@@ -1,7 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChinaMap } from "../components/features/home/china-map";
-import { getMapMarkerRadius } from "../lib/china-map";
+import {
+  getMapMarkerRadius,
+  getMapTransform,
+  transformMapPoint,
+} from "../lib/china-map";
 
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
@@ -30,6 +34,7 @@ const provinceSvg = `
 describe("ChinaMap", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    Reflect.deleteProperty(SVGElement.prototype, "getBBox");
     window.history.replaceState({}, "", "/");
   });
 
@@ -69,6 +74,14 @@ describe("ChinaMap", () => {
         ],
       }),
     }));
+    Object.defineProperty(SVGElement.prototype, "getBBox", {
+      configurable: true,
+      value(this: SVGElement) {
+        return this.getAttribute("aria-label") === "广东省"
+          ? { x: 500, y: 500, width: 40, height: 40 }
+          : { x: 380, y: 370, width: 40, height: 40 };
+      },
+    });
 
     render(<ChinaMap />);
 
@@ -81,9 +94,15 @@ describe("ChinaMap", () => {
     expect(window.location.search).toContain("mapProvince=%E5%B9%BF%E4%B8%9C%E7%9C%81");
     expect(screen.getByText(/中国 \/ 广东省/)).toBeInTheDocument();
     expect(screen.getByLabelText("梧桐山")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("map-content")).toHaveAttribute(
+        "transform",
+        "matrix(4.5 0 0 4.5 -1940 -2024)",
+      );
+    });
 
     const marker = document.querySelector('circle[fill="var(--primary)"]');
-    expect(Number(marker?.getAttribute("r"))).toBeCloseTo(getMapMarkerRadius(5.5, 3));
+    expect(Number(marker?.getAttribute("r"))).toBeCloseTo(getMapMarkerRadius(5.5, 4.5));
     const hitTarget = document.querySelector('circle[fill="transparent"]');
     expect(Number(hitTarget?.getAttribute("r"))).toBe(12);
 
@@ -115,5 +134,35 @@ describe("ChinaMap", () => {
   it("calculates marker radii in the map's unscaled coordinate space", () => {
     expect(getMapMarkerRadius(5, 1)).toBe(5);
     expect(getMapMarkerRadius(5, 3)).toBeCloseTo(5 / 3);
+  });
+
+  it("zooms a small province closer while keeping it inside the focused safe area", () => {
+    const transform = getMapTransform("广东省", {
+      x: 500,
+      y: 500,
+      width: 40,
+      height: 40,
+    });
+
+    expect(transform.scale).toBe(4.5);
+    expect(transformMapPoint({ x: 520, y: 520 }, transform)).toEqual({
+      x: 400,
+      y: 316,
+    });
+  });
+
+  it("fits a large province without clipping it behind the focused controls", () => {
+    const transform = getMapTransform("新疆维吾尔自治区", {
+      x: 100,
+      y: 100,
+      width: 600,
+      height: 400,
+    });
+
+    expect(transform.scale).toBeCloseTo(1.1);
+    expect(transformMapPoint({ x: 400, y: 300 }, transform)).toEqual({
+      x: 400,
+      y: 316,
+    });
   });
 });

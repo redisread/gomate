@@ -11,6 +11,7 @@ import {
   projectChina,
   transformMapPoint,
   PROVINCE_CENTERS,
+  type MapBounds,
 } from "@/lib/china-map";
 import { fetchAPI } from "@/lib/api";
 import type { Location, Region } from "@/lib/types";
@@ -114,10 +115,18 @@ export function ChinaMap({ className }: { className?: string }) {
   const [tooltip, setTooltip] = React.useState<Tooltip | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [focusedProvince, setFocusedProvince] = React.useState<string | null>(null);
+  const [provinceBounds, setProvinceBounds] = React.useState<Record<string, MapBounds>>({});
   const [lens, setLens] = React.useState<MapLens | null>(null);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const transitionTimer = React.useRef<number | null>(null);
   const pushedMapState = React.useRef(false);
+  const provincePathRefs = React.useRef(new Map<string, SVGPathElement>());
+
+  const startMapTransition = React.useCallback(() => {
+    setIsTransitioning(true);
+    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+    transitionTimer.current = window.setTimeout(() => setIsTransitioning(false), 460);
+  }, []);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -139,6 +148,24 @@ export function ChinaMap({ className }: { className?: string }) {
       cancelled = true;
     };
   }, []);
+
+  React.useEffect(() => {
+    const nextBounds: Record<string, MapBounds> = {};
+
+    for (const [name, path] of provincePathRefs.current) {
+      if (typeof path.getBBox !== "function") continue;
+      const bounds = path.getBBox();
+      if (bounds.width <= 0 || bounds.height <= 0) continue;
+      nextBounds[name] = {
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+      };
+    }
+
+    if (Object.keys(nextBounds).length > 0) setProvinceBounds(nextBounds);
+  }, [svgPaths]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -201,10 +228,10 @@ export function ChinaMap({ className }: { className?: string }) {
     const handlePopState = () => {
       const province = parseMapProvince(window.location.search);
       pushedMapState.current = false;
+      startMapTransition();
       setFocusedProvince(province);
       setTooltip(null);
       setLens(null);
-      setIsTransitioning(false);
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -212,7 +239,7 @@ export function ChinaMap({ className }: { className?: string }) {
       window.removeEventListener("popstate", handlePopState);
       if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
     };
-  }, []);
+  }, [startMapTransition]);
 
   const provinceCount = React.useMemo(() => {
     const map = new Map<string, number>();
@@ -220,7 +247,14 @@ export function ChinaMap({ className }: { className?: string }) {
     return map;
   }, [stats]);
   const maxCount = Math.max(1, ...(stats?.provinces ?? []).map((province) => province.count));
-  const mapTransform = React.useMemo(() => getMapTransform(focusedProvince), [focusedProvince]);
+  const mapTransform = React.useMemo(
+    () =>
+      getMapTransform(
+        focusedProvince,
+        focusedProvince ? provinceBounds[focusedProvince] : undefined,
+      ),
+    [focusedProvince, provinceBounds],
+  );
   const mapPoints = React.useMemo(
     () =>
       focusedProvince
@@ -233,6 +267,7 @@ export function ChinaMap({ className }: { className?: string }) {
   const leaveProvince = () => {
     setTooltip(null);
     setLens(null);
+    startMapTransition();
     if (pushedMapState.current) {
       pushedMapState.current = false;
       window.history.back();
@@ -250,7 +285,6 @@ export function ChinaMap({ className }: { className?: string }) {
     }
     setTooltip(null);
     setLens(null);
-    setIsTransitioning(true);
     if (!focusedProvince) {
       pushedMapState.current = true;
       updateMapUrl(name, "push");
@@ -258,8 +292,7 @@ export function ChinaMap({ className }: { className?: string }) {
       updateMapUrl(name, "replace");
     }
     setFocusedProvince(name);
-    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
-    transitionTimer.current = window.setTimeout(() => setIsTransitioning(false), 560);
+    startMapTransition();
   };
 
   const handleProvinceEnter = (name: string) => {
@@ -320,8 +353,13 @@ export function ChinaMap({ className }: { className?: string }) {
           }}
         >
           <g
+            data-testid="map-content"
             transform={`matrix(${mapTransform.scale} 0 0 ${mapTransform.scale} ${mapTransform.translateX} ${mapTransform.translateY})`}
-            className="transition-transform duration-500 ease-out motion-reduce:transition-none"
+            className={
+              isTransitioning
+                ? "transition-transform duration-[450ms] ease-out motion-reduce:transition-none"
+                : undefined
+            }
           >
             {svgPaths.map((path) => {
               const count = provinceCount.get(path.name) ?? 0;
@@ -329,15 +367,20 @@ export function ChinaMap({ className }: { className?: string }) {
               return (
                 <path
                   key={path.name}
+                  ref={(element) => {
+                    if (element) provincePathRefs.current.set(path.name, element);
+                    else provincePathRefs.current.delete(path.name);
+                  }}
                   d={path.d}
                   fill={provinceFill(count, maxCount)}
                   stroke="#ffffff"
                   strokeWidth={isFocused ? 1.4 : 0.6}
+                  vectorEffect="non-scaling-stroke"
                   tabIndex={focusedProvince ? -1 : 0}
                   role="button"
                   aria-label={path.name}
-                  className={`cursor-pointer outline-none transition-[opacity,fill,stroke-width] duration-200 hover:opacity-80 focus-visible:opacity-80 focus-visible:stroke-foreground motion-reduce:transition-none ${
-                    focusedProvince && !isFocused ? "pointer-events-none opacity-20" : ""
+                  className={`cursor-pointer outline-none transition-[opacity,fill,stroke-width] duration-150 hover:opacity-80 focus-visible:opacity-80 focus-visible:stroke-foreground motion-reduce:transition-none ${
+                    focusedProvince && !isFocused ? "pointer-events-none opacity-10" : ""
                   }`}
                   onMouseDown={(event) => event.preventDefault()}
                   onMouseEnter={() => handleProvinceEnter(path.name)}
@@ -452,7 +495,8 @@ export function ChinaMap({ className }: { className?: string }) {
                         fill={provinceFill(count, maxCount)}
                         stroke="#ffffff"
                         strokeWidth={isFocused ? 1.4 : 0.6}
-                        opacity={focusedProvince && !isFocused ? 0.2 : 1}
+                        vectorEffect="non-scaling-stroke"
+                        opacity={focusedProvince && !isFocused ? 0.1 : 1}
                       />
                     );
                   })}
@@ -505,18 +549,18 @@ export function ChinaMap({ className }: { className?: string }) {
 
         {focusedProvince && (
           <div className="absolute inset-x-3 top-3 z-10 flex items-start justify-between gap-3">
-            <div className="rounded-xl bg-card/90 px-3 py-2 shadow-warm-sm ring-1 ring-black/5 backdrop-blur-sm dark:ring-white/10">
+            <div className="min-w-0 rounded-xl bg-card/90 px-3 py-2 shadow-warm-sm ring-1 ring-black/5 backdrop-blur-sm dark:ring-white/10">
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 中国 / {focusedProvince}
               </p>
-              <p className="mt-0.5 text-sm font-bold text-foreground">
+              <p className="mt-0.5 truncate text-sm font-bold text-foreground">
                 {focusedProvince} · {t("locations.mapProvinceCount", { count: focusedCount })}
               </p>
             </div>
             <button
               type="button"
               onClick={leaveProvince}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-card/90 px-3 text-xs font-semibold text-foreground shadow-warm-sm ring-1 ring-black/5 backdrop-blur-sm transition-[background-color,transform] duration-150 hover:bg-card active:scale-[0.97] dark:ring-white/10"
+              className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl bg-card/90 ps-3 pe-2.5 text-xs font-semibold text-foreground shadow-warm-sm ring-1 ring-black/5 backdrop-blur-sm transition-[background-color,transform] duration-150 ease-out hover:bg-card active:scale-[0.96] dark:ring-white/10"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
               {t("home.mapBackToChina")}
@@ -542,7 +586,7 @@ export function ChinaMap({ className }: { className?: string }) {
             <button
               type="button"
               onClick={leaveProvince}
-              className="mt-3 inline-flex min-h-9 items-center rounded-lg bg-foreground px-3 text-xs font-semibold text-background transition-[background-color,transform] duration-150 hover:bg-amber-800 hover:text-white active:scale-[0.97]"
+              className="mt-3 inline-flex min-h-9 items-center rounded-lg bg-foreground px-3 text-xs font-semibold text-background transition-[background-color,transform] duration-150 ease-out hover:bg-amber-800 hover:text-white active:scale-[0.96]"
             >
               {t("home.mapBrowseOtherRegions")}
             </button>

@@ -20,8 +20,20 @@ export interface MapTransform {
   translateY: number;
 }
 
+export interface MapBounds extends MapPointPosition {
+  width: number;
+  height: number;
+}
+
 export const MAP_PROVINCE_PARAM = "mapProvince";
 export const PROVINCE_ZOOM_SCALE = 3;
+const MAX_PROVINCE_ZOOM_SCALE = 4.5;
+const FOCUSED_MAP_VIEWPORT = {
+  x: 64,
+  y: 96,
+  width: 672,
+  height: 440,
+} as const;
 
 export function projectChina(lat: number, lng: number): { x: number; y: number } {
   const b = CHINA_MAP_BOUNDS;
@@ -31,10 +43,33 @@ export function projectChina(lat: number, lng: number): { x: number; y: number }
   };
 }
 
-/** 返回地图 group 的变换，让选中的省份移动到画布中心。 */
-export function getMapTransform(province: string | null): MapTransform {
+/** 返回地图 group 的变换，让选中的省份完整落入聚焦控件之间的安全区域。 */
+export function getMapTransform(
+  province: string | null,
+  bounds?: MapBounds,
+): MapTransform {
   if (!province || !PROVINCE_CENTERS[province]) {
     return { scale: 1, translateX: 0, translateY: 0 };
+  }
+
+  if (bounds && bounds.width > 0 && bounds.height > 0) {
+    const scale = Math.min(
+      MAX_PROVINCE_ZOOM_SCALE,
+      FOCUSED_MAP_VIEWPORT.width / bounds.width,
+      FOCUSED_MAP_VIEWPORT.height / bounds.height,
+    );
+    const boundsCenterX = bounds.x + bounds.width / 2;
+    const boundsCenterY = bounds.y + bounds.height / 2;
+    const viewportCenterX =
+      FOCUSED_MAP_VIEWPORT.x + FOCUSED_MAP_VIEWPORT.width / 2;
+    const viewportCenterY =
+      FOCUSED_MAP_VIEWPORT.y + FOCUSED_MAP_VIEWPORT.height / 2;
+
+    return {
+      scale,
+      translateX: viewportCenterX - boundsCenterX * scale,
+      translateY: viewportCenterY - boundsCenterY * scale,
+    };
   }
 
   const center = PROVINCE_CENTERS[province];
