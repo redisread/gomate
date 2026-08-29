@@ -25,6 +25,7 @@ interface TeamDepartureBriefProps {
   location: Location | null;
   statusLabel: string;
   canMessageLeader: boolean;
+  desktopAction?: React.ReactNode;
 }
 
 export function TeamDepartureBrief({
@@ -32,6 +33,7 @@ export function TeamDepartureBrief({
   location,
   statusLabel,
   canMessageLeader,
+  desktopAction,
 }: TeamDepartureBriefProps) {
   const { t } = useI18n(["teams", "common"]);
   const start = formatTeamStart(team);
@@ -56,7 +58,7 @@ export function TeamDepartureBrief({
   return (
     <section
       data-testid="team-departure-brief"
-      className="overflow-hidden rounded-[20px] bg-card shadow-[0_18px_48px_rgba(82,58,31,0.10)] lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]"
+      className="overflow-hidden rounded-[20px] bg-card shadow-[0_18px_48px_rgba(82,58,31,0.10)] lg:grid lg:grid-cols-[minmax(0,0.82fr)_minmax(22rem,1.18fr)]"
     >
       <LocationMedia location={location} />
 
@@ -97,9 +99,27 @@ export function TeamDepartureBrief({
           {location && <MetaItem icon={MapPin} label={location.name} />}
         </ul>
 
+        {location && (
+          <a
+            href={`/locations/${location.id}`}
+            className="mt-4 inline-flex min-h-10 w-fit items-center gap-2 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-[transform,color,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-accent [@media(hover:hover)]:hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {t("teams.viewLocationDetail")}
+            <span aria-hidden="true">·</span>
+            <span>{location.name}</span>
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </a>
+        )}
+
         {team.description && (
           <div className="prose prose-stone mt-5 max-w-none text-pretty text-sm leading-7 text-muted-foreground prose-p:my-0">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{team.description}</ReactMarkdown>
+          </div>
+        )}
+
+        {desktopAction && (
+          <div data-testid="team-desktop-primary-action" className="mt-6 hidden border-t border-border pt-5 lg:block">
+            {desktopAction}
           </div>
         )}
 
@@ -145,7 +165,7 @@ export function TeamDepartureBrief({
 function LocationMedia({ location }: { location: Location | null }) {
   const { t } = useI18n(["teams"]);
   const content = (
-    <div className="group relative min-h-72 overflow-hidden bg-stone-900 lg:h-full lg:min-h-[34rem]">
+    <div className="group relative min-h-72 overflow-hidden bg-stone-900 lg:h-[28rem] lg:min-h-0">
       {location?.coverImageUrl ? (
         <img
           src={location.coverImageUrl}
@@ -170,9 +190,8 @@ function LocationMedia({ location }: { location: Location | null }) {
           </span>
           <div className="flex items-end justify-between gap-4">
             <span className="text-2xl font-bold leading-tight sm:text-3xl">{location.name}</span>
-            <span className="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl bg-amber-500 px-3.5 text-sm font-semibold text-stone-950 transition-transform duration-150 group-active:scale-[0.96] motion-reduce:transform-none">
-              <span className="hidden sm:inline">{t("teams.viewLocationDetail")}</span>
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            <span className="shrink-0 text-xs font-medium text-white/70 sm:text-sm">
+              {t("teams.viewLocationDetail")}
             </span>
           </div>
         </div>
@@ -180,16 +199,7 @@ function LocationMedia({ location }: { location: Location | null }) {
     </div>
   );
 
-  if (!location) return content;
-
-  return (
-    <a
-      href={`/locations/${location.id}`}
-      className="block min-h-72 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring lg:min-h-full"
-    >
-      {content}
-    </a>
-  );
+  return content;
 }
 
 function MetaItem({

@@ -110,7 +110,7 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
       location_count: 37,
       tag_count: 3,
       location_tag_count: 3,
-      migration_count: 7,
+      migration_count: 8,
       retained_v3_location_count: 1,
       wutongshan_cover_url:
         "https://gomate.cos.jiahongw.com/locations/hiking/wutong-mountain/wutongshan_01.jpg",
