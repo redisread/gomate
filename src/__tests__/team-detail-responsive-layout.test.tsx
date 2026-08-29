@@ -97,6 +97,7 @@ describe("team detail responsive information architecture", () => {
         location={location}
         statusLabel="等你一起"
         canMessageLeader={false}
+        desktopAction={<button type="button">Apply to join</button>}
       />,
     );
 
@@ -113,6 +114,10 @@ describe("team detail responsive information architecture", () => {
     expect(screen.getByRole("link", { name: /大南山/ })).toHaveAttribute(
       "href",
       "/locations/location-1",
+    );
+    expect(image.closest("a")).toBeNull();
+    expect(screen.getByTestId("team-desktop-primary-action")).toContainElement(
+      screen.getByRole("button", { name: "Apply to join" }),
     );
   });
 

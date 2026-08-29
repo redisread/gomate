@@ -63,19 +63,6 @@ export function TeamSidebar({ ctx }: { ctx: ReturnType<typeof useTeamDetail>; })
       <div className="rounded-[20px] bg-card p-5 shadow-[0_8px_28px_rgba(82,58,31,0.08)] sm:p-6">
         <TeamCapacity team={team} canJoin={ctx.canJoin} remaining={ctx.remaining} />
 
-        <div className="mt-5 hidden lg:block">
-          <TeamDecisionPrimaryAction
-            team={team}
-            userId={ctx.userId}
-            canJoin={ctx.canJoin}
-            isFull={ctx.isFull}
-            isLeader={ctx.isLeader}
-            isMember={ctx.isMember}
-            isPending={ctx.isPending}
-            onJoin={() => ctx.setShowJoinModal(true)}
-          />
-        </div>
-
         <ShareButton onClick={share.openShare} />
         {isLeader && <LeaderActions ctx={ctx} team={team} />}
         {isMember && <MemberStatusIndicator onLeave={() => ctx.setShowLeave(true)} />}
