@@ -37,6 +37,9 @@
 ### 地点
 
 - 列表只展示 `published` 且所属 city Region 已启用服务的地点。
+- 地点列表的筛选区域按“地区/热门城市 → 内容标签”分层；热门城市只读取 service-enabled
+  city Region 的 `isHot` 与 `sortOrder`，快捷项点击直接使用共享的 `regionId` 查询参数，
+  不在前端硬编码不存在的城市。
 - 详情路由只使用全局 Location ID，slug 不参与路由解析。
 - 页面消费共享 Location DTO：`region`、`supportedActivityTypes`、`coverImageUrl`、`images` 与结构化 `extra`。
 - 详情的徒步攻略保留路线参数、概述、提示和警告；不展示地点装备或“决策信息”区块，原区块中的
@@ -46,12 +49,16 @@
 ### Team
 
 - 列表按 Region、活动类型、时间和派生 lifecycle 筛选。
+- Team 列表与地点列表共用热门城市排序和选中城市补位规则；“更多城市”仍使用完整 Region
+  选择器，快捷项不改变 `regionId` URL 合同。
 - 创建和编辑 Team 时，`activityType` 必须来自共享代码枚举；所选地点的
   `supportedActivityTypes` 只把推荐项排在前面，不过滤其他活动类型。
 - 创建 Team 的地点选择器通过 `/api/locations?search=<name>` 按名称搜索公开地点，并在结果中
   显示所属地区；表单把 `startAt` 的时间部分统一标为“活动开始时间”，不再称为“集合时间”。
 - Team 列表筛选直接读取共享代码枚举，名称统一通过 i18n 展示。
 - 详情展示 leader、active members、申请、行程和行动本；member 离队直接结束 active membership。
+- Team 详情桌面端在首屏信息区提供唯一加入队伍主 CTA，地点详情为次要链接；移动端保留底部
+  固定操作栏作为唯一主要加入入口，避免重复 CTA。
 - 已结束且成行的 Team 中，leader 或 active member 可通过 `/discover/create?teamId=<id>` 发布回顾。
 - Team 详情的通用分享弹窗与移动端底部分享面板共用三套 SVG 海报预设；切换预设时保留旧预览，
   直到新预览生成完成。
