@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Region } from "@/lib/types";
-import { getDisplayedQuickRegions, getQuickRegions } from "./quick-city-options";
+import {
+  getDisplayedQuickRegions,
+  getRegionDisplayName,
+  getQuickRegions,
+} from "./quick-city-options";
 
 function region(
   id: string,
@@ -68,6 +72,13 @@ describe("quick city options", () => {
     const regions = [region("shenzhen", "深圳", { isHot: true, sortOrder: 10 })];
 
     expect(getDisplayedQuickRegions(regions, "missing", 6)).toEqual(regions);
+  });
+
+  it("为香港快捷项使用更短的展示名称", () => {
+    const hongKong = region("region-cn-hong-kong", "香港特别行政区", { isHot: true, sortOrder: 30 });
+
+    expect(getRegionDisplayName(hongKong)).toBe("香港");
+    expect(getRegionDisplayName(region("shenzhen", "深圳"))).toBe("深圳");
   });
 
   it("热门城市未达到上限时追加选中城市，不隐藏已有热门城市", () => {

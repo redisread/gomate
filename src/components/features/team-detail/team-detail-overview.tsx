@@ -19,6 +19,7 @@ import { TeamLeaderMini } from "@/components/features/teams/shared";
 import type { Location, Team } from "@/lib/types";
 import { formatTeamStart, getTeamDurationMinutes } from "@/lib/team-display";
 import { formatDuration } from "./team-detail-utils";
+import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 interface TeamDepartureBriefProps {
   team: Team;
@@ -78,7 +79,7 @@ export function TeamDepartureBrief({
           {location?.region?.name && (
             <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-secondary px-3 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-              {location.region.name}
+              {getRegionDisplayName(location.region)}
             </span>
           )}
         </div>

@@ -5,6 +5,7 @@ import { ChevronDown, Check, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Region } from "@/lib/types";
 import { useI18n } from "@/hooks/useI18n";
+import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 const HOT_REGION_MAX = 6;
 
@@ -249,7 +250,7 @@ export function RegionSelect({
                         : "border-zinc-200 text-zinc-700 hover:border-amber-400 hover:text-amber-600"
                     )}
                   >
-                    {region.name}
+                    {getRegionDisplayName(region)}
                   </button>
                 ))}
               </div>
@@ -286,7 +287,7 @@ export function RegionSelect({
                   )}
                 >
                   <span className="flex items-center gap-1.5">
-                    <span>{region.name}</span>
+                    <span>{getRegionDisplayName(region)}</span>
                     {(region.nameEn || region.code) && (
                       <span className="text-xs text-zinc-400">
                         {region.nameEn ?? region.code}

@@ -8,6 +8,7 @@ import { adminCatchMessage, adminJsonOrThrow } from "@/lib/admin-i18n";
 import { fetchSelectableRegions } from "@/lib/regions";
 import { ACTIVITY_TYPES, type ActivityType } from "@/contracts";
 import type { Location, Region, Tag } from "@/lib/types";
+import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 interface AdminQuickLocationFormProps {
   initialFocusRef: React.RefObject<HTMLInputElement>;
@@ -127,7 +128,7 @@ export function AdminQuickLocationForm({
         {t("admin.quickDraft.region")}
         <select required value={regionId} onChange={(event) => setRegionId(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3">
           <option value="">{t("admin.quickDraft.chooseRegion")}</option>
-          {regions.map((region) => <option key={region.id} value={region.id}>{region.name}</option>)}
+          {regions.map((region) => <option key={region.id} value={region.id}>{getRegionDisplayName(region)}</option>)}
         </select>
       </label>
 

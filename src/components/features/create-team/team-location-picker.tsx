@@ -6,6 +6,7 @@ import { Check, ChevronDown, Loader2, MapPin, Search } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location } from "@/lib/types";
+import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 interface TeamLocationPickerProps {
   value: string;
@@ -222,7 +223,7 @@ export function TeamLocationPicker({
                       <span className="block truncate font-medium">{location.name}</span>
                       {location.region?.name && (
                         <span className="block truncate text-xs text-muted-foreground">
-                          {location.region.name}
+                          {getRegionDisplayName(location.region)}
                         </span>
                       )}
                     </span>
