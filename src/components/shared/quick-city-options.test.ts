@@ -69,4 +69,16 @@ describe("quick city options", () => {
 
     expect(getDisplayedQuickRegions(regions, "missing", 6)).toEqual(regions);
   });
+
+  it("热门城市未达到上限时追加选中城市，不隐藏已有热门城市", () => {
+    const regions = [
+      region("shenzhen", "深圳", { isHot: true, sortOrder: 10 }),
+      region("huizhou", "惠州"),
+    ];
+
+    expect(getDisplayedQuickRegions(regions, "huizhou", 6).map((item) => item.name)).toEqual([
+      "深圳",
+      "惠州",
+    ]);
+  });
 });

@@ -19,6 +19,7 @@ export function getDisplayedQuickRegions(
 ): Region[] {
   const quickRegions = getQuickRegions(regions, limit);
   const selectedRegion = regions.find((region) => region.id === selectedRegionId);
+  const safeLimit = Math.max(0, Math.floor(limit));
 
   if (
     !selectedRegion
@@ -26,6 +27,10 @@ export function getDisplayedQuickRegions(
     || quickRegions.length === 0
   ) {
     return quickRegions;
+  }
+
+  if (quickRegions.length < safeLimit) {
+    return [...quickRegions, selectedRegion];
   }
 
   return [...quickRegions.slice(0, -1), selectedRegion];
