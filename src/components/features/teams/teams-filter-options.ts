@@ -1,5 +1,3 @@
-export { getQuickRegions, getDisplayedQuickRegions } from "@/components/shared/quick-city-options";
-
 export const TEAM_DATE_OPTIONS = [
   { key: "today", labelKey: "filter.dateQuickToday" },
   { key: "tomorrow", labelKey: "filter.dateQuickTomorrow" },

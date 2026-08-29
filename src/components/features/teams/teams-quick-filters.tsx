@@ -3,7 +3,8 @@ import { CalendarDays, Check, ChevronDown, MapPin, Search } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Region } from "@/lib/types";
-import { getQuickRegions, TEAM_DATE_OPTIONS } from "./teams-filter-options";
+import { TEAM_DATE_OPTIONS } from "./teams-filter-options";
+import { getDisplayedQuickRegions } from "@/components/shared/quick-city-options";
 
 const QUICK_REGION_LIMIT = 6;
 
@@ -216,11 +217,10 @@ export function TeamsQuickFilters({
   onRetryRegions,
 }: TeamsQuickFiltersProps) {
   const { t } = useI18n(["teams", "filter"]);
-  const hotRegions = React.useMemo(() => getQuickRegions(regions, QUICK_REGION_LIMIT), [regions]);
-  const selectedRegion = regions.find((region) => region.id === selectedRegionId);
-  const quickRegions = selectedRegion && !hotRegions.some((region) => region.id === selectedRegion.id)
-    ? [...hotRegions.slice(0, QUICK_REGION_LIMIT - 1), selectedRegion]
-    : hotRegions;
+  const quickRegions = React.useMemo(
+    () => getDisplayedQuickRegions(regions, selectedRegionId, QUICK_REGION_LIMIT),
+    [regions, selectedRegionId],
+  );
 
   return (
     <div className="mt-5 space-y-4" aria-label={t("teams.quickFiltersLabel")}>

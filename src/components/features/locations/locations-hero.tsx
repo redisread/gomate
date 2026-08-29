@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils";
 import { getRoleConfig, type RoleKey, type RoleCfg } from "./constants";
 import { LocationsHeroSkeleton } from "@/components/ui/skeleton";
 import type { Region } from "@/lib/types";
+import { getDisplayedQuickRegions } from "@/components/shared/quick-city-options";
+
+const QUICK_REGION_LIMIT = 6;
 
 interface LocationsHeroProps {
   activeRole: RoleKey;
@@ -39,6 +42,10 @@ export function LocationsHero({
   const regionBtnRef = React.useRef<HTMLButtonElement>(null);
   const regionDropdownRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const quickRegions = React.useMemo(
+    () => getDisplayedQuickRegions(regions, selectedRegionId, QUICK_REGION_LIMIT),
+    [regions, selectedRegionId],
+  );
 
   // i18n 加载中时显示骨架屏
   if (i18nLoading) {
@@ -118,8 +125,8 @@ export function LocationsHero({
         </div>
 
         {/* 筛选栏 */}
-        <div className="mt-3 relative" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 290ms both" }}>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="relative mt-3 space-y-2" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 290ms both" }}>
+          <div className="flex min-w-0 items-start gap-3">
             {regions.length > 0 && (
               <button ref={regionBtnRef} type="button" data-region-btn
                 onClick={() => {
@@ -137,24 +144,46 @@ export function LocationsHero({
                 <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", showRegionDropdown && "rotate-180")} />
               </button>
             )}
-            {regions.length > 0 && popularTags.length > 0 && (
-              <div className="flex-shrink-0 w-px h-4 bg-stone-200 dark:bg-stone-700" />
-            )}
-            {popularTags.slice(0, 8).map((tag) => (
-              <button key={tag.id} type="button" onClick={() => onTagToggle(tag.id)}
-                className={cn("flex-shrink-0 px-3 py-1.5 text-xs rounded-full border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96]",
-                  selectedTags.includes(tag.id) ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
-                )}>
-                {tag.name}
-              </button>
-            ))}
-            {hasActiveFilters && (
-              <button type="button" onClick={onClearAll}
-                className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs text-stone-500 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors rounded-full">
-                <X className="w-3 h-3" />{t("locations.clearBtn")}
-              </button>
+
+            {quickRegions.length > 0 && (
+              <div role="group" aria-label={t("locations.hotCities")} className="flex min-w-0 flex-1 items-center gap-2">
+                <span className="flex-shrink-0 pt-1.5 text-xs font-semibold text-muted-foreground">{t("locations.hotCities")}</span>
+                <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                  {quickRegions.map((region) => (
+                    <button key={region.id} type="button" aria-pressed={selectedRegionId === region.id} onClick={() => onRegionSelect(region.id)}
+                      className={cn("flex-shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96]",
+                        selectedRegionId === region.id ? "border-amber-700 bg-amber-700 text-white shadow-sm dark:border-amber-500 dark:bg-amber-500 dark:text-stone-950" : "border-stone-200 bg-card text-stone-500 hover:border-stone-300 hover:text-stone-700 dark:border-stone-700 dark:bg-card dark:text-stone-400 dark:hover:border-stone-600 dark:hover:text-stone-300"
+                      )}>
+                      {region.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
+
+          {popularTags.length > 0 && (
+            <div role="group" aria-label={t("locations.tagsLabel")} className="flex min-w-0 items-start gap-3">
+              <span className="flex-shrink-0 pt-1.5 text-xs font-semibold text-muted-foreground">{t("locations.tagsLabel")}</span>
+              <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                {popularTags.slice(0, 8).map((tag) => (
+                  <button key={tag.id} type="button" aria-pressed={selectedTags.includes(tag.id)} onClick={() => onTagToggle(tag.id)}
+                    className={cn("flex-shrink-0 px-3 py-1.5 text-xs rounded-full border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96]",
+                      selectedTags.includes(tag.id) ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
+                    )}>
+                    {tag.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {hasActiveFilters && (
+            <button type="button" onClick={onClearAll}
+              className="inline-flex min-h-8 items-center gap-1 rounded-full px-3 py-1.5 text-xs text-stone-500 transition-colors hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-300">
+              <X className="w-3 h-3" />{t("locations.clearBtn")}
+            </button>
+          )}
           <div className="absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-l from-white to-transparent pointer-events-none" />
         </div>
 
