@@ -64,12 +64,20 @@ function renderHero(overrides: Partial<ComponentProps<typeof LocationsHero>> = {
 
 describe("LocationsHero", () => {
   it("按热门城市分组展示快捷筛选，并保持兴趣标签独立", () => {
-    renderHero({ popularTags: [{ id: "hiking", name: "徒步" }] });
+    renderHero({
+      regions: [
+        region("sz", "深圳", true, 10),
+        region("region-cn-hong-kong", "香港特别行政区", true, 20),
+      ],
+      popularTags: [{ id: "hiking", name: "徒步" }],
+    });
 
     expect(screen.getByRole("group", { name: "locations.hotCities" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "深圳" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "广州" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "香港" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("group", { name: "locations.tagsLabel" })).toBeInTheDocument();
+    expect(screen.getByTestId("locations-tag-options")).toHaveClass("flex-wrap");
+    expect(screen.getByTestId("locations-tag-options")).not.toHaveClass("overflow-x-auto");
     expect(screen.getByRole("button", { name: "徒步" })).toBeInTheDocument();
   });
 

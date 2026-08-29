@@ -4,7 +4,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Region } from "@/lib/types";
 import { TEAM_DATE_OPTIONS } from "./teams-filter-options";
-import { getDisplayedQuickRegions } from "@/components/shared/quick-city-options";
+import { getDisplayedQuickRegions, getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 const QUICK_REGION_LIMIT = 6;
 
@@ -190,7 +190,7 @@ function RegionPicker({
                   )}
                 >
                   <span className="min-w-0">
-                    <span className="font-medium">{region.name}</span>
+                    <span className="font-medium">{getRegionDisplayName(region)}</span>
                     {region.nameEn && <span className="ml-2 text-xs text-muted-foreground">{region.nameEn}</span>}
                   </span>
                   {selected && <Check className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />}
@@ -234,7 +234,7 @@ export function TeamsQuickFilters({
             <QuickChip selected={!selectedRegionId} onClick={() => onRegionSelect("")}>{t("teams.allCities")}</QuickChip>
             {quickRegions.map((region) => (
               <QuickChip key={region.id} selected={selectedRegionId === region.id} onClick={() => onRegionSelect(region.id)}>
-                {region.name}
+                {getRegionDisplayName(region)}
               </QuickChip>
             ))}
           </div>

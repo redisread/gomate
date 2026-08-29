@@ -4,6 +4,7 @@ import { isActivityType } from "@/lib/activity-types";
 import type { ActivityType, RecruitmentStatus, Region, Team } from "@/lib/types";
 import { fetchPublicAPI } from "@/lib/api";
 import { fetchSelectableRegions } from "@/lib/regions";
+import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 import { parseTeamTagFilters } from "@/lib/team-filter-params";
 import {
   getDateRangeByQuickType,
@@ -327,7 +328,10 @@ export function useTeams(initialData?: TeamsInitialData) {
   );
 
   const selectedRegionName = React.useMemo(
-    () => availableRegions.find((region) => region.id === selectedRegionId)?.name,
+    () => {
+      const selectedRegion = availableRegions.find((region) => region.id === selectedRegionId);
+      return selectedRegion ? getRegionDisplayName(selectedRegion) : undefined;
+    },
     [availableRegions, selectedRegionId],
   );
 

@@ -1,5 +1,13 @@
 import type { Region } from "@/lib/types";
 
+const QUICK_REGION_LABELS: Record<string, string> = {
+  "region-cn-hong-kong": "香港",
+};
+
+export function getRegionDisplayName(region: Pick<Region, "id" | "name">): string {
+  return QUICK_REGION_LABELS[region.id] ?? region.name;
+}
+
 export function getQuickRegions(regions: Region[], limit: number): Region[] {
   const safeLimit = Math.max(0, Math.floor(limit));
 
