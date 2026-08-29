@@ -5,6 +5,7 @@ import {
   isSupportedSatoriFontData,
   loadFonts,
 } from "./load-fonts";
+import { renderTeamPoster } from "../../templates/share-image/team-poster";
 
 function bytes(...values: number[]): ArrayBuffer {
   return new Uint8Array(values).buffer;
@@ -41,7 +42,12 @@ describe("loadFonts", () => {
   });
 
   it("uses the Worker static fallback before any external font request", async () => {
-    const staticFont = new Uint8Array([0x77, 0x4f, 0x46, 0x46]);
+    const staticFont = await readFile(
+      new URL(
+        "../../../../public/fonts/noto-sans-sc-chinese-simplified-400-normal.woff",
+        import.meta.url,
+      ),
+    );
     const assets = {
       fetch: vi.fn().mockResolvedValue(
         new Response(staticFont, {
@@ -64,21 +70,18 @@ describe("loadFonts", () => {
     expect(fonts[0]?.name).toBe("Noto Sans SC");
     expect(assets.fetch).toHaveBeenCalledTimes(1);
     expect(externalFetch).not.toHaveBeenCalled();
-  });
 
-  it("ships a Satori-compatible static fallback font", async () => {
-    const data = await readFile(
-      new URL(
-        "../../../../public/fonts/noto-sans-sc-chinese-simplified-400-normal.woff",
-        import.meta.url,
-      ),
-    );
+    const svg = await renderTeamPoster({
+      title: "周日徒步队",
+      date: "2026-08-30",
+      locationName: "西湖步道",
+      activeParticipantCount: 3,
+      maxParticipants: 6,
+      qrCodeDataUrl: null,
+      fonts,
+    });
 
-    expect(
-      isSupportedSatoriFontData(
-        data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
-      ),
-    ).toBe(true);
-    expect(data.byteLength).toBeGreaterThan(1_000_000);
+    expect(svg).toMatch(/^<svg[ >]/);
+    expect(svg.length).toBeGreaterThan(1_000);
   });
 });
