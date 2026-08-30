@@ -134,6 +134,26 @@ describe("team detail responsive information architecture", () => {
     );
   });
 
+  it("让桌面端地点媒体填满摘要卡片，并将出发信息收成紧凑分组", () => {
+    render(
+      <TeamDepartureBrief
+        team={team}
+        location={location}
+        statusLabel="等你一起"
+        canMessageLeader={false}
+      />,
+    );
+
+    const image = screen.getByRole("img", { name: "大南山" });
+    const media = image.parentElement;
+    const metadata = screen.getByRole("list");
+
+    expect(media).toHaveClass("h-full", "lg:min-h-[34rem]");
+    expect(media).not.toHaveClass("lg:h-[28rem]");
+    expect(metadata).toHaveClass("rounded-2xl", "bg-secondary/60", "sm:grid-cols-2");
+    expect(metadata).not.toHaveClass("border-y", "lg:grid-cols-1");
+  });
+
   it("shows only login for an anonymous visitor even when the team has space", () => {
     render(
       <TeamDecisionPrimaryAction

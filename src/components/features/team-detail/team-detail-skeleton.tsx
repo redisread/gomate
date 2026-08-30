@@ -5,9 +5,9 @@ export function TeamDetailSkeleton() {
     <main className="min-h-screen bg-background flex flex-col">
       <Navbar />
       <div data-testid="team-detail-content" className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-24 sm:px-6 lg:pb-16 lg:pt-28" aria-busy="true">
-        <div className="overflow-hidden rounded-[20px] bg-card shadow-[0_18px_48px_rgba(82,58,31,0.10)] lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)]">
-          <div className="min-h-72 animate-pulse bg-secondary/80 lg:min-h-[34rem]" />
-          <div className="space-y-6 px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
+        <div className="overflow-hidden rounded-[20px] bg-card shadow-warm-md lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(24rem,1.1fr)]">
+          <div className="h-full min-h-72 animate-pulse bg-secondary/80 lg:min-h-[34rem]" />
+          <div className="space-y-6 px-5 py-6 sm:px-8 sm:py-8 lg:px-9 lg:py-8 xl:px-10 xl:py-10">
             <div className="h-10 w-32 animate-pulse rounded-lg bg-secondary/80" />
             <div className="h-20 w-4/5 animate-pulse rounded-xl bg-secondary/80" />
             <div className="h-28 animate-pulse rounded-xl bg-secondary/80" />

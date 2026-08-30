@@ -59,11 +59,11 @@ export function TeamDepartureBrief({
   return (
     <section
       data-testid="team-departure-brief"
-      className="overflow-hidden rounded-[20px] bg-card shadow-[0_18px_48px_rgba(82,58,31,0.10)] lg:grid lg:grid-cols-[minmax(0,0.82fr)_minmax(22rem,1.18fr)]"
+      className="overflow-hidden rounded-[20px] bg-card shadow-warm-md lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(24rem,1.1fr)]"
     >
       <LocationMedia location={location} />
 
-      <div className="flex flex-col px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-10">
+      <div className="flex flex-col px-5 py-6 sm:px-8 sm:py-8 lg:px-9 lg:py-8 xl:px-10 xl:py-10">
         <a
           href="/teams"
           className="mb-6 inline-flex min-h-10 w-fit items-center gap-2 rounded-lg px-2 text-sm font-medium text-muted-foreground transition-[transform,color,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-accent [@media(hover:hover)]:hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -88,7 +88,7 @@ export function TeamDepartureBrief({
           {team.title}
         </h1>
 
-        <ul className="mt-6 grid grid-cols-1 gap-3 border-y border-border py-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <ul className="mt-6 grid grid-cols-1 gap-x-8 gap-y-3 rounded-2xl bg-secondary/60 px-4 py-4 sm:grid-cols-2 sm:px-5">
           <MetaItem icon={Calendar} label={start.date} />
           {start.time && <MetaItem icon={Clock} label={start.time} />}
           {durationMinutes > 0 && (
@@ -119,13 +119,13 @@ export function TeamDepartureBrief({
         )}
 
         {desktopAction && (
-          <div data-testid="team-desktop-primary-action" className="mt-6 hidden border-t border-border pt-5 lg:block">
+          <div data-testid="team-desktop-primary-action" className="mt-6 hidden rounded-2xl bg-secondary/60 p-4 lg:block">
             {desktopAction}
           </div>
         )}
 
         {team.leader && (
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
             <a
               href={`/users/${team.leader.id}`}
               className="inline-flex min-h-11 items-center gap-3 rounded-xl px-2 transition-[transform,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -166,7 +166,7 @@ export function TeamDepartureBrief({
 function LocationMedia({ location }: { location: Location | null }) {
   const { t } = useI18n(["teams"]);
   const content = (
-    <div className="group relative min-h-72 overflow-hidden bg-stone-900 lg:h-[28rem] lg:min-h-0">
+    <div className="group relative h-full min-h-72 overflow-hidden bg-stone-900 lg:min-h-[34rem]">
       {location?.coverImageUrl ? (
         <img
           src={location.coverImageUrl}
