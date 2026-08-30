@@ -57,7 +57,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
   return (
     <main className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <div className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-20 sm:px-6 lg:pb-16 lg:pt-8">
+      <div data-testid="team-detail-content" className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-24 sm:px-6 lg:pb-16 lg:pt-28">
         <TeamDepartureBrief
           team={team}
           location={ctx.location}

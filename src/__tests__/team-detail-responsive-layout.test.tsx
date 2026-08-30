@@ -2,7 +2,12 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TeamDepartureBrief } from "../components/features/team-detail/team-detail-overview";
 import { TeamDecisionPrimaryAction } from "../components/features/team-detail/team-detail-sidebar";
+import { TeamDetailSkeleton } from "../components/features/team-detail/team-detail-skeleton";
 import type { Location, Team } from "../lib/types";
+
+vi.mock("../components/layout/navbar", () => ({
+  Navbar: () => <div data-testid="mock-navbar" />,
+}));
 
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
@@ -90,6 +95,14 @@ const location = {
 } satisfies Location;
 
 describe("team detail responsive information architecture", () => {
+  it("在导航栏下方为详情主体保留响应式呼吸空间", () => {
+    render(<TeamDetailSkeleton />);
+
+    const content = screen.getByTestId("team-detail-content");
+
+    expect(content).toHaveClass("pt-24", "lg:pt-28");
+  });
+
   it("renders the location image before the decision summary in one departure brief", () => {
     render(
       <TeamDepartureBrief
