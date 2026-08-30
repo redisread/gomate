@@ -5,6 +5,13 @@ import { loadFonts } from "./load-fonts";
 
 export const MAX_EMBEDDED_IMAGE_BYTES = 5 * 1024 * 1024;
 const POSTER_CACHE_PATH = "/__poster-cache/";
+const SATORI_SUPPORTED_IMAGE_TYPES = new Set([
+  "image/apng",
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/svg+xml",
+]);
 
 export async function loadPosterFonts(env: Env) {
   return loadFonts(env);
@@ -162,7 +169,31 @@ async function readImageBodyWithLimit(response: Response): Promise<Uint8Array | 
   return buffer;
 }
 
-async function readImageResponse(response: Response): Promise<string | null> {
+async function convertPosterImage(
+  buffer: Uint8Array,
+  env: Env,
+): Promise<string | null> {
+  const copiedBuffer = new Uint8Array(buffer.byteLength);
+  copiedBuffer.set(buffer);
+  const body = new Response(copiedBuffer.buffer).body;
+  if (!body || !env.IMAGES) return null;
+
+  try {
+    const transformed = await env.IMAGES
+      .input(body)
+      .output({ format: "image/jpeg", quality: 85 });
+    return readImageResponse(transformed.response(), env, false);
+  } catch (error) {
+    logger.warn("poster_image_format_conversion_failed", error);
+    return null;
+  }
+}
+
+async function readImageResponse(
+  response: Response,
+  env: Env,
+  allowConversion = true,
+): Promise<string | null> {
   if (!response.ok || response.status >= 300) return null;
   const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim();
   if (!contentType?.startsWith("image/")) return null;
@@ -170,6 +201,9 @@ async function readImageResponse(response: Response): Promise<string | null> {
   if (declaredLength > MAX_EMBEDDED_IMAGE_BYTES) return null;
   const buffer = await readImageBodyWithLimit(response);
   if (!buffer) return null;
+  if (!SATORI_SUPPORTED_IMAGE_TYPES.has(contentType)) {
+    return allowConversion ? convertPosterImage(buffer, env) : null;
+  }
   return `data:${contentType};base64,${bufferToBase64(buffer)}`;
 }
 
@@ -190,7 +224,8 @@ export async function loadImageAsBase64(
           headers: {
             "content-type": object.httpMetadata?.contentType || "application/octet-stream",
           },
-        })
+        }),
+        env,
       );
     }
   } else {
@@ -209,7 +244,7 @@ export async function loadImageAsBase64(
         signal: controller.signal,
         redirect: "manual",
       });
-      value = await readImageResponse(response);
+      value = await readImageResponse(response, env);
     } catch (error) {
       logger.warn("poster_image_https_fetch_failed", error);
     } finally {
