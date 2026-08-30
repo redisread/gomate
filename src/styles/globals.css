@@ -648,8 +648,7 @@
     transform: rotate(-18deg);
   }
 
-  .home-hero-kicker,
-  .home-section-kicker {
+  .home-hero-kicker {
     letter-spacing: 0.08em;
   }
 
@@ -664,29 +663,6 @@
 
   .btn-brand-offset {
     box-shadow: 3px 3px 0 color-mix(in oklab, var(--foreground) 78%, transparent), var(--shadow-brand-glow);
-  }
-
-  .home-step-card {
-    isolation: isolate;
-    overflow: hidden;
-    transition: transform var(--duration-normal) ease, box-shadow var(--duration-normal) ease, border-color var(--duration-normal) ease;
-  }
-
-  .home-step-card:hover {
-    transform: translateY(-4px) rotate(-0.4deg);
-    border-color: color-mix(in oklab, var(--primary) 48%, var(--border));
-    box-shadow: var(--shadow-card-hover);
-  }
-
-  .home-step-number {
-    position: absolute;
-    z-index: 0;
-    top: 0.4rem;
-    right: 0.9rem;
-    color: color-mix(in oklab, var(--primary) 18%, transparent);
-    font-size: 4.5rem;
-    font-weight: 800;
-    line-height: 1;
   }
 
   .home-map-frame {
@@ -707,12 +683,6 @@
 
     .home-route-card {
       box-shadow: 6px 8px 0 color-mix(in oklab, var(--primary) 22%, transparent), var(--shadow-warm-xl);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .home-step-card:hover {
-      transform: none;
     }
   }
 
