@@ -207,7 +207,9 @@ HEIC 转换失败。JPEG、PNG、GIF 与 WebP 按识别结果生成扩展名和 
 海报接口不接受公开 `refresh` 参数；海报缓存只包含地点、行程和故事的公开内容，不渲染
 用户姓名、头像或用户 ID。`location` 与 `team` 支持 `preset=dusk|ridge|journal`，省略时使用
 `dusk`，其他值在读取业务数据前返回 400；预设 ID 和渲染版本属于缓存身份的一部分。
-`story` 不提供预设选择 UI。
+`story` 不提供预设选择 UI。海报封面在传给 Satori 前只保留其原生支持的 PNG、JPEG、GIF、
+APNG 与 SVG；WebP、AVIF 等其他可解码格式通过 Workers Images binding 转为 JPEG，转换失败时
+降级为无封面海报，不让单张媒体阻断整张海报生成。
 
 ## 变更检查
 
