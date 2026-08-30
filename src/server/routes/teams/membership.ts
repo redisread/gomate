@@ -68,7 +68,7 @@ membership.post("/join", async (c) => {
         AND t.recruitment_status = 'open'
         AND t.cancelled_at IS NULL
         AND t.start_at > ?
-        AND (
+        AND 1 + (
           SELECT COUNT(*) FROM team_members AS active
           WHERE active.team_id = t.id AND active.left_at IS NULL
         ) < t.max_participants

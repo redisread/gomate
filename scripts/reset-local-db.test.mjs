@@ -45,6 +45,16 @@ function run(command, args, options = {}) {
   return result.stdout;
 }
 
+function runRejected(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    cwd: ROOT,
+    encoding: "utf8",
+    ...options,
+  });
+  assert.notEqual(result.status, 0, `${command} unexpectedly succeeded`);
+  return `${result.stdout}\n${result.stderr}`;
+}
+
 test("binding-level reset removes unknown tables and rebuilds exactly v3", () => {
   const state = mkdtempSync(path.join(os.tmpdir(), "gomate-reset-test-"));
   const env = { ...process.env, GOMATE_LOCAL_STATE: state };
@@ -110,7 +120,7 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
       location_count: 37,
       tag_count: 3,
       location_tag_count: 3,
-      migration_count: 8,
+      migration_count: 9,
       retained_v3_location_count: 1,
       wutongshan_cover_url:
         "https://gomate.cos.jiahongw.com/locations/hiking/wutong-mountain/wutongshan_01.jpg",
@@ -138,8 +148,154 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
   }
 });
 
+test("team capacity counts the leader together with active members", () => {
+  const state = mkdtempSync(
+    path.join(os.tmpdir(), "gomate-team-capacity-test-"),
+  );
+  const env = { ...process.env, GOMATE_LOCAL_STATE: state };
+  const commonArgs = [
+    "d1",
+    "execute",
+    "DB",
+    "--local",
+    "--persist-to",
+    state,
+    "--config",
+    "wrangler.jsonc",
+  ];
+  try {
+    run(process.execPath, ["scripts/reset-local-db.mjs"], { env });
+    run(WRANGLER, [
+      ...commonArgs,
+      "--command",
+      `INSERT INTO users (id, name, email) VALUES
+         ('capacity-leader', 'Leader', 'capacity-leader@example.invalid'),
+         ('capacity-member-1', 'Member 1', 'capacity-member-1@example.invalid'),
+         ('capacity-member-2', 'Member 2', 'capacity-member-2@example.invalid');
+       INSERT INTO teams (
+         id, location_id, leader_id, activity_type, title,
+         start_at, end_at, max_participants
+       ) VALUES (
+         'capacity-team', 'location-shenzhen-wutongshan', 'capacity-leader',
+         'hiking', 'Capacity team', 4102444800000, 4102448400000, 2
+       );
+       INSERT INTO team_members (team_id, user_id)
+         VALUES ('capacity-team', 'capacity-member-1');`,
+    ]);
+
+    const overflow = runRejected(WRANGLER, [
+      ...commonArgs,
+      "--command",
+      "INSERT INTO team_members (team_id, user_id) VALUES ('capacity-team', 'capacity-member-2');",
+    ]);
+    assert.match(overflow, /TEAM_CAPACITY_EXCEEDED/u);
+
+    const output = run(WRANGLER, [
+      ...commonArgs,
+      "--json",
+      "--command",
+      `SELECT 1 + COUNT(*) AS participant_count
+       FROM team_members
+       WHERE team_id = 'capacity-team' AND left_at IS NULL;`,
+    ]);
+    assert.deepEqual(
+      JSON.parse(output).flatMap((entry) => entry.results ?? []),
+      [{ participant_count: 2 }],
+    );
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
+test("team capacity migration preserves existing members and expands their limit", () => {
+  const state = mkdtempSync(
+    path.join(os.tmpdir(), "gomate-team-capacity-migration-test-"),
+  );
+  const commonArgs = [
+    "d1",
+    "execute",
+    "DB",
+    "--local",
+    "--persist-to",
+    state,
+    "--config",
+    "wrangler.jsonc",
+  ];
+  try {
+    for (const migration of [
+      "0000_init.sql",
+      "0001_reference_data.sql",
+      "0002_account_issuer.sql",
+      "0003_import_v2_catalog.sql",
+      "0004_fix_wutongshan_cover_image.sql",
+      "0005_admin_location_drafts.sql",
+      "0006_remove_location_decision_info.sql",
+      "0007_popular_city_regions.sql",
+    ]) {
+      run(WRANGLER, [
+        ...commonArgs,
+        "--file",
+        path.join("migrations", migration),
+      ]);
+    }
+
+    run(WRANGLER, [
+      ...commonArgs,
+      "--command",
+      `INSERT INTO users (id, name, email) VALUES
+         ('capacity-migration-leader', 'Leader', 'capacity-migration-leader@example.invalid'),
+         ('capacity-migration-member-1', 'Member 1', 'capacity-migration-member-1@example.invalid'),
+         ('capacity-migration-member-2', 'Member 2', 'capacity-migration-member-2@example.invalid'),
+         ('capacity-migration-member-3', 'Member 3', 'capacity-migration-member-3@example.invalid');
+       INSERT INTO teams (
+         id, location_id, leader_id, activity_type, title,
+         start_at, end_at, max_participants
+       ) VALUES (
+         'capacity-migration-team', 'location-shenzhen-wutongshan',
+         'capacity-migration-leader', 'hiking', 'Capacity migration team',
+         4102444800000, 4102448400000, 2
+       );
+       INSERT INTO team_members (team_id, user_id) VALUES
+         ('capacity-migration-team', 'capacity-migration-member-1'),
+         ('capacity-migration-team', 'capacity-migration-member-2');`,
+    ]);
+
+    run(WRANGLER, [
+      ...commonArgs,
+      "--file",
+      path.join("migrations", "0008_team_capacity_includes_leader.sql"),
+    ]);
+
+    const output = run(WRANGLER, [
+      ...commonArgs,
+      "--json",
+      "--command",
+      `SELECT max_participants,
+              1 + (SELECT COUNT(*) FROM team_members
+                   WHERE team_id = teams.id AND left_at IS NULL) AS participant_count
+       FROM teams
+       WHERE id = 'capacity-migration-team';`,
+    ]);
+    assert.deepEqual(
+      JSON.parse(output).flatMap((entry) => entry.results ?? []),
+      [{ max_participants: 3, participant_count: 3 }],
+    );
+
+    const overflow = runRejected(WRANGLER, [
+      ...commonArgs,
+      "--command",
+      "INSERT INTO team_members (team_id, user_id) VALUES ('capacity-migration-team', 'capacity-migration-member-3');",
+    ]);
+    assert.match(overflow, /TEAM_CAPACITY_EXCEEDED/u);
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
 test("admin location draft migration preserves the existing location and team graph", () => {
-  const state = mkdtempSync(path.join(os.tmpdir(), "gomate-location-migration-test-"));
+  const state = mkdtempSync(
+    path.join(os.tmpdir(), "gomate-location-migration-test-"),
+  );
   const commonArgs = [
     "d1",
     "execute",
@@ -252,7 +408,9 @@ test("admin location draft migration preserves the existing location and team gr
 });
 
 test("location decision cleanup removes only retired equipment JSON paths", () => {
-  const state = mkdtempSync(path.join(os.tmpdir(), "gomate-location-decision-cleanup-test-"));
+  const state = mkdtempSync(
+    path.join(os.tmpdir(), "gomate-location-decision-cleanup-test-"),
+  );
   const commonArgs = [
     "d1",
     "execute",

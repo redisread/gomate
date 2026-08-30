@@ -56,10 +56,13 @@
 - 创建 Team 的地点选择器通过 `/api/locations?search=<name>` 按名称搜索公开地点，并在结果中
   显示所属地区；表单把 `startAt` 的时间部分统一标为“活动开始时间”，不再称为“集合时间”。
 - Team 列表筛选直接读取共享代码枚举，名称统一通过 i18n 展示。
+- Team 列表卡片展示与详情页相同的 canonical 生命周期状态；所有人数、容量进度和满员判断都
+  将 leader 计入 `activeParticipantCount` 与 `maxParticipants`。
 - 详情展示 leader、active members、申请、行程和行动本；member 离队直接结束 active membership。
 - Team 详情桌面端在首屏信息区提供唯一加入队伍主 CTA，地点详情为次要链接；移动端保留底部
   固定操作栏作为唯一主要加入入口，避免重复 CTA。
 - 已结束且成行的 Team 中，leader 或 active member 可通过 `/discover/create?teamId=<id>` 发布回顾。
+- Team 详情正文不嵌入队伍回顾 feed；回顾数据、发布 API 与 Discover 中的展示保持不变。
 - Team 详情的通用分享弹窗与移动端底部分享面板共用三套 SVG 海报预设；切换预设时保留旧预览，
   直到新预览生成完成。
 

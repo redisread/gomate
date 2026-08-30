@@ -57,6 +57,13 @@
       "when": 1787995654000,
       "tag": "0007_popular_city_regions",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1788068689663,
+      "tag": "0008_team_capacity_includes_leader",
+      "breakpoints": true
     }
   ]
 }

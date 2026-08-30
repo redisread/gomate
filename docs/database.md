@@ -134,10 +134,10 @@ Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和
 3. `users_deleted_state_validate_insert`、`users_deleted_state_validate_update`：强制
    `status = deleted` 与 `deleted_at` 同时成立。
 4. `team_members_capacity_validate_insert`、`team_members_capacity_validate_reactivate`：
-   新增或重新激活 active member 前验证容量。
+   新增或重新激活 active member 前按 leader 加 active member 的总人数验证容量。
 5. `team_members_leader_validate_insert`、`team_members_leader_validate_reactivate`：禁止 leader
    成为 active member。
-6. `teams_capacity_validate_update`：人数上限不得低于 active member 数量。
+6. `teams_capacity_validate_update`：人数上限不得低于 leader 加 active member 的总人数。
 7. `teams_leader_validate_update`：禁止把 active member 直接设为 leader。
 8. `story_likes_count_after_insert`、`story_likes_count_after_delete`：原子维护 Story 点赞计数。
 9. `messages_summary_after_insert`：更新会话最后消息摘要与时间。
