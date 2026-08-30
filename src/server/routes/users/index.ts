@@ -28,7 +28,7 @@ import { getTeamLifecycle } from "../../lib/team-lifecycle";
 import { eraseAccount } from "../../lib/account-erasure";
 import { ownedAvatarKeyFromStoredValue } from "../../lib/avatar-media";
 import { deleteR2ObjectsWithRetry } from "../../lib/r2-media";
-import { activeTeamMemberCount } from "../../lib/team-participant-count";
+import { activeTeamParticipantCount } from "../../lib/team-participant-count";
 import { validateRequest } from "../../lib/validation";
 import {
   getUserOngoingTeams,
@@ -160,7 +160,7 @@ function teamSummary(row: {
   };
 }
 
-const participantCount = activeTeamMemberCount(schema.teams.id);
+const participantCount = activeTeamParticipantCount(schema.teams.id);
 
 const teamSummarySelection = {
   id: schema.teams.id,

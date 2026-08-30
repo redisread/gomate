@@ -12,7 +12,7 @@ import { generateId } from "../../lib/id";
 import { logger } from "../../lib/logger";
 import { parseUserExtra } from "../../lib/user-extra";
 import { createTeamTagUpdateBatch } from "../../lib/team-tag-write";
-import { activeTeamMemberCount } from "../../lib/team-participant-count";
+import { activeTeamParticipantCount } from "../../lib/team-participant-count";
 import { validateRequest } from "../../lib/validation";
 import { toTeamResponse } from "./utils";
 
@@ -89,7 +89,7 @@ async function readTeamResponse(
   teamId: string,
   checklistVisible: boolean,
 ) {
-  const activeCount = activeTeamMemberCount(schema.teams.id);
+  const activeCount = activeTeamParticipantCount(schema.teams.id);
   const rows = await db
     .select({
       team: schema.teams,

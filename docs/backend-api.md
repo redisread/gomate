@@ -118,8 +118,9 @@ Location 的 `extra.hiking` 只承载难度、时长、距离、爬升、季节�
 | POST   | `/teams/:id/checklist/assignments/:assignmentId/claim` | member    | 认领分工                              |
 | DELETE | `/teams/:id/checklist/assignments/:assignmentId/claim` | member    | 取消认领                              |
 
-`maxParticipants` 只计算 active `team_members`，不包含 leader。申请批准通过 D1 `batch()`、
-条件 DML 与容量 trigger 保证最终写入时权限、状态和名额仍有效。行动本上限为 2048 UTF-8
+`maxParticipants` 表示包含 leader 在内的队伍总人数上限；`activeParticipantCount` 为 leader 加
+active `team_members`。申请批准通过 D1 `batch()`、条件 DML 与容量 trigger 保证最终写入时权限、
+状态和名额仍有效。行动本上限为 2048 UTF-8
 bytes；覆盖、认领和取消认领使用内容 CAS，冲突返回 409。
 
 Team 的 `activityType` 必填并来自共享代码枚举。Location 的推荐活动类型只用于客户端优先排序，

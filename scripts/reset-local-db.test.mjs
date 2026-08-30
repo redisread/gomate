@@ -45,6 +45,16 @@ function run(command, args, options = {}) {
   return result.stdout;
 }
 
+function runRejected(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    cwd: ROOT,
+    encoding: "utf8",
+    ...options,
+  });
+  assert.notEqual(result.status, 0, `${command} unexpectedly succeeded`);
+  return `${result.stdout}\n${result.stderr}`;
+}
+
 test("binding-level reset removes unknown tables and rebuilds exactly v3", () => {
   const state = mkdtempSync(path.join(os.tmpdir(), "gomate-reset-test-"));
   const env = { ...process.env, GOMATE_LOCAL_STATE: state };
@@ -110,7 +120,7 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
       location_count: 37,
       tag_count: 3,
       location_tag_count: 3,
-      migration_count: 8,
+      migration_count: 9,
       retained_v3_location_count: 1,
       wutongshan_cover_url:
         "https://gomate.cos.jiahongw.com/locations/hiking/wutong-mountain/wutongshan_01.jpg",
@@ -133,6 +143,63 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
       (entry) => entry.results ?? [],
     );
     assert.deepEqual(foreignKeyViolations, []);
+  } finally {
+    rmSync(state, { recursive: true, force: true });
+  }
+});
+
+test("team capacity counts the leader together with active members", () => {
+  const state = mkdtempSync(path.join(os.tmpdir(), "gomate-team-capacity-test-"));
+  const env = { ...process.env, GOMATE_LOCAL_STATE: state };
+  const commonArgs = [
+    "d1",
+    "execute",
+    "DB",
+    "--local",
+    "--persist-to",
+    state,
+    "--config",
+    "wrangler.jsonc",
+  ];
+  try {
+    run(process.execPath, ["scripts/reset-local-db.mjs"], { env });
+    run(WRANGLER, [
+      ...commonArgs,
+      "--command",
+      `INSERT INTO users (id, name, email) VALUES
+         ('capacity-leader', 'Leader', 'capacity-leader@example.invalid'),
+         ('capacity-member-1', 'Member 1', 'capacity-member-1@example.invalid'),
+         ('capacity-member-2', 'Member 2', 'capacity-member-2@example.invalid');
+       INSERT INTO teams (
+         id, location_id, leader_id, activity_type, title,
+         start_at, end_at, max_participants
+       ) VALUES (
+         'capacity-team', 'location-shenzhen-wutongshan', 'capacity-leader',
+         'hiking', 'Capacity team', 4102444800000, 4102448400000, 2
+       );
+       INSERT INTO team_members (team_id, user_id)
+         VALUES ('capacity-team', 'capacity-member-1');`,
+    ]);
+
+    const overflow = runRejected(WRANGLER, [
+      ...commonArgs,
+      "--command",
+      "INSERT INTO team_members (team_id, user_id) VALUES ('capacity-team', 'capacity-member-2');",
+    ]);
+    assert.match(overflow, /TEAM_CAPACITY_EXCEEDED/u);
+
+    const output = run(WRANGLER, [
+      ...commonArgs,
+      "--json",
+      "--command",
+      `SELECT 1 + COUNT(*) AS participant_count
+       FROM team_members
+       WHERE team_id = 'capacity-team' AND left_at IS NULL;`,
+    ]);
+    assert.deepEqual(
+      JSON.parse(output).flatMap((entry) => entry.results ?? []),
+      [{ participant_count: 2 }],
+    );
   } finally {
     rmSync(state, { recursive: true, force: true });
   }
