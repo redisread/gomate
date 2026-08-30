@@ -62,6 +62,7 @@
 - Team 详情桌面端在首屏信息区提供唯一加入队伍主 CTA，地点详情为次要链接；移动端保留底部
   固定操作栏作为唯一主要加入入口，避免重复 CTA。
 - 已结束且成行的 Team 中，leader 或 active member 可通过 `/discover/create?teamId=<id>` 发布回顾。
+- Team 详情正文不嵌入队伍回顾 feed；回顾数据、发布 API 与 Discover 中的展示保持不变。
 - Team 详情的通用分享弹窗与移动端底部分享面板共用三套 SVG 海报预设；切换预设时保留旧预览，
   直到新预览生成完成。
 
