@@ -120,9 +120,9 @@ function LoadingSkeleton() {
           </div>
         </div>
       </div>
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-8">
-          <div className="space-y-6">
+      <div className="mx-auto max-w-6xl px-4 pb-12 pt-8 sm:px-6 sm:pb-14 sm:pt-10 lg:px-8 lg:pb-16 lg:pt-12">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
+          <div className="space-y-8">
             <div className="h-48 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800" />
             <div className="h-64 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800" />
             <div className="h-56 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800" />
@@ -963,29 +963,25 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
       {/* ================================================================
           主内容区
           ================================================================ */}
-      <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
+      <div data-testid="location-detail-content" className="mx-auto max-w-6xl px-4 pb-12 pt-8 sm:px-6 sm:pb-14 sm:pt-10 lg:px-8 lg:pb-16 lg:pt-12">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
 
           {/* 左/中栏 */}
-          <div className="flex flex-col gap-6 pt-6 lg:pt-8">
-            <div>
-              <LocationIntroCard
-                location={location}
-                address={location.address ?? undefined}
-                showGallery={false}
-                showTravelMeta
-              />
-            </div>
+          <div data-testid="location-detail-primary-column" className="flex flex-col gap-8">
+            <LocationIntroCard
+              location={location}
+              address={location.address ?? undefined}
+              showGallery={false}
+              showTravelMeta
+            />
             <RouteInfoCard location={location} />
-            <div>
-              <TeamListSection teams={teams} locationId={location.id} />
-            </div>
+            <TeamListSection teams={teams} locationId={location.id} />
             <LocationStoryRecapFeed locationId={location.id} />
           </div>
 
           {/* 右栏 sticky */}
           <div>
-            <div className="relative z-10 space-y-4 lg:sticky lg:top-24 lg:-mt-12">
+            <div data-testid="location-detail-sidebar" className="relative z-10 space-y-5 lg:sticky lg:top-24">
               <div className="hidden space-y-4 lg:block">
                 <ActionCard location={location} teams={teams} />
               </div>
