@@ -4,7 +4,6 @@ import * as React from "react";
 import { useHomeData, type HomeInitialData } from "./use-home-data";
 import { HomeHero } from "./home-hero";
 import { HomeLocalCircleSection } from "./local-circle/home-local-circle-section";
-import { HomeHowItWorksSection } from "./home-how-it-works-section";
 import { HomeMapSection } from "./home-map-section";
 import { HomeDepartureBoard } from "./home-departure-board";
 import { HomeGuestStickyCta } from "./home-guest-sticky-cta";
@@ -58,7 +57,6 @@ export function HomeClient({ initialData }: { initialData?: HomeInitialData }) {
         )}
         <HomeLocalCircleSection />
         <HomeMapSection />
-        {!isMember && currentUser === null && <HomeHowItWorksSection />}
         {!isMember && <HomeGuestStickyCta />}
         {/* P1-1 T2：首次引导流 modal（登录 + 无队伍 + 未看过才弹，gating 全在 hook 内） */}
         <OnboardingModal />
