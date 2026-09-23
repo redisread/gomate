@@ -2,6 +2,7 @@ import { middleware, pages } from "astro/hono";
 import { cf } from "@astrojs/cloudflare/hono";
 import { apiApp, type ApiBindings } from "./server/app";
 import { Hono, type Context } from "hono";
+import { scheduled } from "./server/scheduled";
 
 const worker = new Hono<{ Bindings: ApiBindings }>();
 
@@ -37,4 +38,4 @@ worker.use("*", cf());
 worker.use("*", middleware());
 worker.use("*", pages());
 
-export default worker;
+export default { fetch: worker.fetch, scheduled };

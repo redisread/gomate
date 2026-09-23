@@ -103,6 +103,9 @@ Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和
 ### Team 生命周期与成员
 
 - Team 持久化招募状态、成团时间和取消时间；“未开始 / 进行中 / 已完成”等展示状态由时间与这些字段派生，不由定时任务回写。
+- 每小时定时关闭 `end_at` 已满 24 小时、仍开放招募、未成团且未取消的 Team：只将
+  `recruitment_status` 设为 `closed` 并更新 `updated_at`，保留详情、成员和申请记录。
+  已成团且已结束的 Team 已派生为 completed，不受自动关闭影响；条件在单条 UPDATE 中复核，重复执行无副作用。
 - leader 不写入 `team_members`，`max_participants` 只限制 active member。
 - join request 是申请历史，`team_members.left_at IS NULL` 才表示当前成员。
 - 同一用户对同一 Team 最多存在一个 pending 申请；批准申请时必须在最终写入中复核 leader、申请状态和剩余名额。

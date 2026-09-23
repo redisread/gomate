@@ -9,6 +9,7 @@ import { serverApiGet } from "../lib/server-api";
 import type { HomeInitialData } from "../components/features/home/use-home-data";
 import type { LocationsResponse } from "../hooks/use-locations";
 import type { Team } from "../lib/types";
+import { homeTeamQuery } from "../components/features/home/team-query";
 import {
   GUEST_FEATURED_LOCATION_NAMES,
   selectGuestFeaturedLocations,
@@ -50,7 +51,7 @@ async function fetchGuestFeaturedLocations(): Promise<LocationsResponse | null> 
 
 const [locationsData, teamsData] = await Promise.all([
   fetchGuestFeaturedLocations(),
-  fetchJson<{ success: boolean; teams: Team[] }>("/teams?recruitmentStatus=open&lifecycle=pending&limit=4"),
+  fetchJson<{ success: boolean; teams: Team[] }>(homeTeamQuery()),
 ]);
 
 const initialData: HomeInitialData = {

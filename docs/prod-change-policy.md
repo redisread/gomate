@@ -6,6 +6,11 @@
 
 - 生产域名：`https://gomate.live`
 - Worker 服务：`gomate`（唯一生产 Worker）
+- 生产 Cron：`0 * * * *`（UTC 每小时），由同一 Worker 的 `scheduled` 入口关闭结束满
+  24 小时且未完成/未关闭的队伍，正常运行时关闭延迟小于一小时。`WRITE_MODE` 非 `open`
+  时跳过所有定时写入；恢复开放后下一次扫描补处理积压。配置随受保护的 main 流水线发布，
+  不通过本机或 Dashboard 手工补写。日志事件为 `team_auto_close_completed`（含 count）、
+  `team_auto_close_skipped`、`team_auto_close_failed`；失败抛出供平台记录。
 - Worker 入口：`src/worker.ts`
 - API：同源 `/api/*`，进程内交给 `src/server/app.ts`
 - D1：binding `DB`，目标数据库 `gomate-db-v3`（生产数据库必须由受保护环境按名称绑定；仓库不携带旧数据库 UUID）
