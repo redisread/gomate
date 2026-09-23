@@ -5,6 +5,7 @@ import { fetchPublicAPI } from "@/lib/api";
 import type { Team } from "@/lib/types";
 import { useLocations, type LocationsResponse } from "@/hooks/use-locations";
 import { useAnimateIn } from "@/hooks/use-animations";
+import { homeTeamQuery } from "./team-query";
 
 export interface HomeInitialData {
   locations?: LocationsResponse | null;
@@ -24,8 +25,7 @@ export function useHomeData(initialData?: HomeInitialData, userRegionId?: string
   // Data fetchers
   const fetchTeams = React.useCallback(async () => {
     try {
-      const regionParam = userRegionId ? `&regionId=${encodeURIComponent(userRegionId)}` : "";
-      const res = await fetchPublicAPI(`/teams?recruitmentStatus=open&limit=4${regionParam}`);
+      const res = await fetchPublicAPI(homeTeamQuery(userRegionId));
       const data = await res.json();
       if (data.success) setTeams(data.teams || []);
     } catch (error) {
@@ -33,8 +33,7 @@ export function useHomeData(initialData?: HomeInitialData, userRegionId?: string
     }
   }, [userRegionId]);
 
-  // #221: always fetch on mount (hasInitialTeamsRef removed — SSR data is unfiltered,
-  // we need client to override with correct regionId-filtered data after hydration)
+  // Refresh the time window and apply the user's region after hydration.
   React.useEffect(() => {
     fetchTeams();
   }, [fetchTeams]);

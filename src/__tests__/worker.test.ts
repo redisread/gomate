@@ -22,6 +22,16 @@ vi.mock("../server/app", async () => {
 
 const { default: worker } = await import("../worker");
 
+it.each(["protected", undefined])("skips scheduled writes when WRITE_MODE is %s", async (writeMode) => {
+  const prepare = vi.fn();
+  expect(worker.scheduled).toBeTypeOf("function");
+  await worker.scheduled(
+    { scheduledTime: Date.now() } as ScheduledController,
+    { WRITE_MODE: writeMode, DB: { prepare } } as never,
+  );
+  expect(prepare).not.toHaveBeenCalled();
+});
+
 async function dispatch(
   path: string,
   env: Record<string, unknown> = {},

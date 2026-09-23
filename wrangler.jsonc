@@ -77,6 +77,7 @@
   "env": {
     "production": {
       "main": "./src/worker.ts",
+      "triggers": { "crons": ["0 * * * *"] },
       "name": "gomate",
       "workers_dev": false,
       "preview_urls": true,
