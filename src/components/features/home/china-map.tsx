@@ -15,6 +15,7 @@ import {
 } from "@/lib/china-map";
 import { fetchAPI } from "@/lib/api";
 import type { Location, Region } from "@/lib/types";
+import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 interface ProvinceStat {
   province: string;
@@ -321,10 +322,10 @@ export function ChinaMap({ className }: { className?: string }) {
     );
     const regionSubtitle = point.provinceName
       ? t("locations.mapPointRegion", {
-          region: point.region.name,
+          region: getRegionDisplayName(point.region),
           province: point.provinceName,
         })
-      : point.region.name || t("locations.defaultRegion");
+      : getRegionDisplayName(point.region) || t("locations.defaultRegion");
     setTooltip({
       x: position.x,
       y: position.y - 12,

@@ -3,6 +3,7 @@ import type { Location } from "@/lib/types";
 import {
   DEFAULT_LOCATION_FORM,
   formDataToLocationPayload,
+  getCoordinatePairErrors,
   locationSaveDestination,
   locationToFormData,
   resolveLocationSaveStatus,
@@ -130,6 +131,17 @@ describe("Location form projection", () => {
       coverImageUrl: null,
       supportedActivityTypes: [],
     });
+  });
+
+  it("requires coordinates to be entered as a pair while allowing both to stay blank", () => {
+    expect(getCoordinatePairErrors("", "", "coordinates required together")).toEqual({});
+    expect(getCoordinatePairErrors("22.5", "", "coordinates required together")).toEqual({
+      longitude: "coordinates required together",
+    });
+    expect(getCoordinatePairErrors("", "114.1", "coordinates required together")).toEqual({
+      latitude: "coordinates required together",
+    });
+    expect(getCoordinatePairErrors("22.5", "114.1", "coordinates required together")).toEqual({});
   });
 
   it("resolves explicit save intents without inferring state from button copy", () => {

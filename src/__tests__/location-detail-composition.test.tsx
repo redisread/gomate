@@ -91,4 +91,17 @@ describe("Location detail composition", () => {
       name: "locationDetail.transport.openInMap",
     })).not.toBeInTheDocument();
   });
+
+  it("keeps the content columns aligned below the hero with responsive breathing room", async () => {
+    render(<LocationDetailClient locationId="location-1" />);
+
+    const content = await screen.findByTestId("location-detail-content");
+    const primaryColumn = screen.getByTestId("location-detail-primary-column");
+    const sidebar = screen.getByTestId("location-detail-sidebar");
+
+    expect(content).toHaveClass("pt-8", "lg:pt-12");
+    expect(primaryColumn).toHaveClass("gap-8");
+    expect(sidebar).toHaveClass("lg:top-24");
+    expect(sidebar).not.toHaveClass("lg:-mt-12");
+  });
 });

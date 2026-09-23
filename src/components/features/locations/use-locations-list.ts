@@ -2,6 +2,7 @@ import * as React from "react";
 import type { Location, Region } from "@/lib/types";
 import { fetchPublicAPI, fetchCurrentUser } from "@/lib/api";
 import { fetchSelectableRegions } from "@/lib/regions";
+import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 import type { RoleKey } from "./constants";
 
 interface LocationsPagination {
@@ -194,7 +195,10 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
     setCurrentPage(1);
   }, []);
 
-  const selectedRegionName = regions.find((region) => region.id === selectedRegionId)?.name;
+  const selectedRegionName = React.useMemo(() => {
+    const selectedRegion = regions.find((region) => region.id === selectedRegionId);
+    return selectedRegion ? getRegionDisplayName(selectedRegion) : undefined;
+  }, [regions, selectedRegionId]);
   const hasActiveFilters = !!(searchQuery || selectedTags.length > 0 || selectedRegionId || activeRole);
 
   return {

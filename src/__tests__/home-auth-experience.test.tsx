@@ -74,6 +74,9 @@ describe("HomeClient auth-specific experience", () => {
 
     expect(await screen.findByTestId("guest-home")).toBeInTheDocument();
     expect(screen.getByTestId("guest-departure-board")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "home.howItWorks.title" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByTestId("member-home")).not.toBeInTheDocument();
   });
 

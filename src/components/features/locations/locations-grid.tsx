@@ -5,6 +5,7 @@ import type { Location, Tag } from "@/lib/types";
 import { tagColorClasses } from "./constants";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
 import { formatRouteMetric, normalizeLocationHiking } from "@/components/features/location-detail/route-utils";
+import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 function ShimmerCard() {
   return (
@@ -55,7 +56,7 @@ function LocationCard({ location, index }: { location: Location; index: number }
             <div className="absolute top-3 right-3">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-black/35 text-white backdrop-blur-sm">
                 <MapPin className="w-3 h-3" />
-                {location.region.name}
+                {getRegionDisplayName(location.region)}
               </span>
             </div>
           )}

@@ -9,7 +9,13 @@
 import "../styles/globals.css";
 import { PublicNavbar } from "../components/layout/public-navbar";
 import { Footer } from "../components/layout/footer";
-import { DEFAULT_LOCALE, type Locale, SUPPORTED_LOCALES, getSSRT } from "../i18n";
+import {
+  DEFAULT_LOCALE,
+  getSSRT,
+  resolveLocale,
+  SUPPORTED_LOCALES,
+  type Locale,
+} from "../i18n";
 import { loadLocaleData } from "../i18n/ssr-loader.server";
 
 interface Props {
@@ -37,8 +43,7 @@ const resolvedOgImage = ogImage
 // 从 middleware 设置的 locals 或 cookie 读取 locale
 const localsLocale = (Astro.locals as any)?.locale as Locale | undefined;
 const cookieLocale = Astro.cookies.get("gomate_locale")?.value as Locale | undefined;
-const resolvedLocale = localsLocale || cookieLocale;
-const locale: Locale = (resolvedLocale && SUPPORTED_LOCALES.includes(resolvedLocale)) ? resolvedLocale : DEFAULT_LOCALE;
+const locale = resolveLocale(localsLocale || cookieLocale);
 // ─── SSR i18n 数据加载 ──────────────────────────────────────────────
 // 从 locals 读取页面声明的 namespaces
 const declaredNs = (Astro.locals as any)?.__i18n_namespaces || [];

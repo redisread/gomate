@@ -3,7 +3,7 @@ import type { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import { getTeamLifecycle } from "../../lib/team-lifecycle";
 import { parseUserExtra } from "../../lib/user-extra";
-import { activeTeamMemberCount } from "../../lib/team-participant-count";
+import { activeTeamParticipantCount } from "../../lib/team-participant-count";
 
 type Db = ReturnType<typeof createDb>;
 type UserRow = typeof schema.users.$inferSelect;
@@ -87,7 +87,7 @@ export async function getUserStats(db: Db, userId: string) {
 }
 
 export async function getUserOngoingTeams(db: Db, userId: string) {
-  const participantCount = activeTeamMemberCount(schema.teams.id);
+  const participantCount = activeTeamParticipantCount(schema.teams.id);
   const rows = await db
     .select({
       id: schema.teams.id,

@@ -1,5 +1,6 @@
 import { ArrowRight, Image as ImageIcon, MapPin } from "lucide-react";
 import type { Location } from "@/lib/types";
+import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 interface TeamLocationPreviewProps {
   location: Location;
@@ -47,7 +48,7 @@ export function TeamLocationPreview({
           <div className="min-w-0">
             <h3 className="truncate text-sm font-semibold text-foreground sm:text-base">{location.name}</h3>
             {location.region?.name && (
-              <p className="mt-1 truncate text-xs text-muted-foreground">{location.region.name}</p>
+              <p className="mt-1 truncate text-xs text-muted-foreground">{getRegionDisplayName(location.region)}</p>
             )}
           </div>
           <span className="inline-flex items-center gap-1 self-start text-xs font-medium text-primary transition-[color,transform] duration-150 group-hover:translate-x-0.5">

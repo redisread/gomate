@@ -24,6 +24,7 @@ import { apiValidator } from "./lib/validation";
 import {
   getRequestOrigin,
   isPreviewAuthMutation,
+  isPreviewRequest,
 } from "./lib/preview-policy";
 
 export type WriteMode = "open" | "protected";
@@ -32,6 +33,13 @@ export type ApiBindings = WorkerEnv;
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 const WRITE_PROTECTION_RETRY_SECONDS = 60;
+
+function effectiveWriteMode(request: Request, env: ApiBindings): WriteMode {
+  // Preview versions share production bindings, so their host must remain a
+  // protected boundary even if a deployment variable is accidentally copied
+  // from the production configuration.
+  return isPreviewRequest(request, env) ? "protected" : resolveWriteMode(env.WRITE_MODE);
+}
 
 export function resolveWriteMode(value: unknown): WriteMode {
   return value === "open" ? "open" : "protected";
@@ -66,7 +74,7 @@ apiApp.use("*", async (c, next) => {
 });
 
 apiApp.use("*", async (c, next) => {
-  const writeMode = resolveWriteMode(c.env?.WRITE_MODE);
+  const writeMode = effectiveWriteMode(c.req.raw, c.env);
   if (
     writeMode === "protected" &&
     !SAFE_METHODS.has(c.req.method.toUpperCase()) &&
@@ -118,7 +126,7 @@ apiApp.get("/health", (c) => {
   const versionId = c.env?.CF_VERSION_METADATA?.id;
   return c.json({
     status: "ok",
-    writeMode: resolveWriteMode(c.env?.WRITE_MODE),
+    writeMode: effectiveWriteMode(c.req.raw, c.env),
     timestamp: new Date().toISOString(),
     ...(versionId ? { versionId } : {}),
   });

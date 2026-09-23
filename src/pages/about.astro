@@ -3,12 +3,77 @@
  * 关于我们页
  */
 import Layout from "../layouts/Layout.astro";
-import { AboutClient } from "../components/features/about-client";
+import { AboutContent, type AboutCopy } from "../components/features/about-content";
+import { getSSRT, resolveLocale, type Locale } from "../i18n";
+import { loadLocaleData } from "../i18n/ssr-loader.server";
 import { declareI18nNs } from "../middleware";
 
-declareI18nNs(Astro.locals, ['nav', 'content']);
+declareI18nNs(Astro.locals, ["nav", "content"]);
+
+const locale = resolveLocale(
+  Astro.locals.locale || Astro.cookies.get("gomate_locale")?.value,
+);
+const loadedData = await loadLocaleData(["nav", "content"], locale, Astro.url.origin);
+const ssr = getSSRT(locale, {
+  [locale]: loadedData,
+} as Record<Locale, Record<string, Record<string, unknown>>>);
+
+const copy: AboutCopy = {
+  breadcrumbHome: ssr.t("nav.home"),
+  breadcrumbCurrent: ssr.t("nav.about"),
+  eyebrow: ssr.t("content.about.eyebrow"),
+  title: ssr.t("content.about.title"),
+  subtitle: ssr.t("content.about.subtitle"),
+  primaryAction: ssr.t("content.about.primaryAction"),
+  secondaryAction: ssr.t("content.about.secondaryAction"),
+  journeyLabel: ssr.t("content.about.journeyLabel"),
+  journeyPlace: ssr.t("content.about.journeyPlace"),
+  journeyTeam: ssr.t("content.about.journeyTeam"),
+  journeyDeparture: ssr.t("content.about.journeyDeparture"),
+  missionEyebrow: ssr.t("content.about.missionEyebrow"),
+  missionTitle: ssr.t("content.about.missionTitle"),
+  missionDescription: ssr.t("content.about.missionDescription"),
+  capabilitiesTitle: ssr.t("content.about.capabilitiesTitle"),
+  capabilities: [
+    {
+      title: ssr.t("content.about.featureDiscoverTitle"),
+      description: ssr.t("content.about.featureDiscoverDesc"),
+    },
+    {
+      title: ssr.t("content.about.featureTeamTitle"),
+      description: ssr.t("content.about.featureTeamDesc"),
+    },
+    {
+      title: ssr.t("content.about.featurePrepareTitle"),
+      description: ssr.t("content.about.featurePrepareDesc"),
+    },
+  ],
+  principlesEyebrow: ssr.t("content.about.principlesEyebrow"),
+  principlesTitle: ssr.t("content.about.principlesTitle"),
+  principlesDescription: ssr.t("content.about.principlesDescription"),
+  principles: [
+    {
+      title: ssr.t("content.about.principleClarityTitle"),
+      description: ssr.t("content.about.principleClarityDesc"),
+    },
+    {
+      title: ssr.t("content.about.principleRespectTitle"),
+      description: ssr.t("content.about.principleRespectDesc"),
+    },
+    {
+      title: ssr.t("content.about.principleSafetyTitle"),
+      description: ssr.t("content.about.principleSafetyDesc"),
+    },
+  ],
+  safetyTitle: ssr.t("content.about.safetyTitle"),
+  safetyDescription: ssr.t("content.about.safetyDescription"),
+  contactEyebrow: ssr.t("content.about.contactEyebrow"),
+  contactTitle: ssr.t("content.about.contactTitle"),
+  contactDescription: ssr.t("content.about.contactDesc"),
+  contactAction: ssr.t("content.about.contactBtn"),
+};
 ---
 
-<Layout title="关于我们 - GoMate">
-  <AboutClient client:visible />
+<Layout title="关于我们 - GoMate" description={copy.subtitle}>
+  <AboutContent copy={copy} />
 </Layout>

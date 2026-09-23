@@ -34,6 +34,7 @@ import type { AdminErrorReason } from "@/contracts/admin-i18n";
 import {
   createLocationInputSchema,
   findOpenCityRegion,
+  hasPartialLocationCoordinates,
   loadLocationTags,
   locationImagesAreAllowed,
   normalizeLocationExtraForStorage,
@@ -243,16 +244,17 @@ mutations.put("/", async (c) => {
     const nextCoverImageUrl = changes.coverImageUrl !== undefined
       ? changes.coverImageUrl
       : existing.coverImageUrl;
-    if (
-      nextStatus === "published" &&
-      (nextLatitude === null ||
-        nextLongitude === null ||
-        nextCoverImageUrl === null)
-    ) {
+    if (hasPartialLocationCoordinates(nextLatitude, nextLongitude)) {
       return c.json(
         APIErrors.validationError(
-          "Published locations require coordinates and a cover image",
+          "Location latitude and longitude must be provided together",
         ),
+        400,
+      );
+    }
+    if (nextStatus === "published" && nextCoverImageUrl === null) {
+      return c.json(
+        APIErrors.validationError("Published locations require a cover image"),
         400,
       );
     }

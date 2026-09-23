@@ -2,7 +2,7 @@ import type { ActivityType } from "@/contracts";
 import { and, asc, desc, eq, gt, isNull, lte, sql, type SQL } from "drizzle-orm";
 import type { createDb } from "../db";
 import * as schema from "../db/schema";
-import { activeTeamMemberCount } from "../lib/team-participant-count";
+import { activeTeamParticipantCount } from "../lib/team-participant-count";
 
 type Db = ReturnType<typeof createDb>;
 
@@ -67,7 +67,7 @@ export async function getRecommendOnboarding(params: {
   const hasAnyMembership = Boolean(membershipRows[0]?.hasAnyMembership);
 
   const queryCandidates = async (filterActivityType: ActivityType | null) => {
-    const activeParticipantCount = activeTeamMemberCount(schema.teams.id);
+    const activeParticipantCount = activeTeamParticipantCount(schema.teams.id);
     const filters: SQL[] = [
       eq(schema.locations.regionId, regionId),
       eq(schema.locations.status, "published"),

@@ -65,6 +65,36 @@ test("rejects raw role/status output and unsafe administrator error helpers", ()
   );
 });
 
+test("rejects using the raw Astro locale for administrator SSR data", () => {
+  const issues = auditAdminI18nSource({
+    filePath: "src/pages/admin/example.astro",
+    code: `
+      const locale = Astro.locals.locale;
+      const data = await loadLocaleData(["admin"], locale, Astro.url.origin);
+    `,
+    localeKeys,
+  });
+
+  assert.ok(issues.some((issue) => issue.rule === "unresolved_admin_locale"));
+});
+
+test("rejects raw Astro locale aliases and direct loader arguments", () => {
+  const issues = auditAdminI18nSource({
+    filePath: "src/pages/admin/example.astro",
+    code: `
+      const rawLocale: string = Astro.locals.locale;
+      const locale = rawLocale;
+      const direct = await loadLocaleData(["admin"], Astro.locals.locale, origin);
+    `,
+    localeKeys,
+  });
+
+  assert.equal(
+    issues.filter((issue) => issue.rule === "unresolved_admin_locale").length,
+    2,
+  );
+});
+
 test("accepts translated copy and technical placeholders", () => {
   const issues = auditAdminI18nSource({
     filePath: "src/components/admin/example.tsx",

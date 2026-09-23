@@ -101,6 +101,19 @@ describe("teams list UI", () => {
     expect(screen.getByText("梧桐山日出")).toBeInTheDocument();
   });
 
+  it("shows the canonical lifecycle status on every team card", () => {
+    render(
+      <TeamCard
+        team={makeTeam({
+          lifecycle: "completed",
+          recruitmentStatus: "closed",
+        })}
+      />,
+    );
+
+    expect(screen.getByText("enums.teamStatus.completed")).toBeInTheDocument();
+  });
+
   it("only shows clear filters when the empty result is caused by criteria", () => {
     const { rerender } = render(<EmptyState onClear={vi.fn()} onClearRegion={vi.fn()} hasActiveCriteria={false} />);
 

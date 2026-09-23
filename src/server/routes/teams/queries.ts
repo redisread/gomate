@@ -23,7 +23,7 @@ import { APIErrors } from "../../lib/api-errors";
 import type { Env } from "../../lib/auth";
 import { getActiveSession } from "../../lib/active-session";
 import { logger } from "../../lib/logger";
-import { activeTeamMemberCount } from "../../lib/team-participant-count";
+import { activeTeamParticipantCount } from "../../lib/team-participant-count";
 import {
   decodeContentCursor,
   encodeContentCursor,
@@ -103,7 +103,7 @@ function lifecycleCondition(lifecycle: TeamLifecycle, now: Date): SQL {
   }
 }
 
-const activeParticipantCount = activeTeamMemberCount(schema.teams.id);
+const activeParticipantCount = activeTeamParticipantCount(schema.teams.id);
 
 async function loadTagsByTeam(db: Db, teamIds: string[]) {
   const grouped = new Map<string, schema.Tag[]>();

@@ -102,22 +102,20 @@ const locationFieldsSchema = z.object({
   extra: locationExtraInputSchema.default({}),
 }).strict();
 
+export function hasPartialLocationCoordinates(
+  latitude: number | null,
+  longitude: number | null,
+): boolean {
+  return (latitude === null) !== (longitude === null);
+}
+
 export const createLocationInputSchema = locationFieldsSchema.superRefine(
   (value, context) => {
-    if (
-      value.status === "published" && value.latitude === null
-    ) {
+    if (hasPartialLocationCoordinates(value.latitude, value.longitude)) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["latitude"],
-        message: "Published locations require latitude",
-      });
-    }
-    if (value.status === "published" && value.longitude === null) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["longitude"],
-        message: "Published locations require longitude",
+        path: [value.latitude === null ? "latitude" : "longitude"],
+        message: "Location latitude and longitude must be provided together",
       });
     }
     if (value.status === "published" && value.coverImageUrl === null) {

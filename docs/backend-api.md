@@ -88,8 +88,8 @@ Location 的 `extra.hiking` 只承载难度、时长、距离、爬升、季节�
 退役键外，未知 hiking 字段仍按 strict schema 拒绝。
 
 快速创建 Location 默认保存 `draft`，只要求 `name`、`description` 与启用的 city
-`regionId`；坐标、封面、标签和推荐活动类型可后补。发布边界要求坐标与封面，但推荐活动类型
-始终可空。`supportedActivityTypes` 是可选的地点推荐信息，写入时必须全部来自共享代码枚举；
+`regionId`；坐标、封面、标签和推荐活动类型可后补。发布边界要求封面；坐标可以同时为空，
+但纬度和经度如果填写则必须成对出现。推荐活动类型始终可空。`supportedActivityTypes` 是可选的地点推荐信息，写入时必须全部来自共享代码枚举；
 名称由客户端 i18n 根据枚举值展示。
 普通 `DELETE /locations/:id` 只归档；永久删除必须同时提交
 `permanent=true&confirm=<locationId>`，且最终删除语句复核没有 Team、Story 或收藏引用。
@@ -123,8 +123,9 @@ Worker 每小时自动关闭结束满 24 小时、仍开放招募、未成团且
 | POST   | `/teams/:id/checklist/assignments/:assignmentId/claim` | member    | 认领分工                              |
 | DELETE | `/teams/:id/checklist/assignments/:assignmentId/claim` | member    | 取消认领                              |
 
-`maxParticipants` 只计算 active `team_members`，不包含 leader。申请批准通过 D1 `batch()`、
-条件 DML 与容量 trigger 保证最终写入时权限、状态和名额仍有效。行动本上限为 2048 UTF-8
+`maxParticipants` 表示包含 leader 在内的队伍总人数上限；`activeParticipantCount` 为 leader 加
+active `team_members`。申请批准通过 D1 `batch()`、条件 DML 与容量 trigger 保证最终写入时权限、
+状态和名额仍有效。行动本上限为 2048 UTF-8
 bytes；覆盖、认领和取消认领使用内容 CAS，冲突返回 409。
 
 Team 的 `activityType` 必填并来自共享代码枚举。Location 的推荐活动类型只用于客户端优先排序，
@@ -211,7 +212,9 @@ HEIC 转换失败。JPEG、PNG、GIF 与 WebP 按识别结果生成扩展名和 
 海报接口不接受公开 `refresh` 参数；海报缓存只包含地点、行程和故事的公开内容，不渲染
 用户姓名、头像或用户 ID。`location` 与 `team` 支持 `preset=dusk|ridge|journal`，省略时使用
 `dusk`，其他值在读取业务数据前返回 400；预设 ID 和渲染版本属于缓存身份的一部分。
-`story` 不提供预设选择 UI。
+`story` 不提供预设选择 UI。海报封面在传给 Satori 前只保留其原生支持的 PNG、JPEG、GIF、
+APNG 与 SVG；WebP、AVIF 等其他可解码格式通过 Workers Images binding 转为 JPEG，转换失败时
+降级为无封面海报，不让单张媒体阻断整张海报生成。
 
 ## 变更检查
 

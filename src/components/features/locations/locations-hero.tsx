@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils";
 import { getRoleConfig, type RoleKey, type RoleCfg } from "./constants";
 import { LocationsHeroSkeleton } from "@/components/ui/skeleton";
 import type { Region } from "@/lib/types";
+import { getDisplayedQuickRegions, getRegionDisplayName } from "@/components/shared/quick-city-options";
+
+const QUICK_REGION_LIMIT = 6;
 
 interface LocationsHeroProps {
   activeRole: RoleKey;
@@ -39,6 +42,10 @@ export function LocationsHero({
   const regionBtnRef = React.useRef<HTMLButtonElement>(null);
   const regionDropdownRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const quickRegions = React.useMemo(
+    () => getDisplayedQuickRegions(regions, selectedRegionId, QUICK_REGION_LIMIT),
+    [regions, selectedRegionId],
+  );
 
   // i18n 加载中时显示骨架屏
   if (i18nLoading) {
@@ -118,8 +125,8 @@ export function LocationsHero({
         </div>
 
         {/* 筛选栏 */}
-        <div className="mt-3 relative" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 290ms both" }}>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="relative mt-4 space-y-4 rounded-2xl border border-border/70 bg-background/40 p-3 sm:p-4" style={{ animation: "fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) 290ms both" }}>
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
             {regions.length > 0 && (
               <button ref={regionBtnRef} type="button" data-region-btn
                 onClick={() => {
@@ -129,7 +136,7 @@ export function LocationsHero({
                   }
                   onToggleRegionDropdown();
                 }}
-                className={cn("flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
+                className={cn("inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
                   selectedRegionId ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
                 <MapPin className="w-3 h-3" />
@@ -137,25 +144,46 @@ export function LocationsHero({
                 <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", showRegionDropdown && "rotate-180")} />
               </button>
             )}
-            {regions.length > 0 && popularTags.length > 0 && (
-              <div className="flex-shrink-0 w-px h-4 bg-stone-200 dark:bg-stone-700" />
-            )}
-            {popularTags.slice(0, 8).map((tag) => (
-              <button key={tag.id} type="button" onClick={() => onTagToggle(tag.id)}
-                className={cn("flex-shrink-0 px-3 py-1.5 text-xs rounded-full border transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96]",
-                  selectedTags.includes(tag.id) ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
-                )}>
-                {tag.name}
-              </button>
-            ))}
-            {hasActiveFilters && (
-              <button type="button" onClick={onClearAll}
-                className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-xs text-stone-500 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors rounded-full">
-                <X className="w-3 h-3" />{t("locations.clearBtn")}
-              </button>
+
+            {quickRegions.length > 0 && (
+              <div role="group" aria-label={t("locations.hotCities")} className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                <span className="shrink-0 text-xs font-semibold text-muted-foreground">{t("locations.hotCities")}</span>
+                <div className="flex min-w-0 flex-wrap gap-2">
+                  {quickRegions.map((region) => (
+                    <button key={region.id} type="button" aria-pressed={selectedRegionId === region.id} onClick={() => onRegionSelect(region.id)}
+                      className={cn("inline-flex min-h-9 items-center rounded-full border px-3 text-xs font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96] motion-reduce:transform-none",
+                        selectedRegionId === region.id ? "border-amber-700 bg-amber-700 text-white shadow-sm dark:border-amber-500 dark:bg-amber-500 dark:text-stone-950" : "border-stone-200 bg-card text-stone-500 hover:border-stone-300 hover:text-stone-700 dark:border-stone-700 dark:bg-card dark:text-stone-400 dark:hover:border-stone-600 dark:hover:text-stone-300"
+                      )}>
+                      {getRegionDisplayName(region)}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-          <div className="absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-l from-white to-transparent pointer-events-none" />
+
+          {popularTags.length > 0 && (
+            <div role="group" aria-label={t("locations.tagsLabel")} className="space-y-2">
+              <span className="block text-xs font-semibold text-muted-foreground">{t("locations.tagsLabel")}</span>
+              <div data-testid="locations-tag-options" className="flex flex-wrap gap-2">
+                {popularTags.slice(0, 8).map((tag) => (
+                  <button key={tag.id} type="button" aria-pressed={selectedTags.includes(tag.id)} onClick={() => onTagToggle(tag.id)}
+                    className={cn("inline-flex min-h-9 items-center rounded-full border px-3 text-xs font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 active:scale-[0.96] motion-reduce:transform-none",
+                      selectedTags.includes(tag.id) ? "bg-amber-700 text-white border-amber-700 shadow-sm dark:bg-amber-500 dark:border-amber-500 dark:text-stone-950" : "bg-card text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
+                    )}>
+                    {tag.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {hasActiveFilters && (
+            <button type="button" onClick={onClearAll}
+              className="inline-flex min-h-9 items-center gap-1 rounded-full px-3 text-xs text-stone-500 transition-[background-color,color,transform] duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96] motion-reduce:transform-none">
+              <X className="w-3 h-3" />{t("locations.clearBtn")}
+            </button>
+          )}
         </div>
 
         {/* Region dropdown */}
@@ -173,7 +201,7 @@ export function LocationsHero({
                 className={cn("w-full flex items-center gap-2 px-3.5 py-2 text-xs transition-colors",
                   selectedRegionId === region.id ? "text-amber-700 bg-amber-50" : "text-stone-500 dark:text-stone-400 hover:bg-stone-50 dark:hover:bg-stone-800 hover:text-stone-700 dark:hover:text-stone-300"
                 )}>
-                <MapPin className="w-3 h-3 flex-shrink-0" />{region.name}
+                <MapPin className="w-3 h-3 flex-shrink-0" />{getRegionDisplayName(region)}
               </button>
             ))}
           </div>

@@ -91,24 +91,5 @@
     "loadErrorTitle": "We could not load your trips",
     "loadErrorDescription": "You can still browse public places and teams, or try loading your personal trips again.",
     "retry": "Try again"
-  },
-  "howItWorks": {
-    "kicker": "From idea to outing",
-    "title": "Three steps to find your people",
-    "description": "GoMate brings places, timing, and teams together so an idea can become a plan.",
-    "steps": {
-      "discover": {
-        "title": "Find somewhere to go",
-        "description": "Browse routes, cities, and nearby destinations to choose a direction."
-      },
-      "team": {
-        "title": "Join or start a team",
-        "description": "Find people with a matching pace, or start an outing yourself."
-      },
-      "go": {
-        "title": "Turn the plan into a start",
-        "description": "Confirm the meetup details, pack what you need, and go together."
-      }
-    }
   }
 }

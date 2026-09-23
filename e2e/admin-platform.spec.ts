@@ -209,6 +209,83 @@ test.describe("admin platform", () => {
     expect(pageErrors).toEqual([]);
   });
 
+  test("all administrator management page headings render translated text", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await authenticate(page, admin);
+
+    const pages = [
+      {
+        path: "/admin/locations",
+        heading: "地点管理",
+        locale: "zh-CN",
+      },
+      {
+        path: "/en/admin/locations",
+        heading: "Locations",
+        locale: "en",
+      },
+      {
+        path: "/ja/admin/locations",
+        heading: "スポット管理",
+        locale: "ja",
+      },
+      {
+        path: "/admin/tags",
+        heading: "标签管理",
+        locale: "zh-CN",
+      },
+      {
+        path: "/en/admin/tags",
+        heading: "Tags",
+        locale: "en",
+      },
+      {
+        path: "/ja/admin/tags",
+        heading: "タグ管理",
+        locale: "ja",
+      },
+      {
+        path: "/admin/users",
+        heading: "用户与管理员",
+        locale: "zh-CN",
+      },
+      {
+        path: "/en/admin/users",
+        heading: "Users and administrators",
+        locale: "en",
+      },
+      {
+        path: "/ja/admin/users",
+        heading: "ユーザーと管理者",
+        locale: "ja",
+      },
+    ] as const;
+
+    for (const { path, heading, locale } of pages) {
+      await page.context().addCookies([
+        { name: "gomate_locale", value: locale, url: LOCAL_ORIGIN },
+      ]);
+      const response = await page.request.get(path);
+      expect(response?.status()).toBe(200);
+      const serverHtml = await response.text();
+      const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+      expect(serverHtml).toMatch(
+        new RegExp(`<h1\\b[^>]*>\\s*${escapedHeading}\\s*</h1>`, "u"),
+      );
+      expect(serverHtml).not.toMatch(
+        /\b(?:admin|enums|ui|content|nav|common)\.[A-Za-z]/u,
+      );
+
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible();
+      await expect(page.locator("body")).not.toContainText(
+        /\b(?:admin|enums|ui|content|nav|common)\.[A-Za-z]/u,
+      );
+    }
+  });
+
   test("location editor keeps draft navigation inside admin and exposes explicit publish controls", async ({
     page,
   }) => {
@@ -248,11 +325,15 @@ test.describe("admin platform", () => {
 
     const coverField = page.locator("#location-field-coverImageUrl");
     await expect(coverField.getByText("请上传封面图片")).toBeVisible();
-    await expect(page.getByText("纬度范围为 -90 到 90")).toBeVisible();
-    await expect(page.getByText("经度范围为 -180 到 180")).toBeVisible();
+    await expect(page.getByText("坐标可选；如填写，请同时填写纬度和经度。可在高德地图/百度地图右键复制坐标")).toBeVisible();
+    await expect(page.getByText("纬度和经度需要同时填写")).toHaveCount(0);
     await expect.poll(() => coverField.evaluate((element) =>
       element.contains(document.activeElement),
     )).toBe(true);
+
+    await page.locator("#location-field-latitude").fill("22.5");
+    await actions.getByRole("button", { name: "发布地点" }).click();
+    await expect(page.getByText("纬度和经度需要同时填写")).toBeVisible();
 
     await page.goto(`/admin/locations/${locationId}/edit`);
     await expect(page.getByRole("link", { name: "查看公开页" })).toHaveAttribute(

@@ -4,6 +4,7 @@ import {
   desc,
   eq,
   inArray,
+  isNotNull,
   like,
   lt,
   or,
@@ -298,6 +299,8 @@ queries.get("/stats", async (c) => {
           eq(schema.locations.status, "published"),
           eq(schema.region.level, "city"),
           eq(schema.region.serviceEnabled, true),
+          isNotNull(schema.locations.latitude),
+          isNotNull(schema.locations.longitude),
         ),
       )
       .orderBy(asc(schema.region.sortOrder), asc(schema.locations.id));

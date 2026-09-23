@@ -93,7 +93,7 @@ function PreviewPanel({ data, regionName }: PreviewPanelProps) {
               ))}
             </div>
           )}
-          {(data.latitude || data.longitude) && (
+          {data.latitude !== "" && data.longitude !== "" && (
             <div className="flex items-center gap-1.5 text-xs text-stone-400 dark:text-stone-500">
               <Navigation className="h-3 w-3" /><span>{data.latitude}, {data.longitude}</span>
             </div>

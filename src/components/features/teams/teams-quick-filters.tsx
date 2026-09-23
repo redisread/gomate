@@ -3,7 +3,8 @@ import { CalendarDays, Check, ChevronDown, MapPin, Search } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Region } from "@/lib/types";
-import { getQuickRegions, TEAM_DATE_OPTIONS } from "./teams-filter-options";
+import { TEAM_DATE_OPTIONS } from "./teams-filter-options";
+import { getDisplayedQuickRegions, getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 const QUICK_REGION_LIMIT = 6;
 
@@ -189,7 +190,7 @@ function RegionPicker({
                   )}
                 >
                   <span className="min-w-0">
-                    <span className="font-medium">{region.name}</span>
+                    <span className="font-medium">{getRegionDisplayName(region)}</span>
                     {region.nameEn && <span className="ml-2 text-xs text-muted-foreground">{region.nameEn}</span>}
                   </span>
                   {selected && <Check className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />}
@@ -216,11 +217,10 @@ export function TeamsQuickFilters({
   onRetryRegions,
 }: TeamsQuickFiltersProps) {
   const { t } = useI18n(["teams", "filter"]);
-  const hotRegions = React.useMemo(() => getQuickRegions(regions, QUICK_REGION_LIMIT), [regions]);
-  const selectedRegion = regions.find((region) => region.id === selectedRegionId);
-  const quickRegions = selectedRegion && !hotRegions.some((region) => region.id === selectedRegion.id)
-    ? [...hotRegions.slice(0, QUICK_REGION_LIMIT - 1), selectedRegion]
-    : hotRegions;
+  const quickRegions = React.useMemo(
+    () => getDisplayedQuickRegions(regions, selectedRegionId, QUICK_REGION_LIMIT),
+    [regions, selectedRegionId],
+  );
 
   return (
     <div className="mt-5 space-y-4" aria-label={t("teams.quickFiltersLabel")}>
@@ -234,7 +234,7 @@ export function TeamsQuickFilters({
             <QuickChip selected={!selectedRegionId} onClick={() => onRegionSelect("")}>{t("teams.allCities")}</QuickChip>
             {quickRegions.map((region) => (
               <QuickChip key={region.id} selected={selectedRegionId === region.id} onClick={() => onRegionSelect(region.id)}>
-                {region.name}
+                {getRegionDisplayName(region)}
               </QuickChip>
             ))}
           </div>

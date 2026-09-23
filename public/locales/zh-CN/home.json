@@ -91,24 +91,5 @@
     "loadErrorTitle": "暂时无法读取你的行程",
     "loadErrorDescription": "公开地点和队伍仍然可以浏览，也可以稍后重试加载个人行程。",
     "retry": "重新加载"
-  },
-  "howItWorks": {
-    "kicker": "从想去到出发",
-    "title": "三步，找到同行的人",
-    "description": "GoMate 把地点、时间和队伍放在一起，让一次出发从想法变成计划。",
-    "steps": {
-      "discover": {
-        "title": "先找到想去的地方",
-        "description": "浏览路线、城市和周边目的地，先确定方向。"
-      },
-      "team": {
-        "title": "加入或发起队伍",
-        "description": "按时间和节奏找到合适的同行者，也可以自己发起一场。"
-      },
-      "go": {
-        "title": "把计划变成出发",
-        "description": "确认集合信息，带上需要的装备，一起走完这段路。"
-      }
-    }
   }
 }

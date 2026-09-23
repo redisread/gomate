@@ -117,6 +117,9 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
           <span className="absolute left-3 top-3 rounded-full bg-black/55 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
             {t(`enums.locationType.${team.activityType}`)}
           </span>
+          <span className="absolute right-3 top-3">
+            <StatusBadge status={displayStatus} />
+          </span>
         </div>
         <div className="flex flex-1 flex-col p-4">
           {location?.name && (

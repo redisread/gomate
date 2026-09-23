@@ -12,12 +12,15 @@ const SOURCE_ROOTS = [
 const SOURCE_FILES = [
   "src/components/features/location-edit-client.tsx",
   "src/layouts/AdminLayout.astro",
+  "src/pages/403.astro",
 ];
 const SOURCE_EXTENSIONS = new Set([".astro", ".tsx", ".ts"]);
 const RETIRED_KEY_PATTERN =
   /admin\.(?:seasons\.[a-z]+|status(?:Draft|Published|Archived))/gu;
 const UNSAFE_HELPER_PATTERN =
   /\b(?:getApiErrorMessage|apiPost|apiPut|apiPatch|apiDelete)\b|\b(?:error|cause)\.message\b/gu;
+const RAW_ADMIN_LOCALE_PATTERN =
+  /(?:\b(?:const|let)\s+\w+\s*(?::[^=;\n]+)?\s*=\s*Astro\.locals\.locale\b|\bloadLocaleData\s*\([\s\S]{0,300}\bAstro\.locals\.locale\b)/gu;
 const RAW_ENUM_PATTERN = /\{\s*(?:user|location)\.(?:role|status)\s*\}/gu;
 const STATIC_KEY_PATTERN = /\bt\(\s*["']((?:admin|enums)\.[^"']+)["']/gu;
 const LITERAL_TITLE_PATTERN =
@@ -90,6 +93,14 @@ export function auditAdminI18nSource({ filePath, code, localeKeys }) {
     rule: "unsafe_admin_error_helper",
     message:
       "Administrator UI must use the message-isolating admin i18n helper",
+  });
+  addMatches(issues, {
+    code,
+    filePath,
+    pattern: RAW_ADMIN_LOCALE_PATTERN,
+    rule: "unresolved_admin_locale",
+    message:
+      "Resolve Astro locale values before loading administrator SSR translations",
   });
 
   STATIC_KEY_PATTERN.lastIndex = 0;
