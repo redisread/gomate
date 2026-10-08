@@ -1,105 +1,23 @@
-# GoMate 项目规则
+# GoMate 代理入口
 
-本文件是仓库级代理规则的唯一维护入口。`CLAUDE.md` 只引用本文件；不要在其他规则文件复制同一套约束。
+编码与交付约束维护在 [CODING_STANDARDS.md](CODING_STANDARDS.md)；`CLAUDE.md` 只指向本入口。
 
-## 事实来源与文档边界
+## 按任务读取
 
-发生冲突时按以下顺序判断：可执行代码/配置/迁移与测试 → 本文件 → `docs/` 现行文档 → README。历史方案和已完成执行计划不留在工作树中，必要时从 Git 历史查阅。
+开始修改前读取[工作与文档](CODING_STANDARDS.md#工作与文档)，并按范围读取以下章节；跨范围任务读取所有命中项，以[验证门禁](CODING_STANDARDS.md#验证门禁)的适用检查通过为完成条件。
 
-| 主题                   | 现行来源                                                     |
-| ---------------------- | ------------------------------------------------------------ |
-| 项目启动、常用命令     | [`README.md`](README.md)                                     |
-| API 合同               | [`docs/backend-api.md`](docs/backend-api.md)                 |
-| 数据库关系、决策与约束 | [`docs/database.md`](docs/database.md)                       |
-| 页面与前端运行时       | [`docs/frontend-pages.md`](docs/frontend-pages.md)           |
-| 设计系统               | [`docs/design-system.md`](docs/design-system.md)             |
-| 本地多 worktree 开发   | [`docs/local-dev-worktrees.md`](docs/local-dev-worktrees.md) |
-| 生产变更与回滚         | [`docs/prod-change-policy.md`](docs/prod-change-policy.md)   |
+| 任务范围                             | 必读规范                                             |
+| ------------------------------------ | ---------------------------------------------------- |
+| 代码、运行时、配置、公开类型         | [架构与共享合同](CODING_STANDARDS.md#架构与共享合同) |
+| 数据库、migration、存储              | [数据库与存储](CODING_STANDARDS.md#数据库与存储)     |
+| 页面、组件、样式、locale             | [前端与国际化](CODING_STANDARDS.md#前端与国际化)     |
+| API、认证、权限、批处理、日志        | [API 与认证](CODING_STANDARDS.md#api-与认证)         |
+| worktree 初始化或启动                | [本地开发](docs/local-dev-worktrees.md)              |
+| 创建或更新 PR、准备合并              | [PR 与合并](CODING_STANDARDS.md#pr-与合并)           |
+| 生产配置、发布、资源变更、事故或回滚 | [生产变更规约](docs/prod-change-policy.md)           |
 
-设计或行为变化必须在同一 PR 更新对应现行文档。不要新增一次性执行计划、已上线功能 spec 或重复的“最终方案”文档；需要长期保留的架构决策应写入对应 `docs/` 文档的决策/约束段。
+## 生产边界
 
-## 当前架构
-
-- 正式 Worker 入口是 `src/worker.ts`：`/api/*` 进程内交给 `src/server/app.ts`，其余请求交给 Astro Cloudflare handler；入口使用 Astro 官方 Hono pipeline。`pnpm dev` 为保留 HMR 使用 Astro 默认开发入口，并由 `src/middleware.ts` 将 `/api/*` 交给同一个 Hono app，不形成第二套 API。
-- 页面、SSR、认证 Cookie 和 API 同源；浏览器 API 固定使用 `/api/*`，不引入独立 API origin、CORS 或前后端双进程。
-- 页面入口位于 `src/pages/`，交互组件位于 `src/components/`，共享客户端调用位于 `src/lib/`。
-- API 路由位于 `src/server/routes/`，通用能力位于 `src/server/lib/`，Drizzle schema 位于 `src/server/db/schema.ts`。
-- 跨端公开类型统一放在 `src/contracts/`；不要维护前后端 DTO 的兼容副本。
-- 生产域名是 `https://gomate.live`，当前 Cloudflare Worker 服务名为 `gomate`。
-
-## 技术栈
-
-- 运行时与部署：Cloudflare Workers（统一 Worker，`nodejs_compat`），生产域名 `https://gomate.live`；本地开发使用 Node `>=22.13.0` 与 pnpm。
-- 页面与交互：Astro 7（`@astrojs/cloudflare` SSR adapter）+ React 18 islands；样式使用 Tailwind CSS 4（`@tailwindcss/vite`）。
-- UI 组件与渲染：lucide-react 图标、react-markdown + remark-gfm，以及使用 satori + qrcode 生成分享海报、OG 图与二维码。
-- API：Hono 4 承载 `/api/*`，请求校验使用 zod + `@hono/standard-validator`（Standard Schema）。
-- 数据层：Cloudflare D1（SQLite 语义）+ Drizzle ORM；drizzle-kit 生成 migration 并维护 journal/snapshot。
-- 存储与媒体：Cloudflare R2（生产 bucket `gomate`，本地 bucket `gomate-local`）以及 Workers Images binding `IMAGES`。
-- 认证与邮件：Better Auth + Resend（邮箱验证、密码重置邮件）。
-- 平台能力：Workers Rate Limiting bindings（登录、注册和邮件限流）以及 Workers Observability（日志和追踪）。
-- 质量工具：TypeScript 5、ESLint 9、Prettier、Vitest（unit / server / worker 三层测试配置）+ Playwright（Chromium e2e）、wrangler 4。
-
-## 工作方式
-
-- 修改前检查 `git status` 和现有实现；用户或其他 worktree 的改动不得被顺手回滚、覆盖或格式化。
-- 使用 Node `>=22.13.0` 与 pnpm；不要用 npm、Yarn 等其他包管理器刷新 lockfile。
-- 多 worktree 首次运行 `pnpm init:worktree`，之后用 `pnpm dev:wt` 启动统一 Worker；具体见本地开发文档。
-- 行为改动必须有能先失败后通过的测试；纯文档改动至少验证链接、格式、引用和受影响的静态门禁。
-- 变更保持单一目的，分支默认使用 `codex/` 前缀；合并前检查 staged diff、秘密、生成物和无关文件。
-- 创建或更新 PR 前必须先读取并遵循 [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md)；
-  标题与正文默认使用中文（可保留 `feat:`、`fix:` 等类型前缀），除非用户明确指定其他语言。不得用
-  通用 `Summary` / `Verification` 结构替换仓库模板，且只能勾选实际通过的验证项。
-
-## 数据库与存储硬约束
-
-- D1 binding 为 `DB`，数据库为 `gomate-db-v3`。有序 migration 链位于 `migrations/`；schema、journal、snapshot 与 migration 必须同步。
-- 当前模型为 19 张业务表、13 个业务触发器。所有 DDL 只通过 migration；不得手工对生产 D1 执行 DDL。
-- 多语句原子写使用 D1 `batch()` 与条件 DML；不要使用 `db.transaction()` 或裸 `BEGIN`/`COMMIT`。
-- JSON 列在 Drizzle 使用 `mode: "json"`，业务层只传对象/数组，不增加字符串兼容层。
-- 稳定 Region、Location、Tag 参考数据由 `0001_reference_data.sql` 管理；`0003_import_v2_catalog.sql` 只保留已退役 v2 的公开地区与地点目录。测试用户和可变 demo 数据不得进入 migration。
-- R2 binding 为 `R2`（bucket `gomate`）。运行时不依赖 KV；不得重新引入已退役的 Worker、KV、域名或旧 binding。
-
-## 前端规则
-
-- 用户可见文案全部走 i18n；namespace 必须保持完整（例如 `content.discover.*`）。修改 locale 后运行 i18n build、validate 和类型检查。
-- Astro 负责 SSR/页面边界，React island 只承载需要客户端状态的交互；不要把纯展示无理由改成 client component。
-- SSR 调用 API 使用进程内 dispatcher，浏览器调用使用同源 `/api`；不得从 Worker 内 self-fetch 生产域名。
-- 使用共享 DTO 和当前 schema 字段，不增加旧字段、旧响应 envelope 或旧分页参数别名。
-- UI 改动遵循 `docs/design-system.md`，并验证键盘、可访问名称、移动端和 reduced-motion。
-
-统一 Worker 最低门禁：
-
-```bash
-pnpm i18n:build
-pnpm i18n:validate
-pnpm lint
-pnpm type-check
-pnpm test
-pnpm test:server
-pnpm build
-```
-
-## API 与认证规则
-
-- 新增/修改路由遵循 `src/server/app.ts` 和现有 `routes/` 边界；错误使用统一 API error/envelope，列表使用有界 limit 与 opaque cursor。
-- 权限与跨表不变量必须在最终写语句中复核，不能只依赖先查后写；关键批处理需覆盖竞争与回滚测试。
-- 认证只接受同源受控入口。邮箱验证和密码重置 token 只经 URL fragment 到页面，再以同源 POST body 提交；不得把 token 放进 path/query、日志或数据库明文。
-- 日志事件名必须是稳定的 lowercase snake_case 字面量；禁止记录 body、headers、cookie、token、secret、原始 email/IP、用户资料或 Error message/stack/cause。
-- API 行为变化同步更新 `docs/backend-api.md`。
-
-API 最低门禁：
-
-```bash
-pnpm lint
-pnpm type-check
-pnpm test:server
-pnpm db:check
-```
-
-## 交付与生产红线
-
-- GitHub Actions 只在目标为 `main` 的 PR 上执行统一 `validate` 质量门禁；Cloudflare Workers Builds 负责在受保护的 `main` 更新后做最小生产构建、D1 migration 和 Worker 部署。合并已审核 PR 即授权该提交发布，不在 `push main` 后重复运行 GitHub CI，也不设置第二个人工发布步骤。
-- 生产发布流水线只允许从受保护的 Cloudflare/Git 集成执行；禁止任何远程 D1、R2、Worker、route/domain 或 secret 写入绕过该流程。
-- 不在本机直接执行生产 Cloudflare 写命令，不使用 admin bypass，不把生产 secrets 放到仓库级 Actions secrets、日志、PR 或命令参数。
-- 不得用临时脚本、Dashboard 手工发布或本机命令替代 `main` 流水线。生产发布现状与限制以 `docs/prod-change-policy.md` 为准。
-- 生产异常先恢复/保持 `WRITE_MODE=protected`，再回滚到已验证 Worker version；旧 split Worker、旧 route 与旧数据库已退役，不得重建为回滚手段。
+- 生产写入只走受保护的 Cloudflare/Git 流程；禁止本机生产写命令、Dashboard/临时脚本替代发布和 admin bypass。生产 secrets 只在受保护环境提供，不进入仓库级 Actions secrets、日志、PR 或命令参数。
+- 合并已审核 PR 到受保护的 `main` 即授权该提交发布；GitHub Actions 只对目标为 `main` 的 PR 执行 `validate`，Cloudflare Workers Builds 在 `main` 更新后完成最小生产构建、D1 migration 与部署，不追加 `push main` CI 或第二个人工发布步骤。
+- 事故先恢复/保持 `WRITE_MODE=protected`，再按生产规约回滚到已验证 Worker version；旧 split Worker、route 和数据库不得重建为回滚手段。
