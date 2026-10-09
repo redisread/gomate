@@ -29,7 +29,7 @@ describe("useShareImage", () => {
     await act(async () => void (await result.current.generateImage()));
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.example.com/share-image/location/location-1?locale=zh-CN&preset=ridge&v=v3",
+      "https://api.example.com/share-image/location/location-1?locale=zh-CN&preset=ridge&v=v4",
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
   });

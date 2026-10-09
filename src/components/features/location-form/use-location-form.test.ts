@@ -25,17 +25,9 @@ const location: Location = {
   images: ["https://gomate.cos.jiahongw.com/locations/wutong-2.jpg"],
   extra: {
     hiking: {
-      difficulty: "moderate",
-      durationMin: 120,
-      durationMax: 180,
-      distanceKm: 5.5,
-      elevationGainM: 700,
       bestSeasons: ["autumn"],
       gearEssential: ["登山鞋"],
       gearOptional: ["登山杖"],
-      overview: "泰山涧上山",
-      tips: ["早点出发"],
-      warnings: ["雨天路滑"],
     } as unknown as NonNullable<Location["extra"]["hiking"]>,
     facilities: ["restroom"],
   },
@@ -54,11 +46,7 @@ describe("Location form projection", () => {
       longitude: 114.2,
       coverImageUrl: location.coverImageUrl,
       extra: {
-        hiking: {
-          difficulty: "moderate",
-          distanceKm: 5.5,
-          elevationGainM: 700,
-        },
+        hiking: { bestSeasons: ["autumn"] },
       },
       tagIds: ["tag-1"],
     });
@@ -68,7 +56,7 @@ describe("Location form projection", () => {
 
   it("emits the exact mutation payload and trims JSON arrays", () => {
     const form = locationToFormData(location);
-    form.extra.hiking.tips = [" 早点出发 ", ""];
+    form.extra.hiking.bestSeasons = [" autumn ", ""];
 
     expect(formDataToLocationPayload(form)).toEqual({
       regionId: "region-sz",
@@ -85,15 +73,7 @@ describe("Location form projection", () => {
       images: location.images,
       extra: {
         hiking: {
-          difficulty: "moderate",
-          durationMin: 120,
-          durationMax: 180,
-          distanceKm: 5.5,
-          elevationGainM: 700,
           bestSeasons: ["autumn"],
-          overview: "泰山涧上山",
-          tips: ["早点出发"],
-          warnings: ["雨天路滑"],
         },
         facilities: ["restroom"],
       },

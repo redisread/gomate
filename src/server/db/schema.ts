@@ -36,15 +36,7 @@ export interface UserExtra {
 
 export interface LocationExtra {
   hiking?: {
-    difficulty?: "easy" | "moderate" | "hard" | "expert";
-    duration_min?: number;
-    duration_max?: number;
-    distance_km?: number;
-    elevation_gain_m?: number;
     best_seasons?: string[];
-    overview?: string | null;
-    tips?: string[];
-    warnings?: string[];
   };
   [key: string]: unknown;
 }

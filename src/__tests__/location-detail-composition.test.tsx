@@ -20,9 +20,6 @@ vi.mock("@/components/layout/footer", () => ({ Footer: () => <footer>Footer</foo
 vi.mock("@/components/features/location-detail/location-intro-card", () => ({
   LocationIntroCard: () => <section>Location intro</section>,
 }));
-vi.mock("@/components/features/location-detail/route-info-card", () => ({
-  RouteInfoCard: () => <section>Route info</section>,
-}));
 vi.mock("@/components/features/location-detail/team-list-section", () => ({
   TeamListSection: () => <section>Team list</section>,
 }));
@@ -85,7 +82,7 @@ describe("Location detail composition", () => {
 
     expect(await screen.findByRole("heading", { name: "梧桐山" })).toBeInTheDocument();
     expect(screen.getByText("Location intro")).toBeInTheDocument();
-    expect(screen.getByText("Route info")).toBeInTheDocument();
+    expect(screen.queryByText("Route info")).not.toBeInTheDocument();
     expect(screen.queryByText("locationDetail.decision.title")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", {
       name: "locationDetail.transport.openInMap",

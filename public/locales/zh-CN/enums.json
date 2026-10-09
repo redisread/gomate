@@ -1,10 +1,4 @@
 {
-  "difficulty": {
-    "easy": "🌿 轻松",
-    "moderate": "⛰ 适中",
-    "hard": "🧗 挑战",
-    "expert": "🏔 专家"
-  },
   "locationType": {
     "hiking": "户外徒步",
     "explore": "城市探索",

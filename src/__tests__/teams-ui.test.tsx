@@ -65,7 +65,7 @@ function makeTeam(overrides: Partial<Team> = {}): Team {
       longitude: 114.21,
       coverImageUrl: "https://example.com/wutong.jpg",
       images: [],
-      extra: { hiking: { difficulty: "moderate" } },
+      extra: { hiking: { bestSeasons: ["autumn"] } },
       createdAt: "2026-08-01T00:00:00.000Z",
       updatedAt: "2026-08-01T00:00:00.000Z",
     },

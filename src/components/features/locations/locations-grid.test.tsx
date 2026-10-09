@@ -30,7 +30,7 @@ const location = {
   coverImageUrl: "https://gomate.cos.jiahongw.com/locations/wutong.jpg",
   images: [],
   extra: {
-    hiking: { durationMin: 120, durationMax: 180, distanceKm: 5.5 },
+    hiking: { bestSeasons: ["autumn"] },
   },
   createdAt: "2026-08-16T00:00:00.000Z",
   updatedAt: "2026-08-16T00:00:00.000Z",

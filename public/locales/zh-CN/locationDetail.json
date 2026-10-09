@@ -14,13 +14,5 @@
   "imageAlt": "图片 {index}",
   "favorite": "收藏",
   "unfavorite": "取消收藏",
-  "routeSummarySubtitle": "先确定路线、用时和强度，再决定是否组队出发",
-  "routeTips": "路线提示",
-  "addressAndRelated": "地址与推荐",
-  "metricUnits": {
-    "hour": "小时",
-    "minute": "分钟",
-    "kilometer": "km",
-    "meter": "m"
-  }
+  "addressAndRelated": "地址与推荐"
 }

@@ -64,6 +64,13 @@
       "when": 1788068689663,
       "tag": "0008_team_capacity_includes_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1791558619760,
+      "tag": "0009_remove_location_hiking_guides",
+      "breakpoints": true
     }
   ]
 }

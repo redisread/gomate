@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import type { ActivityType, RecruitmentStatus, Team } from "@/lib/types";
 import { formatTeamStart, getTeamDisplayStatus } from "@/lib/team-display";
 import {
-  DIFFICULTY_CONFIG,
   getCardGradient, getProgressGradient,
 } from "@/lib/constants";
 import { getStatusConfig } from "./constants";
@@ -87,8 +86,6 @@ export function StatusBadge({ status }: { status: string }) {
 export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
   const { t } = useI18n(["teams", "filter", "common", "enums"]);
   const location = team.location;
-  const difficulty = location?.extra.hiking?.difficulty;
-  const diff = difficulty ? DIFFICULTY_CONFIG[difficulty] : null;
   const gradient = getCardGradient(team.id);
   const start = formatTeamStart(team);
   const displayStatus = getTeamDisplayStatus(team);
@@ -127,7 +124,6 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
               <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-amber-500" aria-hidden="true" />
               <span className="truncate text-xs font-semibold text-foreground">
                 {location.name}
-                {diff && <span className="text-muted-foreground font-normal"><span className="mx-1">·</span>{t(diff.labelKey)}</span>}
               </span>
             </div>
           )}

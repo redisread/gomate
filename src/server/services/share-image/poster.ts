@@ -12,7 +12,6 @@ import * as schema from "../../db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import {
   lookupPosterStrings,
-  localizeDifficulty,
   type PosterLocale,
 } from "./poster-i18n";
 import {
@@ -163,21 +162,6 @@ async function buildLocationPoster(
 
       const qrCodeDataUrl = await generateQrDataUrl(`https://gomate.live/locations/${location.id}`);
 
-      const hasMetrics = hiking?.difficulty != null
-        || hiking?.duration_min != null
-        || hiking?.duration_max != null
-        || hiking?.distance_km != null
-        || hiking?.elevation_gain_m != null;
-      const routeMetrics = hasMetrics
-        ? {
-            difficulty: localizeDifficulty(locale, hiking?.difficulty),
-            durationMin: hiking?.duration_min,
-            durationMax: hiking?.duration_max,
-            distance: hiking?.distance_km,
-            elevation: hiking?.elevation_gain_m,
-          }
-        : null;
-
       const i18n = lookupPosterStrings(locale);
       const svg = await renderLocationPoster({
         preset,
@@ -190,7 +174,6 @@ async function buildLocationPoster(
         regionName: location.region?.name ?? null,
         bestSeason,
         type: location.supportedActivityTypes[0] ?? null,
-        routeMetrics,
         qrCodeDataUrl,
         locale,
         fonts,
@@ -198,10 +181,6 @@ async function buildLocationPoster(
           scanToView: i18n.scanToView,
           siteSlogan: i18n.siteSlogan,
           bestSeasonLabel: i18n.bestSeasonLabel,
-          distanceLabel: i18n.distanceLabel,
-          durationLabel: i18n.durationLabel,
-          elevationLabel: i18n.elevationLabel,
-          difficultyLabel: i18n.difficultyLabel,
           brandName: i18n.brandName,
         },
       });

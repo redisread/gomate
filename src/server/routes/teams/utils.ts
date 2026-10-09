@@ -1,6 +1,5 @@
+import { mapLocationExtra } from "../locations/utils";
 import type {
-  Difficulty,
-  LocationExtra as LocationExtraDto,
   Team as TeamDto,
   TeamParticipant,
 } from "@/contracts";
@@ -42,50 +41,6 @@ export function parseStringArray(value: unknown): string[] {
     : [];
 }
 
-function parseObject(value: unknown): Record<string, unknown> {
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value) as unknown;
-      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-        ? parsed as Record<string, unknown>
-        : {};
-    } catch {
-      return {};
-    }
-  }
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
-}
-
-function mapLocationExtra(value: unknown): LocationExtraDto {
-  const stored = parseObject(value);
-  const hiking = parseObject(stored.hiking);
-  const mapped: LocationExtraDto = {};
-
-  if (Object.keys(hiking).length > 0) {
-    const difficulty = typeof hiking.difficulty === "string" &&
-      ["easy", "moderate", "hard", "expert"].includes(hiking.difficulty)
-      ? hiking.difficulty as Difficulty
-      : undefined;
-    mapped.hiking = {
-      difficulty,
-      durationMin: typeof hiking.duration_min === "number" ? hiking.duration_min : undefined,
-      durationMax: typeof hiking.duration_max === "number" ? hiking.duration_max : undefined,
-      distanceKm: typeof hiking.distance_km === "number" ? hiking.distance_km : undefined,
-      elevationGainM: typeof hiking.elevation_gain_m === "number" ? hiking.elevation_gain_m : undefined,
-      bestSeasons: parseStringArray(hiking.best_seasons),
-      overview: typeof hiking.overview === "string" || hiking.overview === null
-        ? hiking.overview
-        : undefined,
-      tips: parseStringArray(hiking.tips),
-      warnings: parseStringArray(hiking.warnings),
-    };
-  }
-
-  mapped.facilities = parseStringArray(stored.facilities);
-  return mapped;
-}
 
 function mapUserExtra(value: unknown, contactVisible = false) {
   try {

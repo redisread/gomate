@@ -8,7 +8,6 @@ import { useI18n } from "@/hooks/useI18n";
 import { ACTIVITY_TYPES } from "@/contracts";
 import type {
   ActivityType,
-  Difficulty,
   Location,
   LocationStatus,
   Region,
@@ -30,15 +29,7 @@ export interface LocationFormData {
   images: string[];
   extra: {
     hiking: {
-      difficulty: Difficulty | "";
-      durationMin: number | string;
-      durationMax: number | string;
-      distanceKm: number | string;
-      elevationGainM: number | string;
       bestSeasons: string[];
-      overview: string;
-      tips: string[];
-      warnings: string[];
     };
     facilities: string[];
   };
@@ -66,15 +57,7 @@ export interface LocationMutationPayload {
   images: string[];
   extra: {
     hiking?: {
-      difficulty?: Difficulty;
-      durationMin?: number;
-      durationMax?: number;
-      distanceKm?: number;
-      elevationGainM?: number;
       bestSeasons?: string[];
-      overview?: string | null;
-      tips?: string[];
-      warnings?: string[];
     };
     facilities?: string[];
   };
@@ -108,15 +91,7 @@ interface UseLocationFormReturn {
 }
 
 const EMPTY_HIKING: LocationFormData["extra"]["hiking"] = {
-  difficulty: "",
-  durationMin: "",
-  durationMax: "",
-  distanceKm: "",
-  elevationGainM: "",
   bestSeasons: [],
-  overview: "",
-  tips: [],
-  warnings: [],
 };
 
 export const DEFAULT_LOCATION_FORM: LocationFormData = {
@@ -143,11 +118,6 @@ function cleanStrings(values: string[]): string[] {
   return values.map((value) => value.trim()).filter(Boolean);
 }
 
-function optionalNumber(value: number | string): number | undefined {
-  if (value === "") return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
 
 export function getCoordinatePairErrors(
   latitude: number | string,
@@ -179,15 +149,7 @@ export function locationToFormData(location: Location): LocationFormData {
     images: [...location.images],
     extra: {
       hiking: {
-        difficulty: hiking?.difficulty ?? "",
-        durationMin: hiking?.durationMin ?? "",
-        durationMax: hiking?.durationMax ?? "",
-        distanceKm: hiking?.distanceKm ?? "",
-        elevationGainM: hiking?.elevationGainM ?? "",
         bestSeasons: [...(hiking?.bestSeasons ?? [])],
-        overview: hiking?.overview ?? "",
-        tips: [...(hiking?.tips ?? [])],
-        warnings: [...(hiking?.warnings ?? [])],
       },
       facilities: [...(location.extra.facilities ?? [])],
     },
@@ -214,15 +176,7 @@ export function locationSaveDestination(
 export function formDataToLocationPayload(form: LocationFormData): LocationMutationPayload {
   const hiking = form.extra.hiking;
   const hikingPayload: NonNullable<LocationMutationPayload["extra"]["hiking"]> = {
-    difficulty: hiking.difficulty || undefined,
-    durationMin: optionalNumber(hiking.durationMin),
-    durationMax: optionalNumber(hiking.durationMax),
-    distanceKm: optionalNumber(hiking.distanceKm),
-    elevationGainM: optionalNumber(hiking.elevationGainM),
     bestSeasons: cleanStrings(hiking.bestSeasons),
-    overview: hiking.overview.trim() || null,
-    tips: cleanStrings(hiking.tips),
-    warnings: cleanStrings(hiking.warnings),
   };
   const hasHiking = Object.values(hikingPayload).some((value) =>
     Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== "",
@@ -309,9 +263,21 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
             expiresAt?: number;
             data?: LocationFormData;
           } : null;
-          if (draft?.version === 2 && draft.expiresAt && draft.expiresAt > Date.now() && draft.data) {
-            setPendingDraft(draft.data);
-            setShowDraftBanner(JSON.stringify(draft.data) !== JSON.stringify(serverForm));
+          if ((draft?.version === 2 || draft?.version === 3) && draft.expiresAt && draft.expiresAt > Date.now() && draft.data) {
+            const nextDraft: LocationFormData = {
+              ...draft.data,
+              extra: {
+                ...draft.data.extra,
+                hiking: { bestSeasons: draft.data.extra.hiking?.bestSeasons ?? [] },
+              },
+            };
+            localStorage.setItem(draftKey(locationId), JSON.stringify({
+              ...draft, version: 3, data: nextDraft,
+            }));
+            setPendingDraft(nextDraft);
+            setShowDraftBanner(JSON.stringify(nextDraft) !== JSON.stringify(serverForm));
+          } else if (raw) {
+            localStorage.removeItem(draftKey(locationId));
           }
         } catch {
           localStorage.removeItem(draftKey(locationId));
@@ -361,7 +327,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     if (!isDirty || !formData.name) return;
     const timer = window.setTimeout(() => {
       localStorage.setItem(draftKey(locationId), JSON.stringify({
-        version: 2,
+        version: 3,
         expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
         data: formData,
       }));
@@ -414,11 +380,6 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
       nextErrors.coverImageUrl = formData.coverImageUrl.trim()
         ? validateField("coverImageUrl", formData.coverImageUrl)
         : t("admin.validationCoverRequired");
-    }
-    const min = optionalNumber(formData.extra.hiking.durationMin);
-    const max = optionalNumber(formData.extra.hiking.durationMax);
-    if (min !== undefined && max !== undefined && max < min) {
-      nextErrors.durationMax = t("admin.validationDurationRange");
     }
     setErrors(nextErrors);
     const firstInvalidField = Object.entries(nextErrors).find(([, error]) => Boolean(error))?.[0];

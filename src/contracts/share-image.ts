@@ -3,7 +3,7 @@ export const POSTER_PRESET_IDS = ["dusk", "ridge", "journal"] as const;
 export type PosterPresetId = (typeof POSTER_PRESET_IDS)[number];
 
 export const DEFAULT_POSTER_PRESET: PosterPresetId = "dusk";
-export const POSTER_RENDER_VERSION = "v3";
+export const POSTER_RENDER_VERSION = "v4";
 
 export function isPosterPresetId(value: unknown): value is PosterPresetId {
   return typeof value === "string"

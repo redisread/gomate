@@ -82,10 +82,9 @@ Location 使用全局 ID 路由，不提供 slug fallback。公开读取只返�
 D1 JSON 的 snake_case 结构转换。公开和管理员 Location DTO 都不包含内部
 `createdByUserId`；该字段只保留在数据库和服务端写入链路。
 
-Location 的 `extra.hiking` 只承载难度、时长、距离、爬升、季节、路线概述、提示和警告，
-不包含地点装备决策。旧客户端提交 `gearEssential` 或 `gearOptional` 时，输入校验会接受并
-丢弃这两个键，不写入 D1；Location 及 Team 内嵌 Location 响应也不会输出它们。除这两个
-退役键外，未知 hiking 字段仍按 strict schema 拒绝。
+Location 的 `extra.hiking` 仅保留 `bestSeasons`。难度、时长、距离、爬升、路线概述、提示、
+警告与地点装备字段均拒绝写入；Location 与 Team 内嵌 Location 响应也不输出这些退役字段。
+其他未知字段仍按 strict schema 拒绝。
 
 快速创建 Location 默认保存 `draft`，只要求 `name`、`description` 与启用的 city
 `regionId`；坐标、封面、标签和推荐活动类型可后补。发布边界要求封面；坐标可以同时为空，
