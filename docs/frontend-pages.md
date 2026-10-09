@@ -45,8 +45,8 @@
   不在前端硬编码不存在的城市。
 - 详情路由只使用全局 Location ID，slug 不参与路由解析。
 - 页面消费共享 Location DTO：`region`、`supportedActivityTypes`、`coverImageUrl`、`images` 与结构化 `extra`。
-- 详情的徒步攻略保留路线参数、概述、提示和警告；不展示地点装备或“决策信息”区块，原区块中的
-  地图打开入口也不迁移到其他位置。
+- 地点详情、列表、队伍卡片和分享海报不展示徒步攻略或路线参数；最佳季节继续展示。
+  后台不再录入攻略，创建队伍时由发起人填写活动时长，不再按地点参数推荐。
 - 地点 Story 使用 `/api/stories?locationId=<id>`；收藏使用 `/api/favorites/locations`。
 
 ### Team

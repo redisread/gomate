@@ -2,7 +2,6 @@ export type {
   ActivityType,
   AdminUserSummary,
   Conversation,
-  Difficulty,
   Location,
   LocationExtra,
   LocationStatus,

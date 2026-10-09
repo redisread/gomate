@@ -11,7 +11,7 @@ describe("poster preset contract", () => {
   it("defines the three supported presets and a stable default", () => {
     expect(POSTER_PRESET_IDS).toEqual(["dusk", "ridge", "journal"]);
     expect(DEFAULT_POSTER_PRESET).toBe("dusk");
-    expect(POSTER_RENDER_VERSION).toBe("v3");
+    expect(POSTER_RENDER_VERSION).toBe("v4");
   });
 
   it("validates and resolves request values", () => {

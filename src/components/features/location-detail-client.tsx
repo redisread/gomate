@@ -12,9 +12,6 @@ import {
   ChevronLeft,
   Pencil,
   Flame,
-  Clock,
-  Ruler,
-  TrendingUp,
   X,
   ZoomIn,
 } from "lucide-react";
@@ -26,10 +23,8 @@ import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { LocationIntroCard } from "@/components/features/location-detail/location-intro-card";
-import { RouteInfoCard } from "@/components/features/location-detail/route-info-card";
 import { TeamListSection } from "@/components/features/location-detail/team-list-section";
 import { LocationStoryRecapFeed } from "@/components/features/discover/story-recap-feed";
-import { normalizeLocationHiking, type RouteMetric } from "@/components/features/location-detail/route-utils";
 
 // 动态导入 SharePosterModal
 const SharePosterModal = React.lazy(() => import("./share-poster-modal").then(m => ({ default: m.SharePosterModal })));
@@ -43,35 +38,6 @@ function getSeasonLabel(t: (key: TranslationKey) => string) {
     winter: t("enums.season.winter"),
   };
 }
-function getDifficultyInfo(t: (key: TranslationKey) => string) {
-  return {
-    easy: {
-      label: t("enums.difficulty.easy"),
-      dot: "bg-emerald-400",
-      text: "text-emerald-700 dark:text-emerald-400",
-      pill: "bg-emerald-500/20 text-emerald-100 border-emerald-400/30",
-    },
-    moderate: {
-      label: t("enums.difficulty.moderate"),
-      dot: "bg-amber-400",
-      text: "text-amber-700 dark:text-amber-400",
-      pill: "bg-amber-500/20 text-amber-100 border-amber-400/30",
-    },
-    hard: {
-      label: t("enums.difficulty.hard"),
-      dot: "bg-orange-500",
-      text: "text-orange-700 dark:text-orange-400",
-      pill: "bg-orange-500/20 text-orange-100 border-orange-400/30",
-    },
-    expert: {
-      label: t("enums.difficulty.expert"),
-      dot: "bg-red-500",
-      text: "text-red-700 dark:text-red-400",
-      pill: "bg-red-500/20 text-red-100 border-red-400/30",
-    },
-  };
-}
-
 // ─── 骨架屏 ───────────────────────────────────────────────────────────────────
 function LoadingNavbarSkeleton() {
   return (
@@ -322,16 +288,9 @@ interface RelatedLocationsProps {
  */
 function RelatedLocations({ locations }: RelatedLocationsProps) {
   const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
-  const diffInfo = getDifficultyInfo(t);
 
   if (locations.length === 0) return null;
 
-  const diffBadgeConfig: Record<string, { bg: string; text: string; dot: string }> = {
-    easy: { bg: "bg-emerald-50 dark:bg-emerald-950/30", text: "text-emerald-700 dark:text-emerald-400", dot: "bg-emerald-400" },
-    moderate: { bg: "bg-amber-50 dark:bg-amber-950/30", text: "text-amber-700 dark:text-amber-400", dot: "bg-amber-400" },
-    hard: { bg: "bg-orange-50 dark:bg-orange-950/30", text: "text-orange-700 dark:text-orange-400", dot: "bg-orange-500" },
-    expert: { bg: "bg-red-50 dark:bg-red-950/30", text: "text-red-700 dark:text-red-400", dot: "bg-red-500" },
-  };
 
   return (
     <section className="rounded-2xl bg-card p-5 shadow-warm-sm sm:p-6">
@@ -350,9 +309,6 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
 
       <div className="space-y-2">
         {locations.map((loc) => {
-          const difficulty = loc.extra.hiking?.difficulty;
-          const diff = difficulty ? diffBadgeConfig[difficulty] : null;
-          const diffLabel = difficulty ? diffInfo[difficulty]?.label : null;
 
           return (
             <a
@@ -378,12 +334,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
                 <h4 title={loc.name} className="font-semibold text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors text-sm truncate leading-snug">
                   {loc.name}
                 </h4>
-                {diff && diffLabel && (
-                  <span className={cn("inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-3xs font-semibold", diff.bg, diff.text)}>
-                    <span className={cn("w-1.5 h-1.5 rounded-full", diff.dot)} />
-                    {diffLabel}
-                  </span>
-                )}
+
               </div>
 
               <ChevronRight className="h-3.5 w-3.5 text-stone-300 dark:text-stone-600 group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors flex-shrink-0" />
@@ -462,30 +413,6 @@ function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
   );
 }
 
-function formatRouteMetric(
-  metric: RouteMetric | undefined,
-  t: (key: string, vars?: Record<string, string | number>) => string
-) {
-  if (!metric) return null;
-  const unit = metric.unit ? t(`locationDetail.metricUnits.${metric.unit}`) : "";
-  return unit ? `${metric.value} ${unit}` : metric.value;
-}
-
-function HeroMetricPill({
-  icon,
-  value,
-}: {
-  icon: React.ReactNode;
-  value: string | null;
-}) {
-  if (!value) return null;
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/35 px-3 py-1.5 text-xs font-semibold text-white/90 backdrop-blur-sm">
-      {icon}
-      {value}
-    </span>
-  );
-}
 
 function HeroActions({
   location,
@@ -762,15 +689,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     );
   }
 
-  const heroHiking = normalizeLocationHiking(location);
-  const heroDifficulty = heroHiking?.difficulty;
-  const diffInfo = getDifficultyInfo(t)[heroDifficulty as keyof ReturnType<typeof getDifficultyInfo>] ?? {
-    label: heroDifficulty || "",
-    dot: "bg-stone-400",
-    text: "text-stone-700",
-    pill: "bg-white/20 text-white border-white/20",
-  };
-
   // 构建画廊图片列表
   const galleryImages: string[] = [];
   if (location.coverImageUrl) galleryImages.push(location.coverImageUrl);
@@ -892,15 +810,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
 
             {/* 徽章行 */}
             <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-              {diffInfo.label && (
-                <span className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border backdrop-blur-sm",
-                  diffInfo.pill
-                )}>
-                  <span className={cn("w-1.5 h-1.5 rounded-full", diffInfo.dot)} />
-                  {diffInfo.label}
-                </span>
-              )}
               {(location.extra.hiking?.bestSeasons?.length ?? 0) > 0 && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/15 text-white backdrop-blur-sm border border-white/20">
                   <Sparkles className="w-3 h-3" />
@@ -915,24 +824,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
             </h1>
             {location.subtitle && (
               <p className="text-white/75 text-sm sm:text-base font-medium mb-1">{location.subtitle}</p>
-            )}
-
-            {/* 快速数据条 */}
-            {heroHiking && (
-              <div className="flex items-center gap-2 flex-wrap mb-3">
-                <HeroMetricPill
-                  icon={<Clock className="h-3 w-3 text-amber-300" />}
-                  value={formatRouteMetric(heroHiking.duration, t)}
-                />
-                <HeroMetricPill
-                  icon={<Ruler className="h-3 w-3 text-sky-300" />}
-                  value={formatRouteMetric(heroHiking.distance, t)}
-                />
-                <HeroMetricPill
-                  icon={<TrendingUp className="h-3 w-3 text-emerald-300" />}
-                  value={formatRouteMetric(heroHiking.elevation, t)}
-                />
-              </div>
             )}
 
             {/* 圆点指示器 */}
@@ -974,7 +865,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               showGallery={false}
               showTravelMeta
             />
-            <RouteInfoCard location={location} />
             <TeamListSection teams={teams} locationId={location.id} />
             <LocationStoryRecapFeed locationId={location.id} />
           </div>

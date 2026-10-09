@@ -33,6 +33,11 @@ const baseLocation: Location = {
 describe("LocationIntroCard", () => {
   afterEach(() => cleanup());
 
+  it("continues to show best seasons", () => {
+    render(<LocationIntroCard location={{ ...baseLocation, extra: { hiking: { bestSeasons: ["autumn"] } } }} address={baseLocation.address!} />);
+    expect(screen.getByText("enums.season.autumn")).toBeInTheDocument();
+  });
+
   it("keeps the address visible and hides navigation without coordinates", () => {
     render(<LocationIntroCard location={baseLocation} address={baseLocation.address!} />);
 

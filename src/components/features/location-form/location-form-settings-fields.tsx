@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Settings, Plus, ChevronDown, GripVertical, CheckCircle2 } from "lucide-react";
+import { Settings, ChevronDown } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Tag } from "@/lib/types";
@@ -77,19 +77,6 @@ function Field({ label, required, hint, error, children }: FieldProps) {
   );
 }
 
-interface AddButtonProps {
-  label: string; onAdd: () => void;
-}
-
-function AddButton({ label, onAdd }: AddButtonProps) {
-  return (
-    <button type="button" onClick={onAdd}
-      className="flex items-center gap-1.5 text-xs text-amber-600 hover:text-amber-700 transition-colors">
-      <Plus className="h-3.5 w-3.5" />{label}
-    </button>
-  );
-}
-
 const FACILITY_OPTIONS = (t: (key: string) => string) => [
   { value: "parking", label: `🅿️ ${t("admin.facilityParking")}` }, { value: "restroom", label: `🚻 ${t("admin.facilityRestroom")}` },
   { value: "water", label: `💧 ${t("admin.facilityWater")}` }, { value: "food", label: `🍱 ${t("admin.facilityFood")}` },
@@ -104,44 +91,6 @@ interface LocationFormSettingsFieldsProps {
 export function LocationFormSettingsFields({ formData, allTags, updateField }: LocationFormSettingsFieldsProps) {
   const { t } = useI18n(["admin"]);
   const facilityOptions = FACILITY_OPTIONS(t);
-  const [toast, setToast] = React.useState<{ type: "success" | "error"; message: string } | null>(null);
-
-  const updateHiking = React.useCallback((changes: Partial<FormData["extra"]["hiking"]>) => {
-    updateField("extra", {
-      ...formData.extra,
-      hiking: { ...formData.extra.hiking, ...changes },
-    });
-  }, [formData.extra, updateField]);
-
-  const showToast = React.useCallback((type: "success" | "error", message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 2500);
-  }, []);
-
-  const moveItem = React.useCallback((arr: string[], from: number, to: number) => {
-    const next = [...arr];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    return next;
-  }, []);
-
-  const handleDragStart = React.useCallback((e: React.DragEvent, idx: number) => {
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", String(idx));
-  }, []);
-
-  const handleDragOver = React.useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  }, []);
-
-  const handleDrop = React.useCallback((e: React.DragEvent, dropIdx: number, field: "tips" | "warnings") => {
-    e.preventDefault();
-    const fromIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
-    if (fromIdx === dropIdx) return;
-    const next = moveItem(formData.extra.hiking[field], fromIdx, dropIdx);
-    updateHiking({ [field]: next });
-  }, [formData.extra.hiking, moveItem, updateHiking]);
   return (<>
     <SectionCard icon={<Settings className="h-4 w-4" />} title={t("admin.formSettingsTitleRecommended")} collapsible defaultOpen={true}
       badge={<span className="text-3xs text-stone-400 dark:text-stone-500 bg-stone-100 dark:bg-stone-800 px-2 py-0.5 rounded-full">{t("admin.optionalBadge")}</span>}>
@@ -160,143 +109,6 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
                 </button>
               );
             })}
-          </div>
-        </Field>
-      </SubSectionCard>
-
-      <SubSectionCard title={t("admin.formHikingDetails")}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label={t("admin.formDifficulty")}>
-            <select value={formData.extra.hiking.difficulty}
-              onChange={(event) => updateHiking({ difficulty: event.target.value as FormData["extra"]["hiking"]["difficulty"] })}
-              className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700">
-              <option value="">{t("admin.optionalBadge")}</option>
-              <option value="easy">{t("admin.difficultyEasy")}</option>
-              <option value="moderate">{t("admin.difficultyModerate")}</option>
-              <option value="hard">{t("admin.difficultyHard")}</option>
-              <option value="expert">{t("admin.difficultyExpert")}</option>
-            </select>
-          </Field>
-          <Field label={t("admin.formDistanceKm")}>
-            <input type="number" min="0" step="0.1" value={formData.extra.hiking.distanceKm}
-              onChange={(event) => updateHiking({ distanceKm: event.target.value })}
-              className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700" />
-          </Field>
-          <Field label={t("admin.formDurationMin")}>
-            <input type="number" min="0" step="1" value={formData.extra.hiking.durationMin}
-              onChange={(event) => updateHiking({ durationMin: event.target.value })}
-              className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700" />
-          </Field>
-          <Field label={t("admin.formDurationMax")} error={undefined}>
-            <input type="number" min="0" step="1" value={formData.extra.hiking.durationMax}
-              onChange={(event) => updateHiking({ durationMax: event.target.value })}
-              className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700" />
-          </Field>
-          <Field label={t("admin.formElevationGainM")}>
-            <input type="number" min="0" step="1" value={formData.extra.hiking.elevationGainM}
-              onChange={(event) => updateHiking({ elevationGainM: event.target.value })}
-              className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700" />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field label={t("admin.formHikingOverview")}>
-              <textarea rows={3} value={formData.extra.hiking.overview}
-                onChange={(event) => updateHiking({ overview: event.target.value })}
-                className="w-full px-3 py-2 rounded-xl text-sm border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 border-stone-200 dark:border-stone-700" />
-            </Field>
-          </div>
-        </div>
-      </SubSectionCard>
-
-      <SubSectionCard title={t("admin.formTipsSectionTitle")}>
-        {/* 徒步贴士 */}
-        <Field label="" hint="">{/* label 在 SubSectionCard title 中 */}
-          <div className="space-y-2">
-            {formData.extra.hiking.tips.map((tip, idx) => (
-              <div key={idx} draggable
-                onDragStart={(e) => handleDragStart(e, idx)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, idx, "tips")}
-                className="flex items-center gap-1.5 rounded-lg bg-stone-50/50 dark:bg-stone-800/50 hover:bg-stone-100 dark:hover:bg-stone-700/50 transition-colors cursor-grab active:cursor-grabbing p-1">
-                <GripVertical className="h-3.5 w-3.5 text-stone-300 shrink-0" />
-                <input type="text" data-tip-input value={tip}
-                  onChange={(e) => {
-                    const next = [...formData.extra.hiking.tips]; next[idx] = e.target.value;
-                    updateHiking({ tips: next });
-                  }}
-                  onBlur={() => {
-                    if (tip.trim() === "") {
-                      const next = formData.extra.hiking.tips.filter((_, i) => i !== idx);
-                      updateHiking({ tips: next });
-                    }
-                  }}
-                  placeholder={t("admin.tipsPlaceholder")} className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
-                <button type="button" onClick={() => {
-                  const next = formData.extra.hiking.tips.filter((_, i) => i !== idx);
-                  updateHiking({ tips: next });
-                  showToast("success", t("admin.deleteSuccessToast"));
-                }}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-            ))}
-            {formData.extra.hiking.tips.length < 10 && (
-              <AddButton label={t("admin.formTipsAdd")} onAdd={() => {
-                const next = [...formData.extra.hiking.tips, ""];
-                updateHiking({ tips: next });
-                setTimeout(() => {
-                  const inputs = document.querySelectorAll<HTMLInputElement>('[data-tip-input]');
-                  const last = inputs[inputs.length - 1];
-                  last?.focus();
-                }, 0);
-              }} />
-            )}
-          </div>
-        </Field>
-
-        {/* 安全警告 */}
-        <Field label="" hint="">{/* label 在 SubSectionCard title 中 */}
-          <div className="space-y-2">
-            {formData.extra.hiking.warnings.map((w, idx) => (
-              <div key={idx} draggable
-                onDragStart={(e) => handleDragStart(e, idx)}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, idx, "warnings")}
-                className="flex items-center gap-1.5 rounded-lg bg-stone-50/50 dark:bg-stone-800/50 hover:bg-stone-100 dark:hover:bg-stone-700/50 transition-colors cursor-grab active:cursor-grabbing p-1">
-                <GripVertical className="h-3.5 w-3.5 text-stone-300 shrink-0" />
-                <input type="text" data-warning-input value={w}
-                  onChange={(e) => {
-                    const next = [...formData.extra.hiking.warnings]; next[idx] = e.target.value;
-                    updateHiking({ warnings: next });
-                  }}
-                  onBlur={() => {
-                    if (w.trim() === "") {
-                      const next = formData.extra.hiking.warnings.filter((_, i) => i !== idx);
-                      updateHiking({ warnings: next });
-                    }
-                  }}
-                  placeholder={t("admin.warningsPlaceholder")} className={cn("w-full px-3 py-2 rounded-xl text-sm outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 border-stone-200 dark:border-stone-700 focus:ring-2 focus:ring-amber-200 focus:border-amber-400 flex-1")} />
-                <button type="button" onClick={() => {
-                  const next = formData.extra.hiking.warnings.filter((_, i) => i !== idx);
-                  updateHiking({ warnings: next });
-                  showToast("success", t("admin.deleteSuccessToast"));
-                }}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors shrink-0">
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-            ))}
-            {formData.extra.hiking.warnings.length < 10 && (
-              <AddButton label={t("admin.formWarningsAdd")} onAdd={() => {
-                const next = [...formData.extra.hiking.warnings, ""];
-                updateHiking({ warnings: next });
-                setTimeout(() => {
-                  const inputs = document.querySelectorAll<HTMLInputElement>('[data-warning-input]');
-                  const last = inputs[inputs.length - 1];
-                  last?.focus();
-                }, 0);
-              }} />
-            )}
           </div>
         </Field>
       </SubSectionCard>
@@ -325,13 +137,6 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
       </SubSectionCard>
       </div>
     </SectionCard>
-    {toast && (
-      <div className="fixed bottom-5 left-1/2 z-[60] w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 animate-[slide-up-toast_0.25s_ease-out_both]">
-        <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-card px-4 py-3 text-sm font-medium shadow-warm">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
-          <span>{toast.message}</span>
-        </div>
-      </div>
-    )}
+
   </>);
 }

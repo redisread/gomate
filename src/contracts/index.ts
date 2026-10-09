@@ -4,7 +4,6 @@ export * from "./team-checklist";
 
 import type {
   ActivityType,
-  Difficulty,
   LocationStatus,
   RecruitmentStatus,
   RegionLevel,
@@ -50,15 +49,7 @@ export interface Tag {
 }
 
 export interface HikingLocationExtra {
-  difficulty?: Difficulty;
-  durationMin?: number;
-  durationMax?: number;
-  distanceKm?: number;
-  elevationGainM?: number;
   bestSeasons?: string[];
-  overview?: string | null;
-  tips?: string[];
-  warnings?: string[];
 }
 
 export interface LocationExtra {

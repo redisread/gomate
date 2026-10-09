@@ -1,10 +1,9 @@
-import { MapPin, TreePine, ChevronLeft, ChevronRight, Clock, TrendingUp, ArrowRight, Search, Map, Filter, LoaderCircle } from "lucide-react";
+import { MapPin, TreePine, ChevronLeft, ChevronRight, ArrowRight, Search, Map, Filter, LoaderCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location, Tag } from "@/lib/types";
 import { tagColorClasses } from "./constants";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
-import { formatRouteMetric, normalizeLocationHiking } from "@/components/features/location-detail/route-utils";
 import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 function ShimmerCard() {
@@ -29,9 +28,6 @@ function ShimmerCard() {
 
 function LocationCard({ location, index }: { location: Location; index: number }) {
   const { t } = useI18n(["locations", "common", "locationDetail"]);
-  const hiking = normalizeLocationHiking(location);
-  const durationText = formatRouteMetric(hiking?.duration, t);
-  const distanceText = formatRouteMetric(hiking?.distance, t);
   return (
     <a
       href={`/locations/${location.id}`}
@@ -64,22 +60,6 @@ function LocationCard({ location, index }: { location: Location; index: number }
             <h3 className="font-bold text-white text-lg leading-tight drop-shadow-sm">
               {location.name}
             </h3>
-            {(durationText || distanceText) && (
-              <div className="flex items-center gap-3 mt-1.5 text-white/75 text-xs">
-                {durationText && (
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {durationText}
-                  </span>
-                )}
-                {distanceText && (
-                  <span className="flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
-                    {distanceText}
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         </div>
 

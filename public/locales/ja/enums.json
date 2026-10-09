@@ -1,10 +1,4 @@
 {
-  "difficulty": {
-    "easy": "🌿 簡単",
-    "moderate": "⛰ 普通",
-    "hard": "🧗 チャレンジ",
-    "expert": "🏔 エキスパート"
-  },
   "locationType": {
     "hiking": "アウトドアハイキング",
     "explore": "街歩き",

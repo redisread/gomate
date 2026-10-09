@@ -8,7 +8,6 @@ export const ACTIVITY_TYPES = [
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
-export type Difficulty = "easy" | "moderate" | "hard" | "expert";
 
 export type RegionLevel = "province" | "city" | "district" | "other";
 

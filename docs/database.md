@@ -86,9 +86,9 @@ Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和
 - Location 保存可选的多值 `supported_activity_types`，语义是地点推荐活动，不是 Team 的选择约束。
 - 草稿 Location 只要求 Region、名称和介绍；坐标与封面可空。切换为 `published` 时 API 必须补齐
   坐标和封面，推荐活动类型仍可为空。
-- 地点图片与活动扩展保存在有形状约束的 JSON 中；hiking 扩展只保存路线事实、季节、概述、
-  提示和警告，不保存地点层级的必带或选带装备。`0006` 只移除历史 JSON 中的
-  `gear_essential` 与 `gear_optional` 路径，Team 行动本装备仍归 Team 所有。
+- 地点图片与活动扩展保存在有形状约束的 JSON 中；hiking 扩展仅保留 `best_seasons`。
+  `0009` 清理历史地点攻略参数、概述、提示、警告和地点装备，保留季节及其他扩展数据。
+  Team 行动本装备仍归 Team 所有。
 - 创建者引用允许 `SET NULL`，业务内容仍保留。
 
 ### 活动类型与 Team

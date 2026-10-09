@@ -15,7 +15,7 @@ import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
 import { orderActivityTypesForLocation } from "@/lib/activity-types";
 import { isActivityType } from "@/lib/activity-types";
 import { ACTIVITY_TYPES } from "@/contracts";
-import { DURATION_OPTION_DEFS, snapToDurationOption } from "@/lib/duration-options";
+import { DURATION_OPTION_DEFS } from "@/lib/duration-options";
 import type { ActivityType, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
@@ -37,12 +37,10 @@ export function CreateTeamClient() {
   const [locationsLoading, setLocationsLoading] = React.useState(true);
   const [locationsError, setLocationsError] = React.useState(false);
   const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
-  const [recommendedDuration, setRecommendedDuration] = React.useState<number | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
   const [hasWechat, setHasWechat] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState("");
-  const durationManuallyEditedRef = React.useRef(false);
 
   // 获取默认日期/时间
   const now = new Date();
@@ -113,8 +111,6 @@ export function CreateTeamClient() {
   React.useEffect(() => {
     if (!formData.locationId) {
       setSelectedLocation(null);
-      setRecommendedDuration(null);
-      durationManuallyEditedRef.current = false;
       setFormData((prev) =>
         prev.activityType ? { ...prev, activityType: "" } : prev,
       );
@@ -123,8 +119,6 @@ export function CreateTeamClient() {
 
     let cancelled = false;
     setSelectedLocation(null);
-    setRecommendedDuration(null);
-    durationManuallyEditedRef.current = false;
     setFormData((prev) =>
       prev.activityType ? { ...prev, activityType: "" } : prev,
     );
@@ -136,25 +130,12 @@ export function CreateTeamClient() {
         if (!cancelled && data.success && data.location) {
           const loc = data.location as Location;
           setSelectedLocation(loc);
-          durationManuallyEditedRef.current = false; // 新地点，重置手动编辑标记
 
-          // task #152 切源：时长推荐改读 location 自身字段（0010 回填）
-          const recommended = calculateRecommendedDuration(loc);
-          if (recommended != null) {
-            setRecommendedDuration(recommended);
-            setFormData((prev) => ({
-              ...prev,
-              activityType: "",
-              durationMinutes: String(recommended),
-            }));
-          } else {
-            setRecommendedDuration(null);
-            setFormData((prev) => ({
-              ...prev,
-              activityType: "",
-              durationMinutes: String(defaultDuration),
-            }));
-          }
+          setFormData((prev) => ({
+            ...prev,
+            activityType: "",
+            durationMinutes: String(defaultDuration),
+          }));
         }
       })
       .catch(() => {});
@@ -172,45 +153,14 @@ export function CreateTeamClient() {
     [selectedLocation],
   );
 
-  // 当用户手动修改时长时，标记为已手动编辑
+  // 手动修改活动时长
   const handleDurationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    durationManuallyEditedRef.current = true;
     handleChange(e);
   };
 
   // 快捷设置时长
   const handleDurationQuickSelect = (minutes: number) => {
-    durationManuallyEditedRef.current = true;
     setFormData((prev) => ({ ...prev, durationMinutes: String(minutes) }));
-  };
-
-  /**
-   * 根据地点的徒步参数推荐合适的活动时长（分钟）
-   * 从 Team Location.extra.hiking 推导推荐时长。
-   * 无任何参数时返回 null（回退默认值 4 小时）
-   */
-  const calculateRecommendedDuration = (loc: Location): number | null => {
-    let raw: number | null = null;
-    const hiking = loc.extra.hiking;
-    if (hiking?.durationMin && hiking.durationMax) {
-      // 取平均值
-      raw = Math.round((hiking.durationMin + hiking.durationMax) / 2);
-    } else if (hiking?.durationMin) {
-      raw = hiking.durationMin;
-    } else {
-      // 根据难度推荐
-      const difficultyDuration: Record<string, number> = {
-        easy: 180,      // 简单：3 小时
-        moderate: 300,  // 中等：5 小时
-        hard: 420,      // 困难：7 小时
-        expert: 600,    // 专家：10 小时
-      };
-      raw = (hiking?.difficulty && difficultyDuration[hiking.difficulty]) || null;
-    }
-    // task #160（Steven 口径）：推荐值 snap 到最近下拉选项，并列取较长档（徒步宁多勿少）。
-    // 否则受控 select 无匹配项——DOM 显示第一项「1 hour」但 state 是推荐值，
-    // 用户看到 1 小时、实际提交推荐值，且「（推荐）」标记永不出现
-    return raw == null ? null : snapToDurationOption(raw);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -220,8 +170,6 @@ export function CreateTeamClient() {
 
   const handleLocationChange = (locationId: string) => {
     setSelectedLocation(null);
-    setRecommendedDuration(null);
-    durationManuallyEditedRef.current = false;
     setFormData((prev) => ({ ...prev, locationId, activityType: "" }));
   };
 
@@ -459,16 +407,11 @@ export function CreateTeamClient() {
                 icon="⌛"
                 label={t("teams.formLabel.duration")}
                 required
-                hint={recommendedDuration ? t("teams.durationRecommendHint", { hours: Math.round(recommendedDuration / 60) }) : t("teams.durationDefaultHint")}
+                hint={t("teams.durationDefaultHint")}
               >
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-                  {recommendedDuration && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs font-medium text-primary">
-                      <Sparkles className="h-3.5 w-3.5" />
-                      <span>{t("teams.durationRecommendLabel")}</span>
-                    </div>
-                  )}
+
                   <select
                     id="durationMinutes"
                     data-testid="create-team-duration"
@@ -480,7 +423,7 @@ export function CreateTeamClient() {
                   >
                     {getDurationOptions(t).map((opt) => (
                       <option key={opt.value} value={opt.value}>
-                        {opt.label} {recommendedDuration === opt.value ? t("teams.durationRecommendedMarked") : ""}
+                        {opt.label}
                       </option>
                     ))}
                   </select>

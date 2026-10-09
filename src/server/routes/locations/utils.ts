@@ -39,39 +39,9 @@ const supportedActivityTypesSchema = z
 const extraStringSchema = z.string().trim().min(1).max(1_000);
 const extraStringArraySchema = z.array(extraStringSchema).max(50);
 
-const hikingExtraSchema = z
-  .object({
-    difficulty: z.enum(["easy", "moderate", "hard", "expert"]).optional(),
-    durationMin: z.number().finite().nonnegative().optional(),
-    durationMax: z.number().finite().nonnegative().optional(),
-    distanceKm: z.number().finite().nonnegative().optional(),
-    elevationGainM: z.number().finite().nonnegative().optional(),
-    bestSeasons: extraStringArraySchema.optional(),
-    gearEssential: z.unknown().optional(),
-    gearOptional: z.unknown().optional(),
-    overview: z.string().trim().max(10_000).nullable().optional(),
-    tips: extraStringArraySchema.optional(),
-    warnings: extraStringArraySchema.optional(),
-  })
-  .strict()
-  .superRefine((value, context) => {
-    if (
-      value.durationMin !== undefined &&
-      value.durationMax !== undefined &&
-      value.durationMax < value.durationMin
-    ) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["durationMax"],
-        message: "durationMax must be greater than or equal to durationMin",
-      });
-    }
-  })
-  .transform(({
-    gearEssential: _gearEssential,
-    gearOptional: _gearOptional,
-    ...hiking
-  }) => hiking);
+const hikingExtraSchema = z.object({
+  bestSeasons: extraStringArraySchema.optional(),
+}).strict();
 
 export const locationExtraInputSchema = z
   .object({
@@ -162,34 +132,8 @@ export function normalizeLocationExtraForStorage(
   extra: LocationExtraInput,
 ): schema.LocationExtra {
   const stored: schema.LocationExtra = {};
-  if (extra.hiking !== undefined) {
-    const hiking: NonNullable<schema.LocationExtra["hiking"]> = {};
-    if (extra.hiking.difficulty !== undefined) {
-      hiking.difficulty = extra.hiking.difficulty;
-    }
-    if (extra.hiking.durationMin !== undefined) {
-      hiking.duration_min = extra.hiking.durationMin;
-    }
-    if (extra.hiking.durationMax !== undefined) {
-      hiking.duration_max = extra.hiking.durationMax;
-    }
-    if (extra.hiking.distanceKm !== undefined) {
-      hiking.distance_km = extra.hiking.distanceKm;
-    }
-    if (extra.hiking.elevationGainM !== undefined) {
-      hiking.elevation_gain_m = extra.hiking.elevationGainM;
-    }
-    if (extra.hiking.bestSeasons !== undefined) {
-      hiking.best_seasons = extra.hiking.bestSeasons;
-    }
-    if (extra.hiking.overview !== undefined) {
-      hiking.overview = extra.hiking.overview;
-    }
-    if (extra.hiking.tips !== undefined) hiking.tips = extra.hiking.tips;
-    if (extra.hiking.warnings !== undefined) {
-      hiking.warnings = extra.hiking.warnings;
-    }
-    stored.hiking = hiking;
+  if (extra.hiking?.bestSeasons !== undefined) {
+    stored.hiking = { best_seasons: extra.hiking.bestSeasons };
   }
   if (extra.facilities !== undefined) stored.facilities = extra.facilities;
   return stored;
@@ -214,48 +158,13 @@ function readStringArray(value: unknown) {
     : undefined;
 }
 
-function readFiniteNumber(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value)
-    ? value
-    : undefined;
-}
-
 export function mapLocationExtra(value: unknown): LocationExtraDto {
   const stored = parseObject(value);
   const hikingStored = parseObject(stored.hiking);
   const extra: LocationExtraDto = {};
 
-  if (Object.keys(hikingStored).length > 0) {
-    const difficulty = hikingStored.difficulty;
-    const durationMin = readFiniteNumber(hikingStored.duration_min);
-    const durationMax = readFiniteNumber(hikingStored.duration_max);
-    const distanceKm = readFiniteNumber(hikingStored.distance_km);
-    const elevationGainM = readFiniteNumber(hikingStored.elevation_gain_m);
-    const bestSeasons = readStringArray(hikingStored.best_seasons);
-    const tips = readStringArray(hikingStored.tips);
-    const warnings = readStringArray(hikingStored.warnings);
-    extra.hiking = {
-      ...(typeof difficulty === "string" &&
-      ["easy", "moderate", "hard", "expert"].includes(difficulty)
-        ? {
-            difficulty: difficulty as NonNullable<
-              LocationExtraDto["hiking"]
-            >["difficulty"],
-          }
-        : {}),
-      ...(durationMin !== undefined ? { durationMin } : {}),
-      ...(durationMax !== undefined ? { durationMax } : {}),
-      ...(distanceKm !== undefined ? { distanceKm } : {}),
-      ...(elevationGainM !== undefined ? { elevationGainM } : {}),
-      ...(bestSeasons !== undefined ? { bestSeasons } : {}),
-      ...(typeof hikingStored.overview === "string" ||
-      hikingStored.overview === null
-        ? { overview: hikingStored.overview }
-        : {}),
-      ...(tips !== undefined ? { tips } : {}),
-      ...(warnings !== undefined ? { warnings } : {}),
-    };
-  }
+  const bestSeasons = readStringArray(hikingStored.best_seasons);
+  if (bestSeasons !== undefined) extra.hiking = { bestSeasons };
 
   const facilities = readStringArray(stored.facilities);
   if (facilities !== undefined) extra.facilities = facilities;

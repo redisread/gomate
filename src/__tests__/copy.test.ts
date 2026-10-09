@@ -19,7 +19,6 @@ const teamJoinRequestStatusCopy = {
 beforeAll(async () => {
   // 将各语言的枚举数据直接注入缓存，避免 fetch
   const zhEnums = {
-    difficulty: { easy: "🌿 轻松", moderate: "⛰ 适中", hard: "🧗 挑战", expert: "🏔 专家" },
     teamStatus: {
       recruiting: "等你一起", full: "名额告急，可关注", formed: "整装待发",
       ongoing: "进行中", completed: "圆满归来", cancelled: "已取消",
@@ -51,24 +50,6 @@ beforeAll(async () => {
 });
 
 describe("enums - 枚举文案完整性", () => {
-
-  describe("difficulty（难度）枚举映射", () => {
-    const DB_DIFFICULTY_VALUES = ["easy", "moderate", "hard", "expert"] as const;
-
-    it("所有难度枚举值都有对应文案", () => {
-      for (const val of DB_DIFFICULTY_VALUES) {
-        const result = t(`enums.difficulty.${val}`);
-        expect(result, `缺少 enums.difficulty.${val} 的文案`).not.toBe(`enums.difficulty.${val}`);
-      }
-    });
-
-    it("难度文案为有意义的中文", () => {
-      expect(t("enums.difficulty.easy")).toContain("轻松");
-      expect(t("enums.difficulty.moderate")).toContain("适中");
-      expect(t("enums.difficulty.hard")).toContain("挑战");
-      expect(t("enums.difficulty.expert")).toContain("专家");
-    });
-  });
 
   describe("teamStatus（队伍派生展示状态）文案映射", () => {
     const TEAM_DISPLAY_STATUS_VALUES = ["recruiting", "full", "formed", "cancelled", "completed"] as const;

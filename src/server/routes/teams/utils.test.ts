@@ -51,6 +51,7 @@ describe("Team response location projection", () => {
             gear_essential: ["地点登山鞋"],
             gear_optional: ["地点登山杖"],
             warnings: ["雨天路滑"],
+            best_seasons: ["autumn"],
           },
         },
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -59,8 +60,7 @@ describe("Team response location projection", () => {
     });
 
     expect(response.location?.extra.hiking).toMatchObject({
-      difficulty: "moderate",
-      warnings: ["雨天路滑"],
+      bestSeasons: ["autumn"],
     });
     expect(response.location?.extra.hiking).not.toHaveProperty("gearEssential");
     expect(response.location?.extra.hiking).not.toHaveProperty("gearOptional");
