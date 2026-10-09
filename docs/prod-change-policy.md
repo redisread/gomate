@@ -65,9 +65,9 @@ Workers Builds 的推荐配置为：
 
 1. Build command：`pnpm install --frozen-lockfile && pnpm i18n:build && pnpm build`；该阶段只生成
    当前分支的 artifact，不重复执行 PR 已通过的 `pnpm test:ci`、E2E 或 dry-run；
-2. Build variables：`NODE_VERSION=22.13.0`、`PNPM_VERSION=11.19.0`、
+2. Build variables：`NODE_VERSION=22.23.3`、`PNPM_VERSION=11.19.0`、
    `SKIP_DEPENDENCY_INSTALL=1`；启用 build cache。仓库同时通过 `.node-version` 和
-   `packageManager` 固定本地与 CI 工具链；
+   `packageManager` 固定本地与 CI 工具链；生产依赖审计由 PR CI 执行，high/critical 漏洞阻止合并；
 3. Deploy command：`pnpm deploy:production`。脚本先执行
    `wrangler d1 migrations apply DB --remote --env production --config wrangler.jsonc`，只有
    migration 成功后才执行 `wrangler deploy --env production`；
