@@ -6,7 +6,7 @@
   "packageManager": "pnpm@11.19.0",
   "description": "GoMate - 极简地点组队平台 on Cloudflare Workers",
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.23.3"
   },
   "scripts": {
     "dev": "astro dev --port ${GOMATE_WEB_PORT:-5432}",
@@ -41,16 +41,16 @@
     "deploy:preview": "node scripts/deploy-preview.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.2.3",
+    "@astrojs/cloudflare": "^14.3.4",
     "@astrojs/react": "^6.0.4",
     "@hono/standard-validator": "^0.4.0",
     "@standard-schema/spec": "^1.1.0",
     "@tailwindcss/vite": "^4.3.3",
-    "astro": "^7.2.4",
+    "astro": "~7.2.10",
     "better-auth": "^1.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
-    "hono": "^4.13.3",
+    "hono": "^4.13.13",
     "lucide-react": "^0.460.0",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
