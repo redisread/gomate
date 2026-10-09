@@ -41,6 +41,14 @@ export default defineConfig({
       // Cloudflare Workers disallow runtime WebAssembly.compile(). Astro's
       // action scanner only needs the pure-JavaScript lexer implementation.
       alias: [
+        // Posters use SVG QR codes. The Node entry eagerly imports fs/PNG
+        // renderers that cannot run in a Worker; the browser entry supports SVG.
+        {
+          find: /^qrcode$/,
+          replacement: fileURLToPath(
+            new URL("./node_modules/qrcode/lib/browser.js", import.meta.url),
+          ),
+        },
         {
           find: /^es-module-lexer$/,
           replacement: fileURLToPath(
