@@ -22,7 +22,7 @@
   "regionFilter": "按地区筛选",
   "heroTagline": "咖啡馆、citywalk、短途旅行……找个人一起去",
   "searchPlaceholder": "咖啡馆、展览、桌游吧、山野……你想去哪？",
-  "tagsLabel": "探索标签",
+  "tagsLabel": "兴趣",
   "resultCount": "个地方等你探索",
   "totalResultPrefix": "共 {count} 个地方",
   "clearFilter": "清除筛选",
@@ -96,5 +96,17 @@
   },
   "mapProvinceCount": "{count} 个地点",
   "mapNoLocations": "暂无地点",
-  "mapPointRegion": "{region} · {province}"
+  "mapPointRegion": "{region} · {province}",
+  "cityLabel": "城市",
+  "anyCity": "不限",
+  "moreCities": "更多城市",
+  "chooseCity": "选择城市",
+  "searchCities": "搜索城市",
+  "citySearchHelp": "使用上下方向键浏览，按回车选择，按 Esc 关闭",
+  "interestHint": "可多选，符合任意一个即可",
+  "updating": "更新中",
+  "clearInterests": "清除兴趣",
+  "changeCity": "切换城市",
+  "loadFailed": "地点更新失败，请重试",
+  "retry": "重试"
 }

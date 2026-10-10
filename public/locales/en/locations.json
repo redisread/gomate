@@ -22,7 +22,7 @@
   "regionFilter": "Filter by Region",
   "heroTagline": "Cafes, city walks, day trips… find someone to go with",
   "searchPlaceholder": "Cafes, exhibitions, board game bars, mountains… where do you want to go?",
-  "tagsLabel": "Explore Tags",
+  "tagsLabel": "Interests",
   "resultCount": "places waiting to be explored",
   "totalResultPrefix": "{count} places total",
   "clearFilter": "Clear Filters",
@@ -96,5 +96,17 @@
   },
   "mapProvinceCount": "{count} locations",
   "mapNoLocations": "No locations yet",
-  "mapPointRegion": "{region} · {province}"
+  "mapPointRegion": "{region} · {province}",
+  "cityLabel": "City",
+  "anyCity": "Any city",
+  "moreCities": "More cities",
+  "chooseCity": "Choose a city",
+  "searchCities": "Search cities",
+  "citySearchHelp": "Use arrow keys to browse, Enter to select, and Escape to close",
+  "interestHint": "Select several; matches any selected interest",
+  "updating": "Updating",
+  "clearInterests": "Clear interests",
+  "changeCity": "Change city",
+  "loadFailed": "Could not update places. Please retry.",
+  "retry": "Retry"
 }

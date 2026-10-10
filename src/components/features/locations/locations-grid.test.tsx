@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { Location } from "@/lib/types";
 import { LocationsGrid } from "./locations-grid";
@@ -61,7 +61,11 @@ describe("LocationsGrid", () => {
         isLoading={false}
         isRefreshing={false}
         pagination={{ total: 0, nextCursor: null }}
-        onClear={vi.fn()}
+        hasLoadError={false}
+        onClearSearch={vi.fn()}
+        onClearTags={vi.fn()}
+        onChangeRegion={vi.fn()}
+        hasSelectedTags={false}
         emptyVariant="noSearch"
         query="咖啡馆"
         currentPage={1}
@@ -79,7 +83,11 @@ describe("LocationsGrid", () => {
         isLoading={false}
         isRefreshing
         pagination={{ total: 1, nextCursor: null }}
-        onClear={vi.fn()}
+        hasLoadError={false}
+        onClearSearch={vi.fn()}
+        onClearTags={vi.fn()}
+        onChangeRegion={vi.fn()}
+        hasSelectedTags={false}
         currentPage={1}
         onPageChange={vi.fn()}
       />,
@@ -90,8 +98,27 @@ describe("LocationsGrid", () => {
       "/locations/location-wutong",
     );
     expect(screen.getByText("深圳")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toBeInTheDocument();
-    expect(screen.getByRole("status").parentElement).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("link", { name: /梧桐山/ }).closest("[aria-busy]")).toHaveAttribute("aria-busy", "true");
     expect(screen.queryByText("地点加载中")).not.toBeInTheDocument();
   });
+  it("无结果时可以只清除兴趣或切换城市", () => {
+    const onClearTags = vi.fn();
+    const onChangeRegion = vi.fn();
+    render(<LocationsGrid locations={[]} isLoading={false} isRefreshing={false} pagination={{ total: 0, nextCursor: null }}
+      hasLoadError={false} onClearSearch={vi.fn()} onClearTags={onClearTags} onChangeRegion={onChangeRegion}
+      hasSelectedTags currentPage={1} onPageChange={vi.fn()} emptyVariant="tooNarrow" />);
+    fireEvent.click(screen.getByRole("button", { name: "locations.clearInterests" }));
+    expect(onClearTags).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole("button", { name: "locations.changeCity" }));
+    expect(onChangeRegion).toHaveBeenCalledOnce();
+  });
+
+  it("失败时保留卡片与忙碌容器", () => {
+    render(<LocationsGrid locations={[location]} isLoading={false} isRefreshing={false} pagination={{ total: 1, nextCursor: null }}
+      hasLoadError onClearSearch={vi.fn()} onClearTags={vi.fn()} onChangeRegion={vi.fn()}
+      hasSelectedTags={false} currentPage={1} onPageChange={vi.fn()} />);
+    expect(screen.getByRole("link", { name: /梧桐山/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /梧桐山/ }).closest("[aria-busy]")).toHaveAttribute("aria-busy", "false");
+  });
+
 });

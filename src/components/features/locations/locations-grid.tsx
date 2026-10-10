@@ -1,4 +1,4 @@
-import { MapPin, TreePine, ChevronLeft, ChevronRight, ArrowRight, Search, Map, Filter, LoaderCircle } from "lucide-react";
+import { MapPin, TreePine, ChevronLeft, ChevronRight, ArrowRight, Search, Map, Filter } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Location, Tag } from "@/lib/types";
@@ -26,11 +26,12 @@ function ShimmerCard() {
   );
 }
 
-function LocationCard({ location, index }: { location: Location; index: number }) {
+function LocationCard({ location, index, onNavigate }: { location: Location; index: number; onNavigate?: () => void }) {
   const { t } = useI18n(["locations", "common", "locationDetail"]);
   return (
     <a
       href={`/locations/${location.id}`}
+      onClick={onNavigate}
       className="group block"
     >
       <article className="bg-card rounded-2xl overflow-hidden border border-border hover:border-amber-200/50 dark:hover:border-amber-800/50 hover:shadow-xl hover:shadow-amber-100/40 dark:hover:shadow-amber-900/20 hover:ring-1 hover:ring-amber-200/40 dark:hover:ring-amber-700/40 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 motion-reduce:transition-none hover:-translate-y-1">
@@ -111,6 +112,7 @@ export interface EmptyStateProps {
   onClearAll?: () => void;
   onChangeRegion?: () => void;
   onSetRegion?: () => void;
+  onClearTags?: () => void;
 }
 
 const VARIANT_ICON: Record<EmptyStateVariant, React.ElementType> = {
@@ -145,18 +147,19 @@ export function EmptyState({
   onClearAll,
   onChangeRegion,
   onSetRegion,
+  onClearTags,
 }: EmptyStateProps) {
   const { t } = useI18n(["locations", "common"]);
   const Icon = VARIANT_ICON[variant];
 
   const actionMap = { onClearSearch, onChangeRegion, onSetRegion };
   const primaryConfig = VARIANT_PRIMARY[variant];
-  const primaryAction = actionMap[primaryConfig.action];
+  const primaryAction = onClearTags ?? actionMap[primaryConfig.action];
 
   const titleVars: Record<string, string> = variant === "noSearch" ? { query: query ?? "" } : { regionName: regionName ?? "" };
   const title = t(`locations.empty.${variant}.title`, titleVars);
   const desc = t(`locations.empty.${variant}.desc`, titleVars);
-  const primaryLabel = t(primaryConfig.labelKey);
+  const primaryLabel = t(onClearTags ? "locations.clearInterests" : primaryConfig.labelKey);
   const secondaryLabel = t(VARIANT_SECONDARY[variant]);
 
   return (
@@ -188,6 +191,14 @@ export function EmptyState({
         </button>
       )}
 
+      {onChangeRegion && primaryConfig.action !== "onChangeRegion" && (
+        <button type="button" onClick={onChangeRegion} className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <MapPin className="size-4" aria-hidden="true" />{t("locations.changeCity")}
+        </button>
+      )}
+      {onClearTags && query && onClearSearch && (
+        <button type="button" onClick={onClearSearch} className="mt-2 min-h-11 rounded-full px-4 text-sm text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("locations.empty.noSearch.clearBtn")}</button>
+      )}
       {/* Secondary "browse" button */}
       {onClearAll && (
         <button
@@ -207,7 +218,13 @@ export function LocationsGrid({
   isLoading,
   isRefreshing,
   pagination,
-  onClear,
+  hasLoadError,
+  onClearSearch,
+  onClearTags,
+  onChangeRegion,
+  hasSelectedTags,
+  onNavigate,
+  regionName,
   emptyVariant,
   query,
   currentPage,
@@ -217,7 +234,13 @@ export function LocationsGrid({
   isLoading: boolean;
   isRefreshing: boolean;
   pagination: { total: number; nextCursor: string | null };
-  onClear: () => void;
+  hasLoadError: boolean;
+  onClearSearch: () => void;
+  onClearTags: () => void;
+  onChangeRegion: () => void;
+  hasSelectedTags: boolean;
+  onNavigate?: () => void;
+  regionName?: string;
   /** @default "noSearch" */
   emptyVariant?: EmptyStateVariant;
   /** Search query for the noSearch empty state. */
@@ -233,34 +256,24 @@ export function LocationsGrid({
         className="relative transition-opacity duration-150 motion-reduce:transition-none"
         aria-busy={isLoading || isRefreshing}
       >
-        {isRefreshing && locations.length > 0 && (
-          <div
-            role="status"
-            aria-label={t("common.loading")}
-            className="pointer-events-none absolute inset-x-0 top-5 z-10 flex justify-center"
-          >
-            <span className="inline-flex items-center gap-2 rounded-full bg-card/95 px-3 py-2 text-xs font-medium text-muted-foreground shadow-warm-md ring-1 ring-black/5 backdrop-blur-sm dark:ring-white/10">
-              <LoaderCircle className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              {t("common.loading")}
-            </span>
-          </div>
-        )}
-        <div className={cn("transition-opacity duration-150 motion-reduce:transition-none", isRefreshing && locations.length > 0 && "opacity-60")}>
+        <div className={cn("min-h-96 transition-opacity duration-150 motion-reduce:transition-none", isRefreshing && "opacity-75")}>
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {Array.from({ length: 6 }).map((_, i) => <ShimmerCard key={i} />)}
             </div>
-          ) : locations.length === 0 ? (
+          ) : hasLoadError && locations.length === 0 ? null : locations.length === 0 ? (
             <EmptyState
               variant={emptyVariant ?? "noSearch"}
               query={query}
-              onClearSearch={onClear}
-              onClearAll={onClear}
+              regionName={regionName}
+              onClearSearch={query ? onClearSearch : undefined}
+              onClearTags={hasSelectedTags ? onClearTags : undefined}
+              onChangeRegion={onChangeRegion}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {locations.map((location, index) => (
-                <LocationCard key={location.id} location={location} index={index} />
+                <LocationCard key={location.id} location={location} index={index} onNavigate={onNavigate} />
               ))}
             </div>
           )}
@@ -271,9 +284,9 @@ export function LocationsGrid({
         <div className="flex justify-center items-center gap-1.5 mt-12">
           <button
             onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
-            disabled={currentPage === 1 || isRefreshing}
+            disabled={currentPage === 1 || isLoading || isRefreshing || hasLoadError}
             aria-label={t("locations.paginationPrev")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
+            className="w-11 h-11 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
           >
             <span className={cn("text-stone-900 dark:text-stone-100", currentPage === 1 && "text-stone-500 dark:text-stone-500")}>
               <ChevronLeft className="h-4 w-4" />
@@ -282,9 +295,9 @@ export function LocationsGrid({
 
           <button
             onClick={() => pagination.nextCursor && onPageChange(currentPage + 1)}
-            disabled={!pagination.nextCursor || isRefreshing}
+            disabled={!pagination.nextCursor || isLoading || isRefreshing || hasLoadError}
             aria-label={t("locations.paginationNext")}
-            className="w-9 h-9 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
+            className="w-11 h-11 rounded-xl flex items-center justify-center bg-popover border border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 hover:text-stone-700 dark:hover:text-stone-300 disabled:bg-stone-100 disabled:border-stone-200 dark:disabled:bg-stone-900 dark:disabled:border-stone-700 disabled:cursor-not-allowed transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
           >
             <span className={cn("text-stone-900 dark:text-stone-100", !pagination.nextCursor && "text-stone-500 dark:text-stone-500")}>
               <ChevronRight className="h-4 w-4" />

@@ -6,20 +6,20 @@
 
 ## 页面目录
 
-| 领域     | 路径                                                                          | 说明                                                |
-| -------- | ----------------------------------------------------------------------------- | --------------------------------------------------- |
-| 首页     | `/`                                                                           | 访客发现入口；登录用户的行程、推荐和 onboarding     |
-| 认证     | `/login`, `/register`, `/verify-email`, `/forgot-password`, `/reset-password` | 同源 Cookie 认证；验证与重置 token 从 fragment 提交 |
-| 地点     | `/locations`, `/locations/[id]`                                               | 地点列表、详情、标签、队伍和 Story 回顾             |
-| Team     | `/teams`, `/teams/[id]`, `/teams/create`, `/teams/[id]/edit`                  | 筛选、详情、创建、编辑、申请、成员和行动本          |
-| Story    | `/discover`, `/discover/[id]`, `/discover/create`, `/discover/[id]/edit`      | Story feed、详情、创建、编辑、点赞和收藏            |
-| 收藏     | `/favorites`                                                                  | 地点与 Story 收藏                                   |
-| 消息     | `/messages`, `/messages/[id]`                                                 | 会话 inbox 与 cursor 消息历史                       |
-| 用户     | `/my-teams`, `/profile`, `/profile/edit`, `/users/[id]`                       | 当前用户队伍、资料和公开主页                        |
-| 管理后台 | `/admin`, `/admin/locations`, `/admin/locations/new`, `/admin/locations/[id]/edit`, `/admin/tags`, `/admin/users` | 地点、标签与用户角色管理 |
-| 博客     | `/blog`, `/blog/[slug]`                                                       | 内容集合与详情                                      |
-| 信息页   | `/about`, `/contact`, `/feedback`, `/help`, `/privacy`, `/terms`              | 产品与法律信息                                      |
-| 创建入口 | `/create`                                                                     | 创建 Team 或 Story 的统一入口                       |
+| 领域     | 路径                                                                                                              | 说明                                                |
+| -------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 首页     | `/`                                                                                                               | 访客发现入口；登录用户的行程、推荐和 onboarding     |
+| 认证     | `/login`, `/register`, `/verify-email`, `/forgot-password`, `/reset-password`                                     | 同源 Cookie 认证；验证与重置 token 从 fragment 提交 |
+| 地点     | `/locations`, `/locations/[id]`                                                                                   | 地点列表、详情、标签、队伍和 Story 回顾             |
+| Team     | `/teams`, `/teams/[id]`, `/teams/create`, `/teams/[id]/edit`                                                      | 筛选、详情、创建、编辑、申请、成员和行动本          |
+| Story    | `/discover`, `/discover/[id]`, `/discover/create`, `/discover/[id]/edit`                                          | Story feed、详情、创建、编辑、点赞和收藏            |
+| 收藏     | `/favorites`                                                                                                      | 地点与 Story 收藏                                   |
+| 消息     | `/messages`, `/messages/[id]`                                                                                     | 会话 inbox 与 cursor 消息历史                       |
+| 用户     | `/my-teams`, `/profile`, `/profile/edit`, `/users/[id]`                                                           | 当前用户队伍、资料和公开主页                        |
+| 管理后台 | `/admin`, `/admin/locations`, `/admin/locations/new`, `/admin/locations/[id]/edit`, `/admin/tags`, `/admin/users` | 地点、标签与用户角色管理                            |
+| 博客     | `/blog`, `/blog/[slug]`                                                                                           | 内容集合与详情                                      |
+| 信息页   | `/about`, `/contact`, `/feedback`, `/help`, `/privacy`, `/terms`                                                  | 产品与法律信息                                      |
+| 创建入口 | `/create`                                                                                                         | 创建 Team 或 Story 的统一入口                       |
 
 `sitemap.xml.ts` 是 SSR 端点，不是用户页面。
 
@@ -40,9 +40,16 @@
 ### 地点
 
 - 列表只展示 `published` 且所属 city Region 已启用服务的地点。
-- 地点列表的筛选区域按“地区/热门城市 → 内容标签”分层；热门城市只读取 service-enabled
-  city Region 的 `isHot` 与 `sortOrder`，快捷项点击直接使用共享的 `regionId` 查询参数，
-  不在前端硬编码不存在的城市。
+- 地点列表按“城市 → 兴趣”分层：城市是“不限 + 最多六个热门城市 + 更多城市”的单选组，
+  热门城市只读取 service-enabled city Region 的 `isHot` 与 `sortOrder`；非热门已选城市追加
+  显示，不替换热门项。兴趣支持多选，标签之间 OR、不同筛选维度之间 AND；切换城市保留兴趣。
+- 城市与标签点击后立即更新，搜索输入保留 300ms 防抖；用户动作立即作废旧请求，防抖窗口内
+  的旧响应也不能覆盖当前选择。更新期间保留旧列表（包含空态），失败保留内容并提供重试。
+- 固定的“清除筛选”只清城市与兴趣，保留搜索和活动类型；无结果支持单独清兴趣、清搜索及
+  切换城市。结果栏只展示数量与更新状态，不重复渲染已选条件。
+- 筛选使用 `q/tags/regionId/activityType` 写回当前 URL，结果窗口使用 opaque `cursor`；
+  Astro SSR 和客户端读取同一组条件，刷新/分享恢复对应查询。当前 history entry 保存分页
+  游标链和离开列表时的滚动位置，详情返回恢复窗口及位置，不往浏览器历史追加每次筛选。
 - 详情路由只使用全局 Location ID，slug 不参与路由解析。
 - 页面消费共享 Location DTO：`region`、`supportedActivityTypes`、`coverImageUrl`、`images` 与结构化 `extra`。
 - 地点详情、列表、队伍卡片和分享海报不展示徒步攻略或路线参数；最佳季节继续展示。
@@ -52,8 +59,8 @@
 ### Team
 
 - 列表按 Region、活动类型、时间和派生 lifecycle 筛选。
-- Team 列表与地点列表共用热门城市排序和选中城市补位规则；“更多城市”仍使用完整 Region
-  选择器，快捷项不改变 `regionId` URL 合同。
+- Team 列表与地点列表共用热门城市排序；Team 仍保留选中城市补位规则，地点列表追加选中城市。
+  “更多城市”使用完整 Region 选择器，快捷项不改变 `regionId` URL 合同。
 - 创建和编辑 Team 时，`activityType` 必须来自共享代码枚举；所选地点的
   `supportedActivityTypes` 只把推荐项排在前面，不过滤其他活动类型。
 - 创建 Team 的地点选择器通过 `/api/locations?search=<name>` 按名称搜索公开地点，并在结果中
@@ -126,11 +133,11 @@
 
 完整地点表单将“保存内容”和“改变发布状态”分开，`locations.status` 是唯一发布状态来源：
 
-| 当前状态 | 编辑页主要操作 | 公开页入口 |
-| -------- | -------------- | ---------- |
-| `draft` | 保存草稿、发布地点 | 不显示 |
-| `published` | 保存更改 | 显示“查看公开页” |
-| `archived` | 保存更改、恢复为草稿 | 不显示，且不能直接发布 |
+| 当前状态    | 编辑页主要操作       | 公开页入口             |
+| ----------- | -------------------- | ---------------------- |
+| `draft`     | 保存草稿、发布地点   | 不显示                 |
+| `published` | 保存更改             | 显示“查看公开页”       |
+| `archived`  | 保存更改、恢复为草稿 | 不显示，且不能直接发布 |
 
 - 表单用只读状态标识和状态相关操作代替通用状态下拉框。发布操作显式提交
   `status: "published"`；恢复操作显式提交 `status: "draft"`，普通保存保持当前状态。
