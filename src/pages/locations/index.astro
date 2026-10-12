@@ -3,6 +3,7 @@
  * 地点列表页
  */
 import Layout from "../../layouts/Layout.astro";
+import { readLocationFilters } from "../../components/features/locations/use-locations-list";
 import { LocationsClient } from "../../components/features/locations/locations-main";
 import { declareI18nNs } from "../../middleware";
 import { serverApiGet } from "../../lib/server-api";
@@ -17,6 +18,7 @@ const fetchJson = <T,>(path: string) =>
 const params = Astro.url.searchParams;
 const listQuery = new URLSearchParams();
 listQuery.set("limit", "12");
+if (params.get("cursor")) listQuery.set("cursor", params.get("cursor")!);
 if (params.get("q")) listQuery.set("search", params.get("q")!);
 if (params.get("tags")) listQuery.set("tagIds", params.get("tags")!);
 if (params.get("regionId")) listQuery.set("regionId", params.get("regionId")!);
@@ -30,6 +32,8 @@ const [locationsData, tagsData, regionsData] = await Promise.all([
 
 const initialData = locationsData?.success
   ? {
+      filters: readLocationFilters(params),
+      cursor: params.get("cursor"),
       locations: locationsData.locations ?? [],
       pagination: {
         limit: 12,

@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { Region } from "@/lib/types";
-import { LocationsHero } from "./locations-hero";
+import { LocationsHero, LocationsResultBar } from "./locations-hero";
 
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
@@ -46,17 +46,12 @@ function renderHero(overrides: Partial<ComponentProps<typeof LocationsHero>> = {
       ]}
       popularTags={[]}
       showRegionDropdown={false}
-      regionDropdownPos={{ top: 0, left: 0 }}
-      hasActiveFilters={false}
-      isLoading={false}
-      pagination={{ total: 0 }}
-      onRoleSelect={vi.fn()}
+            onRoleSelect={vi.fn()}
       onSearchChange={vi.fn()}
       onTagToggle={vi.fn()}
       onRegionSelect={vi.fn()}
-      onClearAll={vi.fn()}
-      onToggleRegionDropdown={vi.fn()}
-      setRegionDropdownPos={vi.fn()}
+      onClearFilters={vi.fn()}
+      onRegionDropdownChange={vi.fn()}
       {...overrides}
     />,
   );
@@ -72,12 +67,11 @@ describe("LocationsHero", () => {
       popularTags: [{ id: "hiking", name: "徒步" }],
     });
 
-    expect(screen.getByRole("group", { name: "locations.hotCities" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "locations.cityLabel" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "深圳" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "香港" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("group", { name: "locations.tagsLabel" })).toBeInTheDocument();
-    expect(screen.getByTestId("locations-tag-options")).toHaveClass("flex-wrap");
-    expect(screen.getByTestId("locations-tag-options")).not.toHaveClass("overflow-x-auto");
+    expect(screen.getByTestId("locations-tag-options")).toHaveClass("overflow-x-auto");
     expect(screen.getByRole("button", { name: "徒步" })).toBeInTheDocument();
   });
 
@@ -90,4 +84,34 @@ describe("LocationsHero", () => {
 
     expect(onRegionSelect).toHaveBeenCalledWith("hz");
   });
+  it("不限与城市处于同一选择组，清除始终可见且不重复显示地区入口", () => {
+    const onRegionSelect = vi.fn();
+    const onClearFilters = vi.fn();
+    renderHero({ onRegionSelect, onClearFilters });
+    expect(screen.getByRole("button", { name: "locations.anyCity" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: "locations.allRegions" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "locations.clearFilter" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "深圳" }));
+    expect(onRegionSelect).toHaveBeenCalledWith("sz");
+  });
+
+  it("已选非热门城市追加显示，保留全部六个热门入口", () => {
+    renderHero({ selectedRegionId: "extra", regions: [
+      ...Array.from({ length: 6 }, (_, i) => region(`hot-${i}`, `城市${i}`, true, i)),
+      region("extra", "其他城市", false, 9),
+    ] });
+    for (let i = 0; i < 6; i++) expect(screen.getByRole("button", { name: `城市${i}` })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "其他城市" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("更新状态与失败重试保留在结果栏，结果条件不重复展示", () => {
+    const onRetry = vi.fn();
+    const view = render(<LocationsResultBar isLoading={false} isRefreshing pagination={{ total: 12 }} hasLoadError={false} onRetry={onRetry} />);
+    expect(screen.getByRole("status")).toHaveTextContent("locations.updating");
+    view.rerender(<LocationsResultBar isLoading={false} isRefreshing={false} pagination={{ total: 12 }} hasLoadError onRetry={onRetry} />);
+    expect(screen.getByRole("alert")).toHaveTextContent("locations.loadFailed");
+    fireEvent.click(screen.getByRole("button", { name: "locations.retry" }));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
 });

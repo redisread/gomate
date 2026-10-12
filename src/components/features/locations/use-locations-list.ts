@@ -11,225 +11,254 @@ interface LocationsPagination {
   nextCursor: string | null;
 }
 
+export interface LocationFilters {
+  searchQuery: string;
+  selectedTags: string[];
+  selectedRegionId: string;
+  activeRole: RoleKey;
+}
+
+export function readLocationFilters(params: URLSearchParams): LocationFilters {
+  const role = params.get("activityType");
+  return {
+    searchQuery: params.get("q") ?? "",
+    selectedTags: [...new Set(params.get("tags")?.split(",").filter(Boolean) ?? [])],
+    selectedRegionId: params.get("regionId") ?? "",
+    activeRole: role === "hiking" || role === "explore" || role === "leisure" || role === "travel" ? role : "",
+  };
+}
+
 export interface LocationsListInitialData {
   locations: Location[];
   pagination: LocationsPagination;
   popularTags: { id: string; name: string }[];
   regions: Region[];
+  filters?: LocationFilters;
+  cursor?: string | null;
+}
+
+interface LoadParams {
+  cursor?: string | null;
+  targetPage?: number;
+  search?: string;
+  tagIds?: string[];
+  regionId?: string;
+  activityType?: RoleKey;
+}
+
+function requestFilters(filters: LocationFilters): LoadParams {
+  return { search: filters.searchQuery, tagIds: filters.selectedTags, regionId: filters.selectedRegionId, activityType: filters.activeRole };
 }
 
 export function useLocationsList(initialData?: LocationsListInitialData) {
-  const [locations, setLocations] = React.useState<Location[]>(initialData?.locations ?? []);
+  const initialDataRef = React.useRef(initialData);
+  const [locations, setLocations] = React.useState(initialData?.locations ?? []);
   const [isLoading, setIsLoading] = React.useState(!initialData);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState("");
+  const [hasLoadError, setHasLoadError] = React.useState(false);
+  const [filters, setFilters] = React.useState<LocationFilters>(initialData?.filters ?? readLocationFilters(new URLSearchParams()));
+  const filtersRef = React.useRef(filters);
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [pagination, setPagination] = React.useState<LocationsPagination>(
-    initialData?.pagination ?? { total: 0, nextCursor: null, limit: 12 },
-  );
-  const [popularTags, setPopularTags] = React.useState<{ id: string; name: string }[]>(initialData?.popularTags ?? []);
-  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
-  const [regions, setRegions] = React.useState<Region[]>(initialData?.regions ?? []);
-  const [selectedRegionId, setSelectedRegionId] = React.useState("");
-  const [activeRole, setActiveRole] = React.useState<RoleKey>("");
+  const [pagination, setPagination] = React.useState<LocationsPagination>(initialData?.pagination ?? { total: 0, nextCursor: null, limit: 12 });
+  const [popularTags, setPopularTags] = React.useState(initialData?.popularTags ?? []);
+  const [regions, setRegions] = React.useState(initialData?.regions ?? []);
   const [showRegionDropdown, setShowRegionDropdown] = React.useState(false);
-  const [regionDropdownPos, setRegionDropdownPos] = React.useState({ top: 0, left: 0 });
   const [userRegionId, setUserRegionId] = React.useState<string | null | undefined>(undefined);
-  const hasInitialDataRef = React.useRef(Boolean(initialData));
-  const skipInitialFilterFetchRef = React.useRef(true);
-  const locationsRef = React.useRef(locations);
+  const hasLoadedRef = React.useRef(Boolean(initialData));
   const requestIdRef = React.useRef(0);
   const abortControllerRef = React.useRef<AbortController | null>(null);
-  const cursorsByPageRef = React.useRef<Map<number, string | null>>(
-    new Map([
-      [1, null],
-      ...(initialData?.pagination.nextCursor
-        ? [[2, initialData.pagination.nextCursor] as const]
-        : []),
-    ]),
-  );
+  const searchTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const currentWindowRef = React.useRef({ cursor: initialData?.cursor ?? null, page: 1 });
+  const retryParamsRef = React.useRef<LoadParams>({});
+  const restoreScrollRef = React.useRef<number | null>(null);
+  const [ready, setReady] = React.useState(false);
+  const cursorsByPageRef = React.useRef(new Map<number, string | null>([
+    [1, initialData?.cursor ?? null],
+    ...(initialData?.pagination.nextCursor ? [[2, initialData.pagination.nextCursor] as const] : []),
+  ]));
 
-  const loadLocations = React.useCallback(
-    async (params: { cursor?: string | null; targetPage?: number; search?: string; tagIds?: string[]; regionId?: string; activityType?: RoleKey }) => {
-      const requestId = ++requestIdRef.current;
-      abortControllerRef.current?.abort();
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
-      const hasExistingLocations = locationsRef.current.length > 0;
-      setIsLoading(!hasExistingLocations);
-      setIsRefreshing(hasExistingLocations);
-      try {
-        const query = new URLSearchParams();
-        query.set("limit", "12");
-        if (params.cursor) query.set("cursor", params.cursor);
-        if (params.search) query.set("search", params.search);
-        if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
-        if (params.regionId) query.set("regionId", params.regionId);
-        if (params.activityType) query.set("activityType", params.activityType);
-        const res = await fetchPublicAPI(`/locations?${query}`, { signal: controller.signal });
-        const data = await res.json();
-        if (requestId !== requestIdRef.current) return;
-        if (data.success) {
-          locationsRef.current = data.locations;
-          setLocations(data.locations);
-          const targetPage = params.targetPage ?? 1;
-          const nextCursor = data.nextCursor ?? null;
-          setCurrentPage(targetPage);
-          setPagination({
-            limit: 12,
-            total: Number(data.total ?? 0),
-            nextCursor,
-          });
-          if (nextCursor) {
-            cursorsByPageRef.current.set(targetPage + 1, nextCursor);
-          } else {
-            cursorsByPageRef.current.delete(targetPage + 1);
-          }
-        }
-      } catch (error) {
-        if (!(error instanceof Error && error.name === "AbortError")) {
-          console.error("[locations] Failed to load locations:", error);
-        }
-      } finally {
-        if (requestId === requestIdRef.current) {
-          setIsLoading(false);
-          setIsRefreshing(false);
-        }
-      }
-    },
-    []
-  );
-
-  React.useEffect(() => {
-    return () => abortControllerRef.current?.abort();
+  const saveBrowsePosition = React.useCallback(() => {
+    window.history.replaceState({
+      ...window.history.state,
+      gomateLocations: {
+        href: window.location.pathname + window.location.search,
+        ...currentWindowRef.current,
+        cursors: [...cursorsByPageRef.current],
+        scrollY: window.scrollY,
+      },
+    }, "");
   }, []);
 
-  // URL 参数初始化
-  React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const q = params.get("q") || "";
-    const tags = params.get("tags")?.split(",").filter(Boolean) || [];
-    const regionId = params.get("regionId") || "";
-    const activityType = (params.get("activityType") || "") as RoleKey;
-    setSearchQuery(q);
-    setSelectedTags(tags);
-    setSelectedRegionId(regionId);
-    setActiveRole(activityType);
-    if (hasInitialDataRef.current) {
-      hasInitialDataRef.current = false;
-      return;
+  const updateURL = React.useCallback((next: LocationFilters, cursor: string | null = null) => {
+    const url = new URL(window.location.href);
+    const values = { q: next.searchQuery, tags: next.selectedTags.join(","), regionId: next.selectedRegionId, activityType: next.activeRole, cursor };
+    for (const [key, value] of Object.entries(values)) {
+      if (value) url.searchParams.set(key, value);
+      else url.searchParams.delete(key);
     }
-    loadLocations({ search: q, tagIds: tags, regionId, activityType });
-  }, [loadLocations]);
+    window.history.replaceState(window.history.state, "", url);
+    saveBrowsePosition();
+  }, [saveBrowsePosition]);
 
-  // 加载标签
+  // Invalidate at the user's action, including the search debounce window.
+  const invalidateRequest = React.useCallback(() => {
+    ++requestIdRef.current;
+    abortControllerRef.current?.abort();
+    clearTimeout(searchTimerRef.current);
+    setHasLoadError(false);
+    setIsLoading(!hasLoadedRef.current);
+    setIsRefreshing(hasLoadedRef.current);
+  }, []);
+
+  const loadLocations = React.useCallback(async (params: LoadParams) => {
+    invalidateRequest();
+    const requestId = requestIdRef.current;
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    retryParamsRef.current = params;
+    try {
+      const query = new URLSearchParams({ limit: "12" });
+      if (params.cursor) query.set("cursor", params.cursor);
+      if (params.search) query.set("search", params.search);
+      if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
+      if (params.regionId) query.set("regionId", params.regionId);
+      if (params.activityType) query.set("activityType", params.activityType);
+      const res = await fetchPublicAPI(`/locations?${query}`, { signal: controller.signal });
+      const data = await res.json();
+      if (requestId !== requestIdRef.current) return;
+      if (!data.success) throw new Error("locations_load_failed");
+      hasLoadedRef.current = true;
+      setLocations(data.locations);
+      const page = params.targetPage ?? 1;
+      const nextCursor = data.nextCursor ?? null;
+      currentWindowRef.current = { cursor: params.cursor ?? null, page };
+      setCurrentPage(page);
+      setPagination({ limit: 12, total: Number(data.total ?? 0), nextCursor });
+      if (nextCursor) cursorsByPageRef.current.set(page + 1, nextCursor);
+      else cursorsByPageRef.current.delete(page + 1);
+      updateURL(filtersRef.current, params.cursor ?? null);
+    } catch {
+      if (requestId === requestIdRef.current && !controller.signal.aborted) setHasLoadError(true);
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    }
+  }, [invalidateRequest, updateURL]);
+
+  React.useEffect(() => {
+    const restore = () => {
+      const next = readLocationFilters(new URLSearchParams(window.location.search));
+      const cursor = new URLSearchParams(window.location.search).get("cursor");
+      const saved = window.history.state?.gomateLocations;
+      const matches = saved?.href === window.location.pathname + window.location.search;
+      const page = matches && Number.isInteger(saved.page) && saved.page > 0 ? saved.page : 1;
+      if (matches && Array.isArray(saved.cursors)) cursorsByPageRef.current = new Map(saved.cursors);
+      else cursorsByPageRef.current = new Map([
+        [1, cursor],
+        ...(initialDataRef.current?.pagination.nextCursor ? [[2, initialDataRef.current.pagination.nextCursor] as const] : []),
+      ]);
+      currentWindowRef.current = { cursor, page };
+      restoreScrollRef.current = matches && Number.isFinite(saved.scrollY) ? saved.scrollY : null;
+      filtersRef.current = next;
+      setFilters(next);
+      setCurrentPage(page);
+      return { ...requestFilters(next), cursor, targetPage: page };
+    };
+    const params = restore();
+    setReady(true);
+    if (!initialDataRef.current) void loadLocations(params);
+    const onPopState = () => { void loadLocations(restore()); };
+    window.addEventListener("popstate", onPopState);
+    window.addEventListener("pagehide", saveBrowsePosition);
+    const requests = requestIdRef;
+    return () => {
+      ++requests.current;
+      abortControllerRef.current?.abort();
+      clearTimeout(searchTimerRef.current);
+      window.removeEventListener("popstate", onPopState);
+      window.removeEventListener("pagehide", saveBrowsePosition);
+    };
+  }, [loadLocations, saveBrowsePosition]);
+
+  React.useEffect(() => {
+    if (!ready || isLoading || isRefreshing || restoreScrollRef.current === null) return;
+    const top = restoreScrollRef.current;
+    let secondFrame = 0;
+    const frame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => {
+        if (top > 0) window.scrollTo({ top, behavior: "instant" });
+        restoreScrollRef.current = null;
+      });
+    });
+    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(secondFrame); };
+  }, [ready, isLoading, isRefreshing]);
+
   React.useEffect(() => {
     if (initialData?.popularTags) return;
-    fetchPublicAPI("/tags?limit=200")
-      .then((r) => r.json())
-      .then((data) => { if (data.success && data.tags) setPopularTags(data.tags); })
-      .catch(() => {});
+    fetchPublicAPI("/tags?limit=200").then((r) => r.json()).then((data) => { if (data.success && data.tags) setPopularTags(data.tags); }).catch(() => {});
   }, [initialData?.popularTags]);
 
-  // Load service-enabled city-level Regions from the canonical endpoint.
   React.useEffect(() => {
     if (initialData?.regions) return;
-    fetchSelectableRegions()
-      .then(setRegions)
-      .catch(() => {});
+    fetchSelectableRegions().then(setRegions).catch(() => {});
   }, [initialData?.regions]);
 
-  // UserExtra.city stores the selected city-level Region id.
   React.useEffect(() => {
-    fetchCurrentUser()
-      .then((user) => setUserRegionId(user?.extra.city ?? null))
-      .catch(() => setUserRegionId(null));
+    fetchCurrentUser().then((user) => setUserRegionId(user?.extra.city ?? null)).catch(() => setUserRegionId(null));
   }, []);
 
-  // 搜索防抖
-  React.useEffect(() => {
-    if (skipInitialFilterFetchRef.current) {
-      skipInitialFilterFetchRef.current = false;
-      return;
-    }
-    const timer = setTimeout(() => {
-      cursorsByPageRef.current = new Map([[1, null]]);
-      setCurrentPage(1);
-      loadLocations({ search: searchQuery, tagIds: selectedTags, regionId: selectedRegionId, activityType: activeRole });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery, selectedTags, selectedRegionId, activeRole, loadLocations]);
+  const changeFilters = React.useCallback((next: LocationFilters, debounce = false) => {
+    if (JSON.stringify(next) === JSON.stringify(filtersRef.current)) return;
+    invalidateRequest();
+    restoreScrollRef.current = null;
+    filtersRef.current = next;
+    setFilters(next);
+    setCurrentPage(1);
+    currentWindowRef.current = { cursor: null, page: 1 };
+    cursorsByPageRef.current = new Map([[1, null]]);
+    updateURL(next);
+    const params = requestFilters(next);
+    retryParamsRef.current = params;
+    if (debounce) searchTimerRef.current = setTimeout(() => { void loadLocations(params); }, 300);
+    else void loadLocations(params);
+  }, [invalidateRequest, loadLocations, updateURL]);
 
+  const setSearchQuery = React.useCallback((searchQuery: string) => changeFilters({ ...filtersRef.current, searchQuery }, true), [changeFilters]);
   const handleTagToggle = React.useCallback((tagId: string) => {
-    const newTags = selectedTags.includes(tagId)
-      ? selectedTags.filter((t) => t !== tagId)
-      : [...selectedTags, tagId];
-    setSelectedTags(newTags);
-    setCurrentPage(1);
-  }, [selectedTags]);
-
-  const handleRegionSelect = React.useCallback((regionId: string) => {
-    setSelectedRegionId(regionId);
-    setCurrentPage(1);
+    const next = filtersRef.current;
+    changeFilters({ ...next, selectedTags: next.selectedTags.includes(tagId) ? next.selectedTags.filter((id) => id !== tagId) : [...next.selectedTags, tagId] });
+  }, [changeFilters]);
+  const handleRegionSelect = React.useCallback((selectedRegionId: string) => {
+    changeFilters({ ...filtersRef.current, selectedRegionId });
     setShowRegionDropdown(false);
-  }, []);
-
-  const handleRoleSelect = React.useCallback((role: RoleKey) => {
-    const newRole = role === activeRole ? "" : role;
-    setActiveRole(newRole);
-    setCurrentPage(1);
-  }, [activeRole]);
-
+  }, [changeFilters]);
+  const handleRoleSelect = React.useCallback((role: RoleKey) => changeFilters({ ...filtersRef.current, activeRole: filtersRef.current.activeRole === role ? "" : role }), [changeFilters]);
+  const handleClearFilters = React.useCallback(() => changeFilters({ ...filtersRef.current, selectedTags: [], selectedRegionId: "" }), [changeFilters]);
+  const handleClearTags = React.useCallback(() => changeFilters({ ...filtersRef.current, selectedTags: [] }), [changeFilters]);
+  const handleClearAll = React.useCallback(() => changeFilters(readLocationFilters(new URLSearchParams())), [changeFilters]);
+  const handleRetry = React.useCallback(() => loadLocations(retryParamsRef.current), [loadLocations]);
   const handlePageChange = React.useCallback((page: number) => {
     const cursor = cursorsByPageRef.current.get(page);
     if (page < 1 || cursor === undefined) return;
-    loadLocations({ cursor, targetPage: page, search: searchQuery, tagIds: selectedTags, regionId: selectedRegionId, activityType: activeRole });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [searchQuery, selectedTags, selectedRegionId, activeRole, loadLocations]);
-
-  const handleClearAll = React.useCallback(() => {
-    setSearchQuery("");
-    setSelectedTags([]);
-    setSelectedRegionId("");
-    setActiveRole("");
-    setCurrentPage(1);
-  }, []);
+    void loadLocations({ ...requestFilters(filtersRef.current), cursor, targetPage: page });
+    window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  }, [loadLocations]);
 
   const selectedRegionName = React.useMemo(() => {
-    const selectedRegion = regions.find((region) => region.id === selectedRegionId);
-    return selectedRegion ? getRegionDisplayName(selectedRegion) : undefined;
-  }, [regions, selectedRegionId]);
-  const hasActiveFilters = !!(searchQuery || selectedTags.length > 0 || selectedRegionId || activeRole);
+    const region = regions.find((item) => item.id === filters.selectedRegionId);
+    return region ? getRegionDisplayName(region) : undefined;
+  }, [regions, filters.selectedRegionId]);
+  const hasActiveFilters = !!(filters.searchQuery || filters.selectedTags.length || filters.selectedRegionId || filters.activeRole);
 
   return {
-    locations,
-    isLoading,
-    isRefreshing,
-    searchQuery,
-    currentPage,
-    pagination,
-    popularTags,
-    selectedTags,
-    regions,
-    selectedRegionId,
-    activeRole,
-    showRegionDropdown,
-    regionDropdownPos,
-    selectedRegionName,
-    hasActiveFilters,
-    userRegionId,
-    setSearchQuery,
-    setShowRegionDropdown,
-    setRegionDropdownPos,
-    loadLocations,
-    handleTagToggle,
-    handleRegionSelect,
-    handleRoleSelect,
-    handlePageChange,
-    handleClearAll,
+    locations, isLoading, isRefreshing, hasLoadError, ...filters, currentPage, pagination, popularTags,
+    regions, showRegionDropdown, selectedRegionName, hasActiveFilters, userRegionId,
+    setSearchQuery, setShowRegionDropdown, loadLocations, handleTagToggle, handleRegionSelect,
+    handleRoleSelect, handlePageChange, handleClearAll, handleClearFilters, handleClearTags, handleRetry,
     onClearSearch: () => setSearchQuery(""),
-    onClearAll: handleClearAll,
     onChangeRegion: () => setShowRegionDropdown(true),
-    onSetRegion: () => { window.location.href = "/profile/edit"; },
+    saveBrowsePosition,
   };
 }

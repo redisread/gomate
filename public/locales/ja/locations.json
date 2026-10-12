@@ -22,7 +22,7 @@
   "regionFilter": "地域でフィルター",
   "heroTagline": "カフェ、街歩き、ショートトリップ…一緒にいく人を見つけよう",
   "searchPlaceholder": "カフェ、展示、ボードゲームカフェ、山…どこに行きたい？",
-  "tagsLabel": "探索タグ",
+  "tagsLabel": "興味",
   "resultCount": "か所が探索を待っています",
   "totalResultPrefix": "合計 {count} か所",
   "clearFilter": "フィルターをクリア",
@@ -96,5 +96,17 @@
   },
   "mapProvinceCount": "{count} 件の地点",
   "mapNoLocations": "まだ地点はありません",
-  "mapPointRegion": "{province}・{region}"
+  "mapPointRegion": "{province}・{region}",
+  "cityLabel": "都市",
+  "anyCity": "すべて",
+  "moreCities": "他の都市",
+  "chooseCity": "都市を選択",
+  "searchCities": "都市を検索",
+  "citySearchHelp": "上下キーで移動、Enterで選択、Escapeで閉じる",
+  "interestHint": "複数選択可・いずれかに一致",
+  "updating": "更新中",
+  "clearInterests": "興味をクリア",
+  "changeCity": "都市を変更",
+  "loadFailed": "スポットを更新できませんでした。再試行してください。",
+  "retry": "再試行"
 }

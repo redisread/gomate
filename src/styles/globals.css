@@ -1129,3 +1129,7 @@
     padding-left: 1.2rem;
   }
 }
+
+/* Keep the filter rows swipeable without changing keyboard order. */
+.filter-rail { scrollbar-width: none; }
+.filter-rail::-webkit-scrollbar { display: none; }
