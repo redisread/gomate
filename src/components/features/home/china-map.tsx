@@ -77,7 +77,7 @@ export function ChinaMap({ className }: { className?: string }) {
             onClick={leaveProvince}
             disabled={!selection.province}
             aria-hidden={!selection.province}
-            className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-secondary px-3 text-xs font-semibold text-foreground transition-[background-color,transform,opacity] duration-150 hover:bg-accent active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none ${selection.province ? "visible opacity-100" : "invisible opacity-0"}`}
+            className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-secondary px-3 text-xs font-semibold text-foreground transition-[background-color,transform,scale,opacity] duration-150 hover:bg-accent motion-safe:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none ${selection.province ? "visible opacity-100" : "invisible opacity-0"}`}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             {t("home.mapBackToChina")}

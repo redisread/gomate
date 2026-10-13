@@ -106,7 +106,7 @@ export function MapPreview({
             <a
               href={`/locations/${encodeURIComponent(point.id)}`}
               onClick={onNavigate}
-              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-transform duration-150 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transform-none sm:self-auto"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-transform duration-150 motion-safe:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transform-none sm:self-auto"
             >
               {t("home.discoveryMap.viewLocation")}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
