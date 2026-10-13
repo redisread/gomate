@@ -41,7 +41,7 @@ export function parseMapSelection(search: string): MapSelection {
 
 export function getMapSelectionUrl(href: string, selection: MapSelection): string {
   const url = new URL(href);
-  for (const [key, value] of [[MAP_PROVINCE_PARAM, selection.province], [MAP_LOCATION_PARAM, selection.locationId]]) {
+  for (const [key, value] of [[MAP_PROVINCE_PARAM, selection.province], [MAP_LOCATION_PARAM, selection.locationId]] as const) {
     if (value) url.searchParams.set(key, value);
     else url.searchParams.delete(key);
   }

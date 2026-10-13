@@ -40,9 +40,9 @@ describe("ChinaMap", () => {
 
   it("clicking a province focuses the map and writes a restorable URL state", async () => {
     const historyBack = vi.spyOn(window.history, "back").mockImplementation(() => undefined);
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ text: async () => provinceSvg }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, text: async () => provinceSvg }));
     mockFetchAPI.mockImplementation(async (path: string) => ({
-      json: async () => path.startsWith("/regions") ? ({
+      ok: true, json: async () => path.startsWith("/regions") ? ({
         success: true,
         regions: [
           { id: "province-gd", name: "广东省" },
@@ -92,7 +92,7 @@ describe("ChinaMap", () => {
     fireEvent.click(guangdong);
 
     expect(window.location.search).toContain("mapProvince=%E5%B9%BF%E4%B8%9C%E7%9C%81");
-    expect(screen.getByText(/中国 \/ 广东省/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "广东省" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("梧桐山")).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByTestId("map-content")).toHaveAttribute(
@@ -101,34 +101,23 @@ describe("ChinaMap", () => {
       );
     });
 
-    const marker = document.querySelector('circle[fill="var(--primary)"]');
-    expect(Number(marker?.getAttribute("r"))).toBeCloseTo(getMapMarkerRadius(5.5, 4.5));
-    const hitTarget = document.querySelector('circle[fill="transparent"]');
-    expect(Number(hitTarget?.getAttribute("r"))).toBe(12);
-
-    fireEvent.mouseEnter(screen.getByLabelText("梧桐山"));
-    const lens = screen.getByTestId("map-glass-lens");
-    expect(lens).toHaveAttribute("aria-hidden", "true");
-    expect(lens.querySelector('g[filter="url(#map-glass-filter)"]')).not.toBeNull();
-    expect(lens.querySelector('circle[data-testid="map-glass-border"]')).not.toBeNull();
-    expect(lens.querySelector('[role="button"]')).toBeNull();
-
-    fireEvent.mouseLeave(screen.getByRole("group"));
-    expect(screen.queryByTestId("map-glass-lens")).not.toBeInTheDocument();
-
-    const point = screen.getByLabelText("梧桐山");
+    const point = await screen.findByRole("button", { name: "梧桐山" });
+    expect(point).toHaveClass("h-11", "w-11");
     fireEvent.focus(point);
-    expect(screen.getByTestId("map-glass-lens")).toBeInTheDocument();
+    fireEvent.click(point);
+    expect(screen.getByRole("link", { name: "home.discoveryMap.viewLocation" })).toHaveAttribute("href", "/locations/loc-gd");
     fireEvent.blur(point);
-    expect(screen.queryByTestId("map-glass-lens")).not.toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.queryByLabelText("四姑娘山")).not.toBeInTheDocument();
-    });
+    expect(screen.getByRole("link", { name: "home.discoveryMap.viewLocation" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "四姑娘山" })).not.toBeInTheDocument();
 
     fireEvent.click(guangdong);
 
-    expect(historyBack).toHaveBeenCalledOnce();
+    expect(historyBack).not.toHaveBeenCalled();
+    expect(window.location.search).toContain("mapProvince=");
+    fireEvent.click(screen.getByRole("button", { name: "home.mapBackToChina" }));
+    expect(window.location.search).not.toContain("mapProvince=");
+    expect(window.location.search).not.toContain("mapLocation=");
+    expect(guangdong).toHaveFocus();
   });
 
   it("calculates marker radii in the map's unscaled coordinate space", () => {
@@ -164,5 +153,72 @@ describe("ChinaMap", () => {
       x: 400,
       y: 316,
     });
+  });
+});
+
+function mockMapData() {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, text: async () => provinceSvg }));
+  mockFetchAPI.mockImplementation(async (path: string) => ({
+    ok: true, json: async () => path.startsWith("/regions") ? {
+      success: true, regions: [{ id: "province-gd", name: "广东省" }],
+    } : {
+      success: true,
+      regions: [{ region: { id: "region-sz", parentId: "province-gd", name: "深圳" }, count: 2 }],
+      points: [
+        { id: "loc-1", name: "梧桐山", region: { id: "region-sz", parentId: "province-gd", name: "深圳" }, latitude: 22.6, longitude: 114.2 },
+        { id: "loc-2", name: "塘朗山", region: { id: "region-sz", parentId: "province-gd", name: "深圳" }, latitude: 22.7, longitude: 114.0 },
+      ],
+    },
+  }));
+  Object.defineProperty(SVGElement.prototype, "getBBox", {
+    configurable: true, value: () => ({ x: 500, y: 500, width: 40, height: 40 }),
+  });
+}
+
+describe("map exploration continuity", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    Reflect.deleteProperty(SVGElement.prototype, "getBBox");
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("previews a location, keeps selection when hover leaves, and replaces consecutive selections", async () => {
+    mockMapData();
+    render(<ChinaMap />);
+    const point = await screen.findByRole("button", { name: "梧桐山" });
+    fireEvent.click(point);
+    expect(screen.getByRole("link", { name: "home.discoveryMap.viewLocation" })).toHaveAttribute("href", "/locations/loc-1");
+    const historyLength = window.history.length;
+    fireEvent.mouseLeave(point);
+    expect(screen.getByRole("link", { name: "home.discoveryMap.viewLocation" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "塘朗山" }));
+    expect(window.history.length).toBe(historyLength);
+    expect(window.location.search).toContain("mapLocation=loc-2");
+    expect(screen.getByRole("link", { name: "home.discoveryMap.viewLocation" })).toHaveAttribute("href", "/locations/loc-2");
+  });
+
+  it("restores a shared location and clears only an unavailable location", async () => {
+    mockMapData();
+    window.history.replaceState({}, "", "/?q=keep&mapProvince=广东省&mapLocation=loc-1#map");
+    render(<ChinaMap />);
+    expect(await screen.findByRole("link", { name: "home.discoveryMap.viewLocation" })).toHaveAttribute("href", "/locations/loc-1");
+    window.history.replaceState({}, "", "/?q=keep&mapProvince=广东省&mapLocation=removed#map");
+    fireEvent(window, new PopStateEvent("popstate"));
+    expect(await screen.findByText("home.discoveryMap.locationUnavailable")).toBeInTheDocument();
+    expect(window.location.search).toContain("mapProvince=");
+    expect(window.location.search).toContain("q=keep");
+    expect(window.location.search).not.toContain("mapLocation=");
+  });
+
+  it("does not mistake SVG loading failure for an empty province and retries", async () => {
+    mockMapData();
+    vi.mocked(fetch).mockRejectedValueOnce(new Error("offline"));
+    window.history.replaceState({}, "", "/?mapProvince=广东省");
+    render(<ChinaMap />);
+    expect(await screen.findByRole("button", { name: "home.discoveryMap.retry" })).toBeInTheDocument();
+    expect(screen.queryByText(/home.mapFocusedEmptyTitle/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "home.discoveryMap.retry" }));
+    expect(await screen.findByRole("button", { name: "梧桐山" })).toBeInTheDocument();
   });
 });

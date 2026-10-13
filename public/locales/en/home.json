@@ -35,7 +35,16 @@
   },
   "discoveryMap": {
     "title": "Find your next stop on the map",
-    "description": "Open a new starting point, from familiar cities to trails you have not walked yet."
+    "description": "Open a new starting point, from familiar cities to trails you have not walked yet.",
+    "country": "China",
+    "previewLabel": "Location preview",
+    "previewHint": "Choose a place for your next stop",
+    "previewDescription": "Preview its name and region, then open the details when you find a place you like.",
+    "viewLocation": "View location",
+    "loadFailed": "The map could not load. Please try again.",
+    "retry": "Reload map",
+    "chooseLocation": "These places are close together. Choose one to preview:",
+    "locationUnavailable": "This place is no longer available. Choose another."
   },
   "heroLocations": {
     "listLabel": "Featured places",

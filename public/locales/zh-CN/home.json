@@ -35,7 +35,16 @@
   },
   "discoveryMap": {
     "title": "从地图找下一站",
-    "description": "从熟悉的城市到还没走过的山野，按省份打开一张新的出发清单。"
+    "description": "从熟悉的城市到还没走过的山野，按省份打开一张新的出发清单。",
+    "country": "全国",
+    "previewLabel": "地点预览",
+    "previewHint": "点一个地点，看看下一站",
+    "previewDescription": "先看名称和地区，找到想去的地方再查看详情。",
+    "viewLocation": "查看地点",
+    "loadFailed": "地图暂时加载失败，请重试。",
+    "retry": "重新加载",
+    "chooseLocation": "这些地点距离很近，选择你想看的一个：",
+    "locationUnavailable": "这个地点已不可用，请重新选择。"
   },
   "heroLocations": {
     "listLabel": "推荐地点",
