@@ -6,6 +6,7 @@ import {
   type MapSelection,
 } from "@/lib/china-map";
 import type { MapPoint } from "./use-map-data";
+import { useMapReturn } from "./use-map-return";
 
 const EMPTY: MapSelection = { province: null, locationId: null };
 
@@ -13,7 +14,7 @@ export function useMapExploration(points: MapPoint[], ready: boolean) {
   const [selection, setSelection] = React.useState<MapSelection>(EMPTY);
   const [animate, setAnimate] = React.useState(false);
   const [unavailable, setUnavailable] = React.useState(false);
-  const restoredScroll = React.useRef(false);
+  const saveReturnPosition = useMapReturn(ready, selection);
 
   const writeSelection = React.useCallback(
     (next: MapSelection, mode: "push" | "replace") => {
@@ -53,25 +54,6 @@ export function useMapExploration(points: MapPoint[], ready: boolean) {
     }
   }, [points, ready, selection, writeSelection]);
 
-  React.useEffect(() => {
-    if (!ready || restoredScroll.current) return;
-    const saved = window.history.state?.gomateMapReturn;
-    if (
-      !saved ||
-      saved.url !== `${window.location.pathname}${window.location.search}` ||
-      !Number.isFinite(saved.y)
-    )
-      return;
-    const frame = window.requestAnimationFrame(() => {
-      window.scrollTo({ top: saved.y, behavior: "instant" });
-      restoredScroll.current = true;
-      const state = { ...window.history.state };
-      delete state.gomateMapReturn;
-      window.history.replaceState(state, "");
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [ready, selection]);
-
   const choose = (next: MapSelection) => {
     setAnimate(true);
     setUnavailable(false);
@@ -96,17 +78,6 @@ export function useMapExploration(points: MapPoint[], ready: boolean) {
         locationId: point.id,
       }),
     leaveProvince: () => choose(EMPTY),
-    saveReturnPosition: () => {
-      window.history.replaceState(
-        {
-          ...window.history.state,
-          gomateMapReturn: {
-            url: `${window.location.pathname}${window.location.search}`,
-            y: window.scrollY,
-          },
-        },
-        "",
-      );
-    },
+    saveReturnPosition,
   };
 }

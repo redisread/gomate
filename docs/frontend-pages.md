@@ -40,7 +40,8 @@
   只显示临时提示，不覆盖持久选择；密集点位按屏幕距离命中，无法区分时显示具名候选项。
 - `mapProvince` / `mapLocation` 保存省份名称 / 全局地点 ID。进入省份 push，连续选点 replace；
   改写保留其他 query/hash。刷新、分享与详情返回恢复选择，已失效地点清除 ID、保留省份并提示。
-  详情离开前把滚动位置存入该历史条目的 `gomateMapReturn`，资源与轮廓就绪后一次恢复。
+  详情离开前把滚动位置与地图视口锚点存入该历史条目的 `gomateMapReturn`。资源与轮廓就绪后
+  恢复位置，观察后续 island 的布局变化并保持地图锚点；首次用户操作即停止恢复并清理观察器。
 - 按实际 SVG 轮廓自适应缩放，首次打开恢复链接不显示 fallback 缩放帧或重播进入动画。
   SVG 底图与 HTML 点位覆盖层共用 360ms 镜头过渡及 Web Animations `startTime`，包括中途反向。
   标记保持固定可见尺寸与 44×44 CSS px 点击区域；键盘与 reduced-motion 共用选择状态。

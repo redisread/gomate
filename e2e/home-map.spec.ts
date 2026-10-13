@@ -201,6 +201,13 @@ test.describe("touch exploration", () => {
     await expect
       .poll(() => page.evaluate(() => window.scrollY))
       .toBeCloseTo(scrollY, 0);
+    await page.mouse.wheel(0, 100);
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBeGreaterThan(scrollY);
+    expect(
+      await page.evaluate(() => document.documentElement.style.overflowAnchor),
+    ).toBe("");
   });
 });
 
