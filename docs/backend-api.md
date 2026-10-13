@@ -77,6 +77,8 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 | PATCH  | `/tags/:id`            | admin | 重命名标签并保留稳定 slug               |
 | DELETE | `/tags/:id`            | admin | 确认后解除引用并删除标签                 |
 
+地图统计的成功响应使用共享 `LocationStatsResponse`：`total`、按 Region 统计的 `regions` 和含 Region 的 `points`，由服务端返回值与首页地图共同消费。
+
 Location 使用全局 ID 路由，不提供 slug fallback。公开读取只返回 `published` 且属于
 `serviceEnabled=true` city Region 的地点。HTTP `extra` 使用 camelCase，服务层负责与
 D1 JSON 的 snake_case 结构转换。公开和管理员 Location DTO 都不包含内部

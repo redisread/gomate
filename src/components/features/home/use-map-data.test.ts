@@ -3,15 +3,33 @@ import { afterEach, expect, it, vi } from "vitest";
 import { useMapData } from "./use-map-data";
 
 const api = vi.fn();
-vi.mock("@/lib/api", () => ({ fetchAPI: (...args: unknown[]) => api(...args) }));
+vi.mock("@/lib/api", () => ({
+  fetchAPI: (...args: unknown[]) => api(...args),
+}));
 afterEach(() => vi.unstubAllGlobals());
 
 it("waits for both SVG and API data and retries only the failed resource", async () => {
-  let resolveSvg!: (response: { ok: boolean; text: () => Promise<string> }) => void;
-  const svg = vi.fn().mockImplementationOnce(() => new Promise(resolve => { resolveSvg = resolve; }))
-    .mockResolvedValue({ ok: true, text: async () => '<svg><path data-name="广东省" d="M0 0L1 1" /></svg>' });
+  let resolveSvg!: (response: {
+    ok: boolean;
+    text: () => Promise<string>;
+  }) => void;
+  const svg = vi
+    .fn()
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveSvg = resolve;
+        }),
+    )
+    .mockResolvedValue({
+      ok: true,
+      text: async () => '<svg><path data-name="广东省" d="M0 0L1 1" /></svg>',
+    });
   vi.stubGlobal("fetch", svg);
-  api.mockResolvedValue({ ok: true, json: async () => ({ success: true, regions: [], points: [] }) });
+  api.mockResolvedValue({
+    ok: true,
+    json: async () => ({ success: true, regions: [], points: [] }),
+  });
   const { result } = renderHook(useMapData);
   await waitFor(() => expect(result.current.data.status).toBe("ready"));
   expect(result.current.loading).toBe(true);

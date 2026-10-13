@@ -21,7 +21,7 @@
   },
   "mapAriaLabel": "地图：点击省份放大查看该地区地点",
   "mapHint": "点击省份，放大探索当地地点",
-  "mapFocusedAriaLabel": "地图：已进入 {province}，点击地点查看详情",
+  "mapFocusedAriaLabel": "中国地图，当前查看{province}，点击地点可预览",
   "mapBackToChina": "返回全国地图",
   "mapPointHint": "点击地点查看详情",
   "mapFocusedEmptyTitle": "{province} 暂时还没有收录地点",
@@ -43,7 +43,7 @@
     "viewLocation": "查看地点",
     "loadFailed": "地图暂时加载失败，请重试。",
     "retry": "重新加载",
-    "chooseLocation": "这些地点距离很近，选择你想看的一个：",
+    "chooseLocation": "附近有多个地点，选择一个：",
     "locationUnavailable": "这个地点已不可用，请重新选择。"
   },
   "heroLocations": {

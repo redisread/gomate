@@ -21,7 +21,7 @@
   },
   "mapAriaLabel": "地図：都道府県をクリックして拡大し、スポットを表示",
   "mapHint": "都道府県をクリックして、周辺のスポットを探索",
-  "mapFocusedAriaLabel": "地図：{province}を表示中。スポットをクリックして詳細を表示",
+  "mapFocusedAriaLabel": "中国地図：{province}を表示中。スポットを選ぶとプレビューできます",
   "mapBackToChina": "全国地図に戻る",
   "mapPointHint": "スポットをクリックして詳細を表示",
   "mapFocusedEmptyTitle": "{province}にはまだスポットがありません",
@@ -43,7 +43,7 @@
     "viewLocation": "スポットを見る",
     "loadFailed": "地図を読み込めませんでした。もう一度お試しください。",
     "retry": "再読み込み",
-    "chooseLocation": "近くに複数のスポットがあります。見たい場所を選んでください：",
+    "chooseLocation": "近くのスポットを選択：",
     "locationUnavailable": "このスポットは現在表示できません。別の場所を選んでください。"
   },
   "heroLocations": {

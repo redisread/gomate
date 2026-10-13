@@ -21,7 +21,7 @@
   },
   "mapAriaLabel": "Map: click a province to zoom in and explore locations",
   "mapHint": "Click a province to zoom in and explore",
-  "mapFocusedAriaLabel": "Map: viewing {province}; click a location for details",
+  "mapFocusedAriaLabel": "Map: viewing {province}; select a location to preview",
   "mapBackToChina": "Back to China map",
   "mapPointHint": "Click a location for details",
   "mapFocusedEmptyTitle": "No locations have been added in {province} yet",
@@ -43,7 +43,7 @@
     "viewLocation": "View location",
     "loadFailed": "The map could not load. Please try again.",
     "retry": "Reload map",
-    "chooseLocation": "These places are close together. Choose one to preview:",
+    "chooseLocation": "Choose a nearby place:",
     "locationUnavailable": "This place is no longer available. Choose another."
   },
   "heroLocations": {
