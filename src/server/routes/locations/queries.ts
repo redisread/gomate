@@ -13,7 +13,7 @@ import {
 } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { ACTIVITY_TYPES } from "@/contracts";
+import { ACTIVITY_TYPES, type LocationStatsResponse } from "@/contracts";
 
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
@@ -329,7 +329,7 @@ queries.get("/stats", async (c) => {
         ...point,
         region: projectRegion(region),
       })),
-    });
+    } satisfies LocationStatsResponse);
   } catch (error) {
     logger.error("location_stats_get_failed", safeErrorMetadata(error));
     return c.json(

@@ -26,6 +26,40 @@ export interface MapBounds extends MapPointPosition {
 }
 
 export const MAP_PROVINCE_PARAM = "mapProvince";
+export const MAP_LOCATION_PARAM = "mapLocation";
+export function isMapProvince(province: string): boolean {
+  return Object.hasOwn(PROVINCE_CENTERS, province);
+}
+export interface MapSelection {
+  province: string | null;
+  locationId: string | null;
+}
+
+export function parseMapSelection(search: string): MapSelection {
+  return {
+    province: parseMapProvince(search),
+    locationId: new URLSearchParams(search).get(MAP_LOCATION_PARAM) || null,
+  };
+}
+
+export function getMapSelectionUrl(href: string, selection: MapSelection): string {
+  const url = new URL(href);
+  for (const [key, value] of [[MAP_PROVINCE_PARAM, selection.province], [MAP_LOCATION_PARAM, selection.locationId]] as const) {
+    if (value) url.searchParams.set(key, value);
+    else url.searchParams.delete(key);
+  }
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+/** Resolve hits in CSS pixels, independently of zoom; nearly equal hits need a named chooser. */
+export function getMapPointCandidates<T extends MapPointPosition>(points: T[], hit: MapPointPosition): T[] {
+  const nearby = points
+    .filter(point => Math.abs(point.x - hit.x) <= 22 && Math.abs(point.y - hit.y) <= 22)
+    .map(point => ({ point, distance: Math.hypot(point.x - hit.x, point.y - hit.y) }))
+    .sort((a, b) => a.distance - b.distance);
+  const nearest = nearby[0];
+  return nearest ? nearby.filter(entry => entry.distance <= nearest.distance + 4).map(entry => entry.point) : [];
+}
 export const PROVINCE_ZOOM_SCALE = 3;
 const MAX_PROVINCE_ZOOM_SCALE = 4.5;
 const FOCUSED_MAP_VIEWPORT = {
@@ -48,7 +82,7 @@ export function getMapTransform(
   province: string | null,
   bounds?: MapBounds,
 ): MapTransform {
-  if (!province || !PROVINCE_CENTERS[province]) {
+  if (!province || !isMapProvince(province)) {
     return { scale: 1, translateX: 0, translateY: 0 };
   }
 
@@ -87,14 +121,9 @@ export function transformMapPoint(point: MapPointPosition, transform: MapTransfo
   };
 }
 
-/** Keep marker geometry stable while the map content is zoomed. */
-export function getMapMarkerRadius(radius: number, mapScale: number): number {
-  return radius / mapScale;
-}
-
 export function parseMapProvince(search: string): string | null {
   const province = new URLSearchParams(search).get(MAP_PROVINCE_PARAM);
-  return province && PROVINCE_CENTERS[province] ? province : null;
+  return province && isMapProvince(province) ? province : null;
 }
 
 /** 省名 → 投影后的省中心坐标（tooltip 定位用） */

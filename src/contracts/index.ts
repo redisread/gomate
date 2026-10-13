@@ -78,6 +78,17 @@ export interface Location {
   tags?: Tag[];
 }
 
+export interface LocationStatsResponse {
+  success: true;
+  total: number;
+  regions: Array<{ region: Region; count: number }>;
+  points: Array<
+    Pick<Location,
+      "id" | "name" | "slug" | "regionId" | "latitude" | "longitude" | "coverImageUrl" | "supportedActivityTypes"
+    > & { region: Region }
+  >;
+}
+
 export interface UserExtra {
   level: UserLevel;
   completedHikes: number;
