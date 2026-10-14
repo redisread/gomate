@@ -70,7 +70,7 @@ export function createAuth(
     // Disable it and throw unexpected API failures through Hono's sanitized
     // request boundary instead of persisting tokens, emails or query details.
     logger: { disabled: true },
-    onAPIError: { throw: true },
+    onAPIError: { throw: true, errorURL: new URL("/login?oauthError=1", env.APP_URL).href },
     database: drizzleAdapter(db as never, {
       provider: "sqlite",
       schema: {
@@ -80,6 +80,30 @@ export function createAuth(
         verification: schema.verifications,
       },
     }),
+    socialProviders: env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? {
+      google: {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+        disableIdTokenSignIn: true,
+        includeGrantedScopes: false,
+        accessType: "online",
+        prompt: "select_account",
+        mapProfileToUser: (profile) => ({
+          email: profile.email.toLocaleLowerCase("en-US"),
+          // Profile media stays under GoMate's existing upload boundary.
+          image: undefined,
+        }),
+      },
+    } : {},
+    account: {
+      encryptOAuthTokens: true,
+      accountLinking: {
+        enabled: true,
+        requireLocalEmailVerified: true,
+        allowDifferentEmails: false,
+        updateUserInfoOnLink: false,
+      },
+    },
     emailAndPassword: {
       enabled: true,
       autoSignIn: false,
@@ -176,6 +200,11 @@ export function createAuth(
       },
     },
     user: {
+      validateUserInfo: ({ user, source }) => {
+        if (source.oauth?.providerId === "google" && user.emailVerified !== true) {
+          return { error: "google_email_not_verified" };
+        }
+      },
       additionalFields: {
         bio: { type: "string", required: false, defaultValue: "", input: false },
         role: {

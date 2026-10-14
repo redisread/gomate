@@ -81,3 +81,5 @@ E2E_API_URL=http://localhost:<port>/api \
 E2E_ORIGIN=http://localhost:<port> \
 pnpm test:e2e
 ```
+
+测试真实 Google 登录时，在 ignored `.dev.vars` 中配置 `GOOGLE_CLIENT_ID` 和 `GOOGLE_CLIENT_SECRET`，并使用 Google 客户端中已登记的固定端口 5432。未配置时隐藏 Google 入口，邮箱登录仍可用。真实授权只写本地 D1；不要将 OAuth 凭据提交 Git。

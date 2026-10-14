@@ -3,10 +3,12 @@
 import * as React from "react";
 import { Eye, EyeOff, Loader2, Mountain, ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { resolveAdminReturnPath } from "@/lib/admin-return-path";
+import { resolveLoginReturnPath } from "@/lib/login-return-path";
+import { GoogleSignIn } from "./google-sign-in";
 import { signIn } from "@/lib/auth-client";
 
 interface LoginClientProps {
+  googleEnabled?: boolean;
   onNavigate?: (path: string) => void;
 }
 
@@ -16,11 +18,13 @@ interface LoginClientProps {
  * 右侧：表单区
  */
 export function LoginClient({
+  googleEnabled = false,
   onNavigate = (path) => {
     window.location.href = path;
   },
 }: LoginClientProps = {}) {
   const { t } = useI18n(["auth"]);
+  const [googleBusy, setGoogleBusy] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
@@ -51,7 +55,7 @@ export function LoginClient({
       const returnTo = new URLSearchParams(window.location.search).get(
         "returnTo",
       );
-      onNavigate(resolveAdminReturnPath(returnTo));
+      onNavigate(resolveLoginReturnPath(returnTo ?? new URLSearchParams(window.location.search).get("redirect")));
     } catch {
       setError(t("auth.loginErrorRetry"));
     } finally {
@@ -174,6 +178,8 @@ export function LoginClient({
               </p>
             </div>
 
+            <GoogleSignIn enabled={googleEnabled} disabled={isLoading || googleBusy} onBusyChange={setGoogleBusy} />
+
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* 邮箱 */}
               <div className="space-y-1.5">
@@ -242,7 +248,7 @@ export function LoginClient({
               <button
                 data-testid="login-submit"
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || googleBusy}
                 className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
                   background: isLoading ? "var(--primary)" : "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",

@@ -180,3 +180,7 @@
 - React island 的 i18n 首次渲染必须在 SSR 与浏览器端保持同一加载态；浏览器在 hydration 后再消费页面注入的 namespace 缓存。
 - 只有需要客户端状态的交互使用 React island；纯展示保持 Astro SSR。
 - UI 规则与验证清单见 [`design-system.md`](design-system.md)。
+
+### Google 登录入口
+
+登录和注册页根据服务端运行时配置显示“使用 Google 继续”。按钮只发起基础账号授权，首次登录会注册账号；邮箱登录继续可用。`returnTo` 或 `redirect` 只允许同源页面路径，成功返回原页面；取消或失败显示通用提示并可重试。按钮支持键盘、loading、防重复点击和三种 locale。Google 标识使用官方静态素材，来源：https://developers.google.com/static/identity/images/g-logo.png。

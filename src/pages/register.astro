@@ -2,6 +2,8 @@
 /**
  * 注册页
  */
+import { env } from "cloudflare:workers";
+import { isGoogleAuthAvailable } from "../server/lib/google-auth";
 import Layout from "../layouts/Layout.astro";
 import { RegisterClient } from "../components/features/register-client";
 import { declareI18nNs } from "../middleware";
@@ -14,5 +16,5 @@ declareI18nNs(Astro.locals, ["auth", "content"]);
   showNavbar={false}
   showFooter={false}
 >
-  <RegisterClient client:load />
+  <RegisterClient googleEnabled={isGoogleAuthAvailable(Astro.request, env)} client:load />
 </Layout>
