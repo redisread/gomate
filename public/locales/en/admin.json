@@ -160,7 +160,8 @@
     "backHome": "Back to home",
     "quickActionLabel": "Quick add location",
     "quickActionTitle": "Quickly record a location",
-    "closeQuickAction": "Close quick entry"
+    "closeQuickAction": "Close quick entry",
+    "navTeams": "Teams"
   },
   "management": {
     "tagsTitle": "Tags",
@@ -228,5 +229,38 @@
     "permanentDelete": "Delete permanently",
     "permanentPrompt": "Only unreferenced locations can be permanently deleted. Enter the location ID to confirm.",
     "permanentBlocked": "This location still has historical references and cannot be deleted"
+  },
+  "teamsManagement": {
+    "title": "Teams",
+    "description": "Search all teams and view their current status and history.",
+    "search": "Search teams",
+    "searchPlaceholder": "Name, team ID, or leader name / ID",
+    "lifecycle": "Activity status",
+    "recruitmentStatus": "Recruitment status",
+    "allLifecycles": "All activity statuses",
+    "allRecruitmentStatuses": "All recruitment statuses",
+    "readOnly": "Team information is currently read-only.",
+    "loadedCount": "{count} teams loaded · Newest created first",
+    "retry": "Retry",
+    "listLabel": "Team list",
+    "teamId": "Team ID",
+    "leader": "Leader",
+    "location": "Location",
+    "participants": "Members / capacity",
+    "viewDetail": "View details",
+    "viewDetailNamed": "View details: {title}",
+    "noTeams": "No matching teams",
+    "detailTitle": "Team details",
+    "closeDetail": "Close team details",
+    "notSet": "Not set",
+    "activityType": "Activity type",
+    "startAt": "Starts at",
+    "endAt": "Ends at",
+    "formedAt": "Formed at",
+    "cancelledAt": "Cancelled at",
+    "descriptionLabel": "Description",
+    "requirements": "Requirements",
+    "members": "Current members (including leader)",
+    "joinedAt": "Joined at"
   }
 }

@@ -70,5 +70,17 @@
     "male": "Male",
     "female": "Female",
     "other": "Other"
+  },
+  "teamLifecycle": {
+    "pending": "Pending formation",
+    "formed": "Formed",
+    "in_progress": "In progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "expired_unformed": "Expired without formation"
+  },
+  "recruitmentStatus": {
+    "open": "Open for recruitment",
+    "closed": "Recruitment closed"
   }
 }

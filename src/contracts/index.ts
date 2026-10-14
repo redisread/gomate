@@ -168,6 +168,37 @@ export interface Team {
   tags?: Tag[];
 }
 
+export type AdminTeamSummary = Pick<
+  Team,
+  | "id"
+  | "title"
+  | "recruitmentStatus"
+  | "lifecycle"
+  | "createdAt"
+  | "activeParticipantCount"
+  | "maxParticipants"
+> & {
+  leader: Pick<SessionUser, "id" | "name" | "nickname">;
+  location: Pick<Location, "id" | "name">;
+};
+
+export interface AdminTeamsResponse {
+  success: true;
+  teams: AdminTeamSummary[];
+  nextCursor: string | null;
+}
+
+export interface AdminTeamFilters {
+  q?: string;
+  recruitmentStatus?: RecruitmentStatus;
+  lifecycle?: TeamLifecycle;
+}
+
+export interface AdminTeamResponse {
+  success: true;
+  team: Team;
+}
+
 export interface Story {
   id: string;
   authorId: string;
