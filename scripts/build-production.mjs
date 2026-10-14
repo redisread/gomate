@@ -16,6 +16,8 @@ const PNPM = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 const LOCAL_BUILD_SECRET_FALLBACKS = {
   BETTER_AUTH_SECRET: "local-build-only-placeholder-32-characters",
   RESEND_API_KEY: "local-build-only-placeholder",
+  GOOGLE_CLIENT_ID: "",
+  GOOGLE_CLIENT_SECRET: "",
 };
 
 function buildEnvironment() {

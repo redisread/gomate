@@ -179,7 +179,10 @@ describe("createAuth security configuration", () => {
       "cf-connecting-ip",
     ]);
     expect(options.logger).toEqual({ disabled: true });
-    expect(options.onAPIError).toEqual({ throw: true });
+    expect(options.onAPIError).toEqual({
+      throw: true,
+      errorURL: "https://gomate.test/login?oauthError=1",
+    });
   });
 
   it("derives Better Auth origins from the validated Preview host", async () => {
@@ -226,4 +229,66 @@ describe("createAuth security configuration", () => {
     expect(options.advanced.defaultCookieAttributes.domain).toBeUndefined();
   });
 
+});
+
+describe("Google identity trust", () => {
+  it("uses verified matching emails without bypassing local verification", async () => {
+    createAuth({
+      DB: {},
+      BETTER_AUTH_SECRET: "test-secret-key-for-testing-32chars",
+      APP_URL: "https://gomate.live",
+      GOOGLE_CLIENT_ID: "test-client",
+      GOOGLE_CLIENT_SECRET: "test-secret",
+    } as never);
+    const options = mocks.betterAuth.mock.calls.at(-1)?.[0] as {
+      account: {
+        encryptOAuthTokens: boolean;
+        accountLinking: Record<string, unknown>;
+      };
+      socialProviders: {
+        google: {
+          disableIdTokenSignIn: boolean;
+          accessType: string;
+          mapProfileToUser: (profile: { email: string }) => {
+            email: string;
+            image?: string;
+          };
+        };
+      };
+      user: {
+        validateUserInfo: (input: {
+          user: { emailVerified: boolean };
+          source: { oauth: { providerId: string } };
+        }) => unknown;
+      };
+    };
+    expect(options.account.encryptOAuthTokens).toBe(true);
+    expect(options.account.accountLinking).toMatchObject({
+      requireLocalEmailVerified: true,
+      allowDifferentEmails: false,
+      updateUserInfoOnLink: false,
+    });
+    expect(options.account.accountLinking.trustedProviders).toBeUndefined();
+    expect(options.socialProviders.google).toMatchObject({
+      disableIdTokenSignIn: true,
+      accessType: "online",
+    });
+    expect(
+      options.socialProviders.google.mapProfileToUser({
+        email: "Member@Example.Test",
+      }).email,
+    ).toBe("member@example.test");
+    expect(
+      options.user.validateUserInfo({
+        user: { emailVerified: false },
+        source: { oauth: { providerId: "google" } },
+      }),
+    ).toEqual({ error: "google_email_not_verified" });
+    expect(
+      options.user.validateUserInfo({
+        user: { emailVerified: true },
+        source: { oauth: { providerId: "google" } },
+      }),
+    ).toBeUndefined();
+  });
 });

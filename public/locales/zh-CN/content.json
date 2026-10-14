@@ -56,7 +56,7 @@
     "contactBtn": "发送邮件"
   },
   "privacy": {
-    "lastUpdated": "最后更新：2025年1月1日",
+    "lastUpdated": "最后更新：2026年10月15日",
     "pageTitle": "隐私政策",
     "pageSubtitle": "我们重视您的隐私，以下是我们的隐私政策",
     "sections": [
@@ -104,7 +104,8 @@
         "content": "我们使用以下第三方服务：",
         "items": [
           "Cloudflare：提供 CDN 和安全防护",
-          "Resend：用于发送系统邮件"
+          "Resend：用于发送系统邮件",
+          "Google：当你选择 Google 登录时，我们接收账号标识、邮箱、邮箱验证状态和姓名，用于创建或关联 GoMate 账号。我们不请求 Gmail 邮件或 Google Drive 文件权限。"
         ],
         "footer": "这些服务提供商有各自的隐私政策，我们建议您了解相关内容。"
       },

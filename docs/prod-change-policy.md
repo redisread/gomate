@@ -146,3 +146,9 @@ pnpm test:e2e:ci
 GitHub PR CI 会在 `pnpm test:ci`、Worker types/dry-run/size 通过后初始化 runner 临时 D1，
 再自动执行 `pnpm test:e2e:ci`；该流程不持有 Cloudflare 生产凭据，也不访问远程 D1/R2。
 本地检查必须记录实际完成的验证和未执行项。检查通过只说明代码具备合并条件，不等于获得生产写入授权。
+
+### Google OAuth 运行时配置
+
+`gomate` 的 production 运行时还需要 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`，值不得进入仓库、日志、PR 或仓库级 Actions secrets。部署继续继承已配置的运行时 secrets；不将 OAuth secret 放入所有分支共享的 Workers Builds 环境变量，也不增加本机生产写入入口。首次配置必须按本规约的精确授权与受保护流程执行。
+
+Google 项目使用 GoMate 网站客户端，授权回调为 `https://gomate.live/api/auth/callback/google`，本地为 `http://localhost:5432/api/auth/callback/google`。仅申请 `openid email profile`。Google 前台的公开首页、隐私政策、服务条款分别为 `https://gomate.live`、`https://gomate.live/privacy`、`https://gomate.live/terms`。Google OAuth 对远程 Preview 保持关闭，无需将共享 Preview 域名加入 Google 客户端。
