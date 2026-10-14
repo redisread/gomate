@@ -227,3 +227,11 @@ pnpm type-check
 pnpm test:server
 pnpm build
 ```
+
+### Google 登录
+
+- `GET /api/auth/providers` 返回 `{ google: boolean }`，不返回凭据，并使用 `Cache-Control: no-store`。
+- `POST /api/auth/sign-in/social` 仅接受 `{ provider: "google", callbackURL?: string }`。同源 POST、16 KiB body 上限和登录限频均适用；返回地址只接受本站页面，禁止任意 scopes、ID token 和其它 provider。
+- `GET /api/auth/callback/google` 由 Better Auth 验证 OAuth state/cookie 和交换 code。错误返回登录页的通用提示，不回显 Google 错误详情或记录 code/token。
+- Google 首次登录要求已验证邮箱；同邮箱本地账号也必须已完成邮箱验证才能自动关联。关联保留原用户 ID、资料、权限和业务数据，禁用或删除用户不能创建 session。Google OAuth token 加密存储，不申请离线访问，不导入 Google 头像。
+- Google 回调会创建 user/account/session，因此仅在正式 APP_URL 和 `WRITE_MODE=open` 下开放。本地配置使用本地 APP_URL；共享生产数据的远程 Preview 隐藏 Google 按钮并拒绝回调。Preview 保持原有邮箱登录边界。

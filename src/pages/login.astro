@@ -2,6 +2,8 @@
 /**
  * 登录页
  */
+import { env } from "cloudflare:workers";
+import { isGoogleAuthAvailable } from "../server/lib/google-auth";
 import Layout from "../layouts/Layout.astro";
 import { LoginClient } from "../components/features/login-client";
 import { declareI18nNs } from "../middleware";
@@ -14,5 +16,5 @@ declareI18nNs(Astro.locals, ["auth", "content"]);
   showNavbar={false}
   showFooter={false}
 >
-  <LoginClient client:load />
+  <LoginClient googleEnabled={isGoogleAuthAvailable(Astro.request, env)} client:load />
 </Layout>

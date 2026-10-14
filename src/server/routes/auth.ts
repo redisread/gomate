@@ -1,3 +1,5 @@
+import { resolveLoginReturnPath } from "../../lib/login-return-path";
+import { isGoogleAuthAvailable } from "../lib/google-auth";
 import { APIErrors } from "../lib/api-errors";
 import { logger } from "../lib/logger";
 import { Hono, type Context } from "hono";
@@ -267,6 +269,7 @@ function noStoreResponse(response: Response): Response {
   const headers = new Headers(response.headers);
   headers.set("Cache-Control", "no-store");
   headers.set("Pragma", "no-cache");
+  headers.set("Referrer-Policy", "no-referrer");
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -678,6 +681,59 @@ function normalizedAuthPath(url: string): string {
   return decoded.replace(/\/{2,}/gu, "/").replace(/\/+$/u, "");
 }
 
+const googleSignInSchema = z.object({
+  provider: z.literal("google"),
+  callbackURL: z.string().max(2_048).optional(),
+}).strict();
+
+async function handleGoogleSignIn(c: AuthContext) {
+  if (!isGoogleAuthAvailable(c.req.raw, c.env)) {
+    return c.json(APIErrors.notFound("Google sign-in unavailable"), 404);
+  }
+  const origin = new URL(c.env.APP_URL).origin;
+  if (c.req.header("origin") !== origin ||
+      (c.req.header("sec-fetch-site") && c.req.header("sec-fetch-site") !== "same-origin")) {
+    return c.json(APIErrors.forbidden("Cross-origin sign-in rejected"), 403);
+  }
+  const parsed = await readBoundedJson(c, googleSignInSchema);
+  if ("response" in parsed) return parsed.response;
+  let destination = parsed.data.callbackURL ?? "/";
+  if (destination.startsWith(`${origin}/`)) destination = destination.slice(origin.length);
+  const returnPath = resolveLoginReturnPath(destination);
+  if (returnPath !== destination) {
+    return c.json(APIErrors.validationError("Invalid login return path"), 400);
+  }
+  const limited = await enforceNativeRateLimit(c, c.env.AUTH_SIGN_IN_RATE_LIMITER, "google_sign_in");
+  if (limited) return limited;
+  const errorUrl = new URL("/login", origin);
+  errorUrl.searchParams.set("oauthError", "1");
+  errorUrl.searchParams.set("redirect", returnPath);
+  const response = await createAuth(c.env, getExecutionContext(c)).handler(normalizedJsonRequest(c, {
+    provider: "google", callbackURL: `${origin}${returnPath}`, errorCallbackURL: errorUrl.href,
+  }));
+  return noStoreResponse(response);
+}
+
+async function handleGoogleCallback(c: AuthContext) {
+  const failed = () => noStoreResponse(c.redirect("/login?oauthError=1"));
+  if (!isGoogleAuthAvailable(c.req.raw, c.env)) return failed();
+  try {
+    const response = await createAuth(c.env, getExecutionContext(c)).handler(new Request(
+      normalizeBetterAuthUrl(c.req.raw.url), c.req.raw,
+    ));
+    return noStoreResponse(response);
+  } catch {
+    logger.error("google_oauth_callback_failed");
+    return failed();
+  }
+}
+
+auth.get("/providers", (c) => c.json({ google: isGoogleAuthAvailable(c.req.raw, c.env) }, 200, {
+  "Cache-Control": "no-store",
+}));
+auth.post("/sign-in/social", handleGoogleSignIn);
+auth.get("/callback/google", handleGoogleCallback);
+
 auth.post("/update-user", unavailableAuthEndpoint);
 auth.post("/request-password-reset", unavailableAuthEndpoint);
 auth.on(["GET", "POST"], "/verify-email", unavailableAuthEndpoint);
@@ -689,6 +745,12 @@ auth.on(["GET", "POST"], "/verify-email", unavailableAuthEndpoint);
  */
 auth.all("/*", async (c) => {
   const path = normalizedAuthPath(c.req.url);
+  if (c.req.method === "POST" && path === "/api/auth/sign-in/social") {
+    return handleGoogleSignIn(c);
+  }
+  if (c.req.method === "GET" && path === "/api/auth/callback/google") {
+    return handleGoogleCallback(c);
+  }
   if (c.req.method === "POST" && path === "/api/auth/sign-up/email") {
     return handleEmailSignUp(c);
   }

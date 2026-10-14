@@ -56,7 +56,7 @@
     "contactBtn": "Send Email"
   },
   "privacy": {
-    "lastUpdated": "Last Updated: January 1, 2025",
+    "lastUpdated": "Last Updated: October 15, 2026",
     "pageTitle": "Privacy Policy",
     "pageSubtitle": "We value your privacy. Here is our privacy policy.",
     "sections": [
@@ -104,7 +104,8 @@
         "content": "We use the following third-party services:",
         "items": [
           "Cloudflare: for CDN and security protection",
-          "Resend: for sending system emails"
+          "Resend: for sending system emails",
+          "Google: when you choose Google sign-in, we receive your account identifier, email, email verification status and name to create or link your GoMate account. We do not request access to Gmail messages or Google Drive files."
         ],
         "footer": "These service providers have their own privacy policies — we recommend reviewing them."
       },

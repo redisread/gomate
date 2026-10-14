@@ -1,5 +1,6 @@
 "use client";
 
+import { GoogleSignIn } from "./google-sign-in";
 import * as React from "react";
 import { Eye, EyeOff, Loader2, Mountain, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -10,8 +11,9 @@ import { sendVerificationEmail, signUp } from "@/lib/auth-client";
  * 左侧：品牌故事 + 功能亮点（桌面端可见）
  * 右侧：注册表单
  */
-export function RegisterClient() {
+export function RegisterClient({ googleEnabled = false }: { googleEnabled?: boolean } = {}) {
   const { t } = useI18n(["auth"]);
+  const [googleBusy, setGoogleBusy] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
@@ -242,6 +244,8 @@ export function RegisterClient() {
               </p>
             </div>
 
+            <GoogleSignIn enabled={googleEnabled} disabled={isLoading || googleBusy} onBusyChange={setGoogleBusy} />
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* 昵称 */}
               <FormField
@@ -327,7 +331,7 @@ export function RegisterClient() {
               <button
                 data-testid="register-submit"
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || googleBusy}
                 className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
                   background: isLoading ? "var(--primary)" : "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",
