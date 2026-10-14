@@ -7,6 +7,7 @@ import {
   Mountain,
   Tags,
   Users,
+  UsersRound,
   X,
 } from "lucide-react";
 import * as React from "react";
@@ -24,6 +25,7 @@ export interface AdminNavigationCopy {
   navLocations: string;
   navTags: string;
   navUsers: string;
+  navTeams: string;
   backToFrontend: string;
   openNavigation: string;
   closeNavigation: string;
@@ -58,6 +60,7 @@ function navigationItems(copy: AdminNavigationCopy, locale: Locale) {
     },
     { path: "/admin/tags", label: copy.navTags, icon: Tags, exact: false },
     { path: "/admin/users", label: copy.navUsers, icon: Users, exact: false },
+    { path: "/admin/teams", label: copy.navTeams, icon: UsersRound, exact: false },
   ].map((item) => ({ ...item, href: localizedPath(item.path, locale) }));
 }
 

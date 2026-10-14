@@ -16,7 +16,7 @@
 | 收藏     | `/favorites`                                                                                                      | 地点与 Story 收藏                                   |
 | 消息     | `/messages`, `/messages/[id]`                                                                                     | 会话 inbox 与 cursor 消息历史                       |
 | 用户     | `/my-teams`, `/profile`, `/profile/edit`, `/users/[id]`                                                           | 当前用户队伍、资料和公开主页                        |
-| 管理后台 | `/admin`, `/admin/locations`, `/admin/locations/new`, `/admin/locations/[id]/edit`, `/admin/tags`, `/admin/users` | 地点、标签与用户角色管理                            |
+| 管理后台 | `/admin`, `/admin/locations`, `/admin/locations/new`, `/admin/locations/[id]/edit`, `/admin/tags`, `/admin/users`, `/admin/teams` | 地点、标签、用户角色管理与只读队伍查询               |
 | 博客     | `/blog`, `/blog/[slug]`                                                                                           | 内容集合与详情                                      |
 | 信息页   | `/about`, `/contact`, `/feedback`, `/help`, `/privacy`, `/terms`                                                  | 产品与法律信息                                      |
 | 创建入口 | `/create`                                                                                                         | 创建 Team 或 Story 的统一入口                       |
@@ -112,10 +112,16 @@
 
 ### 管理后台
 
+- `/admin/teams` 为只读队伍管理入口：默认查询全部队伍，按创建时间倒序（同时间以 ID 倒序）
+  分页。可按名称、队伍 ID、队长姓名/昵称/ID 检索，招募状态与生命周期分别筛选，条件取 AND。
+  列表展示名称、两个状态、队长、地点、当前人数/上限及创建时间；后台详情展示队伍信息、
+  标签、要求、行动本与当前成员名单（包含队长），不提供修改、关闭、删除或成员调整操作。
+  筛选保留在 URL，加载更多保留筛选；错误支持重试，过期请求不得覆盖新筛选结果。
+  沿用后台管理员授权与三种 locale；小屏使用单列列表，可用键盘操作详情并恢复焦点。
 - `/admin/*` 在 Astro middleware 中先完成服务端授权：访客以 302 前往登录页并携带经过校验的
   站内 `returnTo`，active 普通用户得到 HTTP 403，管理员响应使用 `private, no-store`。
 - 后台不渲染公共 Navbar 或 Footer。宽布局使用固定侧栏，内容无法继续容纳时切换为移动顶部栏
-  和抽屉；导航包含地点列表/新增、活动类型、标签、用户以及返回前台入口。
+  和抽屉；导航包含地点列表/新增、标签、用户、队伍以及返回前台入口。
 - 地点新增、编辑继续按可见性懒加载现有表单，但只使用统一后台壳层，不再重复渲染公共导航。
 - 地点完整编辑表单不采集或校验必带、选带装备；Team 行动本中的装备清单是独立能力，保持不变。
 - 地点管理列表可搜索并按 draft/published/archived 筛选；删除默认归档，永久删除只在归档后

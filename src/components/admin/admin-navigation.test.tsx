@@ -12,6 +12,7 @@ const copy = {
   navLocations: "Locations",
   navTags: "Tags",
   navUsers: "Users",
+  navTeams: "Teams",
   backToFrontend: "Back to site",
   openNavigation: "Open admin navigation",
   closeNavigation: "Close admin navigation",
@@ -80,6 +81,7 @@ describe("AdminNavigation", () => {
       "/admin/locations/new",
       "/admin/tags",
       "/admin/users",
+      "/admin/teams",
       "/",
     ]);
     expect(
