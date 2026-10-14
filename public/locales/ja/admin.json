@@ -160,7 +160,8 @@
     "backHome": "ホームに戻る",
     "quickActionLabel": "スポットをすばやく追加",
     "quickActionTitle": "スポットをすばやく記録",
-    "closeQuickAction": "クイック入力を閉じる"
+    "closeQuickAction": "クイック入力を閉じる",
+    "navTeams": "チーム管理"
   },
   "management": {
     "tagsTitle": "タグ管理",
@@ -228,5 +229,38 @@
     "permanentDelete": "完全に削除",
     "permanentPrompt": "履歴参照のないスポットのみ完全削除できます。確認のためスポット ID を入力してください。",
     "permanentBlocked": "履歴参照があるため完全削除できません"
+  },
+  "teamsManagement": {
+    "title": "チーム管理",
+    "description": "すべてのチームを検索し、現在の状況と履歴を閲覧します。",
+    "search": "チーム検索",
+    "searchPlaceholder": "名前、チーム ID、リーダー名または ID",
+    "lifecycle": "活動状況",
+    "recruitmentStatus": "募集状況",
+    "allLifecycles": "すべての活動状況",
+    "allRecruitmentStatuses": "すべての募集状況",
+    "readOnly": "現在、チーム情報は閲覧のみ可能です。",
+    "loadedCount": "{count} チームを読み込み済み · 作成日時の新しい順",
+    "retry": "再試行",
+    "listLabel": "チーム一覧",
+    "teamId": "チーム ID",
+    "leader": "リーダー",
+    "location": "スポット",
+    "participants": "人数 / 定員",
+    "viewDetail": "詳細を見る",
+    "viewDetailNamed": "詳細を見る：{title}",
+    "noTeams": "該当するチームがありません",
+    "detailTitle": "チーム詳細",
+    "closeDetail": "チーム詳細を閉じる",
+    "notSet": "未設定",
+    "activityType": "活動タイプ",
+    "startAt": "開始日時",
+    "endAt": "終了日時",
+    "formedAt": "成立日時",
+    "cancelledAt": "キャンセル日時",
+    "descriptionLabel": "活動説明",
+    "requirements": "参加条件",
+    "members": "現在のメンバー（リーダーを含む）",
+    "joinedAt": "参加日時"
   }
 }

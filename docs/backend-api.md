@@ -97,6 +97,15 @@ Location 的 `extra.hiking` 仅保留 `bestSeasons`。难度、时长、距离�
 
 ### Team
 
+后台只读 API：`GET /admin/teams` 和 `GET /admin/teams/:id` 均先验证当前 active admin。
+列表参数为 `q`（最多 100 字，名称/队伍 ID/队长姓名、昵称、ID 的字面子串）、
+`recruitmentStatus`（open/closed）、`lifecycle`（现行六种生命周期）、`limit`（1–50，默认 20）
+与 opaque `cursor`；筛选取 AND，排序为 `createdAt DESC, id DESC`，响应
+`{ success, teams: AdminTeamSummary[], nextCursor }`。所有状态及任意状态地点的队伍均可查到。
+详情响应 `{ success, team: Team }`，包含当前成员、标签及只读行动本；用户联系方式继续隐藏。
+详情不存在返回 404；无登录/非管理员分别返回 401/403。非法筛选、limit 或 cursor 返回 400。
+这两个端点不提供写方法，不改变公开队伍接口或数据库结构。
+
 首页使用列表接口的 `startDateFrom` / `startDateTo` ISO 时间戳筛选滚动未来 7 天，
 上下界均包含，结合 `lifecycle=pending` 排除已经出发的队伍；筛选先于 limit/cursor 分页。
 Worker 每小时自动关闭结束满 24 小时、仍开放招募、未成团且未取消的队伍；已完成或

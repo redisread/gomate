@@ -7,7 +7,6 @@ import {
   gt,
   gte,
   inArray,
-  isNotNull,
   isNull,
   like,
   lte,
@@ -29,6 +28,7 @@ import {
   encodeContentCursor,
 } from "../../lib/content-cursor";
 import { toTeamResponse } from "./utils";
+import { lifecycleCondition } from "../../lib/team-lifecycle-query";
 
 const queries = new Hono<{ Bindings: Env }>();
 
@@ -65,43 +65,6 @@ function parseDateBoundary(value: string | undefined, endOfDay: boolean): Date |
   return parsed;
 }
 
-function lifecycleCondition(lifecycle: TeamLifecycle, now: Date): SQL {
-  switch (lifecycle) {
-    case "cancelled":
-      return isNotNull(schema.teams.cancelledAt);
-    case "pending":
-      return and(
-        isNull(schema.teams.cancelledAt),
-        isNull(schema.teams.formedAt),
-        gt(schema.teams.startAt, now),
-      )!;
-    case "formed":
-      return and(
-        isNull(schema.teams.cancelledAt),
-        isNotNull(schema.teams.formedAt),
-        gt(schema.teams.startAt, now),
-      )!;
-    case "in_progress":
-      return and(
-        isNull(schema.teams.cancelledAt),
-        isNotNull(schema.teams.formedAt),
-        lte(schema.teams.startAt, now),
-        gt(schema.teams.endAt, now),
-      )!;
-    case "completed":
-      return and(
-        isNull(schema.teams.cancelledAt),
-        isNotNull(schema.teams.formedAt),
-        lte(schema.teams.endAt, now),
-      )!;
-    case "expired_unformed":
-      return and(
-        isNull(schema.teams.cancelledAt),
-        isNull(schema.teams.formedAt),
-        lte(schema.teams.startAt, now),
-      )!;
-  }
-}
 
 const activeParticipantCount = activeTeamParticipantCount(schema.teams.id);
 

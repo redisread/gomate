@@ -160,7 +160,8 @@
     "backHome": "返回首页",
     "quickActionLabel": "快速添加地点",
     "quickActionTitle": "快速记录地点",
-    "closeQuickAction": "关闭快速录入"
+    "closeQuickAction": "关闭快速录入",
+    "navTeams": "队伍管理"
   },
   "management": {
     "tagsTitle": "标签管理",
@@ -228,5 +229,38 @@
     "permanentDelete": "永久删除",
     "permanentPrompt": "仅无历史引用的地点可永久删除。请输入地点 ID 确认。",
     "permanentBlocked": "地点仍有历史引用，不能永久删除"
+  },
+  "teamsManagement": {
+    "title": "队伍管理",
+    "description": "只读检索全站队伍，查看当前情况与历史记录。",
+    "search": "检索队伍",
+    "searchPlaceholder": "名称、队伍 ID、队长姓名或 ID",
+    "lifecycle": "活动状态",
+    "recruitmentStatus": "招募状态",
+    "allLifecycles": "全部活动状态",
+    "allRecruitmentStatuses": "全部招募状态",
+    "readOnly": "当前仅支持查看队伍信息。",
+    "loadedCount": "已加载 {count} 个队伍 · 创建时间从新到旧",
+    "retry": "重试",
+    "listLabel": "队伍列表",
+    "teamId": "队伍 ID",
+    "leader": "队长",
+    "location": "地点",
+    "participants": "人数 / 上限",
+    "viewDetail": "查看详情",
+    "viewDetailNamed": "查看详情：{title}",
+    "noTeams": "没有匹配的队伍",
+    "detailTitle": "队伍详情",
+    "closeDetail": "关闭队伍详情",
+    "notSet": "未设置",
+    "activityType": "活动类型",
+    "startAt": "开始时间",
+    "endAt": "结束时间",
+    "formedAt": "成团时间",
+    "cancelledAt": "取消时间",
+    "descriptionLabel": "活动说明",
+    "requirements": "参与要求",
+    "members": "当前成员（含队长）",
+    "joinedAt": "加入时间"
   }
 }

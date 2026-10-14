@@ -70,5 +70,17 @@
     "male": "男",
     "female": "女",
     "other": "其他"
+  },
+  "teamLifecycle": {
+    "pending": "待成团",
+    "formed": "已成团",
+    "in_progress": "进行中",
+    "completed": "已完成",
+    "cancelled": "已取消",
+    "expired_unformed": "已过期未成团"
+  },
+  "recruitmentStatus": {
+    "open": "开放招募",
+    "closed": "已关闭招募"
   }
 }
