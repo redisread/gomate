@@ -57,7 +57,7 @@ export function CityPicker({ regions, selectedRegionId, open, onOpenChange, onSe
   return (
     <>
       <button ref={triggerRef} type="button" aria-haspopup="dialog" aria-expanded={open} aria-controls={`${id}-dialog`} onClick={() => onOpenChange(!open)}
-        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none">
+        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-card px-2.5 text-xs font-medium text-foreground/70 transition-colors hover:border-primary/40 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none sm:text-sm">
         {t("locations.moreCities")}<ChevronDown className={cn("size-3.5 transition-transform motion-reduce:transition-none", open && "rotate-180")} aria-hidden="true" />
       </button>
       <Modal open={open} onClose={close} labelledBy={`${id}-title`} initialFocusRef={searchRef} returnFocusRef={triggerRef} lockBodyScroll
