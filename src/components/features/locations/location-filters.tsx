@@ -63,7 +63,7 @@ export function LocationFilters({ regions, popularTags, selectedRegionId, select
     <div className="mt-4 rounded-2xl border border-border/70 bg-muted/20" data-testid="locations-filters">
       <div className="px-3 py-2 sm:px-4 sm:py-3">
         <div role="group" aria-label={t("locations.cityLabel")} className="flex min-w-0 items-start gap-2">
-          <span className="flex min-h-13 w-10 shrink-0 items-center text-xs font-semibold text-foreground/70 sm:w-12">{t("locations.cityLabel")}</span>
+          <span className="flex min-h-13 w-14 shrink-0 items-center text-xs font-semibold text-foreground/70">{t("locations.cityLabel")}</span>
           <FilterRail selectedKey={selectedRegionId} testId="locations-city-options">
             <button type="button" aria-pressed={!selectedRegionId} data-selected={!selectedRegionId} onClick={() => onRegionSelect("")} className={cn(chipClass, chipState(!selectedRegionId))}>
               <Check className={cn(checkClass, selectedRegionId && "invisible")} aria-hidden="true" />{t("locations.anyCity")}
@@ -80,7 +80,7 @@ export function LocationFilters({ regions, popularTags, selectedRegionId, select
         </div>
         {tags.length > 0 && (
           <div role="group" aria-label={t("locations.tagsLabel")} aria-describedby="locations-interest-hint" className="mt-2 flex min-w-0 items-start gap-2 border-t border-border/60 pt-2">
-            <span className="flex min-h-13 w-10 shrink-0 items-center text-xs font-semibold text-foreground/70 sm:w-12">{t("locations.tagsLabel")}</span>
+            <span className="flex min-h-13 w-14 shrink-0 items-center text-xs font-semibold text-foreground/70">{t("locations.tagsLabel")}</span>
             <FilterRail selectedKey={selectedTags.join(",")} testId="locations-tag-options">
               {tags.map((tag) => (
                 <button key={tag.id} type="button" aria-pressed={selectedTags.includes(tag.id)} onClick={() => onTagToggle(tag.id)} className={cn(chipClass, chipState(selectedTags.includes(tag.id)))}>
