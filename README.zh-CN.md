@@ -22,6 +22,7 @@
 <p align="center" style="text-align: center;">
   <a href="README.md">English</a> &nbsp;/&nbsp; 简体中文
 </p>
+
 [![GoMate 首页：推荐地点、组队入口与导航](docs/images/gomate-home.png)](https://gomate.live)
 
 ## GoMate 能做什么？
