@@ -1,5 +1,7 @@
 "use client";
 
+import { BrandIcon } from "@/components/brand-icon";
+
 import * as React from "react";
 import { authClient } from "@/lib/auth-client";
 import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown, MessageCircle } from "lucide-react";
@@ -33,7 +35,7 @@ type NavbarUser = Pick<
  * 响应式导航栏（Design System v3.0）
  * - 滚动前透明；滚动后毛玻璃（暖白 + blur）
  * - 活跃链接：品牌琥珀下划线 + 高亮文字
- * - Logo：Mountain 图标 + 品牌琥珀渐变文字
+ * - Logo：GoMate 同行足迹图标 + 品牌琥珀渐变文字
  * - 主 CTA：品牌琥珀按钮 + 琥珀色光晕
  * - 移动端：从右侧 slide-in 抽屉
  * - 用户菜单：hover 展开下拉
@@ -160,13 +162,10 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
             <a
               href="/"
               data-testid="nav-logo"
-              className="flex items-center gap-2.5 group shrink-0"
+              className="flex min-h-11 items-center gap-2.5 group shrink-0"
               aria-label="GoMate"
             >
-              <Mountain
-                className="h-7 w-7 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3"
-                style={{ color: "#D97706" }}
-              />
+              <BrandIcon size={32} />
               <span className="text-xl font-bold tracking-tight text-gradient-brand">
                 GoMate
               </span>
@@ -373,8 +372,8 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
           >
             {/* 顶部：Logo + 关闭 */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-              <a href="/" className="flex items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
-                <Mountain className="h-5 w-5 text-primary" />
+              <a href="/" className="flex min-h-11 items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+                <BrandIcon size={28} />
                 <span className="font-bold text-foreground">GoMate</span>
               </a>
               <button

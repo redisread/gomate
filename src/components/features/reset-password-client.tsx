@@ -1,7 +1,9 @@
 "use client";
 
+import { BrandIcon } from "@/components/brand-icon";
+
 import * as React from "react";
-import { Loader2, Mountain, Lock, CheckCircle2, KeyRound } from "lucide-react";
+import { Loader2, Lock, CheckCircle2, KeyRound } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { authClient } from "@/lib/auth-client";
 
@@ -113,8 +115,8 @@ export function ResetPasswordClient() {
       >
         {/* 顶部 Logo 栏 */}
         <div className="px-6 pt-6 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2 group">
-            <Mountain className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" style={{ color: "var(--primary)" }} />
+          <a href="/" className="flex min-h-11 items-center gap-2 group">
+            <BrandIcon />
             <span className="text-lg font-bold" style={{ color: "var(--foreground)" }}>GoMate</span>
           </a>
         </div>
@@ -173,8 +175,8 @@ export function ResetPasswordClient() {
     >
       {/* 顶部 Logo 栏 */}
       <div className="px-6 pt-6 flex items-center justify-between">
-        <a href="/" className="flex items-center gap-2 group">
-          <Mountain className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" style={{ color: "var(--primary)" }} />
+        <a href="/" className="flex min-h-11 items-center gap-2 group">
+          <BrandIcon />
           <span className="text-lg font-bold" style={{ color: "var(--foreground)" }}>GoMate</span>
         </a>
         <a

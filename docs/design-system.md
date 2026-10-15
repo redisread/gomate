@@ -12,6 +12,14 @@
 - 字体使用系统字体栈；网页 UI 不加载远程字体。服务端分享海报的 R2 字体属于 API 媒体实现，不属于网页字体系统。
 - 当前面向支持 OKLCH、`color-mix()` 和现代 CSS 的 evergreen 浏览器。
 
+### 品牌图标
+
+- GoMate 使用“同行足迹”品牌图标：琥珀色与奶油白的两枚并行鞋印，以温润的 3D clay 质感表达“发现地点，结伴出发”。PNG 使用 1:1 正方形画布与真实透明背景，保留主体比例与安全边距。
+- 透明 PNG 原稿为 `docs/brand/gomate-icon.png`，生成提示词保存在同目录的 `gomate-icon-prompt.json`。各尺寸按原稿等比缩小，保留 alpha 通道与安全边距，不以重绘的 SVG 或通用 Mountain 图标代替品牌标识。
+- 公共导航、移动菜单、页脚、认证页面和后台品牌入口统一使用 `src/components/brand-icon.tsx`，加载 128×128 的 `public/brand-icon.png`。与可见品牌文字相邻时，图片使用空 `alt`，避免重复朗读。业务功能中的山形图标仍遵循 Lucide 图标规范。
+- 中英文 README 使用 512×512 的 `public/icon-512.png`；浏览器使用 `public/favicon-32x32.png` 和包含 16/32/48 三种尺寸的 `public/favicon.ico`；主屏幕图标为 180×180、使用暖白底色的 `public/apple-touch-icon.png`，其余 PNG 与 ICO 保留透明背景。修改原稿后同步导出所有尺寸，并更新 `BrandIcon` 与 `Layout.astro` 的版本参数以刷新缓存。
+- 品牌资产保留固定色值，网页组件继续使用语义 token；图标不附带 hover 位移或循环动画。README 产品截图应随品牌变更更新为实际页面截图。
+
 ## Token 使用
 
 组件按语义角色选择 token：

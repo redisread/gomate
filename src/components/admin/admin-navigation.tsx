@@ -1,10 +1,10 @@
+import { BrandIcon } from "@/components/brand-icon";
 import {
   ExternalLink,
   House,
   MapPinned,
   MapPinPlus,
   Menu,
-  Mountain,
   Tags,
   Users,
   UsersRound,
@@ -111,9 +111,7 @@ function Brand({
       href={localizedPath("/admin", locale)}
       className="flex min-h-11 min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
-        <Mountain className="size-5" strokeWidth={2} aria-hidden="true" />
-      </span>
+      <BrandIcon size={36} />
       <span className="min-w-0 break-words text-sm font-semibold text-foreground">
         {copy.brand}
       </span>

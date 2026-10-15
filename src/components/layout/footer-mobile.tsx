@@ -1,7 +1,9 @@
 "use client";
 
+import { BrandIcon } from "@/components/brand-icon";
+
 import * as React from "react";
-import { Mountain, Heart, Mail, ArrowUp, MapPin, Users, Plus, FileText, MessageSquare } from "lucide-react";
+import { Heart, Mail, ArrowUp, MapPin, Users, Plus, FileText, MessageSquare } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 
 /**
@@ -51,12 +53,7 @@ export function FooterMobile() {
       <div className="px-5 pt-8 pb-6">
         {/* Logo 和品牌区 */}
         <div className="flex items-center gap-2.5 mb-6">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)" }}
-          >
-            <Mountain className="h-4.5 w-4.5 text-white" />
-          </div>
+          <BrandIcon size={36} />
           <span className="font-bold text-base text-foreground">GoMate</span>
         </div>
 

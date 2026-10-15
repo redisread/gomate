@@ -1,138 +1,93 @@
-# 🏔️ GoMate 地点组队平台
+<p align="center" style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 6px; text-align: center;">
+  <a style="display: inline-flex; align-items: center;" href="https://gomate.live"><img style="display: block;" src="public/icon-512.png" width="72" height="72" alt="GoMate footsteps logo"></a>
+</p>
 
-> 发现有趣地点，找到同行伙伴
+<h1 align="center" style="text-align: center;">GoMate</h1>
 
-[![CI](https://github.com/redisread/gomate/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/redisread/gomate/actions/workflows/ci.yml)
-[![Live](https://img.shields.io/badge/Live-gomate.live-blue)](https://gomate.live)
+<p align="center" style="text-align: center;">
+  <strong>Good places. Great company.</strong><br>
+  Discover nearby places. Start or join a group, and head out together.
+</p>
 
-## 产品定位
+<p align="center" style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 6px; text-align: center;">
+  <a style="display: inline-flex; align-items: center;" href="https://github.com/redisread/gomate/actions/workflows/ci.yml"><img style="display: block;" src="https://github.com/redisread/gomate/actions/workflows/ci.yml/badge.svg?event=pull_request" alt="CI"></a>
+  <a style="display: inline-flex; align-items: center;" href="https://github.com/redisread/gomate"><img style="display: block;" src="https://img.shields.io/github/stars/redisread/gomate?style=flat&amp;color=111111" alt="GitHub stars"></a>
+  <a style="display: inline-flex; align-items: center;" href="https://gomate.live"><img style="display: block;" src="https://img.shields.io/badge/Live-gomate.live-D97706" alt="Live demo"></a>
+</p>
 
-GoMate 是一个**地点组队平台**，解决「想出门但找不到伙伴」的问题：
+<p align="center" style="text-align: center;">
+  <strong><a href="https://gomate.live">Try GoMate</a></strong> &nbsp;·&nbsp; <a href="LESSONS.md#quick-start">Quick start</a> &nbsp;·&nbsp; <a href="#documentation">Documentation</a> &nbsp;·&nbsp; <a href="https://github.com/redisread/gomate/issues">Report an issue</a>
+</p>
 
-| 功能            | 描述                                       |
-| --------------- | ------------------------------------------ |
-| 🗺️ **发现地点** | 城市及周边户外地点推荐，含标签、交通等信息 |
-| 👥 **组建队伍** | 一键发布组队信息，设定人数、时间、要求     |
-| ✅ **便捷参与** | 申请加入队伍，队长审核，组队出发           |
+<p align="center" style="text-align: center;">
+  English &nbsp;/&nbsp; <a href="README.zh-CN.md">简体中文</a>
+</p>
 
-## 在线体验
+[![GoMate homepage in Chinese, with featured destinations and group navigation](docs/images/gomate-home.png)](https://gomate.live)
 
-**网站：** https://gomate.live
+## What is GoMate?
 
-**核心流程：**
-浏览地点 → 查看详情 → 加入/创建队伍 → 等待确认 → 一起出发
+Want to head out but need somewhere to go or someone to join you? GoMate brings place discovery and group planning together.
 
-## 技术架构
+- **Discover places** — Browse a map or filter by city and interests. Check tags and transport information before choosing a destination.
+- **Create a group** — Pick a place, set a time, group size, and requirements, then invite others to join.
+- **Join an outing** — Apply to a group and wait for the organizer's approval. Manage your groups and applications in one place.
 
-```
-统一 Worker: Astro 7 SSR + React 18 + Hono `/api/*`
-数据: Cloudflare D1 + R2（无运行时 KV）
-部署: Cloudflare Workers Builds 从 Git 构建并部署同一个 Worker
-```
+Browse places → Choose a destination → Create or join a group → Get confirmed → Head out together.
 
-## 快速开始
+### Explore places
 
-```bash
-# 安装依赖
-pnpm install
+Browse destinations, interests, and transport information before choosing where to go. The screenshots show the Chinese interface.
 
-# 检查本地环境是否就绪（Node/pnpm、环境文件、端口、wrangler 登录等）
-pnpm env:check
+<img src="docs/images/gomate-locations.png" width="960" alt="GoMate place discovery page showing destination photos, descriptions, city labels, and interest tags">
 
-# 方式 1：直接启动（假设本地 D1 已初始化）
-pnpm dev
+## Tech stack
 
-# 方式 2：初始化本地 secrets、迁移和 seed（推荐第一次使用）
-pnpm init:worktree
+| Category       | Technologies                 |
+| -------------- | ---------------------------- |
+| Interface      | Astro · React · Tailwind CSS |
+| Services       | Hono · Cloudflare Workers    |
+| Authentication | Better Auth                  |
+| Database       | Cloudflare D1 · Drizzle ORM  |
+| File storage   | Cloudflare R2                |
+| Email          | Resend                       |
 
-# 仅重置本地数据库并灌入测试数据
-pnpm db:reset
+## Documentation
 
-# v3 seed 仅写入 Region、地点与标签；用户在测试中独立注册
-```
+The technical guides below are currently written in Chinese.
 
-## 提升用户为 Admin
+| Guide                                            | Contents                                                 |
+| ------------------------------------------------ | -------------------------------------------------------- |
+| [Development and deployment](LESSONS.md#english) | Quick start, local commands, testing, and deployment     |
+| [Local development](docs/local-dev-worktrees.md) | Worktrees, environment variables, local storage, and E2E |
+| [API](docs/backend-api.md)                       | Endpoints, authentication, and response contracts        |
+| [Database](docs/database.md)                     | Data relationships, migrations, and storage constraints  |
+| [Frontend pages](docs/frontend-pages.md)         | Pages, SSR, and client-side behavior                     |
+| [Design system](docs/design-system.md)           | Components, visual conventions, and interaction patterns |
+| [Coding standards](CODING_STANDARDS.md)          | Engineering constraints and validation gates             |
+| [Agent entry point](AGENTS.md)                   | Which project rules to read for each task                |
+| [Production changes](docs/prod-change-policy.md) | Protected releases, resource changes, and rollback       |
 
-地点与 Region 管理接口需要 `role = 'admin'`。如果本地注册账号默认是 `user`，可用以下脚本提升：
+## Contributing
 
-```bash
-pnpm db:promote-admin --email admin@test.com
-```
+Found a bug or have an idea? [Open an issue](https://github.com/redisread/gomate/issues) with the use case, expected behavior, and relevant reproduction steps.
 
-该脚本只允许修改本地 D1。生产权限变更必须走受保护环境与显式审批，脚本传入
-`--env` 或 `--yes` 会直接拒绝执行。
+Before making changes, read [AGENTS.md](AGENTS.md) and the applicable [coding standards](CODING_STANDARDS.md). Keep documentation aligned with behavior, run the required checks, and follow the [PR template](.github/PULL_REQUEST_TEMPLATE.md).
 
-## E2E 测试
+The Flutter mobile client is archived in [gomate-mobile](https://github.com/redisread/gomate-mobile).
 
-### Playwright（推荐）
+## Star History
 
-固定保留 6 条高价值路径：首页与健康检查、注册、登录、未登录访问保护、创建队伍、申请并审批。
-测试使用构建后的本地 Worker 和隔离 D1，不访问 Cloudflare 远程资源；GitHub PR CI 会自动运行。
+If GoMate helps you find your next outing, a ⭐ helps others discover it.
 
-```bash
-# 安装浏览器（首次运行）
-pnpm exec playwright install chromium
+<a href="https://www.star-history.com/?repos=redisread%2Fgomate&amp;type=date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=redisread/gomate&amp;type=date&amp;theme=dark">
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=redisread/gomate&amp;type=date">
+    <img alt="GoMate star history chart" src="https://api.star-history.com/chart?repos=redisread/gomate&amp;type=date" width="800">
+  </picture>
+</a>
 
-# 初始化测试所用的本地 D1
-pnpm db:reset
+## License
 
-# 运行本地 E2E 测试（自动构建并启动本地 Worker）
-pnpm test:e2e
-
-# 无头模式（CI 用）
-pnpm test:e2e:ci
-
-# 调试模式（带 UI）
-pnpm exec playwright test --ui --project=chromium
-
-```
-
-## 本地环境配置
-
-复制统一 Worker 的本地 secrets：
-
-```bash
-cp .dev.vars.example .dev.vars
-```
-
-浏览器和 SSR 都使用同源 `/api`，无需配置 `PUBLIC_API_URL`。
-
-## 本地环境故障排查
-
-如果本地 Worker 启动失败或 E2E 测试行为异常，先运行：
-
-```bash
-pnpm env:check
-```
-
-常见问题：
-
-| 问题                            | 可能原因                               | 解决办法                                         |
-| ------------------------------- | -------------------------------------- | ------------------------------------------------ |
-| `pnpm dev` 提示端口被占用       | 统一 Worker 的 5432 端口被其他进程占用 | 关闭占用端口的进程，或运行 `pnpm dev:wt` 使用下一个空闲端口 |
-| E2E 注册或登录失败              | 本地 D1 未初始化或 secrets 不一致      | 运行 `pnpm db:reset` 并检查 `.dev.vars`          |
-| Playwright 报错找不到浏览器     | Chromium 未安装                        | `pnpm exec playwright install chromium`          |
-| `wrangler` 提示未登录           | Cloudflare 账号未认证                  | `pnpm exec wrangler login`                       |
-| `.dev.vars` 缺失                | 本地 secrets 未配置                    | 复制 `.dev.vars.example` 并填入                 |
-
-如果排查后仍无法解决，请附带 `pnpm env:check` 输出和错误日志提 issue。
-
-## 部署
-
-PR 由 GitHub Actions 完成 `pnpm test:ci`、Worker bundle 校验和隔离 D1 E2E；合并后不再
-重复运行 GitHub CI，由 Cloudflare Workers Builds 对 `main` 做最小生产构建并自动发布。
-`main` 使用 `pnpm deploy:production` 发布正式 Worker；非 `main` 使用
-`pnpm deploy:preview` 上传同一 `gomate` Worker 的 Preview version，并按分支生成稳定
-alias，关联 PR 时由 Cloudflare 原生 Git 集成评论 Preview URL。Preview 使用生产 D1/R2，
-且 Preview 上传命令显式注入 `WRITE_MODE=protected` 拒绝业务写入，仅允许在合法 Preview
-域名上登录/退出并创建认证 session。公开的账号后缀通过 production `vars` 中的
-`PREVIEW_HOST_SUFFIX` 固定，避免部署时丢失。禁止从本机或临时命令执行生产 Worker、
-D1、R2、secret 或 route 写入；详见 `docs/prod-change-policy.md`。
-
-## 相关仓库
-
-- 📱 **移动端**（Flutter）：已归档至 [gomate-mobile](https://github.com/redisread/gomate-mobile)
-
-## 许可证
-
-MIT
+MIT.

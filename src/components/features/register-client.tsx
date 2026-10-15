@@ -1,8 +1,10 @@
 "use client";
 
+import { BrandIcon } from "@/components/brand-icon";
+
 import { GoogleSignIn } from "./google-sign-in";
 import * as React from "react";
-import { Eye, EyeOff, Loader2, Mountain, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Loader2, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { sendVerificationEmail, signUp } from "@/lib/auth-client";
 
@@ -152,13 +154,8 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
         />
 
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2.5 relative z-10">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ background: "color-mix(in oklab, white 20%, transparent)" }}
-          >
-            <Mountain className="h-5 w-5 text-white" />
-          </div>
+        <a href="/" className="flex min-h-11 items-center gap-2.5 relative z-10">
+          <BrandIcon size={36} />
           <span className="text-xl font-bold text-white tracking-tight">GoMate</span>
         </a>
 
@@ -225,8 +222,8 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
       >
         {/* 移动端顶部 Logo */}
         <div className="lg:hidden px-6 pt-6">
-          <a href="/" className="flex items-center gap-2">
-            <Mountain className="h-6 w-6" style={{ color: "var(--primary)" }} />
+          <a href="/" className="flex min-h-11 items-center gap-2">
+            <BrandIcon />
             <span className="text-lg font-bold text-foreground">GoMate</span>
           </a>
         </div>

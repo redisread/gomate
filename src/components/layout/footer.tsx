@@ -1,6 +1,7 @@
+import { BrandIcon } from "@/components/brand-icon";
 import * as React from "react";
 import { useState } from "react";
-import { Mountain, Heart, Mail, ArrowUp, MapPin, Users, Plus, Copy, Check, X } from "lucide-react";
+import { Heart, Mail, ArrowUp, MapPin, Users, Plus, Copy, Check, X } from "lucide-react";
 import type { TranslationKey } from "@/i18n";
 import { useI18n } from "@/hooks/useI18n";
 import { FooterMobile } from "./footer-mobile";
@@ -227,12 +228,7 @@ export function Footer() {
               <div className="card-base p-6 h-full flex flex-col">
                 {/* Logo */}
                 <div className="flex items-center gap-2 mb-4">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)" }}
-                  >
-                    <Mountain className="h-5 w-5 text-white" />
-                  </div>
+                  <BrandIcon size={40} />
                   <span className="font-bold text-lg tracking-tight text-foreground">
                     GoMate
                   </span>

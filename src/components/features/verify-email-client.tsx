@@ -1,7 +1,9 @@
 "use client";
 
+import { BrandIcon } from "@/components/brand-icon";
+
 import * as React from "react";
-import { CheckCircle2, Loader2, MailCheck, Mountain, XCircle } from "lucide-react";
+import { CheckCircle2, Loader2, MailCheck, XCircle } from "lucide-react";
 
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI } from "@/lib/api";
@@ -61,8 +63,8 @@ export function VerifyEmailClient() {
   return (
     <main className="min-h-screen bg-background px-6 py-12 text-foreground">
       <div className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col items-center justify-center text-center">
-        <a href="/" className="mb-10 inline-flex items-center gap-2 text-xl font-bold">
-          <Mountain className="h-7 w-7 text-primary" aria-hidden="true" />
+        <a href="/" className="mb-10 inline-flex min-h-11 items-center gap-2 text-xl font-bold">
+          <BrandIcon />
           GoMate
         </a>
         <section className="w-full rounded-3xl border bg-card p-8 shadow-sm" aria-live="polite">

@@ -1,0 +1,8 @@
+{
+  "generator": "imagegen built-in",
+  "source": "theme-icon-concepts/03-together-footsteps.png",
+  "selected_design": "同行足迹",
+  "transparent_background": true,
+  "aspect_ratio": "1:1",
+  "prompt": "Edit the supplied GoMate FOOTSTEPS icon; this exact attached design is the SELECTED brand identity. Preserve the TWO abstract rounded shoeprint silhouettes, each with its separated heel, one amber-orange and one creamy-white with an amber edge, their side-by-side diagonal stride arrangement, their exact relative sizes, friendly proportions, warm lighting, and tactile premium 3D clay material. Do NOT redesign the subject and do NOT change it into people or a location pin. Change ONLY the surrounding background: remove the entire ivory/apricot background and all ground-plane cast shadows and colored haze, isolating the four shoeprint/heel parts on a genuinely TRANSPARENT background with an actual alpha channel. Preserve the existing object contours, internal material shading and dimensionality. Clean natural antialiased edges, no opaque rim or halo. No fake checkerboard pattern. Deliver a single square 1:1 high-resolution PNG; keep the complete grouped footprints centered with generous balanced transparent safe margin on all four sides, no cropping. The grouped silhouette must stay recognizable at 32px on both light and dark website backgrounds. No text, letters, numbers, watermark, frame, app tile, floor or extra objects. Final production icon PNG, not a mockup or presentation."
+}
