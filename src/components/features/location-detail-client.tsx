@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BrandIcon } from "@/components/brand-icon";
 import {
   MapPin,
   Share2,
@@ -45,7 +46,7 @@ function LoadingNavbarSkeleton() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <Mountain className="h-7 w-7 text-amber-500" />
+            <BrandIcon />
             <span className="text-xl font-bold text-amber-500">GoMate</span>
           </div>
           <div className="hidden items-center gap-3 md:flex">
