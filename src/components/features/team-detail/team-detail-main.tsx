@@ -3,7 +3,10 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useTeamDetail } from "./use-team-detail";
-import { TeamDecisionPrimaryAction, TeamSidebar } from "./team-detail-sidebar";
+import {
+  TeamDecisionPrimaryAction,
+  TeamDecisionPanel,
+} from "./team-detail-sidebar";
 import { TeamMainContent } from "./team-detail-content";
 import { TeamModalsAndFooter } from "./team-detail-bottom-bar";
 import { TeamDetailSkeleton } from "./team-detail-skeleton";
@@ -41,7 +44,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             </button>
             <a
               href="/teams"
-              className="text-amber-600 hover:text-amber-700 underline underline-offset-2"
+              className="text-accent-foreground hover:text-foreground underline underline-offset-2"
             >
               {t("common.backTeams")}
             </a>
@@ -72,17 +75,19 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
       <Navbar />
       <div
         data-testid="team-detail-content"
-        className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-24 sm:px-6 lg:pb-16 lg:pt-28"
+        className="mx-auto w-full max-w-6xl flex-1 px-4 pb-[calc(var(--team-action-height,0px)+3rem)] pt-20 sm:px-6 lg:pb-16 lg:pt-24"
       >
         <TeamDepartureBrief
           team={team}
           location={ctx.location}
           statusLabel={statusInfo.label}
+          statusColor={statusInfo.color}
+          decisionPanel={<TeamDecisionPanel ctx={ctx} />}
+          showMeetingPoint={ctx.isLeader || ctx.isMember}
           desktopAction={desktopAction}
         />
 
-        <div className="mt-7 grid grid-cols-1 gap-7 lg:mt-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-10">
-          <TeamSidebar ctx={ctx} />
+        <div className="mt-8 sm:mt-12">
           <TeamMainContent ctx={ctx} />
         </div>
       </div>

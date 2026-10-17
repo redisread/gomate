@@ -99,7 +99,21 @@ const location = {
 } satisfies Location;
 
 describe("team detail responsive information architecture", () => {
-  it("renders the location image before the decision summary in one departure brief", () => {
+  it("puts the meeting point in the departure brief for a participant", () => {
+    render(
+      <TeamDepartureBrief
+        team={{ ...team, meetingPoint: "Station exit A" }}
+        location={location}
+        statusLabel="Joined"
+        showMeetingPoint
+      />,
+    );
+    expect(screen.getByTestId("team-departure-brief")).toHaveTextContent(
+      "Station exit A",
+    );
+  });
+
+  it("puts the title before the cover and keeps long descriptions out of the departure brief", () => {
     render(
       <TeamDepartureBrief
         team={team}
@@ -116,7 +130,7 @@ describe("team detail responsive information architecture", () => {
     expect(brief).toContainElement(image);
     expect(brief).toContainElement(heading);
     expect(
-      image.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+      heading.compareDocumentPosition(image) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(image).toHaveAttribute("width", "1200");
     expect(image).toHaveAttribute("height", "900");
@@ -126,6 +140,7 @@ describe("team detail responsive information architecture", () => {
       "/locations/location-1",
     );
     expect(image.closest("a")).toBeNull();
+    expect(brief).not.toHaveTextContent(team.description);
     expect(screen.getByTestId("team-desktop-primary-action")).toContainElement(
       screen.getByRole("button", { name: "Join team" }),
     );

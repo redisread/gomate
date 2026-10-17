@@ -7,7 +7,7 @@ export function getStatusInfo(
   const map: Record<string, { label: string; color: string }> = {
     recruiting: {
       label: t("enums.teamStatus.recruiting"),
-      color: "bg-amber-50 text-amber-700",
+      color: "bg-brand-subtle text-accent-foreground",
     },
     full: {
       label: t("enums.teamStatus.full"),
@@ -19,11 +19,11 @@ export function getStatusInfo(
     },
     formed: {
       label: t("enums.teamStatus.formed"),
-      color: "bg-sky-50 text-sky-700",
+      color: "bg-success-subtle text-accent-foreground",
     },
     ongoing: {
       label: t("enums.teamStatus.ongoing"),
-      color: "bg-sky-50 text-sky-700",
+      color: "bg-success-subtle text-accent-foreground",
     },
     completed: {
       label: t("enums.teamStatus.completed"),
@@ -31,7 +31,7 @@ export function getStatusInfo(
     },
     cancelled: {
       label: t("enums.teamStatus.cancelled"),
-      color: "bg-red-50 text-red-600",
+      color: "bg-destructive/10 text-foreground",
     },
     expired_unformed: {
       label: t("enums.teamStatus.closed"),

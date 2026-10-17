@@ -1,12 +1,9 @@
-import * as React from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import type { ReactNode } from "react";
 import {
   ArrowLeft,
-  ArrowRight,
-  Calendar,
+  ArrowUpRight,
   Clock,
-  Crown,
+  Footprints,
   MapPin,
   Mountain,
   Timer,
@@ -22,14 +19,20 @@ interface TeamDepartureBriefProps {
   team: Team;
   location: Location | null;
   statusLabel: string;
-  desktopAction?: React.ReactNode;
+  statusColor?: string;
+  desktopAction?: ReactNode;
+  decisionPanel?: ReactNode;
+  showMeetingPoint?: boolean;
 }
 
 export function TeamDepartureBrief({
   team,
   location,
   statusLabel,
+  statusColor = "bg-brand-subtle text-accent-foreground",
   desktopAction,
+  decisionPanel,
+  showMeetingPoint,
 }: TeamDepartureBriefProps) {
   const { t } = useI18n(["teams", "common"]);
   const start = formatTeamStart(team);
@@ -37,103 +40,139 @@ export function TeamDepartureBrief({
   return (
     <section
       data-testid="team-departure-brief"
-      className="overflow-hidden rounded-[20px] bg-card shadow-warm-md lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(24rem,1.1fr)]"
+      className="space-y-5 sm:space-y-7"
     >
-      <LocationMedia location={location} />
-
-      <div className="flex flex-col px-5 py-6 sm:px-8 sm:py-8 lg:px-9 lg:py-8 xl:px-10 xl:py-10">
-        <a
-          href="/teams"
-          className="mb-6 inline-flex min-h-10 w-fit items-center gap-2 rounded-lg px-2 text-sm font-medium text-muted-foreground transition-[transform,color,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-accent [@media(hover:hover)]:hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          {t("common.backTeams")}
-        </a>
-
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex min-h-8 items-center rounded-full bg-amber-100 px-3 text-sm font-semibold text-amber-800">
+      <a
+        href="/teams"
+        className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        {t("common.backTeams")}
+      </a>
+      <header className="relative max-w-4xl space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <span
+            className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold ${statusColor}`}
+          >
+            <span
+              className="h-1.5 w-1.5 rounded-full bg-current"
+              aria-hidden="true"
+            />
             {statusLabel}
           </span>
-          {location?.region?.name && (
-            <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-secondary px-3 text-sm text-muted-foreground">
-              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+          {location?.region && (
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" aria-hidden="true" />
               {getRegionDisplayName(location.region)}
             </span>
           )}
         </div>
-
-        <h1 className="text-balance text-3xl font-bold leading-[1.18] text-foreground sm:text-4xl lg:text-[2.65rem]">
+        <h1 className="text-page-h1 break-words text-foreground sm:text-4xl">
           {team.title}
         </h1>
-
-        <ul className="mt-6 grid grid-cols-1 gap-x-8 gap-y-3 rounded-2xl bg-secondary/60 px-4 py-4 sm:grid-cols-2 sm:px-5">
-          <MetaItem icon={Calendar} label={start.date} />
-          {start.time && <MetaItem icon={Clock} label={start.time} />}
-          {durationMinutes > 0 && (
-            <MetaItem
-              icon={Timer}
-              label={`${t("teams.estimatedPrefix")} ${formatDuration(durationMinutes / 60)}`}
+      </header>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <div className="min-w-0 rounded-2xl bg-card p-5 shadow-warm-md sm:p-6 lg:col-start-2 lg:row-start-1 lg:p-7">
+          <div className="flex items-center justify-between gap-3 text-sm font-medium text-accent-foreground">
+            <span>{t("teams.departureCardTitle")}</span>
+            <Footprints
+              className="h-5 w-5 -rotate-12 text-accent-500"
+              aria-hidden="true"
             />
+          </div>
+          <div className="relative mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg bg-warm-subtle p-4">
+            <time
+              dateTime={team.startAt}
+              className="min-w-0 space-y-1 tabular-nums"
+            >
+              <span className="block text-sm text-muted-foreground">
+                {start.date.slice(0, 4)}
+              </span>
+              <span className="block text-3xl font-bold tracking-tight text-foreground">
+                {start.date.slice(5)}
+              </span>
+            </time>
+            <div className="flex min-w-0 flex-1 flex-col gap-2 border-s border-dashed border-brand/30 ps-5">
+              {start.time && (
+                <span className="flex items-center gap-2 text-lg font-semibold tabular-nums">
+                  <Clock
+                    className="h-4 w-4 shrink-0 text-accent-foreground"
+                    aria-hidden="true"
+                  />
+                  {start.time}
+                </span>
+              )}
+              {durationMinutes > 0 && (
+                <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Timer className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  {t("teams.estimatedPrefix")}{" "}
+                  {formatDuration(durationMinutes / 60)}
+                </span>
+              )}
+            </div>
+          </div>
+          {location && (
+            <a
+              href={`/locations/${location.id}`}
+              className="mt-3 flex min-h-11 items-center gap-3 rounded-lg py-2 text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <MapPin
+                className="h-5 w-5 shrink-0 text-accent-foreground"
+                aria-hidden="true"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block break-words font-semibold">
+                  {location.name}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {t("teams.viewLocationDetail")}
+                </span>
+              </span>
+              <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+            </a>
           )}
-          {location && <MetaItem icon={MapPin} label={location.name} />}
-        </ul>
-
-        {location && (
-          <a
-            href={`/locations/${location.id}`}
-            className="mt-4 inline-flex min-h-10 w-fit items-center gap-2 rounded-xl px-3 text-sm font-medium text-muted-foreground transition-[transform,color,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-accent [@media(hover:hover)]:hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {t("teams.viewLocationDetail")}
-            <span aria-hidden="true">·</span>
-            <span>{location.name}</span>
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </a>
-        )}
-
-        {team.description && (
-          <div className="prose prose-stone mt-5 max-w-none text-pretty text-sm leading-7 text-muted-foreground prose-p:my-0">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {team.description}
-            </ReactMarkdown>
-          </div>
-        )}
-
-        {desktopAction && (
-          <div
-            data-testid="team-desktop-primary-action"
-            className="mt-6 hidden rounded-2xl bg-secondary/60 p-4 lg:block"
-          >
-            {desktopAction}
-          </div>
-        )}
-
-        {team.leader && (
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          {showMeetingPoint && team.meetingPoint && (
+            <div className="mt-4 rounded-lg bg-secondary p-4">
+              <h2 className="text-sm font-semibold">
+                {t("teams.meetingPoint")}
+              </h2>
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-muted-foreground">
+                {team.meetingPoint}
+              </p>
+            </div>
+          )}
+          {decisionPanel}
+          {desktopAction && (
+            <div
+              data-testid="team-desktop-primary-action"
+              className="mt-5 hidden lg:block"
+            >
+              {desktopAction}
+            </div>
+          )}
+        </div>
+        <div className="space-y-4 lg:col-start-1 lg:row-start-1">
+          <LocationMedia location={location} />
+          {team.leader && (
             <a
               href={`/users/${team.leader.id}`}
-              className="inline-flex min-h-11 items-center gap-3 rounded-xl px-2 transition-[transform,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex min-h-11 w-fit max-w-full items-center gap-4 rounded-xl px-2 py-2 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                <Crown className="h-4 w-4" aria-hidden="true" />
+              <span className="shrink-0 text-sm text-muted-foreground">
+                {t("teams.creatorLabel")}
               </span>
-              <span>
-                <span className="block text-xs text-muted-foreground">
-                  {t("teams.creatorLabel")}
-                </span>
-                <TeamLeaderMini leader={team.leader} showLevel size="sm" />
-              </span>
+              <TeamLeaderMini leader={team.leader} showLevel size="md" />
             </a>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </section>
   );
 }
 
 function LocationMedia({ location }: { location: Location | null }) {
-  const { t } = useI18n(["teams"]);
-  const content = (
-    <div className="group relative h-full min-h-72 overflow-hidden bg-stone-900 lg:min-h-[34rem]">
+  return (
+    <div className="relative aspect-[16/9] overflow-hidden rounded-2xl bg-warm-subtle lg:aspect-[4/3]">
       {location?.coverImageUrl ? (
         <img
           src={location.coverImageUrl}
@@ -142,50 +181,17 @@ function LocationMedia({ location }: { location: Location | null }) {
           height={900}
           loading="eager"
           decoding="async"
-          className="h-full w-full object-cover transition-transform duration-300 motion-reduce:transform-none [@media(hover:hover)]:group-hover:scale-[1.015]"
+          className="h-full w-full object-cover"
         />
       ) : (
-        <div className="flex h-full min-h-72 items-center justify-center bg-stone-900 text-amber-300/70">
+        <div className="flex h-full items-center justify-center text-accent-foreground/60">
           <Mountain className="h-16 w-16" aria-hidden="true" />
         </div>
       )}
-
-      {location && (
-        <div className="absolute inset-x-0 bottom-0 bg-stone-950/75 p-5 text-white sm:p-6">
-          <span className="mb-1 flex items-center gap-1.5 text-xs text-white/75">
-            <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-            {t("teams.activityLocation")}
-          </span>
-          <div className="flex items-end justify-between gap-4">
-            <span className="text-2xl font-bold leading-tight sm:text-3xl">
-              {location.name}
-            </span>
-            <span className="shrink-0 text-xs font-medium text-white/70 sm:text-sm">
-              {t("teams.viewLocationDetail")}
-            </span>
-          </div>
-        </div>
-      )}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-black/10 dark:ring-white/10"
+        aria-hidden="true"
+      />
     </div>
-  );
-
-  return content;
-}
-
-function MetaItem({
-  icon: Icon,
-  label,
-}: {
-  icon: React.ComponentType<{
-    className?: string;
-    "aria-hidden"?: boolean | "true" | "false";
-  }>;
-  label: string;
-}) {
-  return (
-    <li className="flex min-h-8 items-center gap-2 text-sm text-foreground/80">
-      <Icon className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-      <span className="font-medium tabular-nums">{label}</span>
-    </li>
   );
 }

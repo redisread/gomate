@@ -364,5 +364,7 @@
   "linkCopied": "链接已复制",
   "close": "关闭",
   "meetingPoint": "集合信息",
-  "removeMemberAria": "移除 {name}"
+  "removeMemberAria": "移除 {name}",
+  "departureCardTitle": "这次，一起出发",
+  "aboutTrip": "关于这次出发"
 }
