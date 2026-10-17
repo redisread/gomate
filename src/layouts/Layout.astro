@@ -349,7 +349,7 @@ function getHreflangUrl(loc: Locale) {
     {showNavbar && <PublicNavbar client:visible />}
     {/*
       #main-content 是 skip-link 锚点，不是 <main>：
-      各 page/组件（skeleton.tsx、create-team、home-main、story-detail 等）自带 <main> landmark，
+      各 page/组件（skeleton.tsx、create-team、home-main 等）自带 <main> landmark，
       Layout 层再包 <main> 会造成嵌套双 landmark。tabindex=-1 让键盘焦点可跳到内容起点。
     */}
     <div id="main-content" tabindex="-1" class="outline-none">

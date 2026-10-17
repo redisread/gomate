@@ -68,7 +68,7 @@ describe("controlled authentication and upload contracts", () => {
       Object.values(upload.paths ?? {}).flatMap((item) =>
         Object.keys(item ?? {}),
       ),
-    ).toHaveLength(4);
+    ).toHaveLength(3);
     expect(auth.paths?.["/sign-in/email"]?.post).toMatchObject({
       "x-validation-mode": "bounded-json",
     });
@@ -156,9 +156,17 @@ describe("controlled authentication and upload contracts", () => {
     expect(pulls).toBeLessThanOrEqual(2);
     expect(mocks.handler).not.toHaveBeenCalled();
   });
-  it("rejects an unauthenticated malformed multipart request before parsing", async () => {
+  it("removes story uploads entirely", async () => {
     const response = await uploadRoute.request(
       "/story",
+      { method: "POST", body: "malformed" },
+      env,
+    );
+    expect(response.status).toBe(404);
+  });
+  it("rejects an unauthenticated malformed multipart request before parsing", async () => {
+    const response = await uploadRoute.request(
+      "/avatar",
       {
         method: "POST",
         headers: { "content-type": "multipart/form-data" },
@@ -179,7 +187,7 @@ describe("controlled authentication and upload contracts", () => {
     });
     const response = await uploadRoute.fetch(
       new Request(
-        "http://localhost/story",
+        "http://localhost/avatar",
         Object.assign(
           {
             method: "POST",
