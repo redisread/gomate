@@ -72,7 +72,7 @@ export async function requireAdmin(c: {
 }
 
 export function adminAccessErrorResponse(
-  c: Context<{ Bindings: Env }>,
+  c: Pick<Context, "json">,
   error: unknown,
 ) {
   if (!(error instanceof AdminAccessError)) return null;
