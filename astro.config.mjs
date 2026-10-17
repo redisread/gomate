@@ -5,6 +5,7 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import cloudflare from "@astrojs/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
+import { scalarAssets } from "./scripts/scalar-assets.mjs";
 
 const persistStatePath = resolve(
   process.env.GOMATE_LOCAL_STATE ||
@@ -29,7 +30,7 @@ export default defineConfig({
     // redirect it again, creating a loop for non-default Accept-Language.
     routing: "manual",
   },
-  integrations: [react()],
+  integrations: [react(), scalarAssets()],
   image: {
     service: { entrypoint: "astro/assets/services/noop" },
   },

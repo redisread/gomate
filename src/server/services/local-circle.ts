@@ -9,34 +9,18 @@ const NEIGHBOR_AVATAR_MAX = 3;
 
 export type LocalCircleLanguage = "zh-CN" | "en" | "ja";
 
-export interface TopLocation {
-  locationId: string;
-  locationName: string;
-  coverImageUrl: string;
-  visitScore: number;
-  uniqueVisitors: number;
-}
-
-export interface NeighborTeam {
-  teamId: string;
-  title: string;
-  activityType: schema.ActivityType;
-  locationName: string;
-  startAt: string;
-  neighborCount: number;
-  neighborAvatars: string[];
-}
-
-export interface PublicLocalCircle {
-  regionId: string;
-  regionName: string;
-  activePeopleCount: number;
-  topLocations: TopLocation[];
-}
-
-export interface LocalCircle extends PublicLocalCircle {
-  neighborTeams: NeighborTeam[];
-}
+export type {
+  TopLocation,
+  NeighborTeam,
+  PublicLocalCircle,
+  LocalCircle,
+} from "../../contracts/local-circle";
+import type {
+  TopLocation,
+  NeighborTeam,
+  PublicLocalCircle,
+  LocalCircle,
+} from "../../contracts/local-circle";
 
 export interface LocalCircleParams {
   db: Db;
@@ -211,7 +195,9 @@ async function computePublicLocalCircle(
   return {
     regionId,
     regionName:
-      language === "en" ? targetRegion.nameEn ?? targetRegion.name : targetRegion.name,
+      language === "en"
+        ? (targetRegion.nameEn ?? targetRegion.name)
+        : targetRegion.name,
     activePeopleCount,
     topLocations: [...topById.values()],
   };

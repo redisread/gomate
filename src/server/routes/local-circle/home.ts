@@ -1,13 +1,17 @@
 import { and, eq, or, sql } from "drizzle-orm";
-import { Hono } from "hono";
+import {
+  createApiApp,
+  createRoute,
+  jsonResponse,
+  errorResponses,
+} from "../../lib/openapi";
+import { localCircleSchema } from "../../../contracts/local-circle";
 import { z } from "zod";
 
 import { createDb, type Db } from "../../db";
 import * as schema from "../../db/schema";
 import { APIErrors } from "../../lib/api-errors";
-import type { Env } from "../../lib/auth";
 import { getActiveSession } from "../../lib/active-session";
-import { validateRequest } from "../../lib/validation";
 import { logger } from "../../lib/logger";
 import {
   getLocalCircleHome,
@@ -21,13 +25,10 @@ const regionIdSchema = z.string().trim().min(1).max(128);
 const homeQuerySchema = z
   .object({
     language: languageSchema.optional(),
+    regionId: regionIdSchema.optional(),
   })
   .passthrough();
-const regionQuerySchema = z
-  .object({ regionId: regionIdSchema.optional() })
-  .passthrough();
-
-const home = new Hono<{ Bindings: Env }>();
+const home = createApiApp();
 
 type ResolvedRegion = {
   id: string;
@@ -98,50 +99,80 @@ async function resolveRegion(
   return findOpenCityById(db, SHENZHEN_REGION_ID);
 }
 
-home.get("/", async (c) => {
-  const query = await validateRequest(
-    c,
-    "query",
-    homeQuerySchema,
-    "language must be zh-CN, en or ja",
-    "none",
-    "language must be zh-CN, en or ja",
-  );
-  if (query instanceof Response) return query;
-
-  const regionQuery = await validateRequest(
-    c,
-    "query",
-    regionQuerySchema,
-    "regionId must reference an enabled city Region",
-    "none",
-    "regionId must reference an enabled city Region",
-    APIErrors.badRequest,
-  );
-  if (regionQuery instanceof Response) return regionQuery;
-
-  const requestedLanguage = query.language;
-  const language = resolveLanguage(
-    requestedLanguage,
-    c.req.header("accept-language"),
-  );
-  if (!language) {
-    return c.json(
-      APIErrors.validationError("language must be zh-CN, en or ja"),
-      400,
+home.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    operationId: "getLocalCircleHome",
+    tags: ["Local circle"],
+    "x-audience": "public",
+    request: { query: homeQuerySchema },
+    responses: {
+      200: jsonResponse(
+        localCircleSchema.extend({ success: z.literal(true) }),
+        "Local circle",
+      ),
+      ...errorResponses(400, 500, 503),
+    },
+  }),
+  async (c) => {
+    const query = c.req.valid("query");
+    const regionQuery = query;
+    const requestedLanguage = query.language;
+    const language = resolveLanguage(
+      requestedLanguage,
+      c.req.header("accept-language"),
     );
-  }
+    if (!language) {
+      return c.json(
+        APIErrors.validationError("language must be zh-CN, en or ja"),
+        400,
+      );
+    }
 
-  try {
-    const db = createDb(c.env.DB);
-    const requestedRegionId = regionQuery.regionId;
-    const region = await resolveRegion(
-      db,
-      requestedRegionId,
-      c.req.header("CF-IPCity"),
-    );
-    if (!region) {
-      if (requestedRegionId !== undefined) {
+    try {
+      const db = createDb(c.env.DB);
+      const requestedRegionId = regionQuery.regionId;
+      const region = await resolveRegion(
+        db,
+        requestedRegionId,
+        c.req.header("CF-IPCity"),
+      );
+      if (!region) {
+        if (requestedRegionId !== undefined) {
+          return c.json(
+            APIErrors.badRequest(
+              "regionId must reference an enabled city Region",
+            ),
+            400,
+          );
+        }
+        return c.json(
+          APIErrors.serviceUnavailable("Default Region is not configured"),
+          503,
+        );
+      }
+
+      let currentUserId: string | null = null;
+      try {
+        const session = await getActiveSession(c.env, c.req.raw.headers);
+        currentUserId = session?.user.id ?? null;
+      } catch (error) {
+        logger.warn(
+          "local_circle_session_lookup_failed",
+          safeErrorMetadata(error),
+        );
+      }
+
+      const result = await getLocalCircleHome({
+        db,
+        regionId: region.id,
+        language,
+        currentUserId,
+      });
+      return c.json({ success: true as const, ...result }, 200);
+    } catch (error) {
+      if (error instanceof LocalCircleRegionError) {
         return c.json(
           APIErrors.badRequest(
             "regionId must reference an enabled city Region",
@@ -149,43 +180,26 @@ home.get("/", async (c) => {
           400,
         );
       }
+      logger.error("local_circle_home_get_failed", safeErrorMetadata(error));
       return c.json(
-        APIErrors.serviceUnavailable("Default Region is not configured"),
-        503,
+        APIErrors.internalError("Failed to fetch local circle home"),
+        500,
       );
     }
-
-    let currentUserId: string | null = null;
-    try {
-      const session = await getActiveSession(c.env, c.req.raw.headers);
-      currentUserId = session?.user.id ?? null;
-    } catch (error) {
-      logger.warn(
-        "local_circle_session_lookup_failed",
-        safeErrorMetadata(error),
-      );
-    }
-
-    const result = await getLocalCircleHome({
-      db,
-      regionId: region.id,
-      language,
-      currentUserId,
-    });
-    return c.json({ success: true as const, ...result });
-  } catch (error) {
-    if (error instanceof LocalCircleRegionError) {
+  },
+  (result, c) => {
+    if (result.success) return;
+    if (result.error.issues.some((issue) => issue.path[0] === "language")) {
       return c.json(
-        APIErrors.badRequest("regionId must reference an enabled city Region"),
+        APIErrors.validationError("language must be zh-CN, en or ja"),
         400,
       );
     }
-    logger.error("local_circle_home_get_failed", safeErrorMetadata(error));
     return c.json(
-      APIErrors.internalError("Failed to fetch local circle home"),
-      500,
+      APIErrors.badRequest("regionId must reference an enabled city Region"),
+      400,
     );
-  }
-});
+  },
+);
 
 export { home as localCircleHomeRoute };
