@@ -8,7 +8,7 @@ import { fillLoginForm } from "./helpers";
 
 const RUN_ID = Date.now().toString(36);
 const PASSWORD = "test1234";
-const LOCAL_ORIGIN = "http://localhost:5432";
+const LOCAL_ORIGIN = process.env.E2E_ORIGIN || "http://localhost:5432";
 
 let admin: FixtureUser;
 let regularUser: FixtureUser;
