@@ -16,7 +16,7 @@
 </p>
 
 <p align="center" style="text-align: center;">
-  <strong><a href="https://gomate.live">Try GoMate</a></strong> &nbsp;·&nbsp; <a href="LESSONS.md#quick-start">Quick start</a> &nbsp;·&nbsp; <a href="#documentation">Documentation</a> &nbsp;·&nbsp; <a href="https://github.com/redisread/gomate/issues">Report an issue</a>
+  <strong><a href="https://gomate.live">Try GoMate</a></strong> &nbsp;·&nbsp; <a href="docs/development-and-deployment.md#快速开始">Quick start</a> &nbsp;·&nbsp; <a href="#documentation">Documentation</a> &nbsp;·&nbsp; <a href="https://github.com/redisread/gomate/issues">Report an issue</a>
 </p>
 
 <p align="center" style="text-align: center;">
@@ -56,17 +56,17 @@ Browse destinations, interests, and transport information before choosing where 
 
 The technical guides below are currently written in Chinese.
 
-| Guide                                            | Contents                                                 |
-| ------------------------------------------------ | -------------------------------------------------------- |
-| [Development and deployment](LESSONS.md#english) | Quick start, local commands, testing, and deployment     |
-| [Local development](docs/local-dev-worktrees.md) | Worktrees, environment variables, local storage, and E2E |
-| [API](docs/backend-api.md)                       | Endpoints, authentication, and response contracts        |
-| [Database](docs/database.md)                     | Data relationships, migrations, and storage constraints  |
-| [Frontend pages](docs/frontend-pages.md)         | Pages, SSR, and client-side behavior                     |
-| [Design system](docs/design-system.md)           | Components, visual conventions, and interaction patterns |
-| [Coding standards](CODING_STANDARDS.md)          | Engineering constraints and validation gates             |
-| [Agent entry point](AGENTS.md)                   | Which project rules to read for each task                |
-| [Production changes](docs/prod-change-policy.md) | Protected releases, resource changes, and rollback       |
+| Guide                                                            | Contents                                                 |
+| ---------------------------------------------------------------- | -------------------------------------------------------- |
+| [Development and deployment](docs/development-and-deployment.md) | Quick start, local commands, testing, and deployment     |
+| [Local development](docs/local-dev-worktrees.md)                 | Worktrees, environment variables, local storage, and E2E |
+| [API](docs/backend-api.md)                                       | Endpoints, authentication, and response contracts        |
+| [Database](docs/database.md)                                     | Data relationships, migrations, and storage constraints  |
+| [Frontend pages](docs/frontend-pages.md)                         | Pages, SSR, and client-side behavior                     |
+| [Design system](docs/design-system.md)                           | Components, visual conventions, and interaction patterns |
+| [Coding standards](CODING_STANDARDS.md)                          | Engineering constraints and validation gates             |
+| [Agent entry point](AGENTS.md)                                   | Which project rules to read for each task                |
+| [Production changes](docs/prod-change-policy.md)                 | Protected releases, resource changes, and rollback       |
 
 ## Contributing
 
