@@ -41,11 +41,6 @@ async function mockProfileRequests(page: Page) {
       regions: [{ id: "region-shenzhen", name: "深圳市" }],
     }),
   }));
-  await page.route("**/api/messages/unread-count", (route) => route.fulfill({
-    status: 200,
-    contentType: "application/json",
-    body: JSON.stringify({ success: true, count: 0 }),
-  }));
 }
 
 for (const viewport of [
