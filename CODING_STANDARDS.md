@@ -10,13 +10,13 @@
 - 事实优先级：可执行代码/配置/迁移与测试 → `AGENTS.md` 与本文件 → `docs/` 现行文档 → README。
 - 设计或行为变化在同一 PR 更新对应现行文档；长期架构决策写入其决策/约束段。一次性计划、已完成方案和已上线功能 spec 只从 Git 历史查阅，不留在工作树。
 
-| 变更或查询范围           | 现行来源                           |
-| ------------------------ | ---------------------------------- |
-| 项目启动、常用命令       | [开发与部署](LESSONS.md)           |
-| API 合同与 API 行为变化  | [API 文档](docs/backend-api.md)    |
-| 数据库关系、决策与约束   | [数据库文档](docs/database.md)     |
-| 页面、SSR 与客户端运行时 | [前端页面](docs/frontend-pages.md) |
-| UI 设计                  | [设计系统](docs/design-system.md)  |
+| 变更或查询范围           | 现行来源                                         |
+| ------------------------ | ------------------------------------------------ |
+| 项目启动、常用命令       | [开发与部署](docs/development-and-deployment.md) |
+| API 合同与 API 行为变化  | [API 文档](docs/backend-api.md)                  |
+| 数据库关系、决策与约束   | [数据库文档](docs/database.md)                   |
+| 页面、SSR 与客户端运行时 | [前端页面](docs/frontend-pages.md)               |
+| UI 设计                  | [设计系统](docs/design-system.md)                |
 
 ## PR 与合并
 

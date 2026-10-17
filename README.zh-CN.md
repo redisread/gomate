@@ -16,7 +16,7 @@
 </p>
 
 <p align="center" style="text-align: center;">
-  <strong><a href="https://gomate.live">在线体验</a></strong> &nbsp;·&nbsp; <a href="LESSONS.md#快速开始">快速开始</a> &nbsp;·&nbsp; <a href="#项目文档">项目文档</a> &nbsp;·&nbsp; <a href="https://github.com/redisread/gomate/issues">问题反馈</a>
+  <strong><a href="https://gomate.live">在线体验</a></strong> &nbsp;·&nbsp; <a href="docs/development-and-deployment.md#快速开始">快速开始</a> &nbsp;·&nbsp; <a href="#项目文档">项目文档</a> &nbsp;·&nbsp; <a href="https://github.com/redisread/gomate/issues">问题反馈</a>
 </p>
 
 <p align="center" style="text-align: center;">
@@ -56,17 +56,17 @@
 
 以下技术文档目前使用中文维护。
 
-| 文档                                    | 内容                               |
-| --------------------------------------- | ---------------------------------- |
-| [开发与部署](LESSONS.md#简体中文)       | 快速开始、本地命令、测试与部署     |
-| [本地开发](docs/local-dev-worktrees.md) | worktree、环境变量、本地存储与 E2E |
-| [API](docs/backend-api.md)              | 接口、认证与响应合同               |
-| [数据库](docs/database.md)              | 数据关系、migration 与存储约束     |
-| [前端页面](docs/frontend-pages.md)      | 页面、SSR 与客户端行为             |
-| [设计系统](docs/design-system.md)       | 组件、视觉规范与交互模式           |
-| [编码规范](CODING_STANDARDS.md)         | 工程约束与验证门禁                 |
-| [代理入口](AGENTS.md)                   | 按任务范围查阅项目规则             |
-| [生产变更](docs/prod-change-policy.md)  | 受保护发布、资源变更与回滚         |
+| 文档                                             | 内容                               |
+| ------------------------------------------------ | ---------------------------------- |
+| [开发与部署](docs/development-and-deployment.md) | 快速开始、本地命令、测试与部署     |
+| [本地开发](docs/local-dev-worktrees.md)          | worktree、环境变量、本地存储与 E2E |
+| [API](docs/backend-api.md)                       | 接口、认证与响应合同               |
+| [数据库](docs/database.md)                       | 数据关系、migration 与存储约束     |
+| [前端页面](docs/frontend-pages.md)               | 页面、SSR 与客户端行为             |
+| [设计系统](docs/design-system.md)                | 组件、视觉规范与交互模式           |
+| [编码规范](CODING_STANDARDS.md)                  | 工程约束与验证门禁                 |
+| [代理入口](AGENTS.md)                            | 按任务范围查阅项目规则             |
+| [生产变更](docs/prod-change-policy.md)           | 受保护发布、资源变更与回滚         |
 
 ## 参与贡献
 
