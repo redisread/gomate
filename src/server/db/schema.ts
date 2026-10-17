@@ -373,6 +373,7 @@ export const teams = sqliteTable(
       .default("open"),
     formedAt: integer("formed_at", { mode: "timestamp_ms" }),
     cancelledAt: integer("cancelled_at", { mode: "timestamp_ms" }),
+    meetingPoint: text("meeting_point"),
     checklist: text("checklist", { mode: "json" }).$type<TeamChecklist>(),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .notNull()
