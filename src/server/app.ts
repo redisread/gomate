@@ -49,8 +49,8 @@ export function resolveWriteMode(value: unknown): WriteMode {
 export const apiApp = new Hono<{ Bindings: ApiBindings }>();
 
 const queryValueSchema = z.union([z.string(), z.array(z.string())]);
-const queryInputSchema = z.record(queryValueSchema);
-const paramInputSchema = z.record(z.string());
+const queryInputSchema = z.record(z.string(), queryValueSchema);
+const paramInputSchema = z.record(z.string(), z.string());
 
 apiApp.use("*", async (c, next) => {
   const requestId = createRequestId(c.req.header("CF-Ray"));

@@ -3,6 +3,12 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
+minimumReleaseAgeExclude:
+  - '@scalar/client-side-rendering@0.4.12'
+  - '@scalar/helpers@0.16.4'
+  - '@scalar/hono-api-reference@0.12.13'
+  - '@scalar/schemas@0.14.0'
+  - '@scalar/types@0.24.0'
 overrides:
   "@esbuild-kit/core-utils>esbuild": 0.28.2
   # miniflare 固定的旧版本包含安全漏洞，限定同一系列的修复版本。

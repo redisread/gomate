@@ -2,6 +2,8 @@ import { flattenErrors, sValidator } from "@hono/standard-validator";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { Context, Env, ValidationTargets } from "hono";
 
+import { normalizeValidationIssues } from "./validation-issues";
+
 import { APIErrors, type APIError } from "./api-errors";
 
 export type ValidationDetails = "issues" | "flatten" | "none";
@@ -31,7 +33,21 @@ export function apiValidator<
   details: ValidationDetails = "issues",
   errorFactory: ValidationErrorFactory = APIErrors.validationError,
 ) {
-  return sValidator(target, schema, (result, c) => {
+  const compatibleSchema: StandardSchemaV1<
+    StandardSchemaV1.InferInput<Schema>,
+    StandardSchemaV1.InferOutput<Schema>
+  > = {
+    "~standard": {
+      ...schema["~standard"],
+      async validate(value) {
+        const result = await schema["~standard"].validate(value);
+        return result.issues
+          ? { issues: normalizeValidationIssues(result.issues, value) }
+          : result;
+      },
+    },
+  };
+  return sValidator(target, compatibleSchema, (result, c) => {
     if (result.success) return;
 
     return c.json(
@@ -58,7 +74,13 @@ export async function validateValue<
     const result = await schema["~standard"].validate(value);
     if (result.issues) {
       return c.json(
-        errorFactory(message, validationDetails(result.issues, details)),
+        errorFactory(
+          message,
+          validationDetails(
+            normalizeValidationIssues(result.issues, value),
+            details,
+          ),
+        ),
         400,
       );
     }

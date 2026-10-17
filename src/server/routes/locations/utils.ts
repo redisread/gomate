@@ -100,7 +100,17 @@ export const createLocationInputSchema = locationFieldsSchema.superRefine(
 
 export const updateLocationInputSchema = locationFieldsSchema
   .partial()
-  .extend({ id: z.string().trim().min(1).max(128) });
+  .extend({
+    id: z.string().trim().min(1).max(128),
+    // A patch must not apply creation defaults to omitted properties.
+    supportedActivityTypes: locationFieldsSchema.shape.supportedActivityTypes.removeDefault().optional(),
+    status: locationFieldsSchema.shape.status.removeDefault().optional(),
+    latitude: locationFieldsSchema.shape.latitude.removeDefault().optional(),
+    longitude: locationFieldsSchema.shape.longitude.removeDefault().optional(),
+    coverImageUrl: locationFieldsSchema.shape.coverImageUrl.removeDefault().optional(),
+    images: locationFieldsSchema.shape.images.removeDefault().optional(),
+    extra: locationFieldsSchema.shape.extra.removeDefault().optional(),
+  });
 
 export const replaceLocationTagsSchema = z.object({
   tagIds: z

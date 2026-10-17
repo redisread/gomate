@@ -1,6 +1,7 @@
 import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { offsetDateTimeSchema } from "@/contracts/input-formats";
 import { ACTIVITY_TYPES } from "@/contracts";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
@@ -32,8 +33,8 @@ export const createTeamSchema = z
     activityType: activityTypeSchema,
     title: z.string().trim().min(1).max(100),
     description: z.string().trim().max(2_000).nullable().optional(),
-    startAt: z.string().datetime({ offset: true }),
-    endAt: z.string().datetime({ offset: true }),
+    startAt: offsetDateTimeSchema,
+    endAt: offsetDateTimeSchema,
     maxParticipants: z.number().int().min(1).max(49),
     requirements: z.array(requirementSchema).max(20).default([]),
     recruitmentStatus: z.enum(["open", "closed"]).default("open"),
@@ -64,8 +65,8 @@ export const updateTeamSchema = z
     activityType: activityTypeSchema.optional(),
     title: z.string().trim().min(1).max(100).optional(),
     description: z.string().trim().max(2_000).nullable().optional(),
-    startAt: z.string().datetime({ offset: true }).optional(),
-    endAt: z.string().datetime({ offset: true }).optional(),
+    startAt: offsetDateTimeSchema.optional(),
+    endAt: offsetDateTimeSchema.optional(),
     maxParticipants: z.number().int().min(1).max(49).optional(),
     requirements: z.array(requirementSchema).max(20).optional(),
     recruitmentStatus: z.enum(["open", "closed"]).optional(),

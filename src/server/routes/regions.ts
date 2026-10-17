@@ -19,7 +19,7 @@ const querySchema = z.object({
   serviceEnabled: z
     .enum(["true", "false"])
     .transform((value) => value === "true")
-    .default("true"),
+    .prefault("true"),
   parentId: z.string().trim().min(1).max(128).optional(),
 });
 
