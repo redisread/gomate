@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /** Stable activity identifiers. Additions are shipped with code and translations. */
 export const ACTIVITY_TYPES = [
   "hiking",
@@ -6,43 +8,71 @@ export const ACTIVITY_TYPES = [
   "travel",
 ] as const;
 
-export type ActivityType = (typeof ACTIVITY_TYPES)[number];
+export const ActivityTypeSchema = z.enum(ACTIVITY_TYPES);
+export type ActivityType = z.infer<typeof ActivityTypeSchema>;
 
+export const RegionLevelSchema = z.enum([
+  "province",
+  "city",
+  "district",
+  "other",
+]);
+export type RegionLevel = z.infer<typeof RegionLevelSchema>;
 
-export type RegionLevel = "province" | "city" | "district" | "other";
-
-export type LocationStatus = "draft" | "published" | "archived";
+export const LocationStatusSchema = z.enum(["draft", "published", "archived"]);
+export type LocationStatus = z.infer<typeof LocationStatusSchema>;
 
 export const SEASONS = ["spring", "summer", "autumn", "winter"] as const;
 
-export type Season = (typeof SEASONS)[number];
+export const SeasonSchema = z.enum(SEASONS);
+export type Season = z.infer<typeof SeasonSchema>;
 
 export function isSeason(value: unknown): value is Season {
   return typeof value === "string" && SEASONS.includes(value as Season);
 }
 
-export type RecruitmentStatus = "open" | "closed";
+export const RecruitmentStatusSchema = z.enum(["open", "closed"]);
+export type RecruitmentStatus = z.infer<typeof RecruitmentStatusSchema>;
 
-export type TeamLifecycle =
-  | "cancelled"
-  | "pending"
-  | "formed"
-  | "in_progress"
-  | "completed"
-  | "expired_unformed";
+export const TeamLifecycleSchema = z.enum([
+  "cancelled",
+  "pending",
+  "formed",
+  "in_progress",
+  "completed",
+  "expired_unformed",
+]);
+export type TeamLifecycle = z.infer<typeof TeamLifecycleSchema>;
 
-export type TeamJoinRequestStatus =
-  | "pending"
-  | "approved"
-  | "rejected"
-  | "cancelled";
+export const TeamJoinRequestStatusSchema = z.enum([
+  "pending",
+  "approved",
+  "rejected",
+  "cancelled",
+]);
+export type TeamJoinRequestStatus = z.infer<typeof TeamJoinRequestStatusSchema>;
 
-export type StoryStatus = "draft" | "published" | "hidden";
+export const StoryStatusSchema = z.enum(["draft", "published", "hidden"]);
+export type StoryStatus = z.infer<typeof StoryStatusSchema>;
 
-export type UserRole = "user" | "admin";
+export const UserRoleSchema = z.enum(["user", "admin"]);
+export type UserRole = z.infer<typeof UserRoleSchema>;
 
-export type UserLevel = "beginner" | "intermediate" | "advanced" | "expert";
+export const UserLevelSchema = z.enum([
+  "beginner",
+  "intermediate",
+  "advanced",
+  "expert",
+]);
+export type UserLevel = z.infer<typeof UserLevelSchema>;
 
-export type UserStatus = "active" | "suspended" | "banned" | "deleted";
+export const UserStatusSchema = z.enum([
+  "active",
+  "suspended",
+  "banned",
+  "deleted",
+]);
+export type UserStatus = z.infer<typeof UserStatusSchema>;
 
-export type UserGender = "male" | "female" | "other";
+export const UserGenderSchema = z.enum(["male", "female", "other"]);
+export type UserGender = z.infer<typeof UserGenderSchema>;
