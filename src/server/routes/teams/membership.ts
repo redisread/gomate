@@ -1,3 +1,4 @@
+import { teamCookieSecurity } from "./contracts";
 import { teamSessionMiddleware } from "./session-middleware";
 import { TeamJoinRequestSchema, TimestampSchema } from "@/contracts";
 import {
@@ -36,7 +37,7 @@ membership.openapi(
     tags: ["Teams"],
     summary: "Request to join a team",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: {
       params: z.object({ id: z.string() }),
       body: {
@@ -168,7 +169,7 @@ membership.openapi(
     tags: ["Teams"],
     summary: "Approve a pending join request as leader",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string(), requestId: z.string() }) },
 
     responses: {
@@ -274,7 +275,7 @@ membership.openapi(
     tags: ["Teams"],
     summary: "Reject a pending join request as leader",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string(), requestId: z.string() }) },
 
     responses: {
@@ -346,7 +347,7 @@ membership.openapi(
     tags: ["Teams"],
     summary: "Cancel your pending join request",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string(), requestId: z.string() }) },
 
     responses: {
@@ -411,7 +412,7 @@ membership.openapi(
     tags: ["Teams"],
     summary: "Leave a team as an active member",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string() }) },
 
     responses: {
@@ -465,7 +466,7 @@ membership.openapi(
     tags: ["Teams"],
     summary: "Remove an active member as leader",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string(), userId: z.string() }) },
 
     responses: {

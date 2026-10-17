@@ -1,3 +1,4 @@
+import { teamCookieSecurity } from "./contracts";
 import { TeamQuerySchema } from "./contracts";
 import {
   TeamResponseSchema,
@@ -306,7 +307,7 @@ queries.openapi(
     tags: ["Teams"],
     summary: "List join requests as team leader",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string() }) },
 
     responses: {

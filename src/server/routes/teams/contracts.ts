@@ -1,3 +1,4 @@
+import type { RouteConfig } from "../../lib/openapi";
 import { z } from "../../lib/openapi";
 
 /** Existing handlers use the first occurrence when a query key is repeated. */
@@ -37,3 +38,8 @@ export const TeamQuerySchema = z.object({
     description: "Date or date-time; date-only includes the full UTC day.",
   }),
 });
+
+export const teamCookieSecurity: NonNullable<RouteConfig["security"]> = [
+  { cookieAuth: [] },
+  { secureCookieAuth: [] },
+];

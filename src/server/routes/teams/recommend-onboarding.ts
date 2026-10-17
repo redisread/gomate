@@ -1,3 +1,4 @@
+import { teamCookieSecurity } from "./contracts";
 import { teamSessionMiddleware } from "./session-middleware";
 import { OnboardingResponseSchema } from "@/contracts/team-api";
 import { queryString } from "./contracts";
@@ -27,7 +28,7 @@ recommendOnboarding.openapi(
     tags: ["Teams"],
     summary: "Recommend teams for onboarding",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: {
       query: z.object({ activityType: queryString, regionId: queryString }),
     },

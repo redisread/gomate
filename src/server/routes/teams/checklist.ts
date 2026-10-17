@@ -1,3 +1,4 @@
+import { teamCookieSecurity } from "./contracts";
 import { teamSessionMiddleware } from "./session-middleware";
 import { ActionbookAssignmentSchema } from "@/contracts";
 import { ChecklistResponseSchema } from "@/contracts/team-api";
@@ -230,7 +231,7 @@ checklist.openapi(
     tags: ["Teams"],
     summary: "Replace the team actionbook as leader",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: {
       params: z.object({ id: z.string() }),
       body: {
@@ -381,7 +382,7 @@ checklist.openapi(
     tags: ["Teams"],
     summary: "Claim an actionbook assignment as an active member",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string(), assignmentId: z.string() }) },
 
     responses: {
@@ -501,7 +502,7 @@ checklist.openapi(
     tags: ["Teams"],
     summary: "Remove your actionbook assignment claim",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string(), assignmentId: z.string() }) },
 
     responses: {

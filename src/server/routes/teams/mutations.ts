@@ -1,3 +1,4 @@
+import { teamCookieSecurity } from "./contracts";
 import { teamSessionMiddleware } from "./session-middleware";
 import { TeamResponseSchema, TeamSuccessSchema } from "@/contracts/team-api";
 import {
@@ -149,7 +150,7 @@ mutations.openapi(
     tags: ["Teams"],
     summary: "Create a team",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: {
       body: {
         required: true,
@@ -264,7 +265,7 @@ mutations.openapi(
     tags: ["Teams"],
     summary: "Update an unformed future team as leader",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: {
       params: z.object({ id: z.string() }),
       body: {
@@ -419,7 +420,7 @@ mutations.openapi(
     tags: ["Teams"],
     summary: "Delete an empty future team as leader",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string() }) },
 
     responses: {
@@ -481,7 +482,7 @@ mutations.openapi(
     tags: ["Teams"],
     summary: "Confirm team formation as leader",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string() }) },
 
     responses: {
@@ -540,7 +541,7 @@ mutations.openapi(
     tags: ["Teams"],
     summary: "Cancel a team as leader",
     "x-audience": "public",
-    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    security: teamCookieSecurity,
     request: { params: z.object({ id: z.string() }) },
 
     responses: {
