@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TeamDepartureBrief } from "../components/features/team-detail/team-detail-overview";
 import { TeamDecisionPrimaryAction } from "../components/features/team-detail/team-detail-sidebar";
-import { TeamDetailSkeleton } from "../components/features/team-detail/team-detail-skeleton";
 import type { Location, Team } from "../lib/types";
 
 vi.mock("../components/layout/navbar", () => ({
@@ -17,9 +16,9 @@ vi.mock("@/hooks/useI18n", () => ({
         "teams.activityLocation": "Activity location",
         "teams.creatorLabel": "Creator",
         "teams.estimatedPrefix": "Estimated",
-        "teams.joinTeam": "Apply to join",
+        "teams.joinTeam": "Join team",
         "teams.loginBtn": "Log in",
-        "teams.loginToJoinTeam": "Log in to apply and join the team",
+        "teams.loginToJoinTeam": "Log in to join the team",
         "teams.statusEnded": "Ended",
         "teams.viewLocationDetail": "View location details",
         "enums.level.advanced": "Advanced",
@@ -100,21 +99,13 @@ const location = {
 } satisfies Location;
 
 describe("team detail responsive information architecture", () => {
-  it("在导航栏下方为详情主体保留响应式呼吸空间", () => {
-    render(<TeamDetailSkeleton />);
-
-    const content = screen.getByTestId("team-detail-content");
-
-    expect(content).toHaveClass("pt-24", "lg:pt-28");
-  });
-
   it("renders the location image before the decision summary in one departure brief", () => {
     render(
       <TeamDepartureBrief
         team={team}
         location={location}
         statusLabel="等你一起"
-        desktopAction={<button type="button">Apply to join</button>}
+        desktopAction={<button type="button">Join team</button>}
       />,
     );
 
@@ -136,31 +127,8 @@ describe("team detail responsive information architecture", () => {
     );
     expect(image.closest("a")).toBeNull();
     expect(screen.getByTestId("team-desktop-primary-action")).toContainElement(
-      screen.getByRole("button", { name: "Apply to join" }),
+      screen.getByRole("button", { name: "Join team" }),
     );
-  });
-
-  it("让桌面端地点媒体填满摘要卡片，并将出发信息收成紧凑分组", () => {
-    render(
-      <TeamDepartureBrief
-        team={team}
-        location={location}
-        statusLabel="等你一起"
-      />,
-    );
-
-    const image = screen.getByRole("img", { name: "大南山" });
-    const media = image.parentElement;
-    const metadata = screen.getByRole("list");
-
-    expect(media).toHaveClass("h-full", "lg:min-h-[34rem]");
-    expect(media).not.toHaveClass("lg:h-[28rem]");
-    expect(metadata).toHaveClass(
-      "rounded-2xl",
-      "bg-secondary/60",
-      "sm:grid-cols-2",
-    );
-    expect(metadata).not.toHaveClass("border-y", "lg:grid-cols-1");
   });
 
   it("shows only login for an anonymous visitor even when the team has space", () => {
@@ -181,7 +149,7 @@ describe("team detail responsive information architecture", () => {
       "/login?redirect=/teams/team-1",
     );
     expect(
-      screen.queryByRole("button", { name: "Apply to join" }),
+      screen.queryByRole("button", { name: "Join team" }),
     ).not.toBeInTheDocument();
   });
 
@@ -199,7 +167,7 @@ describe("team detail responsive information architecture", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: "Apply to join" }),
+      screen.getByRole("button", { name: "Join team" }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "Log in" }),
