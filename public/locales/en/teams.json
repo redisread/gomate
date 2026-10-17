@@ -364,5 +364,7 @@
   "linkCopied": "Link copied",
   "close": "Close",
   "meetingPoint": "Meeting information",
-  "removeMemberAria": "Remove {name}"
+  "removeMemberAria": "Remove {name}",
+  "departureCardTitle": "Your next outing",
+  "aboutTrip": "About this outing"
 }

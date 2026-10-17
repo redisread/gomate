@@ -4,23 +4,24 @@ export function TeamDetailSkeleton() {
   return (
     <main className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <div data-testid="team-detail-content" className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-24 sm:px-6 lg:pb-16 lg:pt-28" aria-busy="true">
-        <div className="overflow-hidden rounded-[20px] bg-card shadow-warm-md lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(24rem,1.1fr)]">
-          <div className="h-full min-h-72 animate-pulse bg-secondary/80 lg:min-h-[34rem]" />
-          <div className="space-y-6 px-5 py-6 sm:px-8 sm:py-8 lg:px-9 lg:py-8 xl:px-10 xl:py-10">
-            <div className="h-10 w-32 animate-pulse rounded-lg bg-secondary/80" />
-            <div className="h-20 w-4/5 animate-pulse rounded-xl bg-secondary/80" />
-            <div className="h-28 animate-pulse rounded-xl bg-secondary/80" />
-            <div className="h-24 animate-pulse rounded-xl bg-secondary/80" />
-          </div>
-        </div>
-        <div className="mt-7 grid gap-7 lg:mt-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-10">
-          <aside className="lg:col-start-2 lg:row-start-1">
-            <div className="h-64 animate-pulse rounded-[20px] bg-secondary/80" />
-          </aside>
-          <div className="space-y-7 lg:col-start-1 lg:row-start-1">
-            <div className="h-64 animate-pulse rounded-[20px] bg-secondary/80" />
-            <div className="h-48 animate-pulse rounded-[20px] bg-secondary/80" />
+      <div
+        data-testid="team-detail-content"
+        className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 pb-16 pt-20 sm:px-6 lg:pt-24"
+        aria-busy="true"
+      >
+        <div className="h-11 w-32 rounded-lg bg-secondary" />
+        <div className="h-8 w-24 rounded-full bg-secondary" />
+        <div className="h-12 w-4/5 rounded-lg bg-secondary" />
+        <div
+          className="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-8"
+          aria-hidden="true"
+        >
+          <div className="order-2 aspect-[16/9] rounded-2xl bg-secondary lg:order-1 lg:aspect-[4/3]" />
+          <div className="order-1 space-y-5 rounded-2xl bg-card p-6 lg:order-2">
+            <div className="h-6 w-32 rounded-lg bg-secondary" />
+            <div className="h-24 rounded-lg bg-secondary" />
+            <div className="h-12 rounded-lg bg-secondary" />
+            <div className="h-20 rounded-lg bg-secondary" />
           </div>
         </div>
       </div>

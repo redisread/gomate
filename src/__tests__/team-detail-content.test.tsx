@@ -13,7 +13,7 @@ const team = {
   leaderId: "leader-1",
   activityType: "hiking",
   title: "周末徒步",
-  description: null,
+  description: "A full itinerary belongs in the body",
   startAt: "2026-08-30T02:00:00.000Z",
   endAt: "2026-08-30T10:00:00.000Z",
   maxParticipants: 8,
@@ -30,6 +30,20 @@ const team = {
 } satisfies Team;
 
 describe("TeamMainContent", () => {
+  it.each(["isLeader", "isMember"])(
+    "does not repeat meeting information in the body for %s",
+    (role) => {
+      render(
+        <TeamMainContent
+          ctx={
+            { team, allMembers: [], [role]: true, loadTeam: vi.fn() } as never
+          }
+        />,
+      );
+      expect(screen.queryByText("Meet at the station")).not.toBeInTheDocument();
+    },
+  );
+
   it("shows the team meeting information", () => {
     render(
       <TeamMainContent
@@ -37,7 +51,7 @@ describe("TeamMainContent", () => {
           {
             team,
             allMembers: [],
-            isLeader: true,
+            isLeader: false,
             isMember: false,
             userId: "leader-1",
             show: vi.fn(),
@@ -48,5 +62,8 @@ describe("TeamMainContent", () => {
     );
 
     expect(screen.getByText("Meet at the station")).toBeInTheDocument();
+    expect(
+      screen.getByText("A full itinerary belongs in the body"),
+    ).toBeInTheDocument();
   });
 });
