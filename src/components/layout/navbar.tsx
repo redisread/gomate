@@ -26,7 +26,6 @@ const navLinks = (t: (key: string) => string) => [
   { href: "/", label: t("nav.home") },
   { href: "/locations", label: t("nav.locations") },
   { href: "/teams", label: t("nav.teams") },
-  { href: "/discover", label: t("nav.discover") },
 ];
 
 interface NavbarProps {
