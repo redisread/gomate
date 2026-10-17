@@ -78,6 +78,7 @@ async function main() {
     await staged.cleanup();
   }
   await runNodeScript(path.join(ROOT, "scripts/smoke-production-write-boundary.mjs"));
+  await runNodeScript(path.join(ROOT, "scripts/cleanup-retired-r2.mjs"));
 }
 
 if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
