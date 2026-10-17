@@ -20,7 +20,7 @@
 - 正常生产 `WRITE_MODE` 为 `open`；`protected` 只用于经过审批的事故写保护，不作为常规发布配置。
 - Cloudflare Workers Builds 的 Git 连接负责发布授权；运行时 secret（`BETTER_AUTH_SECRET`、`RESEND_API_KEY`）只在受保护 production 环境配置，仓库不保存 Cloudflare 或应用 secret。
 
-旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除；当前 Worker 不引入 KV 运行时缓存。
+旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除；当前 Worker 未配置 KV 运行时缓存。
 
 仓库根配置是本地开发配置：Worker 名称保持为连接的 `gomate`（满足 Workers Builds
 连接校验），但使用本地 D1/R2 状态；
@@ -95,7 +95,7 @@ Workers Builds 的推荐配置为：
 - 多语句原子写使用 D1 `batch()` 与条件 DML；禁止 `db.transaction()` 和裸 `BEGIN`/`COMMIT`。
 - JSON 列在 SQLite 为带 CHECK 的 TEXT，在 Drizzle 使用 `mode: "json"`；业务层传对象/数组。
 - R2 对象删除、批量迁移或 bucket 配置变化必须独立列出 key/prefix 与恢复方式；“部署 Worker”不隐含任何 R2 修改授权。
-- 不使用 KV 作为运行时缓存、session、权限、计费或精确计数真相；不得重新引入共享边缘缓存来承载用户相关数据。
+- 当前未启用运行时 KV。未来仅按[可靠性与性能设计](../CODING_STANDARDS.md#可靠性与性能设计)评估非敏感、可容忍陈旧的路由元数据副本；新增 KV/Queues 资源仍须满足本文的精确范围授权与受保护发布要求。KV 不得作为 session、权限、计费或精确计数真相，也不得承载共享的用户相关数据。
 
 ## 5. 回滚与事故处理
 
