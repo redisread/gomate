@@ -65,6 +65,11 @@ function svgResponse(svg: string, opts: { cacheKey: string }): Response {
 }
 
 const shareImageRoute = createApiApp();
+// Hono query() historically selected the first repeated value.
+const firstQueryValue = z.preprocess(
+  (value) => (Array.isArray(value) ? value[0] : value),
+  z.string().optional(),
+);
 
 shareImageRoute.openapi(
   createRoute({
@@ -83,20 +88,15 @@ shareImageRoute.openapi(
         id: z.string(),
       }),
       query: z.object({
-        locale: z
-          .string()
-          .optional()
-          .describe("zh-CN, en or ja; unknown values fall back to zh-CN"),
-        preset: z
-          .string()
-          .optional()
-          .describe(
-            "dusk (default), ridge or journal; unknown values return BAD_REQUEST",
-          ),
-        refresh: z
-          .string()
-          .optional()
-          .describe("Unsupported; returns BAD_REQUEST when present"),
+        locale: firstQueryValue.describe(
+          "zh-CN, en or ja; unknown values fall back to zh-CN",
+        ),
+        preset: firstQueryValue.describe(
+          "dusk (default), ridge or journal; unknown values return BAD_REQUEST",
+        ),
+        refresh: firstQueryValue.describe(
+          "Unsupported; returns BAD_REQUEST when present",
+        ),
       }),
     },
     responses: {

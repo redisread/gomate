@@ -4,6 +4,7 @@ import type { Context } from "hono";
 import type { WorkerEnv } from "../env";
 import { adminAccessErrorResponse, requireAdmin } from "./admin-access";
 import { APIErrors } from "./api-errors";
+import { apiErrorSchema } from "./openapi";
 
 export const SCALAR_ASSET_PATH = "/generated/scalar-1.75.0/standalone.js";
 type DocumentationApp = OpenAPIHono<{ Bindings: WorkerEnv }>;
@@ -31,7 +32,11 @@ export function audienceDocument(
       const operation = item[method];
       if (!operation) continue;
       const visibility = operation["x-audience"];
-      if (visibility === undefined)
+      if (
+        !["public", "admin", "platform", "excluded"].includes(
+          String(visibility),
+        )
+      )
         throw new Error(`Unclassified API operation: ${method} ${path}`);
       if (
         visibility === "excluded" ||
@@ -88,6 +93,7 @@ export function audienceDocument(
 }
 
 export function registerDocumentation(app: DocumentationApp) {
+  app.openAPIRegistry.register("ApiError", apiErrorSchema);
   app.openAPIRegistry.registerComponent("securitySchemes", "cookieAuth", {
     type: "apiKey",
     in: "cookie",
@@ -112,6 +118,33 @@ export function registerDocumentation(app: DocumentationApp) {
       },
       servers: [{ url: "/api" }],
     });
+    // These responses come from the common HTTP boundary, before any route handler.
+    for (const item of Object.values(generated.paths ?? {})) {
+      for (const method of ["post", "put", "patch", "delete"] as const) {
+        const operation = item?.[method];
+        if (!operation) continue;
+        const content = {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/ApiError" },
+          },
+        };
+        operation.responses ??= {};
+        operation.responses[403] ??= {
+          description: "Cross-origin Cookie write rejected",
+          content,
+        };
+        operation.responses[503] ??= {
+          description: "Writes are protected (WRITE_MODE or Preview policy)",
+          content,
+          headers: {
+            "Retry-After": {
+              description: "Retry delay in seconds for WRITE_PROTECTED",
+              schema: { type: "string", example: "60" },
+            },
+          },
+        };
+      }
+    }
     const filtered = audienceDocument(generated, audience);
     documents.set(audience, filtered);
     return filtered;
@@ -156,6 +189,7 @@ export function registerDocumentation(app: DocumentationApp) {
         hideTestRequestButton: !local,
         hideClientButton: true,
         persistAuth: false,
+        withDefaultFonts: false,
         proxyUrl: "",
       })(c, next);
     });

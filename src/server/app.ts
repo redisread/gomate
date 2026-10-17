@@ -137,7 +137,7 @@ apiApp.openapi(
     const versionId = c.env?.CF_VERSION_METADATA?.id;
     return c.json(
       {
-        status: "ok",
+        status: "ok" as const,
         writeMode: effectiveWriteMode(c.req.raw, c.env),
         timestamp: new Date().toISOString(),
         ...(versionId ? { versionId } : {}),
