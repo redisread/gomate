@@ -33,21 +33,34 @@ for (const locale of ["zh-CN", "en"]) {
       requirements: [],
       tagIds: [],
     });
-    await page
-      .context()
-      .addCookies([
-        {
-          name: "locale",
-          value: locale,
-          url: process.env.E2E_BASE_URL || "http://localhost:5432",
-        },
-      ]);
+    await page.context().addCookies([
+      {
+        name: "gomate_locale",
+        value: locale,
+        url: process.env.E2E_BASE_URL || "http://localhost:5432",
+      },
+    ]);
     await loginAs(page, member.email, member.password);
     await page.goto(`/teams/${teamId}`);
+    await expect(page.locator("html")).toHaveAttribute("lang", locale);
     await page.locator('[data-testid="team-join-button"]:visible').click();
     await expect(page.getByTestId("team-member-status")).toBeVisible();
     await page.reload();
     await expect(page.getByTestId("team-member-status")).toBeVisible();
     await expect(page.getByTestId("team-applications-section")).toHaveCount(0);
+    await page.getByTestId("team-member-status").getByRole("button").click();
+    await page.getByRole("alertdialog").getByRole("button").first().click();
+    await expect(page.getByTestId("team-member-status")).toHaveCount(0);
+    await page.locator('[data-testid="team-join-button"]:visible').click();
+    await expect(page.getByTestId("team-member-status")).toBeVisible();
+    await page.context().clearCookies();
+    await loginAs(page, leader.email, leader.password);
+    await page.goto(`/teams/${teamId}`);
+    await page
+      .getByRole("button", { name: /移除 Member|Remove Member/ })
+      .click();
+    await expect(
+      page.getByRole("button", { name: /移除 Member|Remove Member/ }),
+    ).toHaveCount(0);
   });
 }
