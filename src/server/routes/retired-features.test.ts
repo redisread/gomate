@@ -12,7 +12,7 @@ describe("retired non-core API surface", () => {
     const response = await apiApp.request(path, {}, {
       WRITE_MODE: "open",
       APP_URL: "http://localhost",
-    } as ApiBindings);
+    } as unknown as ApiBindings);
     expect(response.status).toBe(404);
     expect(await response.json()).toMatchObject({
       success: false,
