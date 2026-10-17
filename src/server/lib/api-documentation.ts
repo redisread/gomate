@@ -1,7 +1,7 @@
 import { getLocaleFromCookie, resolveLocale } from "../../i18n";
-import docsZh from "../../../public/locales/zh-CN/api-docs.json";
-import docsEn from "../../../public/locales/en/api-docs.json";
-import docsJa from "../../../public/locales/ja/api-docs.json";
+import docsZh from "../../../public/locales/zh-CN/apiDocs.json";
+import docsEn from "../../../public/locales/en/apiDocs.json";
+import docsJa from "../../../public/locales/ja/apiDocs.json";
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
 import type { Context } from "hono";

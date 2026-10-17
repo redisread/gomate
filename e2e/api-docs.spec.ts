@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test("Scalar renders the public contract using only same-origin assets", async ({
   page,
   baseURL,
-}) => {
+}, testInfo) => {
   const externalRequests: string[] = [];
   const errors: string[] = [];
   page.on("request", (request) => {
@@ -42,3 +42,27 @@ test("admin documentation cannot be read anonymously", async ({ request }) => {
     expect(response.headers()["cache-control"]).toBe("private, no-store");
   }
 });
+
+for (const width of [1280, 390]) {
+  test(`documentation search and keyboard navigation work at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/api/docs");
+    await page.waitForLoadState("networkidle");
+    if (width < 768)
+      await page.getByRole("button", { name: "Open Menu" }).click();
+    await page.getByRole("button", { name: /Open Search/ }).click();
+    const search = page.getByRole("combobox", { name: "Enter search query" });
+    await expect(search).toBeFocused();
+    await search.fill("health");
+    await expect(page.getByRole("dialog")).toContainText("/health");
+    await search.press("ArrowDown");
+    await search.press("Enter");
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(page).toHaveURL(/#.*health/i);
+    await page.screenshot({
+      path: testInfo.outputPath(`api-docs-${width}.png`),
+    });
+  });
+}
