@@ -51,7 +51,7 @@ R2 保存头像与地点媒体，D1 保存所有权和引用。跨 R2/D1 操作�
 
 ### 待执行的退役 R2 对象处置
 
-此次代码/DDL 删除不执行任何远程 R2 删除。旧代码可确认故事临时对象前缀为 `temp/stories/{userId}/`，正式故事对象为 `stories/{storyId}/`；它们只是盘点候选，不能仅按字符串前缀直接删除。
+此次代码/DDL 删除不执行任何远程 R2 删除。2026-10-17 控制台盘点发现 `stories/` 下有一个 179 B 的历史对象（2026-07-18），`temp/stories/` 为空。当前 v3 的故事表为空，无法由其证明该历史对象归属及恢复副本，因此保留该对象。共享桶还存在旧 `share/`、`incremental-cache/` 和 `location/`，这些不因目录名称而被认定为可删除。旧代码可确认故事临时对象前缀为 `temp/stories/{userId}/`，正式故事对象为 `stories/{storyId}/`；它们只是盘点候选，不能仅按字符串前缀直接删除。
 
 后续处置需要在受保护流程中先生成只读 inventory：列出精确 key、大小、ETag/版本、创建时间与可恢复副本，记录旧故事记录能够证明的归属；再从保留的用户头像、地点封面/图片及其扩展资料中提取当前引用，与候选集合相减。外部 URL、归属不明对象、仍被核心数据引用的对象均排除并人工核对。批准后的精确清单分批执行，失败可重入并记录结果，不递归删除共享 bucket。
 
@@ -66,7 +66,7 @@ R2 保存头像与地点媒体，D1 保存所有权和引用。跨 R2/D1 操作�
 1. `0010_minimal_team_meeting_point.sql` 添加集合信息字段并提取旧行动本中的集合信息。旧列/旧表仍在，允许先部署不再读取它们的新 Worker。
 2. `0011_minimal_product_contract.sql` 删除 8 张退役表和旧 `checklist` 列。重建 Team 时先保留成员与标签数据再恢复，重建核心触发器并验证外键；完整本地数据库走到此状态。
 
-生产使用 [发布阶段清单](../migrations/production-phases.json) 和 [迁移规划器](../scripts/production-migrations.mjs) 校验 SQL 摘要、顺序和连续前缀。当前破坏性 contract 阶段禁用：生产只推进已启用前缀，不能因本地最新 schema 已收缩就直接在线删表。后续受保护提交必须记录兼容 Worker version/commit、观察时间段、验证证据及旧版本回滚窗口关闭后才启用；无环境变量绕过。具体授权见 [生产变更规约](prod-change-policy.md)。
+生产使用 [发布阶段清单](../migrations/production-phases.json) 和 [迁移规划器](../scripts/production-migrations.mjs) 校验 SQL 摘要、顺序和连续前缀。`0011` 已在发布清单中启用：兼容 Worker、观察时间段、验证链接及旧版本回滚窗口关闭记录均随清单审核。生产只推进获准的连续前缀；实际执行状态仍需读取 D1 migration 记录确认，无环境变量绕过。具体授权见 [生产变更规约](prod-change-policy.md)。
 
 [Cloudflare migrations](https://developers.cloudflare.com/d1/reference/migrations/) 按 migration 记录执行；Worker 版本回滚不会恢复删除的 D1 数据。删表后的恢复需匹配的数据恢复方案与兼容 Worker，不能仅回退旧代码。
 

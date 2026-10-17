@@ -20,7 +20,7 @@
 - 正常生产 `WRITE_MODE` 为 `open`；`protected` 只用于经过审批的事故写保护，不作为常规发布配置。
 - Cloudflare Workers Builds 的 Git 连接负责发布授权；运行时 secret（`BETTER_AUTH_SECRET`、`RESEND_API_KEY`）只在受保护 production 环境配置，仓库不保存 Cloudflare 或应用 secret。
 
-旧 split Workers、`api.gomate.live`、旧 D1、旧 KV 和旧 route rollback 已删除；当前 Worker 未配置 KV 运行时缓存。
+旧 split Workers、`api.gomate.live`、旧 KV 和旧 route rollback 已退役；2026-10-17 控制台仍可见 `gomate-db-v2`，不作为当前绑定或回滚目标，也不在本次删除范围内；当前 Worker 未配置 KV 运行时缓存。
 
 仓库根配置是本地开发配置：Worker 名称保持为连接的 `gomate`（满足 Workers Builds
 连接校验），但使用本地 D1/R2 状态；
@@ -28,7 +28,7 @@
 生产命令必须显式传入 `--env production`。
 
 仓库历史 baseline 为 19 张业务表、13 个触发器；完整本地 contract 迁移后为 11 张核心表，
-生产当前可执行前缀与本地全链不同。稳定 Region ID `region-cn`、`region-cn-guangdong`、
+生产获准前缀现已包含完整 contract 链。稳定 Region ID `region-cn`、`region-cn-guangdong`、
 `region-cn-shenzhen` 由参考目录管理。实际生产 migration 状态必须从只读 inventory 验证，
 不能由仓库文件推断。阶段区别见[数据库文档](database.md#迁移与发布阶段)。
 
@@ -88,7 +88,7 @@ Workers Builds 的推荐配置为：
 
 - 所有 DDL 只通过 `migrations/`；不得用 `d1 execute` 手工修改生产 schema。
 - migration 采用 expand/code/contract：先应用旧代码可接受的增量 schema，再发布使用新 schema 的代码；删除列、表、约束等 contract migration 必须先发布同时兼容旧/新 schema 的 Worker，完成观察并关闭旧版本回滚窗口后再执行。
-- contract migration 通过发布阶段清单显式禁用；启用必须由后续受保护提交提供兼容 Worker version/commit、观察开始/结束时间、验证链接与旧版本回滚窗口关闭记录。规划器拒绝缺失证据或 SQL 摘要不一致，不提供环境变量绕过。当前 `0011` 仍禁用，`0010` 仅增量添加集合信息；本 PR 的合并不代表 contract 已执行。
+- contract migration 通过发布阶段清单显式禁用；启用必须由后续受保护提交提供兼容 Worker version/commit、观察开始/结束时间、验证链接与旧版本回滚窗口关闭记录。规划器拒绝缺失证据或 SQL 摘要不一致，不提供环境变量绕过。`0011` 已随证据启用，`0010` 仅增量添加集合信息；清单启用不等于线上已执行，必须核对发布结果及 D1 记录。
 - 新 D1 v3 以 `0000_init.sql` 作为 fresh baseline，并由 `0001_reference_data.sql` 写入运行时必需的稳定 Region、Location 和 Tag；`0003_import_v2_catalog.sql` 只增量保留已退役 v2 的 16 个地区和 36 个公开地点，不覆盖 v3 现有目录，也不包含用户数据。已应用 migration 不可改写。后续新增迁移、Drizzle schema、journal 和 snapshot 必须同步，本地运行 `pnpm db:check`。
 - 生产 D1 v3 的创建/绑定是独立的受保护基础设施变更；在该资源完成只读核对前，禁止把旧 D1 UUID 填回 `wrangler.jsonc`，也禁止执行远程 migration。
 - 测试用户和可变 demo 数据不得进入 migration；测试 fixture 只在隔离的本地数据库创建。
@@ -154,4 +154,4 @@ Google 项目使用 GoMate 网站客户端，授权回调为 `https://gomate.liv
 
 ## Preview 与增量迁移的先后关系
 
-Preview 共用生产 D1，且不执行 migration。首次发布包含 `meeting_point` 的 Worker 前，生产可能尚未应用 `0010`，此时 Preview 的队伍读取可能失败；不能据此宣称核心读取已验收。应在受保护 main 发布完成增量迁移后，验证精确 Worker version 的页面与 API；不增加旧字段兜底，也不在 Preview 或本机执行远程迁移。`0011` 仍按迁移清单保持关闭，待观察与回滚窗口证据就绪后再经后续受保护提交启用。
+Preview 共用生产 D1，且不执行 migration。首次发布包含 `meeting_point` 的 Worker 前，生产可能尚未应用 `0010`，此时 Preview 的队伍读取可能失败；不能据此宣称核心读取已验收。应在受保护 main 发布完成增量迁移后，验证精确 Worker version 的页面与 API；不增加旧字段兜底，也不在 Preview 或本机执行远程迁移。`0011` 已按迁移清单附带的观察与回滚窗口证据启用。恢复代码必须兼容收缩后的 schema，不能回退到依赖退役表的旧版本。

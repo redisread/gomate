@@ -88,7 +88,7 @@ pnpm db:promote-admin --email admin@test.com
 
 ## 部署
 
-目标为 `main` 的 PR 由 GitHub Actions 执行应用验证、Worker bundle 检查和隔离本地 D1 的浏览器测试。已审核 PR 合并到受保护的 `main` 后，Cloudflare Workers Builds 通过 `pnpm deploy:production` 完成生产构建、获准 migration 前缀与部署。完整本地迁移会执行 contract 阶段，但生产阶段清单当前禁用破坏性 `0011`；详情见[迁移与发布阶段](database.md#迁移与发布阶段)。
+目标为 `main` 的 PR 由 GitHub Actions 执行应用验证、Worker bundle 检查和隔离本地 D1 的浏览器测试。已审核 PR 合并到受保护的 `main` 后，Cloudflare Workers Builds 通过 `pnpm deploy:production` 完成生产构建、获准 migration 前缀与部署。完整本地迁移会执行 contract 阶段；生产阶段清单已附兼容版本与观察证据，启用 `0011`；详情见[迁移与发布阶段](database.md#迁移与发布阶段)。
 
 其他分支由 Cloudflare Git 集成运行 `pnpm deploy:preview`，上传同一 Worker 的 Preview version，并生成稳定的分支 alias。Preview 共用生产 D1/R2，通过 `WRITE_MODE=protected` 拒绝业务写入；仅在合法 Preview 域名上允许登录、退出与创建认证 session。`PREVIEW_HOST_SUFFIX` 保留在 production vars 中。
 
