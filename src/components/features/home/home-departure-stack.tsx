@@ -18,7 +18,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
 import { Avatar } from "@/components/ui/avatar";
 import type { Team } from "@/lib/types";
-import { formatTeamStart } from "@/lib/team-display";
+import { useHomeTeamTime } from "./home-time";
 
 const DECK_POSITIONS = [
   "z-30 translate-x-0 translate-y-0 rotate-0 scale-100 opacity-100",
@@ -64,6 +64,7 @@ function DepartureCard({
   const coverImage = team.location?.coverImageUrl;
   const locationName = team.location?.name;
   const leaderName = team.leader?.nickname || team.leader?.name || t("common.unknown");
+  const formatTeamStart = useHomeTeamTime();
   const start = formatTeamStart(team);
 
   return (

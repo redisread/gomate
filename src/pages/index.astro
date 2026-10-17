@@ -27,5 +27,5 @@ const initialData: HomeInitialData = {
 ---
 
 <Layout title="GoMate - 发现趣处，组队同行">
-  <HomeClient initialData={initialData} client:visible />
+  <HomeClient initialData={initialData} initialTimeZone={Intl.DateTimeFormat().resolvedOptions().timeZone} client:visible />
 </Layout>
