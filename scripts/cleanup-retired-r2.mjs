@@ -7,6 +7,7 @@ import path from "node:path";
 import { assertProductionDeployEnvironment } from "./production-build-guard.mjs";
 
 const exec = promisify(execFile);
+const audit = { phase: "guard", deleted: 0 };
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const stable = (v) =>
   Array.isArray(v)
@@ -91,18 +92,25 @@ export async function cleanupRetiredR2({
   manifest,
   checkReferences,
   progress = () => {},
+  phase = () => {},
 }) {
   if (manifest.bucket !== "gomate") throw new Error("Unexpected bucket");
+  phase("reference_check");
   await checkReferences();
+  phase("inventory_check");
   const targets = preflightInventory(await api.list(), manifest);
+  phase("content_preflight");
   // Validate every surviving candidate before the first deletion.
   await bounded(targets, async (object) => {
     const bytes = await api.get(object.key);
     if (bytes.length !== object.size || hash(bytes) !== object.sha256)
       throw new Error("Object content changed");
   });
+  phase("reference_recheck");
   await checkReferences();
+  phase("inventory_recheck");
   preflightInventory(await api.list(), manifest);
+  phase("delete");
   let deleted = 0;
   await bounded(targets, async (object) => {
     // These prefixes have no live writer. Recheck bytes immediately before delete.
@@ -112,6 +120,7 @@ export async function cleanupRetiredR2({
     await api.remove(object.key);
     progress(++deleted);
   });
+  phase("final_inventory");
   const remaining = preflightInventory(await api.list(), manifest);
   if (remaining.length) throw new Error("Cleanup incomplete");
   return {
@@ -137,6 +146,7 @@ async function main() {
     manifest.objects.filter((o) => o.delete).length !== 781
   )
     throw new Error("Unapproved cleanup scope");
+  audit.phase = "credentials";
   const { stdout } = await exec("wrangler", ["auth", "token", "--json"], {
     maxBuffer: 1024 * 1024,
   });
@@ -219,7 +229,11 @@ async function main() {
     api,
     manifest,
     checkReferences,
+    phase(value) {
+      audit.phase = value;
+    },
     progress(count) {
+      audit.deleted = count;
       if (count % 100 === 0)
         console.log(`R2 cleanup deleted ${count} approved objects`);
     },
@@ -236,7 +250,7 @@ async function main() {
 if (path.resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
   main().catch(() => {
     console.error(
-      "Retired R2 cleanup stopped; inspect counts and rerun only via protected main build",
+      JSON.stringify({ event: "retired_r2_cleanup_stopped", ...audit }),
     );
     process.exitCode = 1;
   });
