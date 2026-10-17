@@ -2,32 +2,46 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import * as React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AdminQuickAction } from "./admin-quick-action";
+import { AdminQuickActionDialog } from "./admin-quick-action";
 
 function QuickActionFixture({
   onOpenChange,
 }: {
   onOpenChange?: (open: boolean) => void;
 }) {
+  const [open, setOpen] = React.useState(false);
+  const updateOpen = React.useCallback(
+    (value: boolean) => {
+      setOpen(value);
+      onOpenChange?.(value);
+    },
+    [onOpenChange],
+  );
+  const onClose = React.useCallback(() => updateOpen(false), [updateOpen]);
   const initialFocusRef = React.useRef<HTMLInputElement>(null);
   return (
-    <AdminQuickAction
-      label="Quick add location"
-      title="Quickly record a location"
-      closeLabel="Close quick entry"
-      initialFocusRef={initialFocusRef}
-      onOpenChange={onOpenChange}
-    >
-      <label>
-        Location
-        <input ref={initialFocusRef} />
-      </label>
-      <button type="button">Save draft</button>
-    </AdminQuickAction>
+    <>
+      <button type="button" onClick={() => updateOpen(true)}>
+        Quick add location
+      </button>
+      <AdminQuickActionDialog
+        open={open}
+        onClose={onClose}
+        title="Quickly record a location"
+        closeLabel="Close quick entry"
+        initialFocusRef={initialFocusRef}
+      >
+        <label>
+          Location
+          <input ref={initialFocusRef} />
+        </label>
+        <button type="button">Save draft</button>
+      </AdminQuickActionDialog>
+    </>
   );
 }
 
-describe("AdminQuickAction", () => {
+describe("AdminQuickActionDialog", () => {
   let offsetParentDescriptor: PropertyDescriptor | undefined;
 
   beforeEach(() => {
@@ -63,7 +77,6 @@ describe("AdminQuickAction", () => {
     const trigger = screen.getByRole("button", {
       name: "Quick add location",
     });
-    expect(trigger).toHaveClass("min-h-11", "min-w-11");
     fireEvent.click(trigger);
 
     const dialog = screen.getByRole("dialog", {
@@ -76,21 +89,23 @@ describe("AdminQuickAction", () => {
       "motion-reduce:transition-none",
     );
     expect(dialog).toHaveClass("pb-[env(safe-area-inset-bottom)]");
-    await waitFor(() => expect(screen.getByLabelText("Location")).toHaveFocus());
+    await waitFor(() =>
+      expect(screen.getByLabelText("Location")).toHaveFocus(),
+    );
     expect(document.body).toHaveStyle({ overflow: "hidden" });
   });
 
   it("traps Tab focus in both directions", async () => {
     render(<QuickActionFixture />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Quick add location" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Quick add location" }));
 
     const close = screen.getByRole("button", {
       name: "Close quick entry",
     });
     const save = screen.getByRole("button", { name: "Save draft" });
-    await waitFor(() => expect(screen.getByLabelText("Location")).toHaveFocus());
+    await waitFor(() =>
+      expect(screen.getByLabelText("Location")).toHaveFocus(),
+    );
 
     save.focus();
     fireEvent.keyDown(document, { key: "Tab" });
@@ -124,9 +139,7 @@ describe("AdminQuickAction", () => {
 
   it("closes when the backdrop is pressed", () => {
     render(<QuickActionFixture />);
-    fireEvent.click(
-      screen.getByRole("button", { name: "Quick add location" }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Quick add location" }));
     const overlay = screen.getByTestId("admin-quick-action-overlay");
     const backdrop = overlay.querySelector<HTMLElement>("[aria-hidden='true']");
 
