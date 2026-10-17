@@ -1,18 +1,24 @@
+import { teamSessionMiddleware } from "./session-middleware";
+import { TeamJoinRequestSchema, TimestampSchema } from "@/contracts";
+import {
+  createApiApp,
+  createRoute,
+  jsonResponse,
+  errorResponses,
+  z,
+} from "../../lib/openapi";
 import { and, eq, isNull } from "drizzle-orm";
-import { Hono, type Context } from "hono";
-import { z } from "zod";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
 import { APIErrors } from "../../lib/api-errors";
-import type { Env } from "../../lib/auth";
 import { getActiveSession } from "../../lib/active-session";
 import { mapDatabaseError } from "../../lib/database-errors";
 import { generateId } from "../../lib/id";
 import { logger } from "../../lib/logger";
 import { createTeamApprovalBatch } from "../../lib/team-approval";
-import { validateRequest } from "../../lib/validation";
+import { legacyJsonBody, validationHook } from "../../lib/openapi";
 
-const membership = new Hono<{ Bindings: Env }>();
+const membership = createApiApp();
 
 const joinSchema = z.object({
   message: z.string().trim().min(1).max(500).optional(),
@@ -22,41 +28,63 @@ function changes(result: D1Result<unknown> | undefined): number {
   return Number(result?.meta?.changes ?? 0);
 }
 
-async function getSession(c: Context<{ Bindings: Env }>) {
-  return getActiveSession(c.env, c.req.raw.headers);
-}
+membership.openapi(
+  createRoute({
+    method: "post",
+    path: "/join",
+    operationId: "teamsJoin",
+    tags: ["Teams"],
+    summary: "Request to join a team",
+    "x-audience": "public",
+    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    request: {
+      params: z.object({ id: z.string() }),
+      body: {
+        required: true,
+        content: { "application/json": { schema: joinSchema } },
+      },
+    },
+    middleware: [
+      teamSessionMiddleware((error) => {
+        logger.error("team_join_failed", error);
+        return APIErrors.internalError("申请加入失败");
+      }),
+      legacyJsonBody("输入无效"),
+    ] as const,
+    responses: {
+      201: jsonResponse(
+        z.object({
+          success: z.literal(true),
+          joinRequest: TeamJoinRequestSchema.optional(),
+        }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 404, 409, 500),
+    },
+  }),
+  async (c) => {
+    try {
+      const session = c.get("session");
 
-membership.post("/join", async (c) => {
-  try {
-    const session = await getSession(c);
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+      const parsed = c.req.valid("json");
 
-    const parsed = await validateRequest(
-      c,
-      "json",
-      joinSchema,
-      "输入无效",
-      "flatten",
-    );
-    if (parsed instanceof Response) return parsed;
+      const teamId = c.req.valid("param").id;
+      if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
+      const userId = session.user.id;
+      const db = createDb(c.env.DB);
+      const team = await db.query.teams.findFirst({
+        where: eq(schema.teams.id, teamId),
+      });
 
-    const teamId = c.req.param("id");
-    if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
-    const userId = session.user.id;
-    const db = createDb(c.env.DB);
-    const team = await db.query.teams.findFirst({
-      where: eq(schema.teams.id, teamId),
-    });
+      if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
+      if (team.leaderId === userId) {
+        return c.json(APIErrors.conflict("队长不能申请加入自己的队伍"), 409);
+      }
 
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId === userId) {
-      return c.json(APIErrors.conflict("队长不能申请加入自己的队伍"), 409);
-    }
-
-    const requestId = generateId();
-    const now = Date.now();
-    const statement = c.env.DB.prepare(
-      `
+      const requestId = generateId();
+      const now = Date.now();
+      const statement = c.env.DB.prepare(
+        `
       INSERT INTO team_join_requests (
         id, team_id, user_id, status, message,
         decided_by_user_id, decided_at, created_at, updated_at
@@ -85,271 +113,410 @@ membership.post("/join", async (c) => {
             AND pending.status = 'pending'
         )
     `,
-    ).bind(
-      requestId,
-      userId,
-      parsed.message ?? null,
-      now,
-      now,
-      teamId,
-      userId,
-      now,
-      userId,
-      userId,
-    );
-
-    const result = await statement.run();
-    if (changes(result) !== 1) {
-      return c.json(APIErrors.conflict("该队伍当前不接受此申请"), 409);
-    }
-
-    const joinRequest = await db.query.teamJoinRequests.findFirst({
-      where: eq(schema.teamJoinRequests.id, requestId),
-    });
-    return c.json({ success: true, joinRequest }, 201);
-  } catch (error) {
-    const diagnostic = error instanceof Error ? error.message : String(error);
-    if (diagnostic.includes("team_join_requests_one_pending_unique")) {
-      return c.json(APIErrors.conflict("你已经提交了待审批申请"), 409);
-    }
-    logger.error("team_join_failed", error);
-    return c.json(APIErrors.internalError("申请加入失败"), 500);
-  }
-});
-
-membership.post("/join-requests/:requestId/approve", async (c) => {
-  try {
-    const session = await getSession(c);
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-    const teamId = c.req.param("id");
-    if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
-    const requestId = c.req.param("requestId");
-    const db = createDb(c.env.DB);
-    const rows = await db
-      .select({
-        request: schema.teamJoinRequests,
-        leaderId: schema.teams.leaderId,
-      })
-      .from(schema.teamJoinRequests)
-      .innerJoin(
-        schema.teams,
-        eq(schema.teams.id, schema.teamJoinRequests.teamId),
-      )
-      .where(
-        and(
-          eq(schema.teamJoinRequests.id, requestId),
-          eq(schema.teamJoinRequests.teamId, teamId),
-        ),
-      )
-      .limit(1);
-    const row = rows[0];
-
-    if (!row) return c.json(APIErrors.notFound("入队申请不存在"), 404);
-    if (row.leaderId !== session.user.id) {
-      return c.json(APIErrors.forbidden("只有队长可以审批申请"), 403);
-    }
-    if (row.request.status !== "pending") {
-      return c.json(APIErrors.conflict("该申请已经处理"), 409);
-    }
-    if (row.request.userId === row.leaderId) {
-      return c.json(APIErrors.conflict("队长不能成为队员"), 409);
-    }
-
-    const existingMembership = await db.query.teamMembers.findFirst({
-      where: and(
-        eq(schema.teamMembers.teamId, teamId),
-        eq(schema.teamMembers.userId, row.request.userId),
-      ),
-    });
-    if (existingMembership?.leftAt === null) {
-      return c.json(APIErrors.conflict("该用户已经是活动成员"), 409);
-    }
-
-    const clockNow = Date.now();
-    const now = existingMembership
-      ? Math.max(clockNow, existingMembership.joinedAt.getTime() + 1)
-      : clockNow;
-    const results = await c.env.DB.batch(
-      createTeamApprovalBatch(c.env.DB, {
+      ).bind(
         requestId,
-        teamId,
-        leaderId: session.user.id,
+        userId,
+        parsed.message ?? null,
         now,
-      }),
-    );
-    if (changes(results[0]) !== 1 || changes(results[1]) !== 1) {
-      return c.json(APIErrors.conflict("申请状态已变化，未执行审批"), 409);
+        now,
+        teamId,
+        userId,
+        now,
+        userId,
+        userId,
+      );
+
+      const result = await statement.run();
+      if (changes(result) !== 1) {
+        return c.json(APIErrors.conflict("该队伍当前不接受此申请"), 409);
+      }
+
+      const joinRequest = await db.query.teamJoinRequests.findFirst({
+        where: eq(schema.teamJoinRequests.id, requestId),
+      });
+      return c.json(
+        {
+          success: true as const,
+          joinRequest: joinRequest
+            ? {
+                ...joinRequest,
+                decidedAt: joinRequest.decidedAt?.toISOString() ?? null,
+                createdAt: joinRequest.createdAt.toISOString(),
+                updatedAt: joinRequest.updatedAt.toISOString(),
+              }
+            : undefined,
+        },
+        201,
+      );
+    } catch (error) {
+      const diagnostic = error instanceof Error ? error.message : String(error);
+      if (diagnostic.includes("team_join_requests_one_pending_unique")) {
+        return c.json(APIErrors.conflict("你已经提交了待审批申请"), 409);
+      }
+      logger.error("team_join_failed", error);
+      return c.json(APIErrors.internalError("申请加入失败"), 500);
     }
+  },
+  validationHook("输入无效", "flatten"),
+);
 
-    return c.json({ success: true, requestId, status: "approved" });
-  } catch (error) {
-    const mapped = mapDatabaseError(error);
-    if (
-      mapped.body.error.code === "TEAM_CAPACITY_EXCEEDED" ||
-      mapped.body.error.code === "TEAM_LEADER_MEMBER_CONFLICT"
-    ) {
-      return c.json(mapped.body, mapped.status);
-    }
-    logger.error("team_join_request_approve_failed", error);
-    return c.json(APIErrors.internalError("批准申请失败"), 500);
-  }
-});
+membership.openapi(
+  createRoute({
+    method: "post",
+    path: "/join-requests/{requestId}/approve",
+    operationId: "teamsJoinRequestApprove",
+    tags: ["Teams"],
+    summary: "Approve a pending join request as leader",
+    "x-audience": "public",
+    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    request: { params: z.object({ id: z.string(), requestId: z.string() }) },
 
-membership.post("/join-requests/:requestId/reject", async (c) => {
-  try {
-    const session = await getSession(c);
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+    responses: {
+      200: jsonResponse(
+        z.object({
+          success: z.literal(true),
+          requestId: z.string(),
+          status: z.literal("approved"),
+        }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 403, 404, 409, 422, 500),
+    },
+  }),
+  async (c) => {
+    try {
+      const session = await getActiveSession(c.env, c.req.raw.headers);
+      if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-    const teamId = c.req.param("id");
-    if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
-    const requestId = c.req.param("requestId");
-    const db = createDb(c.env.DB);
-    const team = await db.query.teams.findFirst({
-      where: eq(schema.teams.id, teamId),
-    });
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId !== session.user.id) {
-      return c.json(APIErrors.forbidden("只有队长可以审批申请"), 403);
-    }
+      const teamId = c.req.valid("param").id;
+      if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
+      const requestId = c.req.valid("param").requestId;
+      const db = createDb(c.env.DB);
+      const rows = await db
+        .select({
+          request: schema.teamJoinRequests,
+          leaderId: schema.teams.leaderId,
+        })
+        .from(schema.teamJoinRequests)
+        .innerJoin(
+          schema.teams,
+          eq(schema.teams.id, schema.teamJoinRequests.teamId),
+        )
+        .where(
+          and(
+            eq(schema.teamJoinRequests.id, requestId),
+            eq(schema.teamJoinRequests.teamId, teamId),
+          ),
+        )
+        .limit(1);
+      const row = rows[0];
 
-    const now = new Date();
-    const updated = await db
-      .update(schema.teamJoinRequests)
-      .set({
-        status: "rejected",
-        decidedByUserId: session.user.id,
-        decidedAt: now,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(schema.teamJoinRequests.id, requestId),
-          eq(schema.teamJoinRequests.teamId, teamId),
-          eq(schema.teamJoinRequests.status, "pending"),
-        ),
-      )
-      .returning({ id: schema.teamJoinRequests.id });
+      if (!row) return c.json(APIErrors.notFound("入队申请不存在"), 404);
+      if (row.leaderId !== session.user.id) {
+        return c.json(APIErrors.forbidden("只有队长可以审批申请"), 403);
+      }
+      if (row.request.status !== "pending") {
+        return c.json(APIErrors.conflict("该申请已经处理"), 409);
+      }
+      if (row.request.userId === row.leaderId) {
+        return c.json(APIErrors.conflict("队长不能成为队员"), 409);
+      }
 
-    if (updated.length !== 1) {
-      return c.json(APIErrors.conflict("申请不存在或已经处理"), 409);
-    }
-    return c.json({ success: true, requestId, status: "rejected" });
-  } catch (error) {
-    logger.error("team_join_request_reject_failed", error);
-    return c.json(APIErrors.internalError("拒绝申请失败"), 500);
-  }
-});
-
-membership.post("/join-requests/:requestId/cancel", async (c) => {
-  try {
-    const session = await getSession(c);
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-    const teamId = c.req.param("id");
-    if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
-    const requestId = c.req.param("requestId");
-    const now = new Date();
-    const db = createDb(c.env.DB);
-    const updated = await db
-      .update(schema.teamJoinRequests)
-      .set({
-        status: "cancelled",
-        decidedByUserId: null,
-        decidedAt: now,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(schema.teamJoinRequests.id, requestId),
-          eq(schema.teamJoinRequests.teamId, teamId),
-          eq(schema.teamJoinRequests.userId, session.user.id),
-          eq(schema.teamJoinRequests.status, "pending"),
-        ),
-      )
-      .returning({ id: schema.teamJoinRequests.id });
-
-    if (updated.length !== 1) {
-      return c.json(APIErrors.conflict("申请不存在或已经处理"), 409);
-    }
-    return c.json({ success: true, requestId, status: "cancelled" });
-  } catch (error) {
-    logger.error("team_join_request_cancel_failed", error);
-    return c.json(APIErrors.internalError("取消申请失败"), 500);
-  }
-});
-
-membership.post("/leave", async (c) => {
-  try {
-    const session = await getSession(c);
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-    const teamId = c.req.param("id");
-    if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
-    const db = createDb(c.env.DB);
-    const leftAt = new Date();
-    const updated = await db
-      .update(schema.teamMembers)
-      .set({ leftAt })
-      .where(
-        and(
+      const existingMembership = await db.query.teamMembers.findFirst({
+        where: and(
           eq(schema.teamMembers.teamId, teamId),
-          eq(schema.teamMembers.userId, session.user.id),
-          isNull(schema.teamMembers.leftAt),
+          eq(schema.teamMembers.userId, row.request.userId),
         ),
-      )
-      .returning({ userId: schema.teamMembers.userId });
+      });
+      if (existingMembership?.leftAt === null) {
+        return c.json(APIErrors.conflict("该用户已经是活动成员"), 409);
+      }
 
-    if (updated.length !== 1) {
-      return c.json(APIErrors.conflict("你不是该队伍的活动成员"), 409);
+      const clockNow = Date.now();
+      const now = existingMembership
+        ? Math.max(clockNow, existingMembership.joinedAt.getTime() + 1)
+        : clockNow;
+      const results = await c.env.DB.batch(
+        createTeamApprovalBatch(c.env.DB, {
+          requestId,
+          teamId,
+          leaderId: session.user.id,
+          now,
+        }),
+      );
+      if (changes(results[0]) !== 1 || changes(results[1]) !== 1) {
+        return c.json(APIErrors.conflict("申请状态已变化，未执行审批"), 409);
+      }
+
+      return c.json(
+        { success: true as const, requestId, status: "approved" as const },
+        200,
+      );
+    } catch (error) {
+      const mapped = mapDatabaseError(error);
+      if (
+        mapped.body.error.code === "TEAM_CAPACITY_EXCEEDED" ||
+        mapped.body.error.code === "TEAM_LEADER_MEMBER_CONFLICT"
+      ) {
+        return c.json(mapped.body, mapped.status);
+      }
+      logger.error("team_join_request_approve_failed", error);
+      return c.json(APIErrors.internalError("批准申请失败"), 500);
     }
-    return c.json({ success: true, leftAt: leftAt.toISOString() });
-  } catch (error) {
-    logger.error("team_leave_failed", error);
-    return c.json(APIErrors.internalError("退出队伍失败"), 500);
-  }
-});
+  },
+);
 
-membership.post("/members/:userId/remove", async (c) => {
-  try {
-    const session = await getSession(c);
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+membership.openapi(
+  createRoute({
+    method: "post",
+    path: "/join-requests/{requestId}/reject",
+    operationId: "teamsJoinRequestReject",
+    tags: ["Teams"],
+    summary: "Reject a pending join request as leader",
+    "x-audience": "public",
+    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    request: { params: z.object({ id: z.string(), requestId: z.string() }) },
 
-    const teamId = c.req.param("id");
-    if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
-    const targetUserId = c.req.param("userId");
-    const db = createDb(c.env.DB);
-    const team = await db.query.teams.findFirst({
-      where: eq(schema.teams.id, teamId),
-    });
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId !== session.user.id) {
-      return c.json(APIErrors.forbidden("只有队长可以移除成员"), 403);
+    responses: {
+      200: jsonResponse(
+        z.object({
+          success: z.literal(true),
+          requestId: z.string(),
+          status: z.literal("rejected"),
+        }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 403, 404, 409, 500),
+    },
+  }),
+  async (c) => {
+    try {
+      const session = await getActiveSession(c.env, c.req.raw.headers);
+      if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+
+      const teamId = c.req.valid("param").id;
+      if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
+      const requestId = c.req.valid("param").requestId;
+      const db = createDb(c.env.DB);
+      const team = await db.query.teams.findFirst({
+        where: eq(schema.teams.id, teamId),
+      });
+      if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
+      if (team.leaderId !== session.user.id) {
+        return c.json(APIErrors.forbidden("只有队长可以审批申请"), 403);
+      }
+
+      const now = new Date();
+      const updated = await db
+        .update(schema.teamJoinRequests)
+        .set({
+          status: "rejected" as const,
+          decidedByUserId: session.user.id,
+          decidedAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(schema.teamJoinRequests.id, requestId),
+            eq(schema.teamJoinRequests.teamId, teamId),
+            eq(schema.teamJoinRequests.status, "pending"),
+          ),
+        )
+        .returning({ id: schema.teamJoinRequests.id });
+
+      if (updated.length !== 1) {
+        return c.json(APIErrors.conflict("申请不存在或已经处理"), 409);
+      }
+      return c.json(
+        { success: true as const, requestId, status: "rejected" as const },
+        200,
+      );
+    } catch (error) {
+      logger.error("team_join_request_reject_failed", error);
+      return c.json(APIErrors.internalError("拒绝申请失败"), 500);
     }
-    if (targetUserId === team.leaderId) {
-      return c.json(APIErrors.conflict("队长不能被移除"), 409);
-    }
+  },
+);
 
-    const updated = await db
-      .update(schema.teamMembers)
-      .set({ leftAt: new Date() })
-      .where(
-        and(
-          eq(schema.teamMembers.teamId, teamId),
-          eq(schema.teamMembers.userId, targetUserId),
-          isNull(schema.teamMembers.leftAt),
-        ),
-      )
-      .returning({ userId: schema.teamMembers.userId });
+membership.openapi(
+  createRoute({
+    method: "post",
+    path: "/join-requests/{requestId}/cancel",
+    operationId: "teamsJoinRequestCancel",
+    tags: ["Teams"],
+    summary: "Cancel your pending join request",
+    "x-audience": "public",
+    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    request: { params: z.object({ id: z.string(), requestId: z.string() }) },
 
-    if (updated.length !== 1) {
-      return c.json(APIErrors.notFound("活动成员不存在"), 404);
+    responses: {
+      200: jsonResponse(
+        z.object({
+          success: z.literal(true),
+          requestId: z.string(),
+          status: z.literal("cancelled"),
+        }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 409, 500),
+    },
+  }),
+  async (c) => {
+    try {
+      const session = await getActiveSession(c.env, c.req.raw.headers);
+      if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+
+      const teamId = c.req.valid("param").id;
+      if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
+      const requestId = c.req.valid("param").requestId;
+      const now = new Date();
+      const db = createDb(c.env.DB);
+      const updated = await db
+        .update(schema.teamJoinRequests)
+        .set({
+          status: "cancelled" as const,
+          decidedByUserId: null,
+          decidedAt: now,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(schema.teamJoinRequests.id, requestId),
+            eq(schema.teamJoinRequests.teamId, teamId),
+            eq(schema.teamJoinRequests.userId, session.user.id),
+            eq(schema.teamJoinRequests.status, "pending"),
+          ),
+        )
+        .returning({ id: schema.teamJoinRequests.id });
+
+      if (updated.length !== 1) {
+        return c.json(APIErrors.conflict("申请不存在或已经处理"), 409);
+      }
+      return c.json(
+        { success: true as const, requestId, status: "cancelled" as const },
+        200,
+      );
+    } catch (error) {
+      logger.error("team_join_request_cancel_failed", error);
+      return c.json(APIErrors.internalError("取消申请失败"), 500);
     }
-    return c.json({ success: true, userId: targetUserId });
-  } catch (error) {
-    logger.error("team_member_remove_failed", error);
-    return c.json(APIErrors.internalError("移除成员失败"), 500);
-  }
-});
+  },
+);
+
+membership.openapi(
+  createRoute({
+    method: "post",
+    path: "/leave",
+    operationId: "teamsLeave",
+    tags: ["Teams"],
+    summary: "Leave a team as an active member",
+    "x-audience": "public",
+    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    request: { params: z.object({ id: z.string() }) },
+
+    responses: {
+      200: jsonResponse(
+        z.object({ success: z.literal(true), leftAt: TimestampSchema }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 409, 500),
+    },
+  }),
+  async (c) => {
+    try {
+      const session = await getActiveSession(c.env, c.req.raw.headers);
+      if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+
+      const teamId = c.req.valid("param").id;
+      if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
+      const db = createDb(c.env.DB);
+      const leftAt = new Date();
+      const updated = await db
+        .update(schema.teamMembers)
+        .set({ leftAt })
+        .where(
+          and(
+            eq(schema.teamMembers.teamId, teamId),
+            eq(schema.teamMembers.userId, session.user.id),
+            isNull(schema.teamMembers.leftAt),
+          ),
+        )
+        .returning({ userId: schema.teamMembers.userId });
+
+      if (updated.length !== 1) {
+        return c.json(APIErrors.conflict("你不是该队伍的活动成员"), 409);
+      }
+      return c.json(
+        { success: true as const, leftAt: leftAt.toISOString() },
+        200,
+      );
+    } catch (error) {
+      logger.error("team_leave_failed", error);
+      return c.json(APIErrors.internalError("退出队伍失败"), 500);
+    }
+  },
+);
+
+membership.openapi(
+  createRoute({
+    method: "post",
+    path: "/members/{userId}/remove",
+    operationId: "teamsMemberRemove",
+    tags: ["Teams"],
+    summary: "Remove an active member as leader",
+    "x-audience": "public",
+    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    request: { params: z.object({ id: z.string(), userId: z.string() }) },
+
+    responses: {
+      200: jsonResponse(
+        z.object({ success: z.literal(true), userId: z.string() }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 403, 404, 409, 500),
+    },
+  }),
+  async (c) => {
+    try {
+      const session = await getActiveSession(c.env, c.req.raw.headers);
+      if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+
+      const teamId = c.req.valid("param").id;
+      if (!teamId) return c.json(APIErrors.badRequest("缺少队伍 ID"), 400);
+      const targetUserId = c.req.valid("param").userId;
+      const db = createDb(c.env.DB);
+      const team = await db.query.teams.findFirst({
+        where: eq(schema.teams.id, teamId),
+      });
+      if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
+      if (team.leaderId !== session.user.id) {
+        return c.json(APIErrors.forbidden("只有队长可以移除成员"), 403);
+      }
+      if (targetUserId === team.leaderId) {
+        return c.json(APIErrors.conflict("队长不能被移除"), 409);
+      }
+
+      const updated = await db
+        .update(schema.teamMembers)
+        .set({ leftAt: new Date() })
+        .where(
+          and(
+            eq(schema.teamMembers.teamId, teamId),
+            eq(schema.teamMembers.userId, targetUserId),
+            isNull(schema.teamMembers.leftAt),
+          ),
+        )
+        .returning({ userId: schema.teamMembers.userId });
+
+      if (updated.length !== 1) {
+        return c.json(APIErrors.notFound("活动成员不存在"), 404);
+      }
+      return c.json({ success: true as const, userId: targetUserId }, 200);
+    } catch (error) {
+      logger.error("team_member_remove_failed", error);
+      return c.json(APIErrors.internalError("移除成员失败"), 500);
+    }
+  },
+);
 
 export default membership;

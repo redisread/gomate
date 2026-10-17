@@ -1,16 +1,24 @@
-import { Hono } from "hono";
-import { z } from "zod";
+import { teamSessionMiddleware } from "./session-middleware";
+import { ActionbookAssignmentSchema } from "@/contracts";
+import { ChecklistResponseSchema } from "@/contracts/team-api";
+import type { MiddlewareHandler } from "hono";
+import { type ApiEnv, legacyJsonBody, validationHook } from "../../lib/openapi";
+import {
+  createApiApp,
+  createRoute,
+  jsonResponse,
+  errorResponses,
+  z,
+} from "../../lib/openapi";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { APIErrors } from "../../lib/api-errors";
 import { logger } from "../../lib/logger";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
-import type { Env } from "../../lib/auth";
 import { getActiveSession } from "../../lib/active-session";
 import { generateId } from "../../lib/id";
 import { emitTeamActionbookEvent } from "../../lib/team-events";
 import { parseChecklist } from "../../lib/team-checklist-utils";
-import { validateRequest } from "../../lib/validation";
 import type { TeamChecklist, ActionbookAssignment } from "@/contracts";
 
 /**
@@ -25,7 +33,23 @@ import type { TeamChecklist, ActionbookAssignment } from "@/contracts";
  * server 端总是负责 assigneeIds 去重、只允许操作自己。
  */
 
-const checklist = new Hono<{ Bindings: Env }>();
+type ChecklistEnv = ApiEnv & {
+  Variables: ApiEnv["Variables"] & { checklistTeam: schema.Team };
+};
+const checklist = createApiApp<ChecklistEnv>();
+const checklistLeader: MiddlewareHandler<ChecklistEnv> = async (c, next) => {
+  try {
+    const team = await getTeamOr404(createDb(c.env.DB), c.req.param("id")!);
+    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
+    if (team.leaderId !== c.get("session").user.id)
+      return c.json(APIErrors.forbidden("只有队长可以编辑行动本"), 403);
+    c.set("checklistTeam", team);
+  } catch (error) {
+    logger.error("team_checklist_update_failed", error);
+    return c.json(APIErrors.internalError("更新行动本失败"), 500);
+  }
+  await next();
+};
 
 // ==================== Zod schemas ====================
 
@@ -198,131 +222,148 @@ function allAssigneesStillEligible(assigneeIds: string[]) {
  * 队长覆盖式更新整个 checklist。
  * assignment id 保留策略：入参 id 若已存在则复用，否则 server 补新 uuid。
  */
-checklist.put("/:id/checklist", async (c) => {
-  try {
-    const session = await getActiveSession(c.env, c.req.raw.headers);
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+checklist.openapi(
+  createRoute({
+    method: "put",
+    path: "/{id}/checklist",
+    operationId: "teamsChecklistUpdate",
+    tags: ["Teams"],
+    summary: "Replace the team actionbook as leader",
+    "x-audience": "public",
+    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    request: {
+      params: z.object({ id: z.string() }),
+      body: {
+        required: true,
+        content: { "application/json": { schema: checklistPutSchema } },
+      },
+    },
+    middleware: [
+      teamSessionMiddleware((error) => {
+        logger.error("team_checklist_update_failed", error);
+        return APIErrors.internalError("更新行动本失败");
+      }),
+      checklistLeader,
+      legacyJsonBody("输入无效"),
+    ] as const,
+    responses: {
+      200: jsonResponse(ChecklistResponseSchema, "Success"),
+      ...errorResponses(400, 401, 403, 404, 409, 500),
+    },
+  }),
+  async (c) => {
+    try {
+      const session = c.get("session");
+      const teamId = c.req.valid("param").id;
+      const db = createDb(c.env.DB);
+      const team = c.get("checklistTeam");
+      const parsed = c.req.valid("json");
 
-    const teamId = c.req.param("id");
-    const db = createDb(c.env.DB);
-
-    const team = await getTeamOr404(db, teamId);
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-    if (team.leaderId !== session.user.id)
-      return c.json(APIErrors.forbidden("只有队长可以编辑行动本"), 403);
-
-    const parsed = await validateRequest(
-      c,
-      "json",
-      checklistPutSchema,
-      "输入无效",
-      "issues",
-    );
-    if (parsed instanceof Response) return parsed;
-
-    const existing = parseChecklist(team.checklist);
-    const normalizedAssignments = normalizeAssignments(
-      parsed.assignments,
-      existing?.assignments,
-    );
-
-    // B1（Martin CR）：spec 是「队长覆盖式更新整个 checklist」，未传字段视为清空。
-    // 之前用条件展开会保留旧值 → 与 spec 矛盾。这里改为无条件字段赋值。
-    const next: TeamChecklist = {
-      meetingPoint: parsed.meetingPoint,
-      transport: parsed.transport,
-      gear: parsed.gear,
-      assignments: normalizedAssignments,
-      notes: parsed.notes,
-    };
-
-    // S1（Martin CR）：<2KB 软上限从 zod refine 挪到落盘前显式校验，
-    // 返回 validationError 带明确 message，前端能落到 error.code 映射链路。
-    const serialized = JSON.stringify(next);
-    const serializedBytes = new TextEncoder().encode(serialized).byteLength;
-    if (serializedBytes > CHECKLIST_MAX_BYTES) {
-      return c.json(
-        APIErrors.validationError("checklist 内容过大（超过 2KB 上限）", [
-          {
-            code: "custom",
-            path: [],
-            message: `序列化后 ${serializedBytes} 字节，上限 ${CHECKLIST_MAX_BYTES}`,
-          },
-        ]),
-        400,
+      const existing = parseChecklist(team.checklist);
+      const normalizedAssignments = normalizeAssignments(
+        parsed.assignments,
+        existing?.assignments,
       );
-    }
 
-    const assigneeIds = uniqueAssigneeIds(normalizedAssignments);
-    const invalidAssigneeIds = await findInvalidAssigneeIds(
-      db,
-      teamId,
-      team.leaderId,
-      assigneeIds,
-    );
-    if (invalidAssigneeIds.length > 0) {
-      return c.json(
-        APIErrors.validationError(
-          "assigneeIds 只能包含队长或当前 active 成员",
-          { invalidAssigneeIds },
-        ),
-        400,
-      );
-    }
+      // B1（Martin CR）：spec 是「队长覆盖式更新整个 checklist」，未传字段视为清空。
+      // 之前用条件展开会保留旧值 → 与 spec 矛盾。这里改为无条件字段赋值。
+      const next: TeamChecklist = {
+        meetingPoint: parsed.meetingPoint,
+        transport: parsed.transport,
+        gear: parsed.gear,
+        assignments: normalizedAssignments,
+        notes: parsed.notes,
+      };
 
-    const result = await db
-      .update(schema.teams)
-      .set({ checklist: next, updatedAt: new Date() })
-      .where(
-        and(
-          eq(schema.teams.id, teamId),
-          eq(schema.teams.leaderId, session.user.id),
-          checklistContentMatches(team.checklist),
-          allAssigneesStillEligible(assigneeIds),
-        ),
-      )
-      .returning({ id: schema.teams.id });
-
-    if (result.length === 0) {
-      const current = await getTeamOr404(db, teamId);
-      if (!current) return c.json(APIErrors.notFound("队伍不存在"), 404);
-      if (current.leaderId !== session.user.id) {
-        return c.json(APIErrors.forbidden("只有队长可以编辑行动本"), 403);
+      // S1（Martin CR）：<2KB 软上限从 zod refine 挪到落盘前显式校验，
+      // 返回 validationError 带明确 message，前端能落到 error.code 映射链路。
+      const serialized = JSON.stringify(next);
+      const serializedBytes = new TextEncoder().encode(serialized).byteLength;
+      if (serializedBytes > CHECKLIST_MAX_BYTES) {
+        return c.json(
+          APIErrors.validationError("checklist 内容过大（超过 2KB 上限）", [
+            {
+              code: "custom",
+              path: [],
+              message: `序列化后 ${serializedBytes} 字节，上限 ${CHECKLIST_MAX_BYTES}`,
+            },
+          ]),
+          400,
+        );
       }
-      const invalidNow = await findInvalidAssigneeIds(
+
+      const assigneeIds = uniqueAssigneeIds(normalizedAssignments);
+      const invalidAssigneeIds = await findInvalidAssigneeIds(
         db,
         teamId,
-        current.leaderId,
+        team.leaderId,
         assigneeIds,
       );
-      if (invalidNow.length > 0) {
+      if (invalidAssigneeIds.length > 0) {
         return c.json(
           APIErrors.validationError(
             "assigneeIds 只能包含队长或当前 active 成员",
-            { invalidAssigneeIds: invalidNow },
+            { invalidAssigneeIds },
           ),
           400,
         );
       }
-      return c.json(
-        APIErrors.conflict("行动本已被并发修改，请刷新后重试"),
-        409,
-      );
+
+      const result = await db
+        .update(schema.teams)
+        .set({ checklist: next, updatedAt: new Date() })
+        .where(
+          and(
+            eq(schema.teams.id, teamId),
+            eq(schema.teams.leaderId, session.user.id),
+            checklistContentMatches(team.checklist),
+            allAssigneesStillEligible(assigneeIds),
+          ),
+        )
+        .returning({ id: schema.teams.id });
+
+      if (result.length === 0) {
+        const current = await getTeamOr404(db, teamId);
+        if (!current) return c.json(APIErrors.notFound("队伍不存在"), 404);
+        if (current.leaderId !== session.user.id) {
+          return c.json(APIErrors.forbidden("只有队长可以编辑行动本"), 403);
+        }
+        const invalidNow = await findInvalidAssigneeIds(
+          db,
+          teamId,
+          current.leaderId,
+          assigneeIds,
+        );
+        if (invalidNow.length > 0) {
+          return c.json(
+            APIErrors.validationError(
+              "assigneeIds 只能包含队长或当前 active 成员",
+              { invalidAssigneeIds: invalidNow },
+            ),
+            400,
+          );
+        }
+        return c.json(
+          APIErrors.conflict("行动本已被并发修改，请刷新后重试"),
+          409,
+        );
+      }
+
+      emitTeamActionbookEvent({
+        type: "checklist.updated",
+        teamId,
+        actorUserId: session.user.id,
+        timestamp: Date.now(),
+      });
+
+      return c.json({ success: true as const, checklist: next }, 200);
+    } catch (error) {
+      logger.error("team_checklist_update_failed", error);
+      return c.json(APIErrors.internalError("更新行动本失败"), 500);
     }
-
-    emitTeamActionbookEvent({
-      type: "checklist.updated",
-      teamId,
-      actorUserId: session.user.id,
-      timestamp: Date.now(),
-    });
-
-    return c.json({ success: true, checklist: next });
-  } catch (error) {
-    logger.error("team_checklist_update_failed", error);
-    return c.json(APIErrors.internalError("更新行动本失败"), 500);
-  }
-});
+  },
+  validationHook("输入无效", "issues"),
+);
 
 // ==================== POST /:id/checklist/assignments/:assignmentId/claim ====================
 
@@ -332,90 +373,118 @@ checklist.put("/:id/checklist", async (c) => {
  * 只能操作自己的 userId；assignment 不存在返回 404（防漂移）。
  * 并发防丢失：用 checklist 内容 CAS，并在同一 UPDATE 中重新验证 active membership。
  */
-checklist.post("/:id/checklist/assignments/:assignmentId/claim", async (c) => {
-  try {
-    const session = await getActiveSession(c.env, c.req.raw.headers);
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+checklist.openapi(
+  createRoute({
+    method: "post",
+    path: "/{id}/checklist/assignments/{assignmentId}/claim",
+    operationId: "teamsAssignmentClaim",
+    tags: ["Teams"],
+    summary: "Claim an actionbook assignment as an active member",
+    "x-audience": "public",
+    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    request: { params: z.object({ id: z.string(), assignmentId: z.string() }) },
 
-    const teamId = c.req.param("id");
-    const assignmentId = c.req.param("assignmentId");
-    const userId = session.user.id;
-    const db = createDb(c.env.DB);
+    responses: {
+      200: jsonResponse(
+        z.object({
+          success: z.literal(true),
+          assignment: ActionbookAssignmentSchema,
+        }),
+        "Success",
+      ),
+      ...errorResponses(401, 403, 404, 409, 500),
+    },
+  }),
+  async (c) => {
+    try {
+      const session = await getActiveSession(c.env, c.req.raw.headers);
+      if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-    const team = await getTeamOr404(db, teamId);
-    if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
+      const teamId = c.req.valid("param").id;
+      const assignmentId = c.req.valid("param").assignmentId;
+      const userId = session.user.id;
+      const db = createDb(c.env.DB);
 
-    const joined = await hasChecklistAccess(db, teamId, userId, team.leaderId);
-    if (!joined)
-      return c.json(APIErrors.forbidden("仅已加入的成员可认领分工"), 403);
+      const team = await getTeamOr404(db, teamId);
+      if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
 
-    // CAS 重试：checklist 内容或成员身份变化会让 conditional UPDATE 命中 0 行。
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const current = attempt === 0 ? team : await getTeamOr404(db, teamId);
-      if (!current) return c.json(APIErrors.notFound("队伍不存在"), 404);
-
-      const existing = parseChecklist(current.checklist);
-      const assignments = existing?.assignments ?? [];
-      const idx = assignments.findIndex((a) => a.id === assignmentId);
-      if (idx < 0)
-        return c.json(APIErrors.notFound("分工不存在或已被删除"), 404);
-
-      const target = assignments[idx];
-      const changed = !target.assigneeIds.includes(userId);
-      const next: ActionbookAssignment = changed
-        ? { ...target, assigneeIds: [...target.assigneeIds, userId] }
-        : target;
-      const nextAssignments = assignments.slice();
-      nextAssignments[idx] = next;
-      const nextChecklist: TeamChecklist = {
-        ...existing,
-        assignments: nextAssignments,
-      };
-
-      const result = await db
-        .update(schema.teams)
-        .set(
-          changed
-            ? { checklist: nextChecklist, updatedAt: new Date() }
-            : { checklist: nextChecklist },
-        )
-        .where(
-          and(
-            eq(schema.teams.id, teamId),
-            checklistContentMatches(current.checklist),
-            actorStillEligible(userId),
-          ),
-        )
-        .returning({ id: schema.teams.id });
-
-      if (result.length > 0) {
-        if (changed) {
-          emitTeamActionbookEvent({
-            type: "assignment.claim_changed",
-            action: "claim",
-            teamId,
-            assignmentId,
-            actorUserId: userId,
-            timestamp: Date.now(),
-          });
-        }
-        return c.json({ success: true, assignment: next });
-      }
-
-      const latest = await getTeamOr404(db, teamId);
-      if (!latest) return c.json(APIErrors.notFound("队伍不存在"), 404);
-      if (!(await hasChecklistAccess(db, teamId, userId, latest.leaderId))) {
+      const joined = await hasChecklistAccess(
+        db,
+        teamId,
+        userId,
+        team.leaderId,
+      );
+      if (!joined)
         return c.json(APIErrors.forbidden("仅已加入的成员可认领分工"), 403);
+
+      // CAS 重试：checklist 内容或成员身份变化会让 conditional UPDATE 命中 0 行。
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const current = attempt === 0 ? team : await getTeamOr404(db, teamId);
+        if (!current) return c.json(APIErrors.notFound("队伍不存在"), 404);
+
+        const existing = parseChecklist(current.checklist);
+        const assignments = existing?.assignments ?? [];
+        const idx = assignments.findIndex((a) => a.id === assignmentId);
+        if (idx < 0)
+          return c.json(APIErrors.notFound("分工不存在或已被删除"), 404);
+
+        const target = assignments[idx];
+        const changed = !target.assigneeIds.includes(userId);
+        const next: ActionbookAssignment = changed
+          ? { ...target, assigneeIds: [...target.assigneeIds, userId] }
+          : target;
+        const nextAssignments = assignments.slice();
+        nextAssignments[idx] = next;
+        const nextChecklist: TeamChecklist = {
+          ...existing,
+          assignments: nextAssignments,
+        };
+
+        const result = await db
+          .update(schema.teams)
+          .set(
+            changed
+              ? { checklist: nextChecklist, updatedAt: new Date() }
+              : { checklist: nextChecklist },
+          )
+          .where(
+            and(
+              eq(schema.teams.id, teamId),
+              checklistContentMatches(current.checklist),
+              actorStillEligible(userId),
+            ),
+          )
+          .returning({ id: schema.teams.id });
+
+        if (result.length > 0) {
+          if (changed) {
+            emitTeamActionbookEvent({
+              type: "assignment.claim_changed",
+              action: "claim",
+              teamId,
+              assignmentId,
+              actorUserId: userId,
+              timestamp: Date.now(),
+            });
+          }
+          return c.json({ success: true as const, assignment: next }, 200);
+        }
+
+        const latest = await getTeamOr404(db, teamId);
+        if (!latest) return c.json(APIErrors.notFound("队伍不存在"), 404);
+        if (!(await hasChecklistAccess(db, teamId, userId, latest.leaderId))) {
+          return c.json(APIErrors.forbidden("仅已加入的成员可认领分工"), 403);
+        }
+        // checklist 内容发生变化，进入下一轮重读并合并，不覆盖并发写入。
       }
-      // checklist 内容发生变化，进入下一轮重读并合并，不覆盖并发写入。
+      // 两次都失败，返回 409 让客户端重试
+      return c.json(APIErrors.conflict("并发写入冲突，请重试"), 409);
+    } catch (error) {
+      logger.error("team_checklist_claim_failed", error);
+      return c.json(APIErrors.internalError("认领分工失败"), 500);
     }
-    // 两次都失败，返回 409 让客户端重试
-    return c.json(APIErrors.conflict("并发写入冲突，请重试"), 409);
-  } catch (error) {
-    logger.error("team_checklist_claim_failed", error);
-    return c.json(APIErrors.internalError("认领分工失败"), 500);
-  }
-});
+  },
+);
 
 // ==================== DELETE /:id/checklist/assignments/:assignmentId/claim ====================
 
@@ -424,15 +493,29 @@ checklist.post("/:id/checklist/assignments/:assignmentId/claim", async (c) => {
  * 队员取消认领（幂等：不在时返回 204 语义 —— 走 204 no content）。
  * 并发防丢失：用 checklist 内容 CAS，并在同一 UPDATE 中重新验证 active membership。
  */
-checklist.delete(
-  "/:id/checklist/assignments/:assignmentId/claim",
+checklist.openapi(
+  createRoute({
+    method: "delete",
+    path: "/{id}/checklist/assignments/{assignmentId}/claim",
+    operationId: "teamsAssignmentUnclaim",
+    tags: ["Teams"],
+    summary: "Remove your actionbook assignment claim",
+    "x-audience": "public",
+    security: [{ cookieAuth: [] }, { secureCookieAuth: [] }],
+    request: { params: z.object({ id: z.string(), assignmentId: z.string() }) },
+
+    responses: {
+      204: { description: "Assignment claim removed" },
+      ...errorResponses(401, 403, 404, 409, 500),
+    },
+  }),
   async (c) => {
     try {
       const session = await getActiveSession(c.env, c.req.raw.headers);
       if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
-      const teamId = c.req.param("id");
-      const assignmentId = c.req.param("assignmentId");
+      const teamId = c.req.valid("param").id;
+      const assignmentId = c.req.valid("param").assignmentId;
       const userId = session.user.id;
       const db = createDb(c.env.DB);
 
