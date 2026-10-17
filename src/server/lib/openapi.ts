@@ -28,7 +28,7 @@ export type ApiEnv = {
     session: NonNullable<Awaited<ReturnType<typeof getActiveSession>>>;
   };
 };
-/** HTTP and HTTPS deployments use the existing Better Auth cookie names. */
+/** HTTP 与 HTTPS 部署沿用 Better Auth 的 Cookie 名称；两种方案择一认证。 */
 export const cookieSecurity: Record<string, string[]>[] = [
   { cookieAuth: [] },
   { secureCookieAuth: [] },
@@ -43,9 +43,16 @@ export type ValidationErrorFactory = (
 export const apiErrorSchema = z.object({
   success: z.literal(false),
   error: z.object({
-    code: z.string(),
-    message: z.string(),
-    details: z.unknown().optional(),
+    code: z.string().describe("稳定的业务错误码，用于客户端判断错误类别。"),
+    message: z
+      .string()
+      .describe("错误诊断信息，不作为稳定协议或客户端翻译键。"),
+    details: z
+      .unknown()
+      .optional()
+      .describe(
+        "可选错误详情，可能为字段校验问题或包含 reason 的对象；结构随操作而异。",
+      ),
   }),
 });
 
@@ -57,12 +64,32 @@ export function jsonResponse<S extends z.ZodType>(
 }
 
 type ErrorStatus = ClientErrorStatusCode | ServerErrorStatusCode;
+// 仅文档说明；不改变运行时错误码、消息或 HTTP 状态。
+const errorDescriptions: Partial<Record<ErrorStatus, string>> = {
+  400: "请求参数、格式或业务输入不合法，详情见 error。",
+  401: "缺少有效会话，或账号已失效，请重新登录。",
+  403: "当前身份无权执行操作，或写请求未通过同源校验。",
+  404: "资源不存在、不可见或当前环境未开放该入口。",
+  409: "当前状态、唯一性或并发更新发生冲突，请先重新读取资源。",
+  413: "请求体或上传文件超过此接口允许的大小。",
+  415: "不支持该请求媒体类型，请检查 Content-Type。",
+  422: "数据违反业务或关联约束，无法完成操作。",
+  429: "请求过于频繁，请稍后再试。",
+  500: "服务端处理失败，请保留错误码以便排查。",
+  503: "服务或依赖暂不可用，也可能处于写保护状态。",
+};
 export function errorResponses<const Codes extends readonly ErrorStatus[]>(
   ...codes: Codes
 ) {
   // This assertion describes the keys produced by Object.fromEntries; no handler response is cast.
   return Object.fromEntries(
-    codes.map((code) => [code, jsonResponse(apiErrorSchema, `HTTP ${code}`)]),
+    codes.map((code) => [
+      code,
+      jsonResponse(
+        apiErrorSchema,
+        errorDescriptions[code] ?? `请求失败（HTTP ${code}），详情见 error。`,
+      ),
+    ]),
   ) as {
     [Code in Codes[number]]: ReturnType<
       typeof jsonResponse<typeof apiErrorSchema>

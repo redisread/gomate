@@ -22,17 +22,19 @@ const joinResult = z.object({
 
 membership.openapi(
   createRoute({
+    description:
+      "需要有效登录，无需申请或队长审批。队伍须尚未开始、开放招募、未取消且有名额；人数包含队长。首次加入返回 201 和 joined，队长或已加入成员重复调用返回 200 和 already_member，不重复占用名额。条件不满足返回 409。",
     method: "post",
     path: "/join",
     operationId: "teamsJoin",
-    tags: ["Teams"],
-    summary: "Join an open team directly",
+    tags: ["队伍"],
+    summary: "直接加入队伍",
     "x-audience": "public",
     security: teamCookieSecurity,
     request: { params: z.object({ id: z.string() }) },
     responses: {
-      200: jsonResponse(joinResult, "Already a member"),
-      201: jsonResponse(joinResult, "Joined"),
+      200: jsonResponse(joinResult, "已是队长或有效成员，不重复占用名额。"),
+      201: jsonResponse(joinResult, "已直接加入队伍并占用一个成员名额。"),
       ...errorResponses(401, 404, 409, 500),
     },
   }),
@@ -98,11 +100,13 @@ membership.openapi(
 
 membership.openapi(
   createRoute({
+    description:
+      "需要有效登录，仅非队长的有效成员可在活动开始前退出，且队伍不能已取消。成功返回离队时间 leftAt，保留历史成员记录；重复退出、活动已开始或身份失效返回 409。",
     method: "post",
     path: "/leave",
     operationId: "teamsLeave",
-    tags: ["Teams"],
-    summary: "Leave a team as an active member",
+    tags: ["队伍"],
+    summary: "退出队伍",
     "x-audience": "public",
     security: teamCookieSecurity,
     request: { params: z.object({ id: z.string() }) },
@@ -110,7 +114,7 @@ membership.openapi(
     responses: {
       200: jsonResponse(
         z.object({ success: z.literal(true), leftAt: TimestampSchema }),
-        "Success",
+        "请求成功，响应字段见下方结构。",
       ),
       ...errorResponses(400, 401, 409, 500),
     },
@@ -153,11 +157,13 @@ membership.openapi(
 
 membership.openapi(
   createRoute({
+    description:
+      "仅当前有效队长可在活动开始前移除成员，队伍不能已取消，且不能移除队长本人。最终写入重新检查权限、时间和成员状态；目标已离队或写入条件变化时返回 404。成功返回被移除的 userId。",
     method: "post",
     path: "/members/{userId}/remove",
     operationId: "teamsMemberRemove",
-    tags: ["Teams"],
-    summary: "Remove an active member as leader",
+    tags: ["队伍"],
+    summary: "移除队伍成员",
     "x-audience": "public",
     security: teamCookieSecurity,
     request: { params: z.object({ id: z.string(), userId: z.string() }) },
@@ -165,7 +171,7 @@ membership.openapi(
     responses: {
       200: jsonResponse(
         z.object({ success: z.literal(true), userId: z.string() }),
-        "Success",
+        "请求成功，响应字段见下方结构。",
       ),
       ...errorResponses(400, 401, 403, 404, 409, 500),
     },

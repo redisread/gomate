@@ -432,17 +432,19 @@ const avatarSessionBoundary: import("hono").MiddlewareHandler<ApiEnv> = async (
 };
 
 const deleteAvatarContract = createRoute({
+  description:
+    "需要登录，查询参数 key 必须与当前用户正在使用的头像对象一致。对象不属于当前用户、头像已移除或并发替换均返回 403。成功清空头像引用并删除对象后返回 { success: true }；重复删除需先查询当前头像状态，不能直接视为成功。对象清理失败时尝试有条件地恢复引用并返回 500。",
   method: "delete",
   path: "/avatar",
   operationId: "deleteAvatar",
-  summary: "Remove the current avatar",
-  tags: ["Upload"],
+  summary: "删除当前用户头像",
+  tags: ["图片上传"],
   "x-audience": "public",
   security: cookieSecurity,
   middleware: [avatarSessionBoundary],
   request: { query: avatarKeyQuerySchema },
   responses: {
-    200: jsonResponse(z.object({ success: z.literal(true) }), "Avatar removed"),
+    200: jsonResponse(z.object({ success: z.literal(true) }), "头像已移除。"),
     ...errorResponses(400, 401, 403, 500, 503),
   },
 });
@@ -587,7 +589,7 @@ const uploadFormSchema = z.object({
     type: "string",
     format: "binary",
     description:
-      "Image file, maximum 5 MiB; multipart total maximum 5 MiB + 64 KiB. Content is decoded and validated.",
+      "图片文件，上限 5 MiB；multipart 请求体总上限为 5 MiB + 64 KiB，服务端根据实际字节识别和校验格式。",
   }),
 });
 const uploadedImageSchema = z.object({
@@ -600,11 +602,13 @@ const uploadedImageSchema = z.object({
 for (const kind of ["avatar", "location"] as const) {
   upload.openAPIRegistry.registerPath(
     createRoute({
+      description:
+        "需要登录，使用 multipart/form-data 的 file 字段；location 另要求管理员权限。单文件上限 5 MiB，请求体上限 5 MiB + 64 KiB。按实际字节识别 JPEG、PNG、GIF、WebP、HEIC/HEIF；HEIC/HEIF 转为 WebP，拒绝 SVG 和 AVIF。avatar 更新当前用户头像，location 先存入临时空间，地点写接口提交返回的图片 URL。失败原因可见 error.details.reason。",
       method: "post",
       path: `/${kind}`,
       operationId: `upload${kind[0].toUpperCase()}${kind.slice(1)}`,
-      summary: `Upload an image for ${kind}`,
-      tags: ["Upload"],
+      summary: kind === "avatar" ? "上传头像" : "上传地点图片",
+      tags: ["图片上传"],
       "x-audience": kind === "location" ? "admin" : "public",
       "x-validation-mode": "bounded-multipart",
       security: cookieSecurity,
@@ -615,7 +619,10 @@ for (const kind of ["avatar", "location"] as const) {
         },
       },
       responses: {
-        200: jsonResponse(uploadedImageSchema, "Uploaded image"),
+        200: jsonResponse(
+          uploadedImageSchema,
+          "上传结果：对象 key、访问 URL、字节数及实际媒体类型。",
+        ),
         ...errorResponses(400, 401, 403, 413, 500, 503),
         ...(kind === "avatar" ? errorResponses(409) : {}),
       },

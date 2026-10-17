@@ -13,6 +13,21 @@
 
 `API_DOCS_ENABLED=true` 开启四个入口，其他值返回 404。公开规范排除管理员操作及仅由这些操作引用的组件；管理员 JSON 与 HTML 都独立鉴权。Scalar 资源由锁定版本构建到同源静态资源，生产/Preview 隐藏交互请求按钮，不持久保存认证信息。新增普通路由须登记 audience，覆盖测试检查实际路由和规范对应关系。
 
+### 中文文档与维护方式
+
+文档标题、Scalar 界面、分组、接口摘要、使用说明及关键字段注释统一使用简体中文，不随
+`gomate_locale` 或 `Accept-Language` 切换。产品页面和邮件仍按现有中英文策略工作。
+路径、字段名、枚举值、错误码与 `operationId` 保持稳定；完整文档多语言留待后续实现。
+
+接口说明直接维护在 `createRoute`，字段语义使用共享或请求 Schema 的 `.describe()` / `.openapi()`。
+说明应覆盖身份权限、分页、状态限制、幂等及失败处理；公共错误说明集中在 OpenAPI helper，
+全局写保护由文档生成器补充。新增操作必须有中文摘要、使用说明及响应描述，覆盖测试同时检查
+公开/管理员文档隔离与退役接口不再出现，不另行手写 OpenAPI JSON。
+
+多数列表使用 `limit/cursor`，`nextCursor=null` 表示结束，更换筛选后重新分页；标签目录保留
+`page/pageSize`，默认每页 50、最大 200，优先采用 `pageSize`，其次 `limit`。
+地图统计仅包含坐标完整的公开地点，`total` 与 `points` 使用同一口径。
+
 ## 请求与认证边界
 
 - 浏览器请求同源 `/api/*`；Astro SSR 使用进程内 dispatcher，不向生产域名 self-fetch。

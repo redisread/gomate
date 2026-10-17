@@ -91,11 +91,13 @@ function generatedSlug(id: string) {
 
 mutations.openapi(
   createRoute({
+    description:
+      "仅当前有效管理员可用。默认创建 draft，只要求名称、说明及已启用的城市 regionId。发布时必须有封面；经纬度可同时为空，填写时必须成对。推荐活动类型可空，但非空值必须来自共享枚举。",
     method: "post",
     path: "/",
     operationId: "createLocation",
-    summary: "Create a location",
-    tags: ["Locations"],
+    summary: "创建地点",
+    tags: ["地点"],
     "x-audience": "admin",
     security: adminSecurity,
     request: {
@@ -106,7 +108,7 @@ mutations.openapi(
     },
     middleware: [adminMiddleware(), legacyJsonBody("Invalid JSON body")],
     responses: {
-      201: jsonResponse(locationResultSchema, "Success"),
+      201: jsonResponse(locationResultSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 401, 403, 409, 500),
       ...errorResponses(503),
     },
@@ -252,11 +254,13 @@ mutations.openapi(
 
 mutations.openapi(
   createRoute({
+    description:
+      "仅当前有效管理员可用。目标 id 必须放在 JSON body 中，只修改提交字段。发布时校验封面、地区、成对坐标及图片来源；并发状态变化返回 409，客户端应重新读取后确认修改。",
     method: "put",
     path: "/",
     operationId: "updateLocation",
-    summary: "Update a location",
-    tags: ["Locations"],
+    summary: "更新地点",
+    tags: ["地点"],
     "x-audience": "admin",
     security: adminSecurity,
     request: {
@@ -267,7 +271,7 @@ mutations.openapi(
     },
     middleware: [adminMiddleware(), legacyJsonBody("Invalid JSON body")],
     responses: {
-      200: jsonResponse(locationResultSchema, "Success"),
+      200: jsonResponse(locationResultSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 401, 403, 404, 409, 500),
       ...errorResponses(503),
     },
@@ -505,17 +509,19 @@ mutations.openapi(
 
 mutations.openapi(
   createRoute({
+    description:
+      "仅当前有效管理员可用。默认只归档；永久删除须同时提交 permanent=true 与 confirm=地点ID。存在队伍引用时返回 409 和引用统计，最终删除语句会再次检查约束。",
     method: "delete",
     path: "/{id}",
     operationId: "deleteLocation",
-    summary: "Archive or permanently delete a location",
-    tags: ["Locations"],
+    summary: "归档或永久删除地点",
+    tags: ["地点"],
     "x-audience": "admin",
     security: adminSecurity,
     request: { params: idParams, query: deleteLocationQuerySchema },
     middleware: [adminMiddleware()],
     responses: {
-      200: jsonResponse(deleteResultSchema, "Success"),
+      200: jsonResponse(deleteResultSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 401, 403, 404, 409, 500),
       409: jsonResponse(
         apiErrorSchema.extend({
@@ -525,7 +531,7 @@ mutations.openapi(
             })
             .optional(),
         }),
-        "Conflict",
+        "状态或引用冲突，请根据引用统计和错误详情处理。",
       ),
       ...errorResponses(503),
     },
@@ -707,11 +713,13 @@ mutations.openapi(
 
 mutations.openapi(
   createRoute({
+    description:
+      "仅当前有效管理员可用。提交完整 tagIds 数组，原子替换地点的全部标签关系；空数组表示清空，不是追加操作。地点或标签不存在时按响应错误返回。",
     method: "put",
     path: "/{id}/tags",
     operationId: "replaceLocationTags",
-    summary: "Replace location tags",
-    tags: ["Locations"],
+    summary: "替换地点标签",
+    tags: ["地点"],
     "x-audience": "admin",
     security: adminSecurity,
     request: {
@@ -723,7 +731,10 @@ mutations.openapi(
     },
     middleware: [adminMiddleware(), legacyJsonBody("Invalid JSON body")],
     responses: {
-      200: jsonResponse(locationTagsResultSchema, "Success"),
+      200: jsonResponse(
+        locationTagsResultSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(400, 401, 403, 404, 500),
       ...errorResponses(503),
     },

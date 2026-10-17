@@ -142,17 +142,22 @@ export function buildTeamPageQuery(
 
 queries.openapi(
   createRoute({
+    description:
+      "可匿名读取。支持地区、地点、活动类型、招募状态、生命周期、关键词、标签及开始日期区间筛选；先筛选再分页，按开始时间和 ID 升序排列。limit 默认 12、范围 1–100，日期上下界均包含。返回 teams、total、nextCursor，游标须原样传回。",
     method: "get",
     path: "/",
     operationId: "teamsList",
-    tags: ["Teams"],
-    summary: "List teams with cursor pagination",
+    tags: ["队伍"],
+    summary: "分页查询队伍",
     "x-audience": "public",
 
     request: { query: TeamQuerySchema },
 
     responses: {
-      200: jsonResponse(TeamListResponseSchema, "Success"),
+      200: jsonResponse(
+        TeamListResponseSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(400, 500),
     },
   }),
@@ -299,17 +304,19 @@ queries.openapi(
 
 queries.openapi(
   createRoute({
+    description:
+      "可匿名调用。返回 leader（队长）、member（有效成员）或 null；匿名访问 status 为 null，不再提供申请状态。此结果用于展示，后续写接口仍实时检查权限。",
     method: "get",
     path: "/{id}/my-status",
     operationId: "teamsMyStatus",
-    tags: ["Teams"],
-    summary: "Read current viewer membership; anonymous status is null",
+    tags: ["队伍"],
+    summary: "读取我与队伍的关系",
     "x-audience": "public",
 
     request: { params: z.object({ id: z.string() }) },
 
     responses: {
-      200: jsonResponse(MyTeamStatusSchema, "Success"),
+      200: jsonResponse(MyTeamStatusSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(404, 500),
     },
   }),
@@ -356,18 +363,19 @@ queries.openapi(
 
 queries.openapi(
   createRoute({
+    description:
+      "可匿名读取。返回队伍、地点、地区、标签及成员信息；集合地点和联系方式只向队长或当前有效成员展示，其他访问者得到隐藏后的字段。写入权限仍由服务端实时复核。",
     method: "get",
     path: "/{id}",
     operationId: "teamsGet",
-    tags: ["Teams"],
-    summary:
-      "Read a team with viewer-dependent contacts and meeting information",
+    tags: ["队伍"],
+    summary: "读取队伍详情",
     "x-audience": "public",
 
     request: { params: z.object({ id: z.string() }) },
 
     responses: {
-      200: jsonResponse(TeamResponseSchema, "Success"),
+      200: jsonResponse(TeamResponseSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(404, 500),
     },
   }),

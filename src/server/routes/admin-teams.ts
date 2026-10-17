@@ -43,7 +43,14 @@ import { toTeamResponse } from "./teams/utils";
 const adminTeamsRoute = createApiApp();
 const listSchema = z
   .object({
-    q: z.string().trim().max(100).optional(),
+    q: z
+      .string()
+      .trim()
+      .max(100)
+      .optional()
+      .describe(
+        "队伍名称、ID 或队长姓名、昵称、ID 的字面子串，最多 100 字符。",
+      ),
     recruitmentStatus: z.enum(["open", "closed"]).optional(),
     lifecycle: z
       .enum([
@@ -55,8 +62,19 @@ const listSchema = z
         "expired_unformed",
       ])
       .optional(),
-    limit: z.coerce.number().int().min(1).max(50).default(20),
-    cursor: z.string().min(1).max(500).optional(),
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(20)
+      .describe("每页条数，默认 20，范围 1–50。"),
+    cursor: z
+      .string()
+      .min(1)
+      .max(500)
+      .optional()
+      .describe("分页游标：原样传回上一页的 nextCursor；更换筛选条件时省略。"),
   })
   .strict();
 
@@ -86,16 +104,18 @@ function teamRows(db: ReturnType<typeof createDb>) {
 }
 
 const adminTeamList = createRoute({
+  description:
+    "仅当前有效管理员可用。支持 q 字面子串搜索队伍标题、ID 及队长姓名、昵称、ID，并按招募状态、生命周期组合筛选。limit 默认 20、范围 1–50；按创建时间和 ID 倒序返回，nextCursor 为 null 表示结束。包含任意状态地点下的队伍。",
   method: "get",
   path: "/",
   operationId: "listAdminTeams",
-  summary: "List teams for administrators",
-  tags: ["Admin teams"],
+  summary: "分页查询全部队伍",
+  tags: ["队伍管理"],
   "x-audience": "admin",
   security: cookieSecurity,
   request: { query: listSchema },
   responses: {
-    200: jsonResponse(AdminTeamsResponseSchema, "Team page"),
+    200: jsonResponse(AdminTeamsResponseSchema, "队伍列表及下一页游标。"),
     ...errorResponses(400, 401, 403, 500),
   },
 });
@@ -180,16 +200,21 @@ adminTeamsRoute.openapi(
 
 adminTeamsRoute.openapi(
   createRoute({
+    description:
+      "仅当前有效管理员可用。按队伍 ID 读取任意状态队伍、成员、标签及集合信息，不暴露用户联系方式；队伍不存在返回 404。",
     method: "get",
     path: "/{id}",
     operationId: "getAdminTeam",
-    summary: "Get a team for administrators",
-    tags: ["Admin teams"],
+    summary: "读取管理员队伍详情",
+    tags: ["队伍管理"],
     "x-audience": "admin",
     security: cookieSecurity,
     request: { params: z.object({ id: z.string() }) },
     responses: {
-      200: jsonResponse(AdminTeamResponseSchema, "Team detail"),
+      200: jsonResponse(
+        AdminTeamResponseSchema,
+        "队伍详情，包含成员与集合信息，不包含私密联系方式。",
+      ),
       ...errorResponses(400, 401, 403, 404, 500),
     },
   }),

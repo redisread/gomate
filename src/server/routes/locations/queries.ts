@@ -79,11 +79,34 @@ const adminSecurity: Record<string, string[]>[] = [
 ];
 
 const locationListQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(12),
-  cursor: z.string().optional(),
-  search: z.string().trim().max(100).optional(),
-  regionId: z.string().trim().min(1).max(128).optional(),
-  activityType: z.enum(ACTIVITY_TYPES).optional(),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(12)
+    .describe("每页条数，默认 12，范围 1–100。"),
+  cursor: z
+    .string()
+    .optional()
+    .describe("分页游标：原样传回上一页的 nextCursor；更换筛选条件时省略。"),
+  search: z
+    .string()
+    .trim()
+    .max(100)
+    .optional()
+    .describe("名称或说明的搜索关键词，最多 100 字符。"),
+  regionId: z
+    .string()
+    .trim()
+    .min(1)
+    .max(128)
+    .optional()
+    .describe("所属城市地区 ID。"),
+  activityType: z
+    .enum(ACTIVITY_TYPES)
+    .optional()
+    .describe("筛选推荐此活动类型的地点。"),
   tagIds: z
     .string()
     .trim()
@@ -101,15 +124,33 @@ const locationListQuerySchema = z.object({
           ]
         : [],
     )
-    .refine((values) => values.length <= 20, "At most 20 tag IDs are allowed"),
+    .refine((values) => values.length <= 20, "At most 20 tag IDs are allowed")
+    .describe("逗号分隔的标签 ID，去空去重后最多 20 个，任一标签匹配即可。"),
 });
 
 const adminLocationListQuerySchema = z
   .object({
-    limit: z.coerce.number().int().min(1).max(100).default(30),
-    cursor: z.string().optional(),
-    search: z.string().trim().max(100).optional(),
-    status: z.enum(["draft", "published", "archived"]).optional(),
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(30)
+      .describe("每页条数，默认 30，范围 1–100。"),
+    cursor: z
+      .string()
+      .optional()
+      .describe("分页游标：原样传回上一页的 nextCursor；更换筛选条件时省略。"),
+    search: z
+      .string()
+      .trim()
+      .max(100)
+      .optional()
+      .describe("地点名称搜索词，最多 100 字符。"),
+    status: z
+      .enum(["draft", "published", "archived"])
+      .optional()
+      .describe("地点状态：draft 草稿、published 已发布、archived 已归档。"),
   })
   .strict();
 
@@ -134,17 +175,19 @@ export function buildLocationPageQuery(
 
 queries.openapi(
   createRoute({
+    description:
+      "仅当前有效管理员可用。可查询 draft/published/archived 状态，支持名称搜索与状态筛选。limit 默认 30、范围 1–100，按创建时间和 ID 倒序返回，使用 nextCursor 继续分页。",
     method: "get",
     path: "/admin",
     operationId: "listAdminLocations",
-    summary: "List all locations for administrators",
-    tags: ["Locations"],
+    summary: "分页查询全部地点",
+    tags: ["地点"],
     "x-audience": "admin",
     request: { query: adminLocationListQuerySchema },
     middleware: [adminMiddleware()],
     security: adminSecurity,
     responses: {
-      200: jsonResponse(locationPageSchema, "Success"),
+      200: jsonResponse(locationPageSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 401, 403, 500),
     },
   }),
@@ -217,18 +260,20 @@ queries.openapi(
 
 queries.openapi(
   createRoute({
+    description:
+      "无需登录。仅返回 published 且属于已启用城市的地点；支持地区、推荐活动类型、搜索及标签筛选。limit 默认 12、范围 1–100，按创建时间和 ID 倒序排列；标签为逗号分隔 ID，最多 20 个。禁止 page/pageSize，返回 total 和 nextCursor。",
     method: "get",
     path: "/",
     operationId: "listLocations",
-    summary: "List published locations",
-    tags: ["Locations"],
+    summary: "分页查询公开地点",
+    tags: ["地点"],
     "x-audience": "public",
     request: { query: locationListQuerySchema },
     middleware: [rejectLegacyPagination],
     responses: {
       200: jsonResponse(
         locationPageSchema.extend({ total: z.number() }),
-        "Success",
+        "请求成功，响应字段见下方结构。",
       ),
       ...errorResponses(400, 500),
     },
@@ -350,14 +395,19 @@ queries.openapi(
 
 queries.openapi(
   createRoute({
+    description:
+      "无需登录。仅统计已发布、所属城市已启用且同时具有经纬度的地点。total 为这些地图点位的数量，regions 按同一口径分组计数，points 包含对应地区信息；不含缺少坐标的公开地点。",
     method: "get",
     path: "/stats",
     operationId: "getLocationStats",
-    summary: "Map location statistics",
-    tags: ["Locations"],
+    summary: "读取地点地图统计",
+    tags: ["地点"],
     "x-audience": "public",
     responses: {
-      200: jsonResponse(LocationStatsResponseSchema, "Success"),
+      200: jsonResponse(
+        LocationStatsResponseSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(500),
     },
   }),
@@ -432,15 +482,20 @@ queries.openapi(
 
 queries.openapi(
   createRoute({
+    description:
+      "无需登录。按地点全局 ID 查询已发布且处于启用城市的地点标签；地点不可公开访问时返回 404。",
     method: "get",
     path: "/{id}/tags",
     operationId: "getLocationTags",
-    summary: "Get location tags",
-    tags: ["Locations"],
+    summary: "读取地点标签",
+    tags: ["地点"],
     "x-audience": "public",
     request: { params: idParams },
     responses: {
-      200: jsonResponse(locationTagsResultSchema, "Success"),
+      200: jsonResponse(
+        locationTagsResultSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(400, 404, 500),
     },
   }),
@@ -498,17 +553,19 @@ queries.openapi(
 
 queries.openapi(
   createRoute({
+    description:
+      "仅当前有效管理员可用。按全局 ID 读取任意状态的地点及标签、地区信息；不存在返回 404。不提供 slug 回退，也不返回内部创建者字段。",
     method: "get",
     path: "/{id}/admin",
     operationId: "getAdminLocation",
-    summary: "Get any location as administrator",
-    tags: ["Locations"],
+    summary: "读取管理员地点详情",
+    tags: ["地点"],
     "x-audience": "admin",
     request: { params: idParams },
     middleware: [adminMiddleware()],
     security: adminSecurity,
     responses: {
-      200: jsonResponse(locationResultSchema, "Success"),
+      200: jsonResponse(locationResultSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 401, 403, 404, 500),
     },
   }),
@@ -551,15 +608,17 @@ queries.openapi(
 
 queries.openapi(
   createRoute({
+    description:
+      "无需登录。使用全局 ID，不支持 slug 回退。地点必须已发布且所属城市已启用服务，否则返回 404。返回地点、地区、标签和公开扩展信息。",
     method: "get",
     path: "/{id}",
     operationId: "getLocation",
-    summary: "Get a published location",
-    tags: ["Locations"],
+    summary: "读取公开地点详情",
+    tags: ["地点"],
     "x-audience": "public",
     request: { params: idParams },
     responses: {
-      200: jsonResponse(locationResultSchema, "Success"),
+      200: jsonResponse(locationResultSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 404, 500),
     },
   }),

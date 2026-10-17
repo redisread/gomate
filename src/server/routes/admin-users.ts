@@ -26,15 +26,32 @@ const adminUsersRoute = createApiApp();
 
 const listSchema = z
   .object({
-    q: z.string().trim().max(100).optional(),
-    limit: z.coerce.number().int().min(1).max(50).default(20),
-    cursor: z.string().max(500).optional(),
+    q: z
+      .string()
+      .trim()
+      .max(100)
+      .optional()
+      .describe("按姓名或邮箱搜索，最多 100 字符；使用数据库 LIKE 匹配。"),
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(20)
+      .describe("每页条数，默认 20，范围 1–50。"),
+    cursor: z
+      .string()
+      .max(500)
+      .optional()
+      .describe("分页游标：原样传回上一页的 nextCursor；更换筛选条件时省略。"),
   })
   .strict();
 
 const roleSchema = z
   .object({
-    role: z.enum(["user", "admin"]),
+    role: z
+      .enum(["user", "admin"])
+      .describe("目标角色：user 普通用户或 admin 管理员。"),
   })
   .strict();
 
@@ -52,11 +69,13 @@ function toAdminUser(row: typeof schema.users.$inferSelect): AdminUserSummary {
 }
 
 const adminUsersList = createRoute({
+  description:
+    "仅当前有效管理员可用。q 搜索姓名或邮箱，limit 默认 20、范围 1–50，按创建时间和 ID 倒序分页。响应包含用户角色、状态及 nextCursor；不支持按角色或状态筛选。",
   method: "get",
   path: "/",
   operationId: "listAdminUsers",
-  summary: "List users for administrators",
-  tags: ["Admin users"],
+  summary: "分页查询用户",
+  tags: ["用户管理"],
   "x-audience": "admin",
   security: cookieSecurity,
   middleware: [adminMiddleware()],
@@ -68,7 +87,7 @@ const adminUsersList = createRoute({
         users: z.array(AdminUserSummarySchema),
         nextCursor: z.string().nullable(),
       }),
-      "User page",
+      "用户列表及下一页游标。",
     ),
     ...errorResponses(400, 401, 403, 500),
   },
@@ -131,11 +150,13 @@ adminUsersRoute.openapi(
 );
 
 const adminUserRole = createRoute({
+  description:
+    "仅当前有效管理员可用。body.role 为 user 或 admin；不能修改自己的角色，也不能撤销最后一个有效管理员。最终更新会重新检查这些约束，冲突返回 409，error.details.reason 提供稳定原因分类。",
   method: "patch",
   path: "/{id}/role",
   operationId: "setAdminUserRole",
-  summary: "Change a user role",
-  tags: ["Admin users"],
+  summary: "修改用户角色",
+  tags: ["用户管理"],
   "x-audience": "admin",
   security: cookieSecurity,
   middleware: [adminMiddleware(), legacyJsonBody("Invalid user role")],
@@ -153,7 +174,7 @@ const adminUserRole = createRoute({
         id: z.string(),
         role: z.enum(["user", "admin"]),
       }),
-      "Updated role",
+      "更新后的用户 ID 与角色。",
     ),
     ...errorResponses(400, 401, 403, 404, 409, 500, 503),
   },
