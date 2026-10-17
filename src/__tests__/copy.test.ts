@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import type { TeamJoinRequestStatus } from "@/contracts";
 import { t, type Locale } from "../i18n";
 import { hydrateSSRData } from "../i18n";
 
@@ -7,13 +6,6 @@ import { hydrateSSRData } from "../i18n";
  * i18n 合同与展示文案完整性测试
  * 验证共享枚举合同和前端派生展示状态都有对应翻译文案
  */
-
-const teamJoinRequestStatusCopy = {
-  pending: "待审核",
-  approved: "已通过",
-  rejected: "已拒绝",
-  cancelled: "已取消",
-} satisfies Record<TeamJoinRequestStatus, string>;
 
 // 预加载枚举数据到内存缓存
 beforeAll(async () => {
@@ -24,7 +16,6 @@ beforeAll(async () => {
       ongoing: "进行中", completed: "圆满归来", cancelled: "已取消",
       open: "等你一起", closed: "已结束",
     },
-    memberStatus: teamJoinRequestStatusCopy,
     level: { beginner: "新人", intermediate: "探索者", advanced: "资深玩家", expert: "传奇达人" },
     leaderLevel: { beginner: "新人领队", intermediate: "探索者领队", advanced: "资深玩家领队", expert: "传奇达人领队" },
     levelDesc: { beginner: "刚开始探索之旅", intermediate: "有一定活动经验", advanced: "经验丰富的玩家", expert: "资深活动达人" },
@@ -66,26 +57,6 @@ describe("enums - 枚举文案完整性", () => {
       expect(t("enums.teamStatus.formed")).toBe("整装待发");
       expect(t("enums.teamStatus.cancelled")).toBe("已取消");
       expect(t("enums.teamStatus.completed")).toBe("圆满归来");
-    });
-  });
-
-  describe("TeamJoinRequestStatus（入队申请状态）枚举映射", () => {
-    const TEAM_JOIN_REQUEST_STATUS_VALUES = Object.keys(
-      teamJoinRequestStatusCopy,
-    ) as TeamJoinRequestStatus[];
-
-    it("canonical 入队申请状态都有对应文案", () => {
-      for (const val of TEAM_JOIN_REQUEST_STATUS_VALUES) {
-        const result = t(`enums.memberStatus.${val}`);
-        expect(result, `缺少 enums.memberStatus.${val} 的文案`).not.toBe(`enums.memberStatus.${val}`);
-      }
-    });
-
-    it("入队申请状态文案为有意义的中文", () => {
-      expect(t("enums.memberStatus.pending")).toBe("待审核");
-      expect(t("enums.memberStatus.approved")).toBe("已通过");
-      expect(t("enums.memberStatus.rejected")).toBe("已拒绝");
-      expect(t("enums.memberStatus.cancelled")).toBe("已取消");
     });
   });
 

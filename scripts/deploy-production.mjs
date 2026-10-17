@@ -10,23 +10,18 @@ import {
   parseJsonc,
 } from "./production-build-guard.mjs";
 
+import { stageProductionMigrations } from "./production-migrations.mjs";
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WRANGLER = process.platform === "win32" ? "wrangler.cmd" : "wrangler";
 
-export const PRODUCTION_WRANGLER_COMMANDS = [
-  [
-    "d1",
-    "migrations",
-    "apply",
-    "DB",
-    "--remote",
-    "--env",
-    "production",
-    "--config",
-    "wrangler.jsonc",
-  ],
-  ["deploy", "--env", "production"],
-];
+export function productionWranglerCommands(migrationConfigPath) {
+  if (!migrationConfigPath) throw new Error("Approved migration config required");
+  return [
+    ["d1", "migrations", "apply", "DB", "--remote", "--env", "production", "--config", migrationConfigPath],
+    ["deploy", "--env", "production"],
+  ];
+}
 
 function runWrangler(args) {
   return new Promise((resolve, reject) => {
@@ -75,7 +70,13 @@ async function main() {
   assertProductionWriteMode({
     WRITE_MODE: config.env?.production?.vars?.WRITE_MODE,
   });
-  for (const args of PRODUCTION_WRANGLER_COMMANDS) await runWrangler(args);
+  const staged = await stageProductionMigrations(ROOT, config);
+  try {
+    console.log(`Production migrations: ${staged.enabled.length} enabled; ${staged.held.length} held`);
+    for (const args of productionWranglerCommands(staged.configPath)) await runWrangler(args);
+  } finally {
+    await staged.cleanup();
+  }
   await runNodeScript(path.join(ROOT, "scripts/smoke-production-write-boundary.mjs"));
 }
 

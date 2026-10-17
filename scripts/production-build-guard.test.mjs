@@ -8,7 +8,7 @@ import {
   parseJsonc,
   assertPreviewDeployEnvironment,
 } from "./production-build-guard.mjs";
-import { PRODUCTION_WRANGLER_COMMANDS } from "./deploy-production.mjs";
+import { productionWranglerCommands } from "./deploy-production.mjs";
 import { previewDeployCommand } from "./deploy-preview.mjs";
 
 test("allows local production-parity builds", () => {
@@ -148,7 +148,7 @@ test("uploads only a version with a stable branch alias", () => {
 });
 
 test("deploys the Astro build through Wranglers redirected config", () => {
-  assert.deepEqual(PRODUCTION_WRANGLER_COMMANDS, [
+  assert.deepEqual(productionWranglerCommands("/tmp/approved/wrangler.json"), [
     [
       "d1",
       "migrations",
@@ -158,7 +158,7 @@ test("deploys the Astro build through Wranglers redirected config", () => {
       "--env",
       "production",
       "--config",
-      "wrangler.jsonc",
+      "/tmp/approved/wrangler.json",
     ],
     ["deploy", "--env", "production"],
   ]);

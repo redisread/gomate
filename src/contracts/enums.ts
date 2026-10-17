@@ -44,17 +44,6 @@ export const TeamLifecycleSchema = z.enum([
 ]);
 export type TeamLifecycle = z.infer<typeof TeamLifecycleSchema>;
 
-export const TeamJoinRequestStatusSchema = z.enum([
-  "pending",
-  "approved",
-  "rejected",
-  "cancelled",
-]);
-export type TeamJoinRequestStatus = z.infer<typeof TeamJoinRequestStatusSchema>;
-
-export const StoryStatusSchema = z.enum(["draft", "published", "hidden"]);
-export type StoryStatus = z.infer<typeof StoryStatusSchema>;
-
 export const UserRoleSchema = z.enum(["user", "admin"]);
 export type UserRole = z.infer<typeof UserRoleSchema>;
 
