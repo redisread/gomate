@@ -2,9 +2,22 @@ import { resolveLoginReturnPath } from "../../lib/login-return-path";
 import { isGoogleAuthAvailable } from "../lib/google-auth";
 import { APIErrors } from "../lib/api-errors";
 import { logger } from "../lib/logger";
-import { Hono, type Context } from "hono";
+import type { Context } from "hono";
 import { and, eq } from "drizzle-orm";
-import { z } from "zod";
+import {
+  createApiApp,
+  createRoute,
+  z,
+  jsonResponse,
+  errorResponses,
+  apiErrorSchema,
+} from "../lib/openapi";
+import {
+  BrowserSignInSchema,
+  BrowserSessionSchema,
+  AuthProviderErrorSchema,
+  SignOutSchema,
+} from "@/contracts/auth-api";
 import { createAuth, type Env } from "../lib/auth";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -17,7 +30,7 @@ import {
   resetPasswordWithChallenge,
 } from "../lib/password-reset";
 
-const auth = new Hono<{ Bindings: Env }>();
+const auth = createApiApp<{ Bindings: Env }>();
 
 const forgotPasswordSchema = z
   .object({
@@ -681,36 +694,50 @@ function normalizedAuthPath(url: string): string {
   return decoded.replace(/\/{2,}/gu, "/").replace(/\/+$/u, "");
 }
 
-const googleSignInSchema = z.object({
-  provider: z.literal("google"),
-  callbackURL: z.string().max(2_048).optional(),
-}).strict();
+const googleSignInSchema = z
+  .object({
+    provider: z.literal("google"),
+    callbackURL: z.string().max(2_048).optional(),
+  })
+  .strict();
 
 async function handleGoogleSignIn(c: AuthContext) {
   if (!isGoogleAuthAvailable(c.req.raw, c.env)) {
     return c.json(APIErrors.notFound("Google sign-in unavailable"), 404);
   }
   const origin = new URL(c.env.APP_URL).origin;
-  if (c.req.header("origin") !== origin ||
-      (c.req.header("sec-fetch-site") && c.req.header("sec-fetch-site") !== "same-origin")) {
+  if (
+    c.req.header("origin") !== origin ||
+    (c.req.header("sec-fetch-site") &&
+      c.req.header("sec-fetch-site") !== "same-origin")
+  ) {
     return c.json(APIErrors.forbidden("Cross-origin sign-in rejected"), 403);
   }
   const parsed = await readBoundedJson(c, googleSignInSchema);
   if ("response" in parsed) return parsed.response;
   let destination = parsed.data.callbackURL ?? "/";
-  if (destination.startsWith(`${origin}/`)) destination = destination.slice(origin.length);
+  if (destination.startsWith(`${origin}/`))
+    destination = destination.slice(origin.length);
   const returnPath = resolveLoginReturnPath(destination);
   if (returnPath !== destination) {
     return c.json(APIErrors.validationError("Invalid login return path"), 400);
   }
-  const limited = await enforceNativeRateLimit(c, c.env.AUTH_SIGN_IN_RATE_LIMITER, "google_sign_in");
+  const limited = await enforceNativeRateLimit(
+    c,
+    c.env.AUTH_SIGN_IN_RATE_LIMITER,
+    "google_sign_in",
+  );
   if (limited) return limited;
   const errorUrl = new URL("/login", origin);
   errorUrl.searchParams.set("oauthError", "1");
   errorUrl.searchParams.set("redirect", returnPath);
-  const response = await createAuth(c.env, getExecutionContext(c)).handler(normalizedJsonRequest(c, {
-    provider: "google", callbackURL: `${origin}${returnPath}`, errorCallbackURL: errorUrl.href,
-  }));
+  const response = await createAuth(c.env, getExecutionContext(c)).handler(
+    normalizedJsonRequest(c, {
+      provider: "google",
+      callbackURL: `${origin}${returnPath}`,
+      errorCallbackURL: errorUrl.href,
+    }),
+  );
   return noStoreResponse(response);
 }
 
@@ -718,9 +745,9 @@ async function handleGoogleCallback(c: AuthContext) {
   const failed = () => noStoreResponse(c.redirect("/login?oauthError=1"));
   if (!isGoogleAuthAvailable(c.req.raw, c.env)) return failed();
   try {
-    const response = await createAuth(c.env, getExecutionContext(c)).handler(new Request(
-      normalizeBetterAuthUrl(c.req.raw.url), c.req.raw,
-    ));
+    const response = await createAuth(c.env, getExecutionContext(c)).handler(
+      new Request(normalizeBetterAuthUrl(c.req.raw.url), c.req.raw),
+    );
     return noStoreResponse(response);
   } catch {
     logger.error("google_oauth_callback_failed");
@@ -728,9 +755,26 @@ async function handleGoogleCallback(c: AuthContext) {
   }
 }
 
-auth.get("/providers", (c) => c.json({ google: isGoogleAuthAvailable(c.req.raw, c.env) }, 200, {
-  "Cache-Control": "no-store",
-}));
+auth.openapi(
+  createRoute({
+    method: "get",
+    path: "/providers",
+    operationId: "getAuthProviders",
+    summary: "List available sign-in providers",
+    tags: ["Authentication"],
+    "x-audience": "public",
+    responses: {
+      200: jsonResponse(
+        z.object({ google: z.boolean() }),
+        "Available providers",
+      ),
+    },
+  }),
+  (c) =>
+    c.json({ google: isGoogleAuthAvailable(c.req.raw, c.env) }, 200, {
+      "Cache-Control": "no-store",
+    }),
+);
 auth.post("/sign-in/social", handleGoogleSignIn);
 auth.get("/callback/google", handleGoogleCallback);
 
@@ -779,3 +823,247 @@ auth.all("/*", async (c) => {
 });
 
 export { auth as authRoute };
+
+// Controlled readers above enforce 16 KiB before JSON parsing. Registry-only
+// contracts deliberately do not install Hono's eager body validator.
+const authError = jsonResponse(
+  z.union([apiErrorSchema, AuthProviderErrorSchema]),
+  "Authentication failure",
+);
+const acknowledgment = z.object({ success: z.literal(true) });
+const authContracts = {
+  forgotPassword: createRoute({
+    method: "post",
+    path: "/forgot-password",
+    operationId: "forgotPassword",
+    summary: "Request a password reset email",
+    tags: ["Authentication"],
+    "x-audience": "public",
+    description:
+      "16 KiB JSON limit. Always acknowledges accepted email requests without revealing account existence.",
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: forgotPasswordSchema } },
+      },
+    },
+    responses: {
+      200: jsonResponse(
+        acknowledgment.extend({ message: z.string() }),
+        "Request acknowledged",
+      ),
+      ...errorResponses(400, 413, 415, 429, 500, 503),
+    },
+  }),
+  signUp: createRoute({
+    method: "post",
+    path: "/sign-up/email",
+    operationId: "signUpEmail",
+    summary: "Register with email",
+    tags: ["Authentication"],
+    "x-audience": "public",
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: signUpEmailSchema } },
+      },
+    },
+    responses: {
+      200: jsonResponse(acknowledgment, "Registration acknowledged"),
+      ...errorResponses(400, 413, 415, 429, 500, 503),
+    },
+  }),
+  signIn: createRoute({
+    method: "post",
+    path: "/sign-in/email",
+    operationId: "signInEmail",
+    summary: "Sign in with email",
+    tags: ["Authentication"],
+    "x-audience": "public",
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: signInEmailSchema } },
+      },
+    },
+    responses: {
+      200: jsonResponse(
+        BrowserSignInSchema,
+        "Browser session established; token only in HttpOnly Cookie",
+      ),
+      ...errorResponses(400, 401, 413, 415, 429, 500, 503),
+    },
+  }),
+  verification: createRoute({
+    method: "post",
+    path: "/send-verification-email",
+    operationId: "sendVerificationEmail",
+    summary: "Request an email verification message",
+    tags: ["Authentication"],
+    "x-audience": "public",
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: verificationEmailSchema } },
+      },
+    },
+    responses: {
+      200: jsonResponse(z.object({ status: z.boolean() }), "Email accepted"),
+      ...errorResponses(413, 415, 429, 503),
+      400: authError,
+      403: authError,
+      500: authError,
+    },
+  }),
+  confirm: createRoute({
+    method: "post",
+    path: "/confirm-email",
+    operationId: "confirmEmail",
+    summary: "Confirm an email verification token",
+    tags: ["Authentication"],
+    "x-audience": "public",
+    description:
+      "Submit the email fragment token in the JSON body, never in a URL query.",
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: emailConfirmationSchema } },
+      },
+    },
+    responses: {
+      200: jsonResponse(acknowledgment, "Email confirmed"),
+      ...errorResponses(400, 413, 415, 429, 500, 503),
+    },
+  }),
+  reset: createRoute({
+    method: "post",
+    path: "/reset-password",
+    operationId: "resetPassword",
+    summary: "Reset a password using a fragment token",
+    tags: ["Authentication"],
+    "x-audience": "public",
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: passwordResetSchema } },
+      },
+    },
+    responses: {
+      200: jsonResponse(acknowledgment, "Password reset"),
+      ...errorResponses(400, 413, 415, 429, 500, 503),
+    },
+  }),
+  signOut: createRoute({
+    method: "post",
+    path: "/sign-out",
+    operationId: "signOut",
+    summary: "Sign out of the current session",
+    request: {
+      body: {
+        required: false,
+        description:
+          "Optional provider sign-out options; validation is owned by Better Auth.",
+        content: {
+          "application/json": {
+            schema: z.object({
+              callbackURL: z.string().optional(),
+              disableRedirect: z.boolean().optional(),
+              state: z.string().optional(),
+            }),
+          },
+        },
+      },
+    },
+    tags: ["Authentication"],
+    "x-audience": "public",
+    responses: {
+      200: jsonResponse(SignOutSchema, "Signed out"),
+      400: authError,
+      500: authError,
+      ...errorResponses(403, 503),
+    },
+  }),
+  social: createRoute({
+    method: "post",
+    path: "/sign-in/social",
+    operationId: "signInGoogle",
+    summary: "Start Google sign-in",
+    tags: ["Authentication"],
+    "x-audience": "public",
+    description:
+      "Same-origin Google sign-in. Available only when configured. 16 KiB JSON limit.",
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: googleSignInSchema } },
+      },
+    },
+    responses: {
+      200: jsonResponse(
+        z.object({ url: z.string(), redirect: z.boolean() }),
+        "OAuth destination",
+      ),
+      400: authError,
+      500: authError,
+      ...errorResponses(403, 404, 413, 415, 429, 503),
+    },
+  }),
+  callback: createRoute({
+    method: "get",
+    path: "/callback/google",
+    operationId: "googleCallback",
+    summary: "Complete Google sign-in",
+    tags: ["Authentication"],
+    "x-audience": "public",
+    request: {
+      query: z
+        .object({
+          code: z.string().optional(),
+          state: z.string().optional(),
+          error: z.string().optional(),
+          error_description: z.string().optional(),
+        })
+        .passthrough(),
+    },
+    responses: {
+      302: {
+        description: "Redirect to the product or login error page",
+        headers: {
+          Location: {
+            schema: { type: "string" },
+            description: "Same-origin return destination",
+          },
+        },
+      },
+    },
+  }),
+};
+for (const [name, contract] of Object.entries(authContracts))
+  auth.openAPIRegistry.registerPath({
+    ...contract,
+    "x-validation-mode": ["signOut", "callback"].includes(name)
+      ? "provider-controlled"
+      : "bounded-json",
+  });
+for (const method of ["get", "post"] as const)
+  auth.openAPIRegistry.registerPath(
+    createRoute({
+      method,
+      path: "/get-session",
+      operationId: method === "get" ? "getSession" : "postSession",
+      summary: "Read the current browser session",
+      tags: ["Authentication"],
+      "x-audience": "public",
+      "x-validation-mode": "provider-controlled",
+      description:
+        "Returns null without an active session. Browser payload excludes token, IP address and user agent.",
+      security: [{}, { cookieAuth: [] }, { secureCookieAuth: [] }],
+      responses: {
+        200: jsonResponse(BrowserSessionSchema, "Current browser session"),
+        400: authError,
+        401: authError,
+        500: authError,
+        ...errorResponses(403, ...(method === "post" ? ([503] as const) : [])),
+      },
+    }),
+  );

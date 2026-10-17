@@ -1,31 +1,35 @@
+const cookieSecurity: Record<string, string[]>[] = [
+  { cookieAuth: [] },
+  { secureCookieAuth: [] },
+];
 import { and, eq, isNull } from "drizzle-orm";
-import { Hono, type Context } from "hono";
-import { z } from "zod";
+import type { Context } from "hono";
 
 import type { ImageUploadReason } from "@/contracts/image-upload";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
 import { getActiveSession } from "../lib/active-session";
-import {
-  adminAccessErrorResponse,
-  requireAdmin,
-} from "../lib/admin-access";
+import { adminAccessErrorResponse, requireAdmin } from "../lib/admin-access";
 import { APIErrors } from "../lib/api-errors";
-import type { Env } from "../lib/auth";
 import {
   isOwnedAvatarKey,
   ownedAvatarKeyFromStoredValue,
 } from "../lib/avatar-media";
 import { generateId } from "../lib/id";
 import { logger } from "../lib/logger";
+import { deleteR2ObjectsWithRetry, getR2PublicBaseUrl } from "../lib/r2-media";
 import {
-  deleteR2ObjectsWithRetry,
-  getR2PublicBaseUrl,
-} from "../lib/r2-media";
-import { validateRequest } from "../lib/validation";
+  createApiApp,
+  createRoute,
+  z,
+  jsonResponse,
+  errorResponses,
+  validationHook,
+  type ApiEnv,
+} from "../lib/openapi";
 
-const upload = new Hono<{ Bindings: Env }>();
-type UploadContext = Context<{ Bindings: Env }>;
+const upload = createApiApp();
+type UploadContext = Context<ApiEnv>;
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 // Keep total buffering bounded while allowing normal multipart framing.
@@ -297,9 +301,9 @@ async function validatedFormFile(
   c: UploadContext,
   formData: FormData,
 ): Promise<File | Response> {
-  const file = formData.get("file");
-  return file instanceof File
-    ? file
+  const parsed = uploadFormSchema.safeParse({ file: formData.get("file") });
+  return parsed.success
+    ? parsed.data.file
     : c.json(
         APIErrors.badRequest("No file provided", { reason: "missing_file" }),
         400,
@@ -314,12 +318,18 @@ upload.post("/avatar", async (c) => {
 
     const storage = storageConfiguration(c);
     if (!storage) {
-      return c.json(APIErrors.internalError("R2 storage is not safely configured"), 500);
+      return c.json(
+        APIErrors.internalError("R2 storage is not safely configured"),
+        500,
+      );
     }
     const formData = await boundedFormData(c.req.raw);
     const file = await validatedFormFile(c, formData);
     if (file instanceof Response) return file;
-    const { buffer, ext, contentType } = await normalizedImage(file, c.env.IMAGES);
+    const { buffer, ext, contentType } = await normalizedImage(
+      file,
+      c.env.IMAGES,
+    );
 
     const db = createDb(c.env.DB);
     const [currentUser] = await db
@@ -342,18 +352,21 @@ upload.post("/avatar", async (c) => {
     });
 
     const url = uploadUrl(c, storage.publicBaseUrl, finalKey);
-    const imageUnchanged = currentUser.image === null
-      ? isNull(schema.users.image)
-      : eq(schema.users.image, currentUser.image);
+    const imageUnchanged =
+      currentUser.image === null
+        ? isNull(schema.users.image)
+        : eq(schema.users.image, currentUser.image);
     const updated = await db
       .update(schema.users)
       .set({ image: url, updatedAt: new Date() })
-      .where(and(
-        eq(schema.users.id, session.user.id),
-        imageUnchanged,
-        eq(schema.users.status, "active"),
-        isNull(schema.users.deletedAt),
-      ))
+      .where(
+        and(
+          eq(schema.users.id, session.user.id),
+          imageUnchanged,
+          eq(schema.users.status, "active"),
+          isNull(schema.users.deletedAt),
+        ),
+      )
       .returning({ image: schema.users.image });
     if (updated.length !== 1) {
       await deleteR2ObjectsWithRetry(storage.bucket, createdKeys);
@@ -377,7 +390,8 @@ upload.post("/avatar", async (c) => {
       ...(previousKey && previousKey !== finalKey ? [previousKey] : []),
     ]).catch((cleanupError: unknown) => {
       logger.error("avatar_media_cleanup_failed", {
-        errorType: cleanupError instanceof Error ? cleanupError.name : "UnknownR2Error",
+        errorType:
+          cleanupError instanceof Error ? cleanupError.name : "UnknownR2Error",
       });
     });
 
@@ -389,9 +403,12 @@ upload.post("/avatar", async (c) => {
       type: contentType,
     });
   } catch (error) {
-    if (error instanceof UploadRequestError) return requestErrorResponse(c, error);
+    if (error instanceof UploadRequestError)
+      return requestErrorResponse(c, error);
     if (createdKeys.length > 0 && c.env.R2) {
-      await deleteR2ObjectsWithRetry(c.env.R2, createdKeys).catch(() => undefined);
+      await deleteR2ObjectsWithRetry(c.env.R2, createdKeys).catch(
+        () => undefined,
+      );
     }
     logger.error("avatar_upload_failed", {
       errorType: error instanceof Error ? error.name : "UnknownUploadError",
@@ -400,83 +417,118 @@ upload.post("/avatar", async (c) => {
   }
 });
 
-upload.delete("/avatar", async (c) => {
+const avatarSessionBoundary: import("hono").MiddlewareHandler<ApiEnv> = async (
+  c,
+  next,
+) => {
   try {
     const session = await getActiveSession(c.env, c.req.raw.headers);
     if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-    const query = await validateRequest(
-      c,
-      "query",
-      avatarKeyQuerySchema,
-      "Object key is required",
-      "none",
-      "Object key is required",
-      APIErrors.badRequest,
-    );
-    if (query instanceof Response) return query;
-    const { key } = query;
-    if (!c.env.R2) {
-      return c.json(APIErrors.internalError("R2 storage not configured"), 500);
-    }
-    if (!isOwnedAvatarKey(key, session.user.id)) {
-      return c.json(APIErrors.forbidden("无权删除该文件"), 403);
-    }
-
-    const db = createDb(c.env.DB);
-    const [userRecord] = await db
-      .select({ image: schema.users.image })
-      .from(schema.users)
-      .where(eq(schema.users.id, session.user.id))
-      .limit(1);
-    if (!userRecord?.image) {
-      return c.json(APIErrors.forbidden("无权删除该文件"), 403);
-    }
-
-    const currentKey = ownedAvatarKeyFromStoredValue(
-      c.env,
-      new URL(c.req.raw.url),
-      userRecord.image,
-      session.user.id,
-    );
-    if (currentKey !== key) {
-      return c.json(APIErrors.forbidden("无权删除该文件"), 403);
-    }
-
-    const cleared = await db
-      .update(schema.users)
-      .set({ image: null, updatedAt: new Date() })
-      .where(and(
-        eq(schema.users.id, session.user.id),
-        eq(schema.users.image, userRecord.image),
-      ))
-      .returning({ id: schema.users.id });
-    if (cleared.length !== 1) {
-      return c.json(APIErrors.forbidden("头像已变化，请刷新后重试"), 403);
-    }
-
-    try {
-      await deleteR2ObjectsWithRetry(c.env.R2, [key]);
-    } catch (error) {
-      // Restore the reference only if no concurrent replacement occurred.
-      const restored = await db
-        .update(schema.users)
-        .set({ image: userRecord.image, updatedAt: new Date() })
-        .where(and(eq(schema.users.id, session.user.id), isNull(schema.users.image)))
-        .returning({ id: schema.users.id });
-      if (restored.length === 0) {
-        await deleteR2ObjectsWithRetry(c.env.R2, [key]);
-      }
-      throw error;
-    }
-    return c.json({ success: true });
+    c.set("session", session);
   } catch (error) {
     logger.error("avatar_delete_failed", {
       errorType: error instanceof Error ? error.name : "UnknownUploadError",
     });
     return c.json(APIErrors.internalError("Failed to delete avatar"), 500);
   }
+  await next();
+};
+
+const deleteAvatarContract = createRoute({
+  method: "delete",
+  path: "/avatar",
+  operationId: "deleteAvatar",
+  summary: "Remove the current avatar",
+  tags: ["Upload"],
+  "x-audience": "public",
+  security: cookieSecurity,
+  middleware: [avatarSessionBoundary],
+  request: { query: avatarKeyQuerySchema },
+  responses: {
+    200: jsonResponse(z.object({ success: z.literal(true) }), "Avatar removed"),
+    ...errorResponses(400, 401, 403, 500, 503),
+  },
 });
+upload.openapi(
+  deleteAvatarContract,
+  async (c) => {
+    try {
+      const session = c.get("session");
+      const query = c.req.valid("query");
+      const { key } = query;
+      if (!c.env.R2) {
+        return c.json(
+          APIErrors.internalError("R2 storage not configured"),
+          500,
+        );
+      }
+      if (!isOwnedAvatarKey(key, session.user.id)) {
+        return c.json(APIErrors.forbidden("无权删除该文件"), 403);
+      }
+
+      const db = createDb(c.env.DB);
+      const [userRecord] = await db
+        .select({ image: schema.users.image })
+        .from(schema.users)
+        .where(eq(schema.users.id, session.user.id))
+        .limit(1);
+      if (!userRecord?.image) {
+        return c.json(APIErrors.forbidden("无权删除该文件"), 403);
+      }
+
+      const currentKey = ownedAvatarKeyFromStoredValue(
+        c.env,
+        new URL(c.req.raw.url),
+        userRecord.image,
+        session.user.id,
+      );
+      if (currentKey !== key) {
+        return c.json(APIErrors.forbidden("无权删除该文件"), 403);
+      }
+
+      const cleared = await db
+        .update(schema.users)
+        .set({ image: null, updatedAt: new Date() })
+        .where(
+          and(
+            eq(schema.users.id, session.user.id),
+            eq(schema.users.image, userRecord.image),
+          ),
+        )
+        .returning({ id: schema.users.id });
+      if (cleared.length !== 1) {
+        return c.json(APIErrors.forbidden("头像已变化，请刷新后重试"), 403);
+      }
+
+      try {
+        await deleteR2ObjectsWithRetry(c.env.R2, [key]);
+      } catch (error) {
+        // Restore the reference only if no concurrent replacement occurred.
+        const restored = await db
+          .update(schema.users)
+          .set({ image: userRecord.image, updatedAt: new Date() })
+          .where(
+            and(
+              eq(schema.users.id, session.user.id),
+              isNull(schema.users.image),
+            ),
+          )
+          .returning({ id: schema.users.id });
+        if (restored.length === 0) {
+          await deleteR2ObjectsWithRetry(c.env.R2, [key]);
+        }
+        throw error;
+      }
+      return c.json({ success: true as const }, 200);
+    } catch (error) {
+      logger.error("avatar_delete_failed", {
+        errorType: error instanceof Error ? error.name : "UnknownUploadError",
+      });
+      return c.json(APIErrors.internalError("Failed to delete avatar"), 500);
+    }
+  },
+  validationHook("Object key is required", "none", APIErrors.badRequest),
+);
 
 upload.post("/location", async (c) => {
   let attemptedKey: string | null = null;
@@ -485,12 +537,18 @@ upload.post("/location", async (c) => {
 
     const storage = storageConfiguration(c);
     if (!storage) {
-      return c.json(APIErrors.internalError("R2 storage is not safely configured"), 500);
+      return c.json(
+        APIErrors.internalError("R2 storage is not safely configured"),
+        500,
+      );
     }
     const formData = await boundedFormData(c.req.raw);
     const file = await validatedFormFile(c, formData);
     if (file instanceof Response) return file;
-    const { buffer, ext, contentType } = await normalizedImage(file, c.env.IMAGES);
+    const { buffer, ext, contentType } = await normalizedImage(
+      file,
+      c.env.IMAGES,
+    );
     const key = `temp/locations/${admin.id}/${generateId()}.${ext}`;
     attemptedKey = key;
     await storage.bucket.put(key, buffer, {
@@ -507,7 +565,8 @@ upload.post("/location", async (c) => {
   } catch (error) {
     const denied = adminAccessErrorResponse(c, error);
     if (denied) return denied;
-    if (error instanceof UploadRequestError) return requestErrorResponse(c, error);
+    if (error instanceof UploadRequestError)
+      return requestErrorResponse(c, error);
     if (attemptedKey && c.env.R2) {
       await deleteR2ObjectsWithRetry(c.env.R2, [attemptedKey]).catch(
         () => undefined,
@@ -516,7 +575,10 @@ upload.post("/location", async (c) => {
     logger.error("location_image_upload_failed", {
       errorType: error instanceof Error ? error.name : "UnknownUploadError",
     });
-    return c.json(APIErrors.internalError("Failed to upload location image"), 500);
+    return c.json(
+      APIErrors.internalError("Failed to upload location image"),
+      500,
+    );
   }
 });
 
@@ -528,12 +590,18 @@ upload.post("/story", async (c) => {
 
     const storage = storageConfiguration(c);
     if (!storage) {
-      return c.json(APIErrors.internalError("R2 storage is not safely configured"), 500);
+      return c.json(
+        APIErrors.internalError("R2 storage is not safely configured"),
+        500,
+      );
     }
     const formData = await boundedFormData(c.req.raw);
     const file = await validatedFormFile(c, formData);
     if (file instanceof Response) return file;
-    const { buffer, ext, contentType } = await normalizedImage(file, c.env.IMAGES);
+    const { buffer, ext, contentType } = await normalizedImage(
+      file,
+      c.env.IMAGES,
+    );
     const key = `temp/stories/${session.user.id}/${generateId()}.${ext}`;
     attemptedKey = key;
     await storage.bucket.put(key, buffer, {
@@ -547,7 +615,8 @@ upload.post("/story", async (c) => {
       type: contentType,
     });
   } catch (error) {
-    if (error instanceof UploadRequestError) return requestErrorResponse(c, error);
+    if (error instanceof UploadRequestError)
+      return requestErrorResponse(c, error);
     if (attemptedKey && c.env.R2) {
       await deleteR2ObjectsWithRetry(c.env.R2, [attemptedKey]).catch(
         () => undefined,
@@ -561,3 +630,45 @@ upload.post("/story", async (c) => {
 });
 
 export { upload as uploadRoute };
+
+// Only bounded multipart readers use registry-only body contracts.
+const uploadFormSchema = z.object({
+  file: z.file().openapi({
+    type: "string",
+    format: "binary",
+    description:
+      "Image file, maximum 5 MiB; multipart total maximum 5 MiB + 64 KiB. Content is decoded and validated.",
+  }),
+});
+const uploadedImageSchema = z.object({
+  success: z.literal(true),
+  key: z.string(),
+  url: z.string(),
+  size: z.number().int(),
+  type: z.string(),
+});
+for (const kind of ["avatar", "location", "story"] as const) {
+  upload.openAPIRegistry.registerPath(
+    createRoute({
+      method: "post",
+      path: `/${kind}`,
+      operationId: `upload${kind[0].toUpperCase()}${kind.slice(1)}`,
+      summary: `Upload an image for ${kind}`,
+      tags: ["Upload"],
+      "x-audience": kind === "location" ? "admin" : "public",
+      "x-validation-mode": "bounded-multipart",
+      security: cookieSecurity,
+      request: {
+        body: {
+          required: true,
+          content: { "multipart/form-data": { schema: uploadFormSchema } },
+        },
+      },
+      responses: {
+        200: jsonResponse(uploadedImageSchema, "Uploaded image"),
+        ...errorResponses(400, 401, 403, 413, 500, 503),
+        ...(kind === "avatar" ? errorResponses(409) : {}),
+      },
+    }),
+  );
+}
