@@ -6,6 +6,7 @@ import * as React from "react";
 import { authClient } from "@/lib/auth-client";
 import {
   Mountain,
+  MapPinPlus,
   Menu,
   X,
   User,
@@ -30,7 +31,12 @@ const navLinks = (t: (key: string) => string) => [
 
 interface NavbarProps {
   className?: string;
-  renderAdminQuickAction?: () => React.ReactNode;
+  adminQuickActionLabel?: string;
+  renderAdminQuickAction?: (props: {
+    open: boolean;
+    onClose: () => void;
+    returnFocusRef: React.RefObject<HTMLElement | null>;
+  }) => React.ReactNode;
 }
 
 type NavbarUser = Pick<
@@ -45,14 +51,35 @@ type NavbarUser = Pick<
  * - Logo：GoMate 同行足迹图标 + 品牌琥珀渐变文字
  * - 主 CTA：品牌琥珀按钮 + 琥珀色光晕
  * - 移动端：从右侧 slide-in 抽屉
- * - 用户菜单：hover 展开下拉
+ * - 用户菜单：点击或键盘展开个人选项
  */
-export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
+export function Navbar({
+  className,
+  renderAdminQuickAction,
+  adminQuickActionLabel,
+}: NavbarProps) {
   const { t } = useI18n(["nav", "common"]);
   // SSR/CSR 初始状态必须一致，避免 hydration mismatch
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
+  const [quickActionOpen, setQuickActionOpen] = React.useState(false);
+  const userMenuButtonRef = React.useRef<HTMLButtonElement>(null);
+  const mobileMenuButtonRef = React.useRef<HTMLButtonElement>(null);
+  const quickActionReturnRef = React.useRef<HTMLElement | null>(null);
+  const closeQuickAction = React.useCallback(
+    () => setQuickActionOpen(false),
+    [],
+  );
+  const openQuickAction = (mobile: boolean) => {
+    quickActionReturnRef.current = mobile
+      ? mobileMenuButtonRef.current
+      : userMenuButtonRef.current;
+    setShowUserMenu(false);
+    setIsMobileMenuOpen(false);
+    setQuickActionOpen(true);
+  };
+  const userMenuId = React.useId();
   const [currentPath, setCurrentPath] = React.useState("");
   const [session, setSession] = React.useState<
     | {
@@ -86,17 +113,20 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
   const [sessionFailed, setSessionFailed] = React.useState(false);
   const updateSession = React.useCallback((refresh: boolean) => {
     const request = refresh ? refreshCurrentUser() : fetchCurrentUser();
-    void request.then((u) => {
-      setSessionFailed(false);
-      setSession(
-        u
-          ? {
-              user: u,
-              isAdmin: u.role === "admin",
-            }
-          : null,
-      );
-    }).catch(() => setSessionFailed(true));
+    void request
+      .then((u) => {
+        setSessionFailed(false);
+        if (u?.role !== "admin") setQuickActionOpen(false);
+        setSession(
+          u
+            ? {
+                user: u,
+                isAdmin: u.role === "admin",
+              }
+            : null,
+        );
+      })
+      .catch(() => setSessionFailed(true));
   }, []);
 
   // 获取登录会话，并在页面恢复后重新读取，避免旧访客态永久驻留。
@@ -118,13 +148,14 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
     };
   }, [updateSession]);
 
-  // 移动菜单打开时锁定滚动
+  // 统一管理抽屉到快速添加弹窗的滚动锁，避免两者交接时互相恢复。
   React.useEffect(() => {
-    document.body.style.overflow = isMobileMenuOpen ? "hidden" : "";
+    document.body.style.overflow =
+      isMobileMenuOpen || quickActionOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isMobileMenuOpen]);
+  }, [isMobileMenuOpen, quickActionOpen]);
 
   // 点击外部关闭用户菜单
   React.useEffect(() => {
@@ -139,6 +170,21 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
     return () => document.removeEventListener("click", handler);
   }, [showUserMenu]);
 
+  React.useEffect(() => {
+    if (!showUserMenu && !isMobileMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setShowUserMenu(false);
+      setIsMobileMenuOpen(false);
+      (isMobileMenuOpen
+        ? mobileMenuButtonRef
+        : userMenuButtonRef
+      ).current?.focus();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showUserMenu, isMobileMenuOpen]);
+
   const handleLogout = async () => {
     await authClient.signOut();
     setSession(null);
@@ -152,10 +198,41 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
     if (href === "/") return currentPath === "/";
     return currentPath.startsWith(href);
   };
-  const adminQuickAction =
-    session?.isAdmin && renderAdminQuickAction
-      ? renderAdminQuickAction()
-      : null;
+  const adminItems = (mobile: boolean) =>
+    session?.isAdmin ? (
+      <>
+        <div role="separator" className="my-1 border-t border-border" />
+        <a
+          href="/admin"
+          data-testid={mobile ? "nav-admin-mobile" : "nav-admin"}
+          className="flex min-h-11 items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+          onClick={() => {
+            setShowUserMenu(false);
+            setIsMobileMenuOpen(false);
+          }}
+        >
+          <Settings
+            className="size-4 text-muted-foreground"
+            aria-hidden="true"
+          />
+          {t("nav.admin")}
+        </a>
+        {renderAdminQuickAction && (
+          <button
+            type="button"
+            onClick={() => openQuickAction(mobile)}
+            aria-haspopup="dialog"
+            className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+          >
+            <MapPinPlus
+              className="size-4 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
+            {adminQuickActionLabel}
+          </button>
+        )}
+      </>
+    ) : null;
 
   return (
     <>
@@ -224,19 +301,14 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
               {/* 主题切换 */}
               <ThemeToggle />
 
-              {session?.isAdmin && (
-                <a
-                  href="/admin"
-                  data-testid="nav-admin"
-                  className="flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-stone-600 transition-colors duration-150 hover:bg-accent hover:text-foreground dark:text-stone-400"
-                >
-                  <Settings className="h-4 w-4" aria-hidden="true" />
-                  {t("nav.admin")}
-                </a>
-              )}
-
               {sessionFailed ? (
-                <button type="button" className="min-h-11 underline" onClick={() => updateSession(true)}>{t("common.retry")}</button>
+                <button
+                  type="button"
+                  className="min-h-11 underline"
+                  onClick={() => updateSession(true)}
+                >
+                  {t("common.retry")}
+                </button>
               ) : session === undefined ? (
                 <div
                   className="flex items-center gap-2"
@@ -252,8 +324,11 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                   <div className="relative" data-user-menu>
                     <button
                       type="button"
+                      ref={userMenuButtonRef}
+                      aria-expanded={showUserMenu}
+                      aria-controls={userMenuId}
                       onClick={() => setShowUserMenu(!showUserMenu)}
-                      className="flex items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
+                      className="flex min-h-11 items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
                     >
                       {/* 用户头像 */}
                       <Avatar
@@ -278,15 +353,12 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                     {/* 下拉菜单 */}
                     {showUserMenu && (
                       <div
-                        className="absolute right-0 top-full mt-1.5 w-44 rounded-xl overflow-hidden bg-popover border border-border shadow-lg z-50"
-                        style={{
-                          animation:
-                            "fade-up 0.15s cubic-bezier(0.16,1,0.3,1) both",
-                        }}
+                        id={userMenuId}
+                        className="absolute right-0 top-full mt-1.5 w-52 rounded-xl overflow-hidden bg-popover border border-border shadow-lg z-50"
                       >
                         <a
                           href="/profile"
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                          className="flex min-h-11 items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
                           onClick={() => setShowUserMenu(false)}
                         >
                           <User className="h-3.5 w-3.5 text-muted-foreground" />
@@ -294,17 +366,21 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                         </a>
                         <a
                           href="/my-teams"
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                          className="flex min-h-11 items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
                           onClick={() => setShowUserMenu(false)}
                         >
                           <Mountain className="h-3.5 w-3.5 text-muted-foreground" />
                           {t("nav.myTeams")}
                         </a>
-                        <div className="border-t border-border my-1" />
+                        {adminItems(false)}
+                        <div
+                          role="separator"
+                          className="border-t border-border my-1"
+                        />
                         <button
                           type="button"
                           onClick={handleLogout}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                          className="w-full min-h-11 flex items-center gap-2.5 px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                         >
                           <LogOut className="h-3.5 w-3.5" />
                           {t("nav.logout")}
@@ -340,20 +416,12 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
               )}
             </div>
 
-            {adminQuickAction && (
-              <div
-                className="ms-auto shrink-0 md:ms-0"
-                data-testid="nav-admin-quick-action"
-              >
-                {adminQuickAction}
-              </div>
-            )}
-
             {/* ---- 移动端汉堡按钮 ---- */}
             <button
               type="button"
+              ref={mobileMenuButtonRef}
               data-testid="nav-mobile-menu-toggle"
-              className="md:hidden p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
+              className="md:hidden min-h-11 min-w-11 p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={
                 isMobileMenuOpen ? t("common.closeMenu") : t("common.openMenu")
@@ -374,7 +442,7 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
           移动端抽屉菜单
           ============================================================ */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
+        <div className="fixed inset-0 z-[60] md:hidden">
           {/* 遮罩 */}
           <div
             className="absolute inset-0 bg-[#1e1812]/20 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]"
@@ -384,7 +452,7 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
 
           {/* 抽屉面板：右侧滑入 */}
           <div
-            className="absolute right-0 top-0 bottom-0 w-72 flex flex-col bg-popover border-l border-border shadow-2xl"
+            className="absolute right-0 top-0 bottom-0 w-72 overflow-y-auto flex flex-col bg-popover border-l border-border shadow-2xl"
             style={{
               animation:
                 "slide-in-right 0.35s cubic-bezier(0.16,1,0.3,1) forwards",
@@ -403,7 +471,7 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-muted-foreground hover:bg-accent transition-colors"
+                className="min-h-11 min-w-11 p-1.5 rounded-lg text-muted-foreground hover:bg-accent transition-colors"
                 aria-label={t("common.closeMenu")}
               >
                 <X className="h-5 w-5" />
@@ -436,7 +504,7 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
               className="flex flex-col px-3 py-3 gap-0.5"
               aria-label={t("common.mobileNav")}
             >
-              {navLinks(t).map((link, i) => {
+              {navLinks(t).map((link) => {
                 const active = isActive(link.href);
                 return (
                   <a
@@ -445,11 +513,9 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={cn(
                       "block px-4 py-3 text-base font-medium rounded-xl transition-colors duration-150",
-                      "animate-[fade-up_0.35s_cubic-bezier(0.16,1,0.3,1)_forwards] opacity-0",
                       active
                         ? "text-primary bg-accent"
                         : "text-foreground hover:bg-accent hover:text-primary",
-                      `stagger-${i + 1}`,
                     )}
                   >
                     {link.label}
@@ -465,7 +531,13 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                 <LocaleToggle />
               </div>
               {sessionFailed ? (
-                <button type="button" className="min-h-11 underline" onClick={() => updateSession(true)}>{t("common.retry")}</button>
+                <button
+                  type="button"
+                  className="min-h-11 underline"
+                  onClick={() => updateSession(true)}
+                >
+                  {t("common.retry")}
+                </button>
               ) : session === undefined ? (
                 <div
                   className="h-24 animate-pulse rounded-xl bg-muted motion-reduce:animate-none"
@@ -473,36 +545,6 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                 />
               ) : session?.user ? (
                 <>
-                  {session.isAdmin && (
-                    <a
-                      href="/admin"
-                      data-testid="nav-admin-mobile"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-                    >
-                      <Settings
-                        className="h-4 w-4 text-muted-foreground"
-                        aria-hidden="true"
-                      />
-                      {t("nav.admin")}
-                    </a>
-                  )}
-                  <a
-                    href="/profile"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 border border-border text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-colors font-medium text-sm"
-                  >
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    {t("nav.profile")}
-                  </a>
-                  <a
-                    href="/my-teams"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 border border-border text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-colors font-medium text-sm"
-                  >
-                    <Mountain className="h-4 w-4 text-muted-foreground" />
-                    {t("nav.myTeams")}
-                  </a>
                   <a
                     href="/teams/create"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -511,14 +553,34 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                     <Plus className="h-4 w-4" />
                     {t("nav.createTeam")}
                   </a>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="w-full flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground py-2 transition-colors"
-                  >
-                    <LogOut className="h-3.5 w-3.5" />
-                    {t("nav.logout")}
-                  </button>
+                  <div>
+                    <a
+                      href="/profile"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                    >
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      {t("nav.profile")}
+                    </a>
+                    <a
+                      href="/my-teams"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
+                    >
+                      <Mountain className="h-4 w-4 text-muted-foreground" />
+                      {t("nav.myTeams")}
+                    </a>
+                    {adminItems(true)}
+                    <div role="separator" className="border-t border-border" />
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full min-h-11 flex items-center px-4 gap-2.5 text-sm text-muted-foreground hover:text-foreground py-2 transition-colors"
+                    >
+                      <LogOut className="h-3.5 w-3.5" />
+                      {t("nav.logout")}
+                    </button>
+                  </div>
                 </>
               ) : (
                 <>
@@ -543,6 +605,12 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
           </div>
         </div>
       )}
+      {session?.isAdmin &&
+        renderAdminQuickAction?.({
+          open: quickActionOpen,
+          onClose: closeQuickAction,
+          returnFocusRef: quickActionReturnRef,
+        })}
     </>
   );
 }

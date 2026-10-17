@@ -1,5 +1,6 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { AdminQuickActionDialog } from "../components/admin/admin-quick-action";
 import { Navbar } from "../components/layout/navbar";
 
 const fetchCurrentUserMock = vi.fn();
@@ -27,7 +28,9 @@ vi.mock("@/hooks/useI18n", () => ({
   }),
 }));
 
-vi.mock("../components/layout/locale-toggle", () => ({ LocaleToggle: () => null }));
+vi.mock("../components/layout/locale-toggle", () => ({
+  LocaleToggle: () => null,
+}));
 vi.mock("../components/theme-toggle", () => ({ ThemeToggle: () => null }));
 
 describe("Navbar auth state", () => {
@@ -38,10 +41,19 @@ describe("Navbar auth state", () => {
 
   it("does not flash guest actions while authentication is loading", async () => {
     let resolveUser: ((user: null) => void) | undefined;
-    fetchCurrentUserMock.mockReturnValue(new Promise<null>((resolve) => { resolveUser = resolve; }));
+    fetchCurrentUserMock.mockReturnValue(
+      new Promise<null>((resolve) => {
+        resolveUser = resolve;
+      }),
+    );
     const renderAdminQuickAction = vi.fn(() => <button>Quick action</button>);
 
-    render(<Navbar renderAdminQuickAction={renderAdminQuickAction} />);
+    render(
+      <Navbar
+        adminQuickActionLabel="Quick action"
+        renderAdminQuickAction={renderAdminQuickAction}
+      />,
+    );
 
     expect(screen.getByTestId("nav-auth-loading")).toBeInTheDocument();
     expect(screen.queryByTestId("nav-login")).not.toBeInTheDocument();
@@ -126,11 +138,21 @@ describe("Navbar auth state", () => {
       extra: {},
     });
 
-    render(<Navbar renderAdminQuickAction={renderAdminQuickAction} />);
+    render(
+      <Navbar
+        adminQuickActionLabel="Quick action"
+        renderAdminQuickAction={renderAdminQuickAction}
+      />,
+    );
 
+    await screen.findByTestId("nav-create-team");
+    expect(screen.queryByTestId("nav-admin")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Admin/ }));
     const adminLink = await screen.findByTestId("nav-admin");
     expect(adminLink).toHaveAttribute("href", "/admin");
-    expect(screen.getByTestId("injected-admin-quick-action")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("injected-admin-quick-action"),
+    ).toBeInTheDocument();
     expect(renderAdminQuickAction).toHaveBeenCalled();
   });
 
@@ -146,10 +168,22 @@ describe("Navbar auth state", () => {
       extra: {},
     });
 
-    render(<Navbar renderAdminQuickAction={renderAdminQuickAction} />);
+    render(
+      <Navbar
+        adminQuickActionLabel="Quick action"
+        renderAdminQuickAction={renderAdminQuickAction}
+      />,
+    );
 
     expect(await screen.findByTestId("nav-create-team")).toBeInTheDocument();
     expect(screen.queryByTestId("nav-admin")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /User/ }));
+    expect(screen.queryByTestId("nav-admin")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("nav-mobile-menu-toggle"));
+    expect(screen.queryByTestId("nav-admin-mobile")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Quick action" }),
+    ).not.toBeInTheDocument();
     expect(renderAdminQuickAction).not.toHaveBeenCalled();
   });
 
@@ -166,6 +200,8 @@ describe("Navbar auth state", () => {
 
     render(<Navbar />);
 
+    await screen.findByTestId("nav-create-team");
+    fireEvent.click(screen.getByRole("button", { name: /Admin/ }));
     expect(await screen.findByTestId("nav-admin")).toHaveAttribute(
       "href",
       "/admin",
@@ -174,4 +210,66 @@ describe("Navbar auth state", () => {
       screen.queryByTestId("injected-admin-quick-action"),
     ).not.toBeInTheDocument();
   });
+  it.each([false, true])(
+    "groups admin actions and returns focus after quick entry (mobile=%s)",
+    async (mobile) => {
+      fetchCurrentUserMock.mockResolvedValue({
+        id: "admin-1",
+        name: "Admin",
+        role: "admin",
+      });
+      render(
+        <Navbar
+          adminQuickActionLabel="Quick action"
+          renderAdminQuickAction={(props) => (
+            <AdminQuickActionDialog
+              {...props}
+              lockBodyScroll={false}
+              title="Quick entry"
+              closeLabel="Close"
+            >
+              <input aria-label="Location name" />
+            </AdminQuickActionDialog>
+          )}
+        />,
+      );
+      await screen.findByTestId("nav-create-team");
+      const trigger = mobile
+        ? screen.getByTestId("nav-mobile-menu-toggle")
+        : screen.getByRole("button", { name: /Admin/ });
+      fireEvent.click(trigger);
+      const adminLink = screen.getByTestId(
+        mobile ? "nav-admin-mobile" : "nav-admin",
+      );
+      const group = adminLink.parentElement!;
+      const labels = within(group)
+        .getAllByRole("link")
+        .concat(within(group).getAllByRole("button"))
+        .sort((a, b) =>
+          a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING
+            ? -1
+            : 1,
+        )
+        .map((element) => element.textContent);
+      expect(labels.slice(labels.indexOf("nav.profile"))).toEqual([
+        "nav.profile",
+        "nav.myTeams",
+        "nav.admin",
+        "Quick action",
+        "nav.logout",
+      ]);
+      fireEvent.click(screen.getByRole("button", { name: "Quick action" }));
+      expect(
+        screen.getByRole("dialog", { name: "Quick entry" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId(mobile ? "nav-admin-mobile" : "nav-admin"),
+      ).not.toBeInTheDocument();
+      fireEvent.keyDown(document, { key: "Escape" });
+      await act(async () => {});
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(trigger).toHaveFocus();
+      expect(document.body.style.overflow).toBe("");
+    },
+  );
 });
