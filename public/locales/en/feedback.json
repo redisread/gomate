@@ -36,5 +36,7 @@
   "subjectLabel": "Subject",
   "subjectPlaceholder": "Briefly describe your suggestion topic",
   "messageLabel": "Detailed Suggestion",
-  "messagePlaceholder": "Please describe your suggestion or feedback in detail..."
+  "messagePlaceholder": "Please describe your suggestion or feedback in detail...",
+  "description": "Tell us about a problem or suggestion.",
+  "contentPlaceholder": "Describe your problem or suggestion"
 }

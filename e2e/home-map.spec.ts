@@ -247,7 +247,6 @@ test("map failure is retryable and reduced motion updates without animation", as
 
 for (const [locale, linkName] of [
   ["en", "View location"],
-  ["ja", "スポットを見る"],
 ]) {
   test(`map preview supports ${locale} at 320px`, async ({ page, baseURL }) => {
     await page.setViewportSize({ width: 320, height: 800 });

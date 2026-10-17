@@ -240,13 +240,6 @@ test.describe("read-only administrator teams", () => {
         `View details: ${prefix} 已完成`,
         "Team details",
       ],
-      [
-        "ja",
-        "チーム管理",
-        "チーム検索",
-        `詳細を見る：${prefix} 已完成`,
-        "チーム詳細",
-      ],
     ]) {
       for (const width of [320, 768, 1024, 1440]) {
         await page.setViewportSize({ width, height: 900 });

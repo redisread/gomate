@@ -16,7 +16,7 @@ export function resolveLoginReturnPath(
   const pathname = value.split(/[?#]/u, 1)[0];
   if (/%(?:2e|2f|5c|25)/iu.test(pathname)) return "/";
   const url = new URL(value, "https://gomate.invalid");
-  const pagePath = url.pathname.replace(/^\/(?:en|ja|zh-CN)(?=\/|$)/u, "");
+  const pagePath = url.pathname.replace(/^\/(?:en|zh-CN)(?=\/|$)/u, "");
   if (
     url.origin !== "https://gomate.invalid" ||
     /^\/(?:api|login|register)(?:\/|$)/u.test(pagePath)

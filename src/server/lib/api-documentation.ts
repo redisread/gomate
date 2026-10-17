@@ -1,7 +1,6 @@
-import { getLocaleFromCookie, resolveLocale } from "../../i18n";
+import { getRequestLocale } from "../../contracts/locale";
 import docsZh from "../../../public/locales/zh-CN/apiDocs.json";
 import docsEn from "../../../public/locales/en/apiDocs.json";
-import docsJa from "../../../public/locales/ja/apiDocs.json";
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
 import type { Context } from "hono";
@@ -191,15 +190,8 @@ export function registerDocumentation(app: DocumentationApp) {
       c.header("Cache-Control", "private, no-store");
       const hostname = new URL(c.req.url).hostname;
       const local = ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
-      const cookie = c.req.header("cookie") ?? "";
-      const language = c.req
-        .header("accept-language")
-        ?.split(",")[0]
-        ?.split("-")[0];
-      const locale = cookie.includes("gomate_locale=")
-        ? getLocaleFromCookie(cookie)
-        : resolveLocale(language);
-      const titles = { "zh-CN": docsZh, en: docsEn, ja: docsJa }[locale];
+      const locale = getRequestLocale(c.req.raw.headers);
+      const titles = { "zh-CN": docsZh, en: docsEn }[locale];
       return Scalar<{ Bindings: WorkerEnv }>({
         url: `/api${prefix}/openapi.json`,
         cdn: SCALAR_ASSET_PATH,

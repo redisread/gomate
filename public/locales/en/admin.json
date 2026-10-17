@@ -182,7 +182,6 @@
     "saveFailed": "Failed to save. Try again.",
     "deleteFailed": "Failed to delete. Try again.",
     "teamLocationRefs": "Teams / locations",
-    "locationTeamStoryRefs": "Locations / teams / stories",
     "detachTagConfirm": "This tag is still referenced. Detach every reference and delete it?",
     "deleteTagConfirm": "Delete this unused tag?",
     "searchUsers": "Search name or email",
@@ -191,7 +190,8 @@
     "currentUser": "Current account",
     "makeAdmin": "Make admin",
     "revokeAdmin": "Revoke admin",
-    "roleConfirm": "Confirm this administrator role change?"
+    "roleConfirm": "Confirm this administrator role change?",
+    "locationTeamRefs": "Locations / teams"
   },
   "errors": {
     "adminSelfRoleChange": "You cannot change administrator access for your current account.",
