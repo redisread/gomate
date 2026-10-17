@@ -244,8 +244,8 @@ GIF、WebP 与 HEIC/HEIF 栅格图片，SVG 和 AVIF 即使可以解码也会拒
 `error.details.reason` 提供稳定的失败分类供客户端本地化展示，包括无法解码、格式不支持和
 HEIC 转换失败。JPEG、PNG、GIF 与 WebP 按识别结果生成扩展名和 Content-Type 并保留原始
 字节，HEIC/HEIF 通过 Images binding 转为 WebP 后再写入 R2。媒体写入继续以临时对象、
-最终对象、条件 DML 和补偿清理维护 R2/D1 一致性。Local-circle KV 只缓存无用户身份的公共
-部分，个性化数据每次从 D1 合并。
+最终对象、条件 DML 和补偿清理维护 R2/D1 一致性。Local-circle 当前通过 D1 查询公共与
+个性化数据，没有运行时 KV 缓存；未来缓存与异步选型遵循[可靠性与性能设计](../CODING_STANDARDS.md#可靠性与性能设计)。
 海报接口不接受公开 `refresh` 参数；海报缓存只包含地点、行程和故事的公开内容，不渲染
 用户姓名、头像或用户 ID。`location` 与 `team` 支持 `preset=dusk|ridge|journal`，省略时使用
 `dusk`，其他值在读取业务数据前返回 400；预设 ID 和渲染版本属于缓存身份的一部分。
