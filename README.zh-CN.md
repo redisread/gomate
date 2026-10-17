@@ -23,7 +23,6 @@
   <a href="README.md">English</a> &nbsp;/&nbsp; 简体中文
 </p>
 
-
 ## GoMate 能做什么？
 
 想出门，却不知道去哪儿，或找不到同行的人？GoMate 把发现地点和组队出行放在一起。

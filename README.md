@@ -23,7 +23,6 @@
   English &nbsp;/&nbsp; <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-
 ## What is GoMate?
 
 Want to head out but need somewhere to go or someone to join you? GoMate brings place discovery and group planning together.
