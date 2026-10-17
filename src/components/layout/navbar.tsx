@@ -84,9 +84,11 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const [sessionFailed, setSessionFailed] = React.useState(false);
   const updateSession = React.useCallback((refresh: boolean) => {
     const request = refresh ? refreshCurrentUser() : fetchCurrentUser();
     void request.then((u) => {
+      setSessionFailed(false);
       setSession(
         u
           ? {
@@ -95,7 +97,7 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
             }
           : null,
       );
-    });
+    }).catch(() => setSessionFailed(true));
   }, []);
 
   // 获取登录会话，并在页面恢复后重新读取，避免旧访客态永久驻留。
@@ -234,7 +236,9 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                 </a>
               )}
 
-              {session === undefined ? (
+              {sessionFailed ? (
+                <button type="button" className="min-h-11 underline" onClick={() => updateSession(true)}>{t("common.retry")}</button>
+              ) : session === undefined ? (
                 <div
                   className="flex items-center gap-2"
                   data-testid="nav-auth-loading"
@@ -461,7 +465,9 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
               <div className="flex items-center justify-center py-2">
                 <LocaleToggle />
               </div>
-              {session === undefined ? (
+              {sessionFailed ? (
+                <button type="button" className="min-h-11 underline" onClick={() => updateSession(true)}>{t("common.retry")}</button>
+              ) : session === undefined ? (
                 <div
                   className="h-24 animate-pulse rounded-xl bg-muted motion-reduce:animate-none"
                   aria-hidden="true"

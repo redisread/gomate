@@ -15,7 +15,7 @@
 - API：同源 `/api/*`，进程内交给 `src/server/app.ts`
 - D1：binding `DB`，目标数据库 `gomate-db-v3`（生产数据库必须由受保护环境按名称绑定；仓库不携带旧数据库 UUID）
 - R2：binding `R2`，bucket `gomate`
-- Rate Limiting bindings：`AUTH_SIGN_IN_RATE_LIMITER`、`AUTH_SIGN_UP_RATE_LIMITER`、`AUTH_EMAIL_RATE_LIMITER`、`FEEDBACK_RATE_LIMITER`
+- Rate Limiting bindings：`AUTH_SIGN_IN_RATE_LIMITER`、`AUTH_SIGN_UP_RATE_LIMITER`、`AUTH_EMAIL_RATE_LIMITER`
 - Preview URL：同一 `gomate` Worker 的 version/alias Preview；不创建独立 Worker、D1 或 R2
 - 正常生产 `WRITE_MODE` 为 `open`；`protected` 只用于经过审批的事故写保护，不作为常规发布配置。
 - Cloudflare Workers Builds 的 Git 连接负责发布授权；运行时 secret（`BETTER_AUTH_SECRET`、`RESEND_API_KEY`）只在受保护 production 环境配置，仓库不保存 Cloudflare 或应用 secret。
@@ -151,3 +151,7 @@ GitHub PR CI 会在 `pnpm test:ci`、Worker types/dry-run/size 通过后初始�
 `gomate` 的 production 运行时还需要 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`，值不得进入仓库、日志、PR 或仓库级 Actions secrets。部署继续继承已配置的运行时 secrets；不将 OAuth secret 放入所有分支共享的 Workers Builds 环境变量，也不增加本机生产写入入口。首次配置必须按本规约的精确授权与受保护流程执行。
 
 Google 项目使用 GoMate 网站客户端，授权回调为 `https://gomate.live/api/auth/callback/google`，本地为 `http://localhost:5432/api/auth/callback/google`。仅申请 `openid email profile`。Google 前台的公开首页、隐私政策、服务条款分别为 `https://gomate.live`、`https://gomate.live/privacy`、`https://gomate.live/terms`。Google OAuth 对远程 Preview 保持关闭，无需将共享 Preview 域名加入 Google 客户端。
+
+## Preview 与增量迁移的先后关系
+
+Preview 共用生产 D1，且不执行 migration。首次发布包含 `meeting_point` 的 Worker 前，生产可能尚未应用 `0010`，此时 Preview 的队伍读取可能失败；不能据此宣称核心读取已验收。应在受保护 main 发布完成增量迁移后，验证精确 Worker version 的页面与 API；不增加旧字段兜底，也不在 Preview 或本机执行远程迁移。`0011` 仍按迁移清单保持关闭，待观察与回滚窗口证据就绪后再经后续受保护提交启用。

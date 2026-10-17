@@ -39,7 +39,7 @@ describe("public route contracts", () => {
         method: "POST",
         body: "{",
       },
-      { FEEDBACK_RATE_LIMITER: { limit: async () => ({ success: true }) } },
+      { AUTH_EMAIL_RATE_LIMITER: { limit: async () => ({ success: true }) } },
     );
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({

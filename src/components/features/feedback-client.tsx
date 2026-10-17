@@ -10,6 +10,10 @@ export function FeedbackClient() {
   const [email, setEmail] = React.useState("");
   const [content, setContent] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
+  const attempt = React.useRef<{
+    fingerprint: string;
+    requestId: string;
+  } | null>(null);
   const pending = React.useRef(false);
   const [submitted, setSubmitted] = React.useState(false);
   const [error, setError] = React.useState(false);
@@ -20,7 +24,18 @@ export function FeedbackClient() {
     setSubmitting(true);
     setError(false);
     try {
-      await submitFeedback({ email, content });
+      const fingerprint = JSON.stringify([
+        email.trim().toLowerCase(),
+        content.trim(),
+      ]);
+      if (attempt.current?.fingerprint !== fingerprint) {
+        attempt.current = { fingerprint, requestId: crypto.randomUUID() };
+      }
+      await submitFeedback({
+        email,
+        content,
+        requestId: attempt.current.requestId,
+      });
       setSubmitted(true);
     } catch {
       setError(true);
@@ -46,6 +61,7 @@ export function FeedbackClient() {
             <button
               className="min-h-11 underline"
               onClick={() => {
+                attempt.current = null;
                 setContent("");
                 setSubmitted(false);
               }}

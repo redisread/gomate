@@ -186,7 +186,7 @@ export async function sendFeedbackEmail(
           replyTo: data.email,
           subject: getEmailField(locale, "feedback", "title"),
           html: `<div><h2>${getEmailField(locale, "feedback", "title")}</h2><p>${escapeHtml(data.email)}</p><p style="white-space:pre-wrap">${escapeHtml(data.content)}</p></div>`,
-        }),
+        }, { idempotencyKey: `feedback/${data.requestId}` }),
       10000,
       "Feedback email timeout",
     );

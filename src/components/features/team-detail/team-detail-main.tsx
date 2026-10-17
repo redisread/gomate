@@ -32,6 +32,13 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             <p className="text-muted-foreground/70">
               {error || t("teams.notFound")}
             </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="min-h-11 underline"
+            >
+              {t("common.retry")}
+            </button>
             <a
               href="/teams"
               className="text-amber-600 hover:text-amber-700 underline underline-offset-2"

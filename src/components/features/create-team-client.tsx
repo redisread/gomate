@@ -1,5 +1,7 @@
 "use client";
 
+import { RequestFailure } from "@/components/ui/request-failure";
+
 import * as React from "react";
 import {
   ArrowLeft,
@@ -43,6 +45,7 @@ export function CreateTeamClient() {
   );
   const [hasWechat, setHasWechat] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [sessionFailed, setSessionFailed] = React.useState(false);
   const [error, setError] = React.useState("");
 
   // 获取默认日期/时间
@@ -73,7 +76,7 @@ export function CreateTeamClient() {
       if (!u) return;
       setIsAuthenticated(true);
       setHasWechat(!!u.extra.wechat);
-    })();
+    })().catch(() => setSessionFailed(true));
 
     const params = new URLSearchParams(window.location.search);
     const locId = params.get("locationId");
@@ -239,6 +242,7 @@ export function CreateTeamClient() {
     }
   };
 
+  if (sessionFailed) return <RequestFailure />;
   if (isAuthenticated === null) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-background">

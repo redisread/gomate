@@ -1,5 +1,7 @@
 "use client";
 
+import { RequestFailure } from "@/components/ui/request-failure";
+
 import * as React from "react";
 import {
   Calendar,
@@ -194,6 +196,8 @@ export function ProfileClient() {
     }
   }, []);
 
+  const [sessionFailed, setSessionFailed] = React.useState(false);
+
   const loadProfile = React.useCallback(async () => {
     setIsLoading(true);
     try {
@@ -211,6 +215,8 @@ export function ProfileClient() {
         : Promise.resolve();
 
       await Promise.all([loadTeams(), regionRequest]);
+    } catch {
+      setSessionFailed(true);
     } finally {
       setIsLoading(false);
     }
@@ -220,6 +226,7 @@ export function ProfileClient() {
     void loadProfile();
   }, [loadProfile]);
 
+  if (sessionFailed) return <RequestFailure />;
   if (isLoading) return <ProfileSkeleton label={t("profile.loadingHint")} />;
   if (!user) return null;
 

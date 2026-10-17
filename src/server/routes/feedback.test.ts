@@ -10,10 +10,15 @@ vi.mock("resend", () => ({
 const limit = vi.fn();
 const env = {
   RESEND_API_KEY: "test",
-  FEEDBACK_RATE_LIMITER: { limit },
+  AUTH_EMAIL_RATE_LIMITER: { limit },
 } as unknown as Env;
+const requestId = "b96450a4-f648-4636-a7c1-b9bb3e039790";
 const submit = (
-  data: unknown = { email: "person@example.com", content: "Feedback" },
+  data: unknown = {
+    requestId,
+    email: "person@example.com",
+    content: "Feedback",
+  },
 ) =>
   feedbackRoute.request(
     "/",
@@ -24,7 +29,7 @@ const submit = (
         cookie: "gomate_locale=en",
         "CF-Connecting-IP": "192.0.2.1",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ requestId, ...(data as object) }),
     },
     env,
   );
@@ -130,10 +135,43 @@ it("rejects malformed JSON and missing configuration without sending", async () 
     {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: "p@example.com", content: "Hi" }),
+      body: JSON.stringify({
+        requestId,
+        email: "p@example.com",
+        content: "Hi",
+      }),
     },
-    { FEEDBACK_RATE_LIMITER: { limit } } as unknown as Env,
+    { AUTH_EMAIL_RATE_LIMITER: { limit } } as unknown as Env,
   );
   expect(missing.status).toBe(500);
   expect(mocks.send).not.toHaveBeenCalled();
+});
+
+it("reuses the same provider idempotency key after an ambiguous transport failure", async () => {
+  mocks.send.mockRejectedValueOnce(new Error("response lost after acceptance"));
+  expect((await submit()).status).toBe(500);
+  expect((await submit()).status).toBe(200);
+  expect(mocks.send).toHaveBeenCalledTimes(2);
+  expect(mocks.send.mock.calls[0][1]).toEqual({
+    idempotencyKey: `feedback/${requestId}`,
+  });
+  expect(mocks.send.mock.calls[1][1]).toEqual(mocks.send.mock.calls[0][1]);
+  expect(mocks.send.mock.calls[1][0]).toEqual(mocks.send.mock.calls[0][0]);
+});
+
+it("keeps the idempotency key when delivery timed out with an unknown result", async () => {
+  vi.useFakeTimers();
+  try {
+    mocks.send.mockImplementationOnce(() => new Promise(() => undefined));
+    const pending = submit();
+    await vi.waitFor(() => expect(mocks.send).toHaveBeenCalledOnce());
+    await vi.advanceTimersByTimeAsync(10001);
+    expect((await pending).status).toBe(500);
+    expect((await submit()).status).toBe(200);
+    expect(mocks.send.mock.calls[1][1]).toEqual({
+      idempotencyKey: `feedback/${requestId}`,
+    });
+  } finally {
+    vi.useRealTimers();
+  }
 });

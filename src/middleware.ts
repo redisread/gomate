@@ -86,6 +86,10 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     return dispatchDevApi(context);
   }
 
+  // Astro selects its 404 route for unknown paths. Negotiate languages only
+  // for real pages; a removed or mistyped URL must remain a direct 404.
+  if (!hasLocalePrefix && context.routePattern === "/404") return next();
+
   // Query tokens are a rejected legacy transport: never consume them and do
   // not forward them through locale redirects/rewrite requests. The supported
   // email links use fragments, which never reach this middleware.

@@ -22,8 +22,15 @@ test("language menu offers only Chinese and English and preserves location query
 test("removed Japanese URLs and translation resources are not served or redirected", async ({
   request,
 }) => {
-  for (const path of ["/ja/locations", "/locales/ja/common.json"]) {
-    const response = await request.get(path, { maxRedirects: 0 });
+  for (const path of [
+    "/ja/locations?source=old",
+    "/locales/ja/common.json",
+    "/missing-route",
+  ]) {
+    const response = await request.get(path, {
+      maxRedirects: 0,
+      headers: { "Accept-Language": "en" },
+    });
     expect(response.status()).toBe(404);
     expect(response.headers().location).toBeUndefined();
   }

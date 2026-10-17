@@ -1,5 +1,6 @@
 "use client";
 
+import { RequestFailure } from "@/components/ui/request-failure";
 import { Plus } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ export function MyTeamsClient() {
   const { t } = useI18n(["myTeams"]);
   const ctx = useMyTeams();
 
+  if (!ctx.currentUser && ctx.actionMessage) return <RequestFailure />;
   if (!ctx.currentUser) {
     return (
       <main className="min-h-screen bg-background">

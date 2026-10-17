@@ -32,7 +32,12 @@ function assertResponse(value: void | Response): asserts value is Response {
 
 describe("i18n middleware query preservation", () => {
   it("does not recognize removed locale paths or rewrite them", async () => {
-    const context = contextFor(new Request("https://gomate.test/ja/locations"));
+    const context = contextFor(
+      new Request("https://gomate.test/ja/locations?source=old", {
+        headers: { "Accept-Language": "en" },
+      }),
+    );
+    Object.assign(context, { routePattern: "/404" });
     const next = vi.fn(() => new Response("not found", { status: 404 }));
     const response = await onRequest(context as never, next as never);
     assertResponse(response);

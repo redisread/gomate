@@ -30,7 +30,7 @@ const protectFeedback: MiddlewareHandler<ApiEnv> = async (c, next) => {
     const key = Array.from(new Uint8Array(hash), (byte) =>
       byte.toString(16).padStart(2, "0"),
     ).join("");
-    const decision = await c.env.FEEDBACK_RATE_LIMITER.limit({ key });
+    const decision = await c.env.AUTH_EMAIL_RATE_LIMITER.limit({ key });
     if (!decision.success) {
       c.header("Retry-After", "60");
       return c.json(APIErrors.rateLimited(), 429);

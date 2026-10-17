@@ -82,12 +82,23 @@ describe("same-origin API client", () => {
     expect(getApiErrorMessage(null, "fallback")).toBe("fallback");
   });
 
+  it("rejects dependency failures and permits a later session retry", async () => {
+    mockFetch.mockResolvedValueOnce(new Response('{}', { status: 500 }));
+    await expect(refreshCurrentUser()).rejects.toThrow();
+    mockFetch.mockResolvedValueOnce(new Response('{"user":{"id":"recovered"}}'));
+    await expect(fetchCurrentUser()).resolves.toMatchObject({id:"recovered"});
+    mockFetch.mockRejectedValueOnce(new TypeError("offline"));
+    await expect(refreshCurrentUser()).rejects.toThrow();
+    mockFetch.mockResolvedValueOnce(new Response('{}', { status: 401 }));
+    await expect(fetchCurrentUser()).resolves.toBeNull();
+  });
+
   it("can refresh a previously memoized guest session", async () => {
     mockFetch
-      .mockResolvedValueOnce(new Response('{"user":null}', { status: 200 }))
+      .mockResolvedValueOnce(new Response('{"user":null}', { status: 401 }))
       .mockResolvedValueOnce(new Response('{"user":{"id":"user-1"}}', { status: 200 }));
 
-    await expect(fetchCurrentUser()).resolves.toBeNull();
+    await expect(refreshCurrentUser()).resolves.toBeNull();
     await expect(refreshCurrentUser()).resolves.toMatchObject({ id: "user-1" });
 
     expect(mockFetch).toHaveBeenCalledTimes(2);

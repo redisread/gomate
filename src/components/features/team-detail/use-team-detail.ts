@@ -51,6 +51,7 @@ export function useTeamDetail(teamId: string) {
         return;
       }
       const data = await response.json();
+      if (!response.ok) throw new Error("team unavailable");
       if (data.success && data.team) {
         setTeam(data.team as Team);
         setError(null);
@@ -92,6 +93,7 @@ export function useTeamDetail(teamId: string) {
           setError(t("teams.notFound"));
           return;
         }
+        if (!teamResponse.ok) throw new Error("team unavailable");
         const data = await teamResponse.json();
         if (!data.success || !data.team) {
           setError(t("teams.notFound"));

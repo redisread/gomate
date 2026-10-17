@@ -40,9 +40,9 @@
 
 ### 反馈
 
-唯一反馈入口接受 `email`、`content`：邮箱规范化，内容去空白后 1–5000 字符，实际请求体不超过 32 KiB；旧联系表单字段不再接受。反馈不保存为工单，发送到支持邮箱；HTML 转义，供应商返回失败或超时不会显示成功，不自动重发结果未知的邮件。
+唯一反馈入口接受 `requestId`（UUID）、`email`、`content`：邮箱规范化，内容去空白后 1–5000 字符，实际请求体不超过 32 KiB；旧联系表单字段不再接受。反馈不保存为工单，发送到支持邮箱；HTML 转义，供应商返回失败或超时不会显示成功，不自动重发结果未知的邮件。同一表单内容失败后重试保留 `requestId`，更改内容或成功后重新提交生成新 ID；服务端向 Resend 传递 `feedback/{requestId}` 幂等键。供应商去重窗口为 24 小时，页面刷新或超过窗口不提供永久去重保证。参见 [Resend 幂等键](https://resend.com/docs/dashboard/emails/idempotency-keys)。
 
-`FEEDBACK_RATE_LIMITER` 配置每 key 每 60 秒 3 次，以 Cloudflare 客户端 IP 的摘要作为 key。拒绝返回 429 和 `Retry-After: 60`，保护服务不可用返回 503。匿名反馈没有可信用户身份，因此采用 IP 摘要限流，共享网络用户可能共用额度；此为边缘防滥用限制，不是严格全局计数；其平台语义见 [Workers Rate Limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)。认证有独立限流 binding，互不复用额度。
+反馈复用已有 `AUTH_EMAIL_RATE_LIMITER`，每 key 每 60 秒 5 次，以加 `feedback:` 前缀后计算的客户端 IP 摘要作为 key。拒绝返回 429 和 `Retry-After: 60`，保护服务不可用返回 503。匿名反馈没有可信用户身份，因此采用 IP 摘要限流，共享网络用户可能共用额度；此为边缘防滥用限制，不是严格全局计数；其平台语义见 [Workers Rate Limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)。反馈与认证邮件使用不同 key 空间，复用同一个 binding，不新增 Cloudflare 资源。
 
 ## 测试与维护
 

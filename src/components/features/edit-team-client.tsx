@@ -1,5 +1,7 @@
 "use client";
 
+import { RequestFailure } from "@/components/ui/request-failure";
+
 import * as React from "react";
 import {
   ArrowLeft,
@@ -33,6 +35,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
   );
   const [isLeader, setIsLeader] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [sessionFailed, setSessionFailed] = React.useState(false);
   const [error, setError] = React.useState("");
 
   const [formData, setFormData] = React.useState({
@@ -104,7 +107,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
       } finally {
         setIsLoading(false);
       }
-    })();
+    })().catch(() => setSessionFailed(true));
   }, [teamId, t]);
 
   const handleChange = (
@@ -205,6 +208,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
     }
   };
 
+  if (sessionFailed) return <RequestFailure />;
   if (isLoading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-background">
