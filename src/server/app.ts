@@ -16,11 +16,6 @@ import { adminUsersRoute } from "./routes/admin-users";
 import { adminTeamsRoute } from "./routes/admin-teams";
 import { contactRoute } from "./routes/contact";
 import { feedbackRoute } from "./routes/feedback";
-import { favoritesRoute } from "./routes/favorites";
-import messagesRoute from "./routes/messages";
-import storiesRoute from "./routes/stories";
-import { shareImageRoute } from "./routes/share-image";
-import { localCircleHomeRoute } from "./routes/local-circle/home";
 import {
   getRequestOrigin,
   isPreviewAuthMutation,
@@ -158,11 +153,6 @@ apiApp.route("/admin/users", adminUsersRoute);
 apiApp.route("/admin/teams", adminTeamsRoute);
 apiApp.route("/contact", contactRoute);
 apiApp.route("/feedback", feedbackRoute);
-apiApp.route("/favorites", favoritesRoute);
-apiApp.route("/messages", messagesRoute);
-apiApp.route("/stories", storiesRoute);
-apiApp.route("/share-image", shareImageRoute);
-apiApp.route("/local-circle/home", localCircleHomeRoute);
 
 apiApp.get("/r2/*", async (c) => {
   const hostname = new URL(c.req.url).hostname;

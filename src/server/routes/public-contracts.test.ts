@@ -4,10 +4,7 @@ import { contactRoute } from "./contact";
 import { feedbackRoute } from "./feedback";
 import { regionsRoute } from "./regions";
 import { tagsRoute } from "./tags";
-import { favoritesRoute } from "./favorites";
 import { usersRoute } from "./users";
-import messagesRoute from "./messages";
-import storiesRoute from "./stories";
 const mocks = vi.hoisted(() => ({ getActiveSession: vi.fn() }));
 vi.mock("../lib/active-session", () => ({
   getActiveSession: mocks.getActiveSession,
@@ -52,10 +49,7 @@ describe("public route contracts", () => {
 
 it.each([
   ["tags", tagsRoute, "POST", "/"],
-  ["favorites", favoritesRoute, "POST", "/locations"],
   ["users", usersRoute, "PATCH", "/me"],
-  ["messages", messagesRoute, "POST", "/"],
-  ["stories", storiesRoute, "POST", "/"],
 ] as const)(
   "%s keeps authentication ahead of malformed body",
   async (_name, app, method, path) => {
@@ -67,31 +61,6 @@ it.each([
     });
   },
 );
-
-it("documents every ordinary module without accessing a database", () => {
-  const app = createApiApp();
-  app
-    .route("/favorites", favoritesRoute)
-    .route("/users", usersRoute)
-    .route("/messages", messagesRoute)
-    .route("/stories", storiesRoute);
-  const document = app.getOpenAPI31Document({
-    openapi: "3.1.0",
-    info: { title: "API", version: "1" },
-  });
-  expect(
-    Object.values(document.paths ?? {}).flatMap((path) =>
-      Object.keys(path ?? {}).filter((key) =>
-        ["get", "post", "patch", "put", "delete"].includes(key),
-      ),
-    ),
-  ).toHaveLength(28);
-  expect(document.paths?.["/stories/{id}"]?.put?.requestBody).toBeDefined();
-  expect(document.paths?.["/stories/{id}"]?.put?.security).toEqual([
-    { cookieAuth: [] },
-    { secureCookieAuth: [] },
-  ]);
-});
 
 it("keeps concrete success response fields and status codes checked by TypeScript", () => {
   const app = createApiApp();
@@ -140,24 +109,6 @@ it.each([
     usersRoute,
     "/me/created-teams?page=1&page=2&limit=nope",
     "page pagination is not supported; use cursor",
-  ],
-  [
-    "conversation",
-    messagesRoute,
-    "/?limit=nope&limit=10",
-    "limit must be an integer between 1 and 50",
-  ],
-  [
-    "conversation page precedence",
-    messagesRoute,
-    "/?page=1&page=2&limit=nope",
-    "page pagination is not supported; use cursor",
-  ],
-  [
-    "message since precedence",
-    messagesRoute,
-    "/conversation-1?since=1&since=2&limit=nope",
-    "since is not supported; use cursor",
   ],
 ] as const)(
   "preserves first-value query and unsupported parameter behavior: %s",
