@@ -1,4 +1,6 @@
 import * as React from "react";
+import { animate as animateValue, motion } from "motion/react";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { useI18n } from "@/hooks/useI18n";
 import {
   getMapPointCandidates,
@@ -10,8 +12,6 @@ import {
 } from "@/lib/china-map";
 import type { MapPoint, ProvincePath } from "./use-map-data";
 
-const CAMERA_TRANSITION =
-  "transition-[transform,opacity] duration-[360ms] ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-none";
 const layoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
 
@@ -49,7 +49,9 @@ export function MapCanvas({
   const lastWidth = React.useRef(width);
   const previousProvince = React.useRef(selection.province);
   const [hovered, setHovered] = React.useState<string | null>(null);
-  const moving = animate && lastWidth.current === width;
+  const reduced = useReducedMotion();
+  const moving = animate && lastWidth.current === width && !reduced;
+  const liveCamera = React.useRef(camera);
   const maxCount = Math.max(1, ...counts.values());
 
   layoutEffect(() => {
@@ -94,39 +96,42 @@ export function MapCanvas({
   }, [selection.province, selection.locationId]);
 
   layoutEffect(() => {
-    if (
-      !moving ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    )
+    const from = liveCamera.current;
+    const draw = (progress: number) => {
+      const value = {
+        scale: from.scale + (camera.scale - from.scale) * progress,
+        translateX:
+          from.translateX + (camera.translateX - from.translateX) * progress,
+        translateY:
+          from.translateY + (camera.translateY - from.translateY) * progress,
+      };
+      liveCamera.current = value;
+      // One Motion clock writes both layers in the same frame, even after interruption.
+      if (cameraRef.current)
+        cameraRef.current.style.transform = `matrix(${value.scale},0,0,${value.scale},${value.translateX},${value.translateY})`;
+      for (const point of points) {
+        if (point.latitude === null || point.longitude === null) continue;
+        const element = markerRefs.current.get(point.id)?.parentElement;
+        const position = transformMapPoint(
+          projectChina(point.latitude, point.longitude),
+          value,
+        );
+        if (element)
+          element.style.transform = `translate(${(position.x * width) / 800}px,${(position.y * width) / 800}px)`;
+      }
+    };
+    if (!moving) {
+      draw(1);
       return;
-    const elements = [
-      cameraRef.current,
-      ...Array.from(
-        markerRefs.current.values(),
-        (button) => button.parentElement,
-      ),
-    ];
-    const animations = elements
-      .flatMap((element) =>
-        typeof element?.getAnimations === "function"
-          ? element.getAnimations()
-          : [],
-      )
-      .filter(
-        (animation) =>
-          "transitionProperty" in animation &&
-          animation.transitionProperty === "transform",
-      );
-    const start = document.timeline?.currentTime;
-    if (typeof start !== "number") return;
-    // SVG transitions and composited HTML transitions can start on different frames.
-    // Give them one clock, including reversals whose CSS duration would otherwise shorten independently.
-    for (const animation of animations) {
-      if (animation.effect instanceof KeyframeEffect)
-        animation.effect.updateTiming({ duration: 360 });
-      animation.startTime = start;
     }
-  }, [camera.scale, camera.translateX, camera.translateY, width, moving]);
+    draw(0);
+    const animation = animateValue(0, 1, {
+      duration: 0.36,
+      ease: [0.2, 0, 0, 1],
+      onUpdate: draw,
+    });
+    return () => animation.stop();
+  }, [camera, width, moving, points]);
 
   const choosePoint = (event: React.MouseEvent, point: MapPoint) => {
     if (event.detail === 0) {
@@ -179,7 +184,6 @@ export function MapCanvas({
             style={{
               transform: `matrix(${camera.scale},0,0,${camera.scale},${camera.translateX},${camera.translateY})`,
             }}
-            className={moving ? CAMERA_TRANSITION : undefined}
           >
             {paths.map((path) => {
               const count = counts.get(path.name) ?? 0;
@@ -238,7 +242,7 @@ export function MapCanvas({
             <div
               key={point.id}
               aria-hidden={!visible}
-              className={`absolute left-0 top-0 ${moving ? CAMERA_TRANSITION : ""}`}
+              className="absolute left-0 top-0"
               style={{
                 transform: `translate(${(position.x * width) / 800}px,${(position.y * width) / 800}px)`,
                 opacity: visible && width > 0 ? 1 : 0,
@@ -263,7 +267,9 @@ export function MapCanvas({
                 onFocus={() => setHovered(point.id)}
                 onBlur={() => setHovered(null)}
               >
-                <span
+                <motion.span
+                  animate={{ scale: !reduced && selected ? 1.15 : 1 }}
+                  transition={{ duration: reduced ? 0 : 0.15 }}
                   aria-hidden="true"
                   className={`h-2.5 w-2.5 rounded-full border-2 border-background bg-primary shadow-warm-sm transition-[box-shadow,background-color] duration-150 motion-reduce:transition-none ${selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
                 />
