@@ -36,17 +36,60 @@ const tagIdsSchema = z
 
 export const createTeamSchema = z
   .object({
-    locationId: z.string().trim().min(1).max(100),
-    activityType: activityTypeSchema,
+    locationId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .describe("活动地点的全局 ID。"),
+    activityType: activityTypeSchema.describe(
+      "活动类型的稳定枚举值，与地点推荐类型无强制绑定。",
+    ),
     title: z.string().trim().min(1).max(100),
-    description: z.string().trim().max(2_000).nullable().optional(),
-    meetingPoint: z.string().trim().max(1000).nullable().optional(),
-    startAt: offsetDateTimeSchema,
-    endAt: offsetDateTimeSchema,
-    maxParticipants: z.number().int().min(1).max(49),
-    requirements: z.array(requirementSchema).max(20).default([]),
-    recruitmentStatus: z.enum(["open", "closed"]).default("open"),
-    tagIds: tagIdsSchema.default([]),
+    description: z
+      .string()
+      .trim()
+      .max(2_000)
+      .nullable()
+      .optional()
+      .describe("队伍补充说明，可传 null 清空。"),
+    meetingPoint: z
+      .string()
+      .trim()
+      .max(1000)
+      .nullable()
+      .optional()
+      .describe(
+        "集合地点说明，最多 1000 字符；null 表示清空，普通访客不可见。",
+      ),
+    startAt: offsetDateTimeSchema.describe(
+      "活动开始时间，必须带时区；创建或修改时须在未来。",
+    ),
+    endAt: offsetDateTimeSchema.describe(
+      "活动结束时间，必须带时区且不早于开始时间。",
+    ),
+    maxParticipants: z
+      .number()
+      .int()
+      .min(1)
+      .max(49)
+      .describe(
+        "包含队长在内的总人数上限，范围 1–49；修改时不能低于当前有效人数。",
+      ),
+    requirements: z
+      .array(requirementSchema)
+      .max(20)
+      .default([])
+      .describe("参与要求列表，最多 20 条，每条最多 200 字符。"),
+    recruitmentStatus: z
+      .enum(["open", "closed"])
+      .default("open")
+      .describe(
+        "招募开关：open 开放、closed 关闭；实际可报名还取决于时间、取消状态和容量。",
+      ),
+    tagIds: tagIdsSchema
+      .default([])
+      .describe("完整标签 ID 列表，最多 20 个；更新时为替换语义，空数组清空。"),
   })
   .superRefine((value, ctx) => {
     const startAt = Date.parse(value.startAt);
@@ -69,17 +112,62 @@ export const createTeamSchema = z
 
 export const updateTeamSchema = z
   .object({
-    locationId: z.string().trim().min(1).max(100).optional(),
-    activityType: activityTypeSchema.optional(),
+    locationId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .optional()
+      .describe("活动地点的全局 ID。"),
+    activityType: activityTypeSchema
+      .optional()
+      .describe("活动类型的稳定枚举值，与地点推荐类型无强制绑定。"),
     title: z.string().trim().min(1).max(100).optional(),
-    description: z.string().trim().max(2_000).nullable().optional(),
-    meetingPoint: z.string().trim().max(1000).nullable().optional(),
-    startAt: offsetDateTimeSchema.optional(),
-    endAt: offsetDateTimeSchema.optional(),
-    maxParticipants: z.number().int().min(1).max(49).optional(),
-    requirements: z.array(requirementSchema).max(20).optional(),
-    recruitmentStatus: z.enum(["open", "closed"]).optional(),
-    tagIds: tagIdsSchema.optional(),
+    description: z
+      .string()
+      .trim()
+      .max(2_000)
+      .nullable()
+      .optional()
+      .describe("队伍补充说明，可传 null 清空。"),
+    meetingPoint: z
+      .string()
+      .trim()
+      .max(1000)
+      .nullable()
+      .optional()
+      .describe(
+        "集合地点说明，最多 1000 字符；null 表示清空，普通访客不可见。",
+      ),
+    startAt: offsetDateTimeSchema
+      .optional()
+      .describe("活动开始时间，必须带时区；创建或修改时须在未来。"),
+    endAt: offsetDateTimeSchema
+      .optional()
+      .describe("活动结束时间，必须带时区且不早于开始时间。"),
+    maxParticipants: z
+      .number()
+      .int()
+      .min(1)
+      .max(49)
+      .optional()
+      .describe(
+        "包含队长在内的总人数上限，范围 1–49；修改时不能低于当前有效人数。",
+      ),
+    requirements: z
+      .array(requirementSchema)
+      .max(20)
+      .optional()
+      .describe("参与要求列表，最多 20 条，每条最多 200 字符。"),
+    recruitmentStatus: z
+      .enum(["open", "closed"])
+      .optional()
+      .describe(
+        "招募开关：open 开放、closed 关闭；实际可报名还取决于时间、取消状态和容量。",
+      ),
+    tagIds: tagIdsSchema
+      .optional()
+      .describe("完整标签 ID 列表，最多 20 个；更新时为替换语义，空数组清空。"),
   })
   .strict();
 
@@ -146,11 +234,13 @@ async function validateTagIds(db: Db, tagIds: string[]): Promise<boolean> {
 
 mutations.openapi(
   createRoute({
+    description:
+      "需要登录。地点必须公开可用，activityType 必须来自共享枚举。startAt 必须在未来，endAt 不得早于开始时间；人数上限 1–49 且包含队长。创建者成为队长，标签最多 20 个，成功返回队伍详情。",
     method: "post",
     path: "/",
     operationId: "teamsCreate",
-    tags: ["Teams"],
-    summary: "Create a team",
+    tags: ["队伍"],
+    summary: "创建队伍",
     "x-audience": "public",
     security: teamCookieSecurity,
     request: {
@@ -167,7 +257,7 @@ mutations.openapi(
       legacyJsonBody("输入无效"),
     ] as const,
     responses: {
-      201: jsonResponse(TeamResponseSchema, "Success"),
+      201: jsonResponse(TeamResponseSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 401, 409, 422, 500),
     },
   }),
@@ -262,11 +352,13 @@ mutations.openapi(
 
 mutations.openapi(
   createRoute({
+    description:
+      "仅队长可操作，队伍必须尚未开始、未成团且未取消。只修改提交字段；人数上限不能低于当前有效人数，修改时间、地点和活动类型仍需满足创建约束。并发状态变化返回 409。",
     method: "put",
     path: "/{id}",
     operationId: "teamsUpdate",
-    tags: ["Teams"],
-    summary: "Update an unformed future team as leader",
+    tags: ["队伍"],
+    summary: "编辑未开始的队伍",
     "x-audience": "public",
     security: teamCookieSecurity,
     request: {
@@ -284,7 +376,7 @@ mutations.openapi(
       legacyJsonBody("输入无效"),
     ] as const,
     responses: {
-      200: jsonResponse(TeamResponseSchema, "Success"),
+      200: jsonResponse(TeamResponseSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 401, 403, 404, 409, 422, 500),
     },
   }),
@@ -421,17 +513,19 @@ mutations.openapi(
 
 mutations.openapi(
   createRoute({
+    description:
+      "仅队长可操作，队伍须尚未开始、未成团、未取消且无有效成员。最终删除再次检查约束；不满足条件返回 409。成功返回 success 确认。",
     method: "delete",
     path: "/{id}",
     operationId: "teamsDelete",
-    tags: ["Teams"],
-    summary: "Delete an empty future team as leader",
+    tags: ["队伍"],
+    summary: "删除尚无其他成员的队伍",
     "x-audience": "public",
     security: teamCookieSecurity,
     request: { params: z.object({ id: z.string() }) },
 
     responses: {
-      200: jsonResponse(TeamSuccessSchema, "Success"),
+      200: jsonResponse(TeamSuccessSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(401, 403, 404, 409, 500),
     },
   }),
@@ -482,17 +576,19 @@ mutations.openapi(
 
 mutations.openapi(
   createRoute({
+    description:
+      "仅队长可操作，队伍须尚未开始、未成团且未取消。成功后记录成团时间并关闭招募，返回更新后的队伍详情；重复成团或并发状态变化返回 409。",
     method: "post",
     path: "/{id}/form",
     operationId: "teamsForm",
-    tags: ["Teams"],
-    summary: "Confirm team formation as leader",
+    tags: ["队伍"],
+    summary: "确认队伍成团",
     "x-audience": "public",
     security: teamCookieSecurity,
     request: { params: z.object({ id: z.string() }) },
 
     responses: {
-      200: jsonResponse(TeamResponseSchema, "Success"),
+      200: jsonResponse(TeamResponseSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(401, 403, 404, 409, 500),
     },
   }),
@@ -541,17 +637,19 @@ mutations.openapi(
 
 mutations.openapi(
   createRoute({
+    description:
+      "仅队长可操作，队伍须尚未结束且未取消；可以取消已成团或进行中的队伍。成功后记录取消时间并关闭招募，返回队伍详情；重复取消或状态变化返回 409。历史记录保留。",
     method: "post",
     path: "/{id}/cancel",
     operationId: "teamsCancel",
-    tags: ["Teams"],
-    summary: "Cancel a team as leader",
+    tags: ["队伍"],
+    summary: "取消队伍",
     "x-audience": "public",
     security: teamCookieSecurity,
     request: { params: z.object({ id: z.string() }) },
 
     responses: {
-      200: jsonResponse(TeamResponseSchema, "Success"),
+      200: jsonResponse(TeamResponseSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(401, 403, 404, 409, 500),
     },
   }),

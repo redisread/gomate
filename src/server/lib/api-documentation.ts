@@ -1,6 +1,4 @@
-import { getRequestLocale } from "../../contracts/locale";
 import docsZh from "../../../public/locales/zh-CN/apiDocs.json";
-import docsEn from "../../../public/locales/en/apiDocs.json";
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
 import type { Context } from "hono";
@@ -23,7 +21,7 @@ const methods = [
   "trace",
 ] as const;
 
-/** Filter operations first, then retain only components reachable from this audience. */
+/** 先按受众过滤操作，再保留可达组件，避免公开规范泄露管理员专用结构。 */
 export function audienceDocument(
   document: Document,
   audience: "public" | "admin",
@@ -116,14 +114,22 @@ export function registerDocumentation(app: DocumentationApp) {
     const generated = app.getOpenAPI31Document({
       openapi: "3.1.0",
       info: {
-        title: audience === "admin" ? "GoMate Admin API" : "GoMate API",
+        title:
+          audience === "admin" ? "GoMate 管理员 API 文档" : "GoMate API 文档",
         version: "1.0.0",
-        description:
-          "同源 Cookie 认证；文档不改变接口权限。列表使用各操作声明的分页规则。",
+        description: [
+          "GoMate 接口文档当前统一使用简体中文，所有接口路径均以 `/api` 为前缀。字段名、枚举值与 operationId 是稳定协议标识，不随文档语言变化。",
+          "### 认证与权限\n浏览器使用同源 HttpOnly Cookie 会话，无需手工填写 token。公开文档也包含需登录的产品接口；管理员接口每次从数据库复核有效账号和管理员角色。文档可见不代表有权执行接口。",
+          "### 请求与响应\n除上传使用 multipart/form-data 外，声明了 JSON 请求体的接口应发送 application/json。时间通常为 ISO 8601 字符串，带时区；具体格式、必填与可空约束以各字段 Schema 为准。成功响应并非统一包裹在 data 中，请按各操作结构解析。",
+          "### 分页\n多数列表使用 limit 与不透明 cursor，客户端原样传回 nextCursor，为 null 时结束。更换筛选条件后从第一页开始。各接口的默认值、上限和排序不同；标签目录仍使用 page/pageSize，不能套用 cursor。",
+          "### 错误与重试\n业务错误通常为 { success: false, error: { code, message, details? } }；部分认证响应使用供应商结构。按 code、HTTP 状态及已知 details.reason 分支处理，不依赖 message 文案。400 表示输入不合法，401 表示需要有效登录，403 表示权限或来源不允许，404 表示资源不存在或不可见，409 表示状态或并发冲突。遇到写入响应丢失应先查询结果；是否可以安全重试取决于各操作的幂等约定。",
+          "### 写保护\n携带 Cookie 的写请求必须通过同源校验。WRITE_MODE=protected 或 Preview 策略可阻止写入，返回 503、WRITE_PROTECTED 和 Retry-After: 60；等待不代表恢复写入权限。Preview 只额外开放邮箱登录和注销，不开放业务写入。",
+          "### 文档使用\n仅本地页面显示请求执行按钮，生产及 Preview 隐藏执行入口。文档由路由和共享 Schema 自动生成，不另行维护协议副本。",
+        ].join("\n\n"),
       },
       servers: [{ url: "/api" }],
     });
-    // These responses come from the common HTTP boundary, before any route handler.
+    // 全局写保护先于业务路由执行，因此统一补充错误响应而不重复声明到每个接口。
     for (const item of Object.values(generated.paths ?? {})) {
       for (const method of ["post", "put", "patch", "delete"] as const) {
         const operation = item?.[method];
@@ -135,18 +141,19 @@ export function registerDocumentation(app: DocumentationApp) {
         };
         operation.responses ??= {};
         operation.responses[403] ??= {
-          description: "Cross-origin Cookie write rejected",
+          description: "携带 Cookie 的写请求未通过同源校验。",
           content,
         };
         const protectedResponse = operation.responses[503];
         if (!protectedResponse || !("$ref" in protectedResponse)) {
           operation.responses[503] = {
             ...(protectedResponse ?? { content }),
-            description: `${protectedResponse?.description ?? "Service unavailable"}; writes may be protected (WRITE_MODE or Preview policy)`,
+            description: `${protectedResponse?.description ?? "服务暂不可用。"} WRITE_MODE 或 Preview 策略可能禁止写入，错误码为 WRITE_PROTECTED。`,
             headers: {
               ...protectedResponse?.headers,
               "Retry-After": {
-                description: "Retry delay in seconds for WRITE_PROTECTED",
+                description:
+                  "写保护响应的建议等待秒数；恢复写入仍取决于环境策略。",
                 schema: { type: "string", example: "60" },
               },
             },
@@ -190,13 +197,14 @@ export function registerDocumentation(app: DocumentationApp) {
       c.header("Cache-Control", "private, no-store");
       const hostname = new URL(c.req.url).hostname;
       const local = ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
-      const locale = getRequestLocale(c.req.raw.headers);
-      const titles = { "zh-CN": docsZh, en: docsEn }[locale];
+      // 文档目前固定中文；后续完整支持多语言时再一起切换标题、正文及缓存键。
       return Scalar<{ Bindings: WorkerEnv }>({
         url: `/api${prefix}/openapi.json`,
         cdn: SCALAR_ASSET_PATH,
+        localization: { locale: "zh-CN" },
+        modelsSectionLabel: "数据模型",
         pageTitle:
-          audience === "admin" ? titles.adminTitle : titles.publicTitle,
+          audience === "admin" ? docsZh.adminTitle : docsZh.publicTitle,
         hideTestRequestButton: !local,
         hideClientButton: true,
         persistAuth: false,

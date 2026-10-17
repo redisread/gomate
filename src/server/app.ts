@@ -110,10 +110,13 @@ apiApp.use("*", async (c, next) => {
 
 apiApp.openapi(
   createRoute({
+    description:
+      "无需登录。返回当前时间、写入模式及可用的 Worker 版本标识；此接口用于检查请求入口，不探测数据库、对象存储或邮件服务。",
+    summary: "检查服务状态",
     method: "get",
     path: "/health",
     operationId: "getHealth",
-    tags: ["Platform"],
+    tags: ["平台"],
     "x-audience": "platform",
     responses: {
       200: jsonResponse(
@@ -123,7 +126,7 @@ apiApp.openapi(
           timestamp: z.string(),
           versionId: z.string().optional(),
         }),
-        "Worker health",
+        "入口运行状态、写入模式及版本信息。",
       ),
     },
   }),

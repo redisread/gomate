@@ -85,11 +85,12 @@ describe("API documentation HTTP boundary", () => {
   );
 
   it.each([
-    ["en-US,en;q=0.9", undefined, "GoMate API Reference"],
+    ["en-US,en;q=0.9", undefined, "GoMate API 文档"],
+    ["zh-CN", "gomate_locale=en", "GoMate API 文档"],
     ["ja-JP,ja;q=0.9", undefined, "GoMate API 文档"],
     ["en-US", "gomate_locale=zh-CN", "GoMate API 文档"],
   ])(
-    "localizes the document title for %s with cookie %s",
+    "keeps the documentation Chinese for %s with cookie %s",
     async (language, cookie, title) => {
       const headers = new Headers({ "accept-language": language! });
       if (cookie) headers.set("cookie", cookie);
@@ -98,7 +99,9 @@ describe("API documentation HTTP boundary", () => {
         bindings(),
       );
       expect(response.status).toBe(200);
-      expect(await response.text()).toContain(`<title>${title}</title>`);
+      const html = await response.text();
+      expect(html).toContain(`<title>${title}</title>`);
+      expect(html).toMatch(/"localization":\s*\{\s*"locale":\s*"zh-CN"/u);
     },
   );
 
@@ -188,6 +191,50 @@ describe("administrator documentation access and complete coverage", () => {
     expect(report.excluded["ALL /auth/*"]).toContain("deny-by-default");
     expect(spec.paths?.["/admin/users"]?.get).toBeDefined();
     expect(spec.paths?.["/locations"]?.post).toBeDefined();
+  });
+
+  it("provides Chinese usage and response descriptions for every documented operation", async () => {
+    mocks.getSession.mockResolvedValue({ user: { id: "admin" } });
+    const spec: Document = await (await request("/admin/openapi.json")).json();
+    for (const [path, item] of Object.entries(spec.paths ?? {})) {
+      for (const method of ["get", "post", "put", "patch", "delete"] as const) {
+        const operation = item?.[method];
+        if (!operation) continue;
+        const label = `${method} ${path}`;
+        expect(operation.summary, label).toMatch(/\p{Script=Han}/u);
+        expect(operation.description, label).toMatch(/\p{Script=Han}/u);
+        expect(operation.description!.length, label).toBeGreaterThan(30);
+        for (const tag of operation.tags ?? [])
+          expect(tag, label).toMatch(/\p{Script=Han}/u);
+        for (const response of Object.values(operation.responses ?? {})) {
+          if (!("$ref" in response))
+            expect(response.description, label).toMatch(/\p{Script=Han}/u);
+        }
+      }
+    }
+    expect(spec.paths?.["/teams/{id}/join"]?.post?.description).toContain(
+      "already_member",
+    );
+    expect(spec.paths?.["/feedback"]?.post?.description).toContain("24 小时");
+    expect(spec.paths?.["/teams/{id}/join-requests"]).toBeUndefined();
+    expect(spec.paths?.["/stories"]).toBeUndefined();
+    expect(spec.paths?.["/messages"]).toBeUndefined();
+    expect(spec.paths?.["/favorites/locations"]).toBeUndefined();
+    expect(spec.paths?.["/tags"]?.get?.description).toContain("page/pageSize");
+  });
+
+  it("uses the Chinese title and UI for administrator docs regardless of product locale", async () => {
+    mocks.getSession.mockResolvedValue({ user: { id: "admin" } });
+    const response = await apiApp.fetch(
+      new Request("https://localhost/admin/docs", {
+        headers: { "accept-language": "en-US", cookie: "gomate_locale=en" },
+      }),
+      bindings(),
+    );
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain("<title>GoMate 管理员 API 文档</title>");
+    expect(html).toMatch(/"localization":\s*\{\s*"locale":\s*"zh-CN"/u);
   });
 
   it("does not let cached admin documents cross audience or authentication boundaries", async () => {

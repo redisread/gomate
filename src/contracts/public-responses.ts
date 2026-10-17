@@ -24,7 +24,10 @@ export const TimelineTeamSchema = TeamSchema.omit({
 });
 export const TimelineTeamsResponseSchema = SuccessSchema.extend({
   teams: z.array(TimelineTeamSchema),
-  nextCursor: z.string().nullable(),
+  nextCursor: z
+    .string()
+    .nullable()
+    .describe("下一页游标；为 null 表示已到末页，客户端无需解析。"),
 });
 export const PublicUserResponseSchema = SuccessSchema.extend({
   user: UserPublicProfileSchema,

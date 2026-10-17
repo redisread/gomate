@@ -60,10 +60,12 @@ const privateAccountHeaders: MiddlewareHandler<ApiEnv> = async (c, next) => {
   await next();
 };
 const timelineQuerySchema = z.object({
-  limit: firstQueryStringSchema.describe("Integer 1–50; default 10"),
-  cursor: firstQueryStringSchema.describe("Opaque timeline cursor"),
-  page: firstQueryStringSchema.describe("Unsupported; returns 400"),
-  pageSize: firstQueryStringSchema.describe("Unsupported; returns 400"),
+  limit: firstQueryStringSchema.describe("每页条数，1–50 的整数，默认 10。"),
+  cursor: firstQueryStringSchema.describe(
+    "上一页的 nextCursor，原样传回以继续读取。",
+  ),
+  page: firstQueryStringSchema.describe("不支持此参数，传入时返回 400。"),
+  pageSize: firstQueryStringSchema.describe("不支持此参数，传入时返回 400。"),
 });
 
 const nullableText = (max: number) =>
@@ -71,11 +73,22 @@ const nullableText = (max: number) =>
 
 const updateProfileSchema = z
   .object({
-    name: z.string().trim().min(1).max(100).optional(),
-    nickname: nullableText(100).optional(),
-    bio: nullableText(1000).optional(),
+    name: z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .optional()
+      .describe("姓名，去除首尾空白后为 1–100 字符。"),
+    nickname: nullableText(100).optional().describe("昵称；null 表示清空。"),
+    bio: nullableText(1000)
+      .optional()
+      .describe("个人简介，最多 1000 字符；null 表示清空。"),
     gender: z.enum(["male", "female", "other"]).nullable().optional(),
-    birthday: utcDateTimeSchema.nullable().optional(),
+    birthday: utcDateTimeSchema
+      .nullable()
+      .optional()
+      .describe("UTC 时间戳，以 Z 结尾；null 表示清空。"),
     extra: z
       .object({
         level: z
@@ -85,7 +98,8 @@ const updateProfileSchema = z
         city: z.string().trim().min(1).max(64).nullable().optional(),
       })
       .strict()
-      .optional(),
+      .optional()
+      .describe("按提交的子字段合并，未提交的子字段保留。"),
   })
   .strict()
   .refine(
@@ -95,7 +109,9 @@ const updateProfileSchema = z
 
 const deleteAccountSchema = z
   .object({
-    confirmation: z.literal("DELETE"),
+    confirmation: z
+      .literal("DELETE")
+      .describe("必须精确填写 DELETE，以确认匿名化账号并撤销凭证。"),
   })
   .strict();
 
@@ -258,17 +274,22 @@ export function buildJoinedTeamsPageQuery(
 
 usersRoute.openapi(
   createRoute({
+    description:
+      "需要登录。返回当前用户的完整产品资料及当前角色，响应禁止缓存。role 可用于界面展示，但不能代替管理员接口的服务端授权检查。",
     method: "get",
     path: "/me",
     operationId: "usersMe",
-    tags: ["users"],
-    summary: "Read current account",
+    tags: ["用户"],
+    summary: "读取当前账号资料",
     "x-audience": "public",
     security: cookieSecurity,
     middleware: [privateAccountHeaders, sessionMiddleware()],
     request: {},
     responses: {
-      200: jsonResponse(SelfUserResponseSchema, "Success"),
+      200: jsonResponse(
+        SelfUserResponseSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(401, 404, 500),
     },
   }),
@@ -287,11 +308,13 @@ usersRoute.openapi(
 
 usersRoute.openapi(
   createRoute({
+    description:
+      "需要登录，不能指定其他用户 ID。至少提交一个字段，未提交字段保留，可空字段传 null 表示清空。extra 按字段合并；不接受头像字段，头像应通过上传接口修改。成功返回更新后的资料。",
     method: "patch",
     path: "/me",
     operationId: "usersUpdateMe",
-    tags: ["users"],
-    summary: "Update account profile",
+    tags: ["用户"],
+    summary: "修改当前账号资料",
     "x-audience": "public",
     security: cookieSecurity,
     middleware: [sessionMiddleware(), legacyJsonBody("Invalid profile")],
@@ -302,7 +325,10 @@ usersRoute.openapi(
       },
     },
     responses: {
-      200: jsonResponse(SelfUserResponseSchema, "Success"),
+      200: jsonResponse(
+        SelfUserResponseSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(400, 401, 404, 409, 500, 403, 503),
     },
   }),
@@ -390,17 +416,22 @@ usersRoute.openapi(
 
 usersRoute.openapi(
   createRoute({
+    description:
+      "需要登录，仅查询当前用户作为队长的队伍。limit 默认 10、范围 1–50，使用 cursor 继续读取；不支持 page/pageSize，nextCursor 为 null 表示结束。",
     method: "get",
     path: "/me/created-teams",
     operationId: "usersCreatedTeams",
-    tags: ["users"],
-    summary: "List teams I created",
+    tags: ["用户"],
+    summary: "分页读取我创建的队伍",
     "x-audience": "public",
     security: cookieSecurity,
     middleware: [sessionMiddleware()],
     request: { query: timelineQuerySchema },
     responses: {
-      200: jsonResponse(TimelineTeamsResponseSchema, "Success"),
+      200: jsonResponse(
+        TimelineTeamsResponseSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(400, 401, 500),
     },
   }),
@@ -435,17 +466,22 @@ usersRoute.openapi(
 
 usersRoute.openapi(
   createRoute({
+    description:
+      "需要登录，仅查询当前用户尚未离开的成员关系对应队伍。limit 默认 10、范围 1–50，使用 cursor 分页；不包含已离队的历史成员关系。",
     method: "get",
     path: "/me/joined-teams",
     operationId: "usersJoinedTeams",
-    tags: ["users"],
-    summary: "List teams I joined",
+    tags: ["用户"],
+    summary: "分页读取我加入的队伍",
     "x-audience": "public",
     security: cookieSecurity,
     middleware: [sessionMiddleware()],
     request: { query: timelineQuerySchema },
     responses: {
-      200: jsonResponse(TimelineTeamsResponseSchema, "Success"),
+      200: jsonResponse(
+        TimelineTeamsResponseSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(400, 401, 500),
     },
   }),
@@ -480,11 +516,13 @@ usersRoute.openapi(
 
 usersRoute.openapi(
   createRoute({
+    description:
+      '需要登录，JSON body 必须为 {"confirmation":"DELETE"}。先清理自有头像，再匿名化账号并撤销全部登录凭证和会话；历史队伍关联保留。该操作不可通过再次登录撤销。',
     method: "delete",
     path: "/me",
     operationId: "usersDeleteMe",
-    tags: ["users"],
-    summary: "Delete current account",
+    tags: ["用户"],
+    summary: "删除当前账号",
     "x-audience": "public",
     security: cookieSecurity,
     middleware: [
@@ -498,7 +536,7 @@ usersRoute.openapi(
       },
     },
     responses: {
-      200: jsonResponse(SuccessSchema, "Success"),
+      200: jsonResponse(SuccessSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 401, 500, 403, 503),
     },
   }),
@@ -571,15 +609,20 @@ usersRoute.openapi(
 
 usersRoute.openapi(
   createRoute({
+    description:
+      "无需登录。按用户 ID 返回公开资料及进行中的队伍，不返回邮箱、私密联系方式或完整账号资料；用户不存在或不可公开访问时返回 404。",
     method: "get",
     path: "/{id}",
     operationId: "usersGet",
-    tags: ["users"],
-    summary: "Read public user profile",
+    tags: ["用户"],
+    summary: "读取用户公开资料",
     "x-audience": "public",
     request: { params: z.object({ id: z.string() }) },
     responses: {
-      200: jsonResponse(PublicUserResponseSchema, "Success"),
+      200: jsonResponse(
+        PublicUserResponseSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(400, 404, 500),
     },
   }),

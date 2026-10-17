@@ -39,7 +39,8 @@ const forgotPasswordSchema = z
       .trim()
       .max(254, "邮箱地址不能超过 254 个字符")
       .email("请输入有效的邮箱地址")
-      .transform((value) => value.toLocaleLowerCase("en-US")),
+      .transform((value) => value.toLocaleLowerCase("en-US"))
+      .describe("邮箱地址，去除首尾空白并归一化为小写。"),
   })
   .strict();
 
@@ -59,10 +60,20 @@ const signUpEmailSchema = z
       .trim()
       .max(254)
       .email()
-      .transform((value) => value.toLocaleLowerCase("en-US")),
-    password: z.string().min(8).max(128),
-    name: z.string().trim().min(1).max(100),
-    callbackURL: z.string().max(2_048).optional(),
+      .transform((value) => value.toLocaleLowerCase("en-US"))
+      .describe("邮箱地址，去除首尾空白并归一化为小写。"),
+    password: z.string().min(8).max(128).describe("登录密码，8–128 字符。"),
+    name: z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .describe("显示姓名，去除首尾空白后为 1–100 字符。"),
+    callbackURL: z
+      .string()
+      .max(2_048)
+      .optional()
+      .describe("可选本站回跳地址，须通过服务端允许的返回地址校验。"),
   })
   .strict();
 
@@ -73,10 +84,15 @@ const signInEmailSchema = z
       .trim()
       .max(254)
       .email()
-      .transform((value) => value.toLocaleLowerCase("en-US")),
-    password: z.string().min(1).max(128),
-    callbackURL: z.string().max(2_048).optional(),
-    rememberMe: z.boolean().optional(),
+      .transform((value) => value.toLocaleLowerCase("en-US"))
+      .describe("邮箱地址，去除首尾空白并归一化为小写。"),
+    password: z.string().min(1).max(128).describe("登录密码，1–128 字符。"),
+    callbackURL: z
+      .string()
+      .max(2_048)
+      .optional()
+      .describe("可选本站回跳地址，须通过服务端允许的返回地址校验。"),
+    rememberMe: z.boolean().optional().describe("是否由认证服务保持登录状态。"),
   })
   .strict();
 
@@ -87,21 +103,40 @@ const verificationEmailSchema = z
       .trim()
       .max(254)
       .email()
-      .transform((value) => value.toLocaleLowerCase("en-US")),
-    callbackURL: z.string().max(2_048).optional(),
+      .transform((value) => value.toLocaleLowerCase("en-US"))
+      .describe("邮箱地址，去除首尾空白并归一化为小写。"),
+    callbackURL: z
+      .string()
+      .max(2_048)
+      .optional()
+      .describe("可选本站回跳地址，须通过服务端允许的返回地址校验。"),
   })
   .strict();
 
 const emailConfirmationSchema = z
   .object({
-    token: z.string().trim().min(1).max(4_096),
+    token: z
+      .string()
+      .trim()
+      .min(1)
+      .max(4_096)
+      .describe(
+        "邮件链接 fragment 中的令牌，仅通过 JSON body 提交，不放入 URL 查询参数。",
+      ),
   })
   .strict();
 
 const passwordResetSchema = z
   .object({
-    newPassword: z.string().min(8).max(128),
-    token: z.string().trim().min(1).max(4_096),
+    newPassword: z.string().min(8).max(128).describe("新密码，8–128 字符。"),
+    token: z
+      .string()
+      .trim()
+      .min(1)
+      .max(4_096)
+      .describe(
+        "邮件链接 fragment 中的令牌，仅通过 JSON body 提交，不放入 URL 查询参数。",
+      ),
   })
   .strict();
 
@@ -696,8 +731,12 @@ function normalizedAuthPath(url: string): string {
 
 const googleSignInSchema = z
   .object({
-    provider: z.literal("google"),
-    callbackURL: z.string().max(2_048).optional(),
+    provider: z.literal("google").describe("仅支持 google。"),
+    callbackURL: z
+      .string()
+      .max(2_048)
+      .optional()
+      .describe("可选本站回跳页面地址，不允许外部站点。"),
   })
   .strict();
 
@@ -757,16 +796,18 @@ async function handleGoogleCallback(c: AuthContext) {
 
 auth.openapi(
   createRoute({
+    description:
+      "无需登录。返回 google 布尔值，表示当前环境是否开放 Google 登录；不返回客户端密钥等凭据。响应禁止缓存，Preview 不开放 Google 登录。",
     method: "get",
     path: "/providers",
     operationId: "getAuthProviders",
-    summary: "List available sign-in providers",
-    tags: ["Authentication"],
+    summary: "读取可用登录方式",
+    tags: ["认证"],
     "x-audience": "public",
     responses: {
       200: jsonResponse(
         z.object({ google: z.boolean() }),
-        "Available providers",
+        "当前环境可用的登录方式。",
       ),
     },
   }),
@@ -828,7 +869,7 @@ export { auth as authRoute };
 // contracts deliberately do not install Hono's eager body validator.
 const authError = jsonResponse(
   z.union([apiErrorSchema, AuthProviderErrorSchema]),
-  "Authentication failure",
+  "认证失败；可能为统一业务错误或认证供应商错误，见下方结构。",
 );
 const acknowledgment = z.object({ success: z.literal(true) });
 const authContracts = {
@@ -836,11 +877,11 @@ const authContracts = {
     method: "post",
     path: "/forgot-password",
     operationId: "forgotPassword",
-    summary: "Request a password reset email",
-    tags: ["Authentication"],
+    summary: "申请密码重置邮件",
+    tags: ["认证"],
     "x-audience": "public",
     description:
-      "16 KiB JSON limit. Always acknowledges accepted email requests without revealing account existence.",
+      "无需登录。JSON 请求体上限 16 KiB，受邮件发送限频约束。接受请求后返回统一确认，不泄露邮箱是否存在。邮件中的 token 置于 URL fragment，重置时应通过 POST body 提交。",
     request: {
       body: {
         required: true,
@@ -850,17 +891,19 @@ const authContracts = {
     responses: {
       200: jsonResponse(
         acknowledgment.extend({ message: z.string() }),
-        "Request acknowledged",
+        "请求已受理，不表示邮箱一定存在。",
       ),
       ...errorResponses(400, 413, 415, 429, 500, 503),
     },
   }),
   signUp: createRoute({
+    description:
+      "无需登录。JSON 请求体上限 16 KiB，受注册限频约束。返回固定成功确认以避免账号枚举；新账号只有在用户与密码凭证持久化完成后才确认成功。注册不返回会话 token。",
     method: "post",
     path: "/sign-up/email",
     operationId: "signUpEmail",
-    summary: "Register with email",
-    tags: ["Authentication"],
+    summary: "使用邮箱注册",
+    tags: ["认证"],
     "x-audience": "public",
     request: {
       body: {
@@ -869,16 +912,18 @@ const authContracts = {
       },
     },
     responses: {
-      200: jsonResponse(acknowledgment, "Registration acknowledged"),
+      200: jsonResponse(acknowledgment, "注册请求确认，不返回会话 token。"),
       ...errorResponses(400, 413, 415, 429, 500, 503),
     },
   }),
   signIn: createRoute({
+    description:
+      "无需预先登录。JSON 请求体上限 16 KiB，受登录限频约束。成功后由同源 HttpOnly Cookie 保存会话，响应只返回浏览器所需用户和跳转信息，不包含会话 token。",
     method: "post",
     path: "/sign-in/email",
     operationId: "signInEmail",
-    summary: "Sign in with email",
-    tags: ["Authentication"],
+    summary: "使用邮箱登录",
+    tags: ["认证"],
     "x-audience": "public",
     request: {
       body: {
@@ -889,17 +934,19 @@ const authContracts = {
     responses: {
       200: jsonResponse(
         BrowserSignInSchema,
-        "Browser session established; token only in HttpOnly Cookie",
+        "登录成功，会话 token 仅通过 HttpOnly Cookie 设置。",
       ),
       ...errorResponses(400, 401, 413, 415, 429, 500, 503),
     },
   }),
   verification: createRoute({
+    description:
+      "无需预先登录。JSON 请求体上限 16 KiB，受邮件发送限频约束。验证链接只在 fragment 中携带 token；客户端读取并清除 fragment 后调用确认接口。部分错误由认证供应商返回，格式见响应 Schema。",
     method: "post",
     path: "/send-verification-email",
     operationId: "sendVerificationEmail",
-    summary: "Request an email verification message",
-    tags: ["Authentication"],
+    summary: "申请邮箱验证邮件",
+    tags: ["认证"],
     "x-audience": "public",
     request: {
       body: {
@@ -908,7 +955,10 @@ const authContracts = {
       },
     },
     responses: {
-      200: jsonResponse(z.object({ status: z.boolean() }), "Email accepted"),
+      200: jsonResponse(
+        z.object({ status: z.boolean() }),
+        "验证邮件请求已受理。",
+      ),
       ...errorResponses(413, 415, 429, 503),
       400: authError,
       403: authError,
@@ -919,11 +969,11 @@ const authContracts = {
     method: "post",
     path: "/confirm-email",
     operationId: "confirmEmail",
-    summary: "Confirm an email verification token",
-    tags: ["Authentication"],
+    summary: "确认邮箱验证",
+    tags: ["认证"],
     "x-audience": "public",
     description:
-      "Submit the email fragment token in the JSON body, never in a URL query.",
+      "无需预先登录。将邮件链接 fragment 中的 token 放入 JSON body，禁止通过路径或查询参数提交。JSON 请求体上限 16 KiB；无效或过期 token 无法完成验证。",
     request: {
       body: {
         required: true,
@@ -931,16 +981,18 @@ const authContracts = {
       },
     },
     responses: {
-      200: jsonResponse(acknowledgment, "Email confirmed"),
+      200: jsonResponse(acknowledgment, "邮箱验证成功。"),
       ...errorResponses(400, 413, 415, 429, 500, 503),
     },
   }),
   reset: createRoute({
+    description:
+      "无需预先登录。提交邮件 fragment 中的 token 和新密码，JSON 请求体上限 16 KiB。不要把 token 放入路径、查询参数或日志；成功后返回 success 确认。",
     method: "post",
     path: "/reset-password",
     operationId: "resetPassword",
-    summary: "Reset a password using a fragment token",
-    tags: ["Authentication"],
+    summary: "重置登录密码",
+    tags: ["认证"],
     "x-audience": "public",
     request: {
       body: {
@@ -949,20 +1001,21 @@ const authContracts = {
       },
     },
     responses: {
-      200: jsonResponse(acknowledgment, "Password reset"),
+      200: jsonResponse(acknowledgment, "密码重置成功。"),
       ...errorResponses(400, 413, 415, 429, 500, 503),
     },
   }),
   signOut: createRoute({
+    description:
+      "通过浏览器的同源 Cookie 注销当前会话。请求体可省略；可选注销参数由 Better Auth 校验。此操作受同源写保护约束，不等于删除账号。",
     method: "post",
     path: "/sign-out",
     operationId: "signOut",
-    summary: "Sign out of the current session",
+    summary: "退出当前会话",
     request: {
       body: {
         required: false,
-        description:
-          "Optional provider sign-out options; validation is owned by Better Auth.",
+        description: "可选注销参数，由 Better Auth 负责校验。",
         content: {
           "application/json": {
             schema: z.object({
@@ -974,10 +1027,10 @@ const authContracts = {
         },
       },
     },
-    tags: ["Authentication"],
+    tags: ["认证"],
     "x-audience": "public",
     responses: {
-      200: jsonResponse(SignOutSchema, "Signed out"),
+      200: jsonResponse(SignOutSchema, "当前会话已注销。"),
       400: authError,
       500: authError,
       ...errorResponses(403, 503),
@@ -987,11 +1040,11 @@ const authContracts = {
     method: "post",
     path: "/sign-in/social",
     operationId: "signInGoogle",
-    summary: "Start Google sign-in",
-    tags: ["Authentication"],
+    summary: "发起 Google 登录",
+    tags: ["认证"],
     "x-audience": "public",
     description:
-      "Same-origin Google sign-in. Available only when configured. 16 KiB JSON limit.",
+      "仅在环境已配置并开放 Google 登录时可用。只接受 google 供应商，callbackURL 必须为允许的本站页面；JSON 上限 16 KiB，并执行同源校验与登录限频。响应返回 OAuth 跳转地址，Preview 不开放此流程。",
     request: {
       body: {
         required: true,
@@ -1001,7 +1054,7 @@ const authContracts = {
     responses: {
       200: jsonResponse(
         z.object({ url: z.string(), redirect: z.boolean() }),
-        "OAuth destination",
+        "OAuth 跳转地址及是否跳转的标识。",
       ),
       400: authError,
       500: authError,
@@ -1009,11 +1062,13 @@ const authContracts = {
     },
   }),
   callback: createRoute({
+    description:
+      "供 Google OAuth 重定向调用，由 Better Auth 校验 state 与 Cookie 并交换授权码。成功或失败均重定向到本站页面，不回显供应商错误详情。仅正式 APP_URL 且允许写入时开放。",
     method: "get",
     path: "/callback/google",
     operationId: "googleCallback",
-    summary: "Complete Google sign-in",
-    tags: ["Authentication"],
+    summary: "处理 Google 登录回调",
+    tags: ["认证"],
     "x-audience": "public",
     request: {
       query: z
@@ -1027,11 +1082,11 @@ const authContracts = {
     },
     responses: {
       302: {
-        description: "Redirect to the product or login error page",
+        description: "重定向到本站页面或登录错误页。",
         headers: {
           Location: {
             schema: { type: "string" },
-            description: "Same-origin return destination",
+            description: "本站的回跳地址。",
           },
         },
       },
@@ -1051,15 +1106,18 @@ for (const method of ["get", "post"] as const)
       method,
       path: "/get-session",
       operationId: method === "get" ? "getSession" : "postSession",
-      summary: "Read the current browser session",
-      tags: ["Authentication"],
+      summary: "读取当前浏览器会话",
+      tags: ["认证"],
       "x-audience": "public",
       "x-validation-mode": "provider-controlled",
       description:
-        "Returns null without an active session. Browser payload excludes token, IP address and user agent.",
+        "强制回源读取当前会话；无有效会话时返回 null。响应不包含会话 token、IP 地址或 User-Agent。GET 和 POST 返回相同数据结构，但 POST 仍受全局写保护约束。",
       security: [{}, { cookieAuth: [] }, { secureCookieAuth: [] }],
       responses: {
-        200: jsonResponse(BrowserSessionSchema, "Current browser session"),
+        200: jsonResponse(
+          BrowserSessionSchema,
+          "当前浏览器会话，无有效会话时为 null。",
+        ),
         400: authError,
         401: authError,
         500: authError,

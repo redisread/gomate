@@ -38,9 +38,11 @@ const supportedActivityTypesSchema = z
 const extraStringSchema = z.string().trim().min(1).max(1_000);
 const extraStringArraySchema = z.array(extraStringSchema).max(50);
 
-const hikingExtraSchema = z.object({
-  bestSeasons: extraStringArraySchema.optional(),
-}).strict();
+const hikingExtraSchema = z
+  .object({
+    bestSeasons: extraStringArraySchema.optional(),
+  })
+  .strict();
 
 export const locationExtraInputSchema = z
   .object({
@@ -49,27 +51,69 @@ export const locationExtraInputSchema = z
   })
   .strict();
 
-const locationFieldsSchema = z.object({
-  regionId: z.string().trim().min(1).max(128),
-  name: z.string().trim().min(1).max(200),
-  slug: z
-    .string()
-    .trim()
-    .min(1)
-    .max(200)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-    .optional(),
-  supportedActivityTypes: supportedActivityTypesSchema.default([]),
-  status: locationStatusSchema.default("draft"),
-  subtitle: z.string().trim().max(500).nullable().optional(),
-  description: z.string().trim().min(1).max(10_000),
-  address: z.string().trim().max(500).nullable().optional(),
-  latitude: z.number().finite().min(-90).max(90).nullable().default(null),
-  longitude: z.number().finite().min(-180).max(180).nullable().default(null),
-  coverImageUrl: httpsUrlSchema.nullable().default(null),
-  images: z.array(httpsUrlSchema).max(20).default([]),
-  extra: locationExtraInputSchema.default({}),
-}).strict();
+const locationFieldsSchema = z
+  .object({
+    regionId: z
+      .string()
+      .trim()
+      .min(1)
+      .max(128)
+      .describe("已启用服务的 city 级地区 ID。"),
+    name: z.string().trim().min(1).max(200),
+    slug: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+      .optional()
+      .describe("可选的展示标识；详情接口始终使用全局 ID，不按 slug 查找。"),
+    supportedActivityTypes: supportedActivityTypesSchema
+      .default([])
+      .describe("推荐活动类型，可为空数组；不限制队伍选择其他有效活动类型。"),
+    status: locationStatusSchema
+      .default("draft")
+      .describe("默认 draft；published 要求封面和有效地区，archived 为归档。"),
+    subtitle: z.string().trim().max(500).nullable().optional(),
+    description: z
+      .string()
+      .trim()
+      .min(1)
+      .max(10_000)
+      .describe("地点说明，去除首尾空白后为 1–10000 字符。"),
+    address: z.string().trim().max(500).nullable().optional(),
+    latitude: z
+      .number()
+      .finite()
+      .min(-90)
+      .max(90)
+      .nullable()
+      .default(null)
+      .describe("纬度，范围 -90 至 90；必须与经度同时填写或同时为空。"),
+    longitude: z
+      .number()
+      .finite()
+      .min(-180)
+      .max(180)
+      .nullable()
+      .default(null)
+      .describe("经度，范围 -180 至 180；必须与纬度同时填写或同时为空。"),
+    coverImageUrl: httpsUrlSchema
+      .nullable()
+      .default(null)
+      .describe("封面 HTTPS 地址，发布时必填，并须满足服务端图片来源限制。"),
+    images: z
+      .array(httpsUrlSchema)
+      .max(20)
+      .default([])
+      .describe("图片 HTTPS 地址列表，最多 20 张。"),
+    extra: locationExtraInputSchema
+      .default({})
+      .describe(
+        "扩展信息；hiking 仅支持 bestSeasons，不接受已退役的路线难度、距离等字段。",
+      ),
+  })
+  .strict();
 
 export function hasPartialLocationCoordinates(
   latitude: number | null,
@@ -97,19 +141,21 @@ export const createLocationInputSchema = locationFieldsSchema.superRefine(
   },
 );
 
-export const updateLocationInputSchema = locationFieldsSchema
-  .partial()
-  .extend({
-    id: z.string().trim().min(1).max(128),
-    // A patch must not apply creation defaults to omitted properties.
-    supportedActivityTypes: locationFieldsSchema.shape.supportedActivityTypes.removeDefault().optional(),
-    status: locationFieldsSchema.shape.status.removeDefault().optional(),
-    latitude: locationFieldsSchema.shape.latitude.removeDefault().optional(),
-    longitude: locationFieldsSchema.shape.longitude.removeDefault().optional(),
-    coverImageUrl: locationFieldsSchema.shape.coverImageUrl.removeDefault().optional(),
-    images: locationFieldsSchema.shape.images.removeDefault().optional(),
-    extra: locationFieldsSchema.shape.extra.removeDefault().optional(),
-  });
+export const updateLocationInputSchema = locationFieldsSchema.partial().extend({
+  id: z.string().trim().min(1).max(128),
+  // A patch must not apply creation defaults to omitted properties.
+  supportedActivityTypes: locationFieldsSchema.shape.supportedActivityTypes
+    .removeDefault()
+    .optional(),
+  status: locationFieldsSchema.shape.status.removeDefault().optional(),
+  latitude: locationFieldsSchema.shape.latitude.removeDefault().optional(),
+  longitude: locationFieldsSchema.shape.longitude.removeDefault().optional(),
+  coverImageUrl: locationFieldsSchema.shape.coverImageUrl
+    .removeDefault()
+    .optional(),
+  images: locationFieldsSchema.shape.images.removeDefault().optional(),
+  extra: locationFieldsSchema.shape.extra.removeDefault().optional(),
+});
 
 export const replaceLocationTagsSchema = z.object({
   tagIds: z
@@ -117,7 +163,10 @@ export const replaceLocationTagsSchema = z.object({
     .max(20)
     .refine((values) => new Set(values).size === values.length, {
       message: "Tag IDs must be unique",
-    }),
+    })
+    .describe(
+      "替换后的完整标签 ID 列表，最多 20 个且不可重复；空数组清空标签。",
+    ),
 });
 
 export async function findOpenCityRegion(db: Db, regionId: string) {
@@ -157,7 +206,7 @@ function parseObject(value: unknown): Record<string, unknown> {
     }
   }
   return value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
+    ? (value as Record<string, unknown>)
     : {};
 }
 
@@ -263,10 +312,7 @@ export function isAllowedLocationImageUrl(value: string, env: Env) {
   }
   if (url.protocol !== "https:") return false;
 
-  const exactHosts = new Set([
-    "gomate.cos.jiahongw.com",
-    "cdn.discordapp.com",
-  ]);
+  const exactHosts = new Set(["gomate.cos.jiahongw.com", "cdn.discordapp.com"]);
   try {
     exactHosts.add(new URL(env.R2_PUBLIC_URL).hostname);
   } catch {
@@ -287,9 +333,7 @@ export function locationImagesAreAllowed(
 ) {
   return [input.coverImageUrl, ...input.images]
     .filter((url): url is string => url !== null)
-    .every((url) =>
-    isAllowedLocationImageUrl(url, env),
-  );
+    .every((url) => isAllowedLocationImageUrl(url, env));
 }
 
 export function safeErrorMetadata(error: unknown) {

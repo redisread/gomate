@@ -86,11 +86,13 @@ const boundFeedbackBody: MiddlewareHandler<ApiEnv> = async (c, next) => {
  */
 feedback.openapi(
   createRoute({
+    description:
+      "无需登录。提交 requestId（UUID）、email 和 content；正文去除首尾空白后为 1–5000 字符，请求体上限 32 KiB。同一内容重试复用 requestId，通过邮件供应商 24 小时幂等窗口去重；修改内容或重新提交时生成新 ID。按客户端 IP 摘要限流，超限返回 429 和 Retry-After: 60，保护服务不可用返回 503，发送失败或超时返回 500。",
     method: "post",
     path: "/",
     operationId: "feedbackSubmit",
-    tags: ["feedback"],
-    summary: "Submit feedback",
+    tags: ["产品反馈"],
+    summary: "提交产品反馈",
     "x-audience": "public",
     middleware: [
       protectFeedback,
@@ -106,7 +108,7 @@ feedback.openapi(
     responses: {
       200: jsonResponse(
         z.object({ success: z.literal(true), message: z.string() }),
-        "Success",
+        "请求成功，响应字段见下方结构。",
       ),
       ...errorResponses(400, 413, 429, 500, 403, 503),
     },

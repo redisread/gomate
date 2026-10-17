@@ -10,7 +10,7 @@ export const offsetDateTimeSchema = z
   .stringFormat("gomate-datetime", offsetPattern)
   .openapi({
     pattern: offsetPattern.source,
-    description: "ISO timestamp; seconds optional; Z or ±HH:mm / ±HHmm offset.",
+    description: "ISO 时间戳，秒可省略；时区必须为 Z、±HH:mm 或 ±HHmm。",
   });
 
 // Existing profile timestamps also accept minute precision (no seconds).
@@ -19,7 +19,7 @@ export const utcDateTimeSchema = z
   .stringFormat("gomate-datetime", utcPattern)
   .openapi({
     pattern: utcPattern.source,
-    description: "UTC timestamp ending in Z; seconds optional.",
+    description: "以 Z 结尾的 UTC 时间戳，秒可省略。",
   });
 
 // Unlike Zod 4's URL parser, the previous contract did not trim URL text.
@@ -38,8 +38,7 @@ export function urlTextSchema(message: string) {
       { error: message },
     )
     .openapi({
-      description:
-        "URL accepted by the WHATWG URL parser; original text is preserved.",
+      description: "可由 WHATWG URL 解析器解析的 URL，保留输入原文。",
     });
 }
 
@@ -51,5 +50,5 @@ export const firstQueryStringSchema = z
   )
   .openapi({
     type: "string",
-    description: "If repeated, only the first query value is used.",
+    description: "重复传入同名查询参数时只取第一个值。",
   });

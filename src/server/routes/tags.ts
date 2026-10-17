@@ -25,14 +25,20 @@ const tagsRoute = createApiApp();
 
 const createTagSchema = z
   .object({
-    name: z.string().trim().min(1).max(50),
+    name: z
+      .string()
+      .trim()
+      .min(1)
+      .max(50)
+      .describe("标签显示名称，去除首尾空白后为 1–50 字符。"),
     slug: z
       .string()
       .trim()
       .min(1)
       .max(80)
       .regex(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u)
-      .optional(),
+      .optional()
+      .describe("可选稳定标识，省略时由名称生成；重命名不会改变 slug。"),
   })
   .strict();
 
@@ -44,17 +50,35 @@ const updateTagSchema = z
 
 const deleteTagQuerySchema = z
   .object({
-    confirmDetach: z.enum(["true", "false"]).optional(),
+    confirmDetach: z
+      .enum(["true", "false"])
+      .optional()
+      .describe("仅 true 表示确认解除所有引用后删除；默认不解除引用。"),
   })
   .strict();
 
 const tagsQuerySchema = z
   .object({
-    type: z.string().optional(),
-    page: z.string().optional(),
-    pageSize: z.string().optional(),
-    limit: z.string().optional(),
-    includeReferences: z.enum(["true", "false"]).optional(),
+    type: z
+      .string()
+      .optional()
+      .describe("不支持标签类型筛选，传入时返回 400。"),
+    page: z
+      .string()
+      .optional()
+      .describe("页码，默认 1；非整数回退 1，小于 1 时取 1。"),
+    pageSize: z
+      .string()
+      .optional()
+      .describe("每页数量，默认 50；整数限制在 1–200，非整数回退 50。"),
+    limit: z
+      .string()
+      .optional()
+      .describe("未提供 pageSize 时作为页大小来源，优先使用 pageSize。"),
+    includeReferences: z
+      .enum(["true", "false"])
+      .optional()
+      .describe("true 时返回引用统计并要求管理员权限；否则只返回公开目录。"),
   })
   .passthrough();
 
@@ -69,11 +93,13 @@ function slugify(name: string): string {
 
 tagsRoute.openapi(
   createRoute({
+    description:
+      "普通目录可匿名读取；includeReferences=true 时要求当前有效管理员，并返回地点和队伍引用数。此接口保留 page/pageSize 分页，不能套用其他列表的 cursor 规则；响应 pagination 包含总页数与 hasMore。",
     method: "get",
     path: "/",
     operationId: "tagsList",
-    tags: ["tags"],
-    summary: "List tags; reference counts require administrator access",
+    tags: ["标签"],
+    summary: "查询标签目录",
     "x-audience": "public",
     request: { query: tagsQuerySchema },
     responses: {
@@ -98,7 +124,7 @@ tagsRoute.openapi(
             hasMore: z.boolean(),
           }),
         }),
-        "Success",
+        "请求成功，响应字段见下方结构。",
       ),
       ...errorResponses(400, 401, 403, 500),
     },
@@ -210,11 +236,13 @@ tagsRoute.openapi(
 
 tagsRoute.openapi(
   createRoute({
+    description:
+      "仅当前有效管理员可用。提交名称和可选 slug；未提供 slug 时按名称生成。命中已有标签时返回 200，新建成功返回 201，客户端应使用响应中的稳定标签 ID。",
     method: "post",
     path: "/",
     operationId: "tagsCreate",
-    tags: ["tags"],
-    summary: "Create or reuse a tag",
+    tags: ["标签"],
+    summary: "创建或复用标签",
     "x-audience": "admin",
     security: cookieSecurity,
     middleware: [adminMiddleware(), legacyJsonBody("Invalid tag")],
@@ -231,7 +259,7 @@ tagsRoute.openapi(
           tagId: z.string(),
           existing: z.boolean(),
         }),
-        "Success",
+        "请求成功，响应字段见下方结构。",
       ),
       201: jsonResponse(
         z.object({
@@ -239,7 +267,7 @@ tagsRoute.openapi(
           tagId: z.string(),
           existing: z.boolean(),
         }),
-        "Created",
+        "创建成功，返回新建资源。",
       ),
       ...errorResponses(400, 401, 403, 409, 500, 503),
     },
@@ -293,11 +321,13 @@ tagsRoute.openapi(
 
 tagsRoute.openapi(
   createRoute({
+    description:
+      "仅当前有效管理员可用。只更新标签名称，保留原 slug 和引用关系。名称冲突或并发变更返回 409，error.details.reason 提供原因分类。",
     method: "patch",
     path: "/{id}",
     operationId: "tagsUpdate",
-    tags: ["tags"],
-    summary: "Rename a tag",
+    tags: ["标签"],
+    summary: "重命名标签",
     "x-audience": "admin",
     security: cookieSecurity,
     middleware: [adminMiddleware(), legacyJsonBody("Invalid tag")],
@@ -311,7 +341,7 @@ tagsRoute.openapi(
     responses: {
       200: jsonResponse(
         z.object({ success: z.literal(true), tag: TagSchema }),
-        "Success",
+        "请求成功，响应字段见下方结构。",
       ),
       ...errorResponses(400, 401, 403, 404, 409, 500, 503),
     },
@@ -345,11 +375,13 @@ tagsRoute.openapi(
 
 tagsRoute.openapi(
   createRoute({
+    description:
+      "仅当前有效管理员可用。存在引用时默认返回 409 及引用计数；明确提交 confirmDetach=true 后解除引用并删除标签。操作前应向使用者展示受影响的地点和队伍数量。",
     method: "delete",
     path: "/{id}",
     operationId: "tagsDelete",
-    tags: ["tags"],
-    summary: "Delete a tag and optionally detach references",
+    tags: ["标签"],
+    summary: "删除标签",
     "x-audience": "admin",
     security: cookieSecurity,
     middleware: [adminMiddleware()],
@@ -367,7 +399,7 @@ tagsRoute.openapi(
             teams: z.number(),
           }),
         }),
-        "Success",
+        "请求成功，响应字段见下方结构。",
       ),
       ...errorResponses(400, 401, 403, 404, 500, 503),
       409: jsonResponse(
@@ -377,7 +409,7 @@ tagsRoute.openapi(
             teams: z.number(),
           }),
         }),
-        "Tag has references; explicit detachment confirmation required",
+        "标签仍有引用，需显式确认解除引用后才能删除。",
       ),
     },
   }),

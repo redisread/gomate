@@ -28,16 +28,16 @@ export type Coordinates = z.infer<typeof CoordinatesSchema>;
 export const RegionSchema = z.object({
   id: z.string(),
   countryCode: z.string(),
-  parentId: z.string().nullable(),
+  parentId: z.string().nullable().describe("父级地区 ID，根节点为 null。"),
   name: z.string(),
   nameEn: z.string().nullable(),
   slug: z.string(),
   code: z.string().nullable(),
   level: RegionLevelSchema,
-  timezone: z.string().nullable(),
+  timezone: z.string().nullable().describe("地区时区标识，未设置时为 null。"),
   centerLatitude: z.number().nullable(),
   centerLongitude: z.number().nullable(),
-  serviceEnabled: z.boolean(),
+  serviceEnabled: z.boolean().describe("是否对外开放该地区的服务。"),
   isHot: z.boolean(),
   sortOrder: z.number(),
 });
@@ -66,16 +66,18 @@ export const LocationSchema = z.object({
   regionId: z.string(),
   name: z.string(),
   slug: z.string(),
-  supportedActivityTypes: z.array(ActivityTypeSchema),
+  supportedActivityTypes: z
+    .array(ActivityTypeSchema)
+    .describe("地点推荐活动类型；空数组表示未设置推荐。"),
   status: LocationStatusSchema,
   subtitle: z.string().nullable(),
   description: z.string(),
   address: z.string().nullable(),
-  latitude: z.number().nullable(),
-  longitude: z.number().nullable(),
+  latitude: z.number().nullable().describe("纬度；未设置坐标时为 null。"),
+  longitude: z.number().nullable().describe("经度；未设置坐标时为 null。"),
   coverImageUrl: z.string().nullable(),
   images: z.array(z.string()),
-  extra: LocationExtraSchema,
+  extra: LocationExtraSchema.describe("公开扩展信息，使用 camelCase 字段名。"),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
   region: RegionSchema.optional(),
@@ -142,7 +144,7 @@ export type AdminUserSummary = z.infer<typeof AdminUserSummarySchema>;
 export const TeamParticipantSchema = z.object({
   userId: z.string(),
   joinedAt: TimestampSchema,
-  leftAt: TimestampSchema.nullable(),
+  leftAt: TimestampSchema.nullable().describe("离队时间，null 表示有效成员。"),
   user: SessionUserSchema.pick({
     id: true,
     name: true,
@@ -165,15 +167,27 @@ export const TeamSchema = z.object({
   description: z.string().nullable(),
   startAt: TimestampSchema,
   endAt: TimestampSchema,
-  maxParticipants: z.number(),
-  activeParticipantCount: z.number(),
+  maxParticipants: z.number().describe("包含队长在内的总人数上限。"),
+  activeParticipantCount: z
+    .number()
+    .describe("队长加上尚未离队的有效成员人数。"),
   requirements: z.array(z.string()),
-  recruitmentStatus: RecruitmentStatusSchema,
-  formedAt: TimestampSchema.nullable(),
-  cancelledAt: TimestampSchema.nullable(),
-  lifecycle: TeamLifecycleSchema,
-  isFull: z.boolean(),
-  meetingPoint: z.string().nullable(),
+  recruitmentStatus: RecruitmentStatusSchema.describe(
+    "招募开关，与生命周期独立；open 不保证仍有名额或仍可报名。",
+  ),
+  formedAt:
+    TimestampSchema.nullable().describe("确认成团时间，未成团为 null。"),
+  cancelledAt: TimestampSchema.nullable().describe("取消时间，未取消为 null。"),
+  lifecycle: TeamLifecycleSchema.describe(
+    "由取消时间、成团时间、开始和结束时间推导的当前生命周期。",
+  ),
+  isFull: z.boolean().describe("当前有效人数是否已达到人数上限。"),
+  meetingPoint: z
+    .string()
+    .nullable()
+    .describe(
+      "集合地点说明；仅向队长、有效成员或管理员详情接口展示，其他访问者为 null。",
+    ),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
   leader: SessionUserSchema.pick({
@@ -207,7 +221,10 @@ export type AdminTeamSummary = z.infer<typeof AdminTeamSummarySchema>;
 export const AdminTeamsResponseSchema = z.object({
   success: z.literal(true),
   teams: z.array(AdminTeamSummarySchema),
-  nextCursor: z.string().nullable(),
+  nextCursor: z
+    .string()
+    .nullable()
+    .describe("下一页游标；为 null 表示已到末页，客户端无需解析。"),
 });
 export type AdminTeamsResponse = z.infer<typeof AdminTeamsResponseSchema>;
 
@@ -241,7 +258,13 @@ export const UserPublicProfileSchema = z.object({
 export type UserPublicProfile = z.infer<typeof UserPublicProfileSchema>;
 
 export const cursorPageSchema = <T extends z.ZodType>(itemSchema: T) =>
-  z.object({ items: z.array(itemSchema), nextCursor: z.string().nullable() });
+  z.object({
+    items: z.array(itemSchema),
+    nextCursor: z
+      .string()
+      .nullable()
+      .describe("下一页游标；为 null 表示已到末页，客户端无需解析。"),
+  });
 export type CursorPage<T> = z.infer<
   ReturnType<typeof cursorPageSchema<z.ZodType<T>>>
 >;

@@ -15,10 +15,12 @@ test("Scalar renders the public contract using only same-origin assets", async (
       externalRequests.push(request.url());
   });
   page.on("pageerror", (error) => errors.push(error.message));
+  await page.setExtraHTTPHeaders({ "Accept-Language": "en-US" });
   const response = await page.goto("/api/docs");
+  await expect(page).toHaveTitle("GoMate API 文档");
   expect(response?.status()).toBe(200);
   await expect(
-    page.getByRole("heading", { name: "GoMate API", exact: true }),
+    page.getByRole("heading", { name: "GoMate API 文档", exact: true }),
   ).toBeVisible();
   await expect(page.locator("body")).toContainText("/health");
   await expect(page.locator("body")).not.toContainText("/admin/users");
@@ -49,11 +51,13 @@ for (const width of [1280, 390]) {
   }, testInfo) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto("/api/docs");
-    await page.waitForLoadState("networkidle");
+    await expect(
+      page.getByRole("heading", { name: "GoMate API 文档", exact: true }),
+    ).toBeVisible();
     if (width < 768)
-      await page.getByRole("button", { name: "Open Menu" }).click();
-    await page.getByRole("button", { name: /Open Search/ }).click();
-    const search = page.getByRole("combobox", { name: "Enter search query" });
+      await page.getByRole("button", { name: "打开菜单" }).click();
+    await page.getByRole("button", { name: /打开搜索/ }).click();
+    const search = page.getByRole("combobox", { name: "输入搜索查询" });
     await expect(search).toBeFocused();
     await search.fill("health");
     await expect(page.getByRole("dialog")).toContainText("/health");
