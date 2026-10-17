@@ -85,8 +85,8 @@ test("stages only the approved prefix with an explicit production binding", asyn
   try {
     const names = await readdir(path.dirname(staged.configPath));
     assert.ok(names.includes("0010_minimal_team_meeting_point.sql"));
-    assert.ok(!names.includes("0011_minimal_product_contract.sql"));
-    assert.deepEqual(staged.held, ["0011_minimal_product_contract.sql"]);
+    assert.ok(names.includes("0011_minimal_product_contract.sql"));
+    assert.deepEqual(staged.held, []);
     const config = JSON.parse(await readFile(staged.configPath, "utf8"));
     assert.equal(
       config.env.production.d1_databases[0].migrations_dir,

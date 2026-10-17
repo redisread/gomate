@@ -35,3 +35,18 @@ test("removed Japanese URLs and translation resources are not served or redirect
     expect(response.headers().location).toBeUndefined();
   }
 });
+
+for (const locale of ["zh-CN", "en"]) {
+  test(`${locale} navigation excludes the retired discovery page`, async ({
+    page,
+  }) => {
+    await page.goto(`/${locale}/locations`);
+    await expect(
+      page.locator("[data-locale-toggle]").filter({ visible: true }).first(),
+    ).toBeVisible();
+    await expect(page.locator('a[href$="/discover"]')).toHaveCount(0);
+    await expect(page.getByText("nav.discover", { exact: true })).toHaveCount(
+      0,
+    );
+  });
+}
