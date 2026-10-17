@@ -36,12 +36,6 @@
     "open": "等你一起",
     "closed": "已结束"
   },
-  "memberStatus": {
-    "pending": "待审核",
-    "approved": "已通过",
-    "rejected": "已拒绝",
-    "cancelled": "已取消"
-  },
   "level": {
     "beginner": "新人",
     "intermediate": "探索者",

@@ -9,7 +9,6 @@ export type {
   SessionUser,
   Tag,
   Team,
-  TeamChecklist,
   TeamLifecycle,
   TeamParticipant,
   UserExtra,

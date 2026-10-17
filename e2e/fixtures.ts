@@ -1,13 +1,8 @@
 /**
  * E2E fixture 自构造工具
  *
- * 背景：team-applications 等用例历史上依赖 seed 脚本预置的账号 + 队伍 + pending 申请，
- * 但「申请 → 审批」是消耗性状态（approve/reject 一次即消失），预置种子天然不幂等。
- *
- * 本模块让每个用例自行构造隔离 fixture：
- *   signUpUser（注册、验证邮箱、登录）→ patchWechat（建队/申请的前置条件）
- *   → createTeamAs；申请和审批由浏览器完成
- * 用户名/队名带 RUN_ID 时间戳，多次运行互不干扰，无需清理。
+ * 每个用例自行注册、验证并登录隔离账号，设置建队所需微信号，按需创建队伍。
+ * 用户名和队名带运行标识，多次运行互不干扰。
  *
  * 默认连接统一 Worker 的 /api，可用环境变量覆盖。HTTP 使用 Origin 头和
  * set-cookie 会话。

@@ -49,6 +49,12 @@ pnpm dev
 | `pnpm build`       | 构建生产 Worker                                |
 | `pnpm test:e2e`    | 使用构建后的本地 Worker 运行 Playwright        |
 
+**测试职责与精简原则。** 单元/组件测试验证用户可见行为和项目自己的合同，不重复穷举第三方库行为，也不把 CSS 类名当作实际布局证明。浏览器测试负责尺寸、溢出、键盘焦点、触屏和返回恢复；现有 profile 浏览器测试覆盖编辑入口点击尺寸及统计排列。权限、人数并发、失败恢复和真实迁移约束保留在 HTTP/D1/Worker 边界。
+
+翻译合同测试直接读取已发布 JSON，按共享枚举逐语言核对，缺少英文时不能被中文回退掩盖；一般 key 一致性和空值由 `i18n:validate` 负责。`test:build-guard` 同时运行 Preview alias 与 worktree 配置测试。精简测试需说明删掉的是冗余断言还是不再承诺的行为，不能靠降低断言或增加重试次数处理失败。
+
+方法参考：[Testing Library 指导原则](https://testing-library.com/docs/guiding-principles/)、[Playwright 自动重试断言](https://playwright.dev/docs/test-assertions/)；核对日期 2026-10-17。
+
 **浏览器测试。** 首次安装 Chromium，准备本地数据后运行：
 
 ```bash
