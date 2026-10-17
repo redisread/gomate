@@ -16,5 +16,15 @@
   "unfavorite": "取消收藏",
   "addressAndRelated": "地址与推荐",
   "photoGallery": "地点照片",
-  "imageLoadFailed": "图片加载失败，请重试。"
+  "imageLoadFailed": "图片加载失败，请重试。",
+  "journal": "把下一站，留给这里",
+  "together": "下一步 · 找个伴",
+  "actionDescription": "约上同行的人，把心动变成一次出发。",
+  "emptyTeamsTitle": "这趟旅程，等一个发起人",
+  "teamsLoadFailed": "暂时无法加载队伍，请重试。",
+  "locationLoadFailed": "暂时无法加载地点，请重试。",
+  "address": "怎么去",
+  "seasons": "什么时候去",
+  "copied": "地址已复制",
+  "copyFailed": "复制失败，请选择地址文本复制。"
 }

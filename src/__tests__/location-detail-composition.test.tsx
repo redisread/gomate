@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Location } from "@/lib/types";
 import { LocationDetailClient } from "@/components/features/location-detail-client";
@@ -15,13 +22,14 @@ vi.mock("@/hooks/useI18n", () => ({
     getNsData: () => null,
   }),
 }));
-vi.mock("@/components/layout/navbar", () => ({ Navbar: () => <nav>Navbar</nav> }));
-vi.mock("@/components/layout/footer", () => ({ Footer: () => <footer>Footer</footer> }));
+vi.mock("@/components/layout/navbar", () => ({
+  Navbar: () => <nav>Navbar</nav>,
+}));
+vi.mock("@/components/layout/footer", () => ({
+  Footer: () => <footer>Footer</footer>,
+}));
 vi.mock("@/components/features/location-detail/location-intro-card", () => ({
   LocationIntroCard: () => <section>Location intro</section>,
-}));
-vi.mock("@/components/features/location-detail/team-list-section", () => ({
-  TeamListSection: () => <section>Team list</section>,
 }));
 
 const location: Location = {
@@ -50,11 +58,14 @@ function response(body: unknown): Response {
 describe("Location detail composition", () => {
   beforeEach(() => {
     location.coverImageUrl = null;
-    vi.stubGlobal("IntersectionObserver", class {
-      observe() {}
-      disconnect() {}
-      unobserve() {}
-    });
+    vi.stubGlobal(
+      "IntersectionObserver",
+      class {
+        observe() {}
+        disconnect() {}
+        unobserve() {}
+      },
+    );
     fetchMock.mockImplementation((path: string) => {
       if (path === "/locations/location-1") {
         return Promise.resolve(response({ success: true, location }));
@@ -75,16 +86,91 @@ describe("Location detail composition", () => {
     vi.unstubAllGlobals();
   });
 
+  it("shows a team request failure instead of an empty invitation", async () => {
+    const original = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation((path: string) =>
+      path.startsWith("/teams?")
+        ? Promise.resolve({ ok: false, json: async () => ({ success: false }) })
+        : original(path),
+    );
+    render(<LocationDetailClient locationId="location-1" />);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "locationDetail.teamsLoadFailed",
+    );
+    expect(
+      screen.queryByText("locations.detailNoTeamsDesc"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("recovers the location after a failed request without retaining the error", async () => {
+    const original = fetchMock.getMockImplementation()!;
+    let fail = true;
+    fetchMock.mockImplementation((path: string) =>
+      path === "/locations/location-1" && fail
+        ? Promise.resolve({ ok: false })
+        : original(path),
+    );
+    render(<LocationDetailClient locationId="location-1" />);
+    expect(
+      await screen.findByRole("heading", {
+        name: "locationDetail.locationLoadFailed",
+      }),
+    ).toBeInTheDocument();
+    fail = false;
+    fireEvent.click(screen.getByRole("button", { name: "common.retry" }));
+    expect(
+      await screen.findByRole("heading", { name: "梧桐山" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("locationDetail.locationLoadFailed"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers retry when the location request times out", async () => {
+    const timeout = new AbortController();
+    const timeoutSpy = vi
+      .spyOn(AbortSignal, "timeout")
+      .mockReturnValue(timeout.signal);
+    const original = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation((path: string, options: RequestInit) =>
+      path === "/locations/location-1"
+        ? new Promise((_resolve, reject) =>
+            options.signal!.addEventListener("abort", () =>
+              reject(new DOMException("timeout", "TimeoutError")),
+            ),
+          )
+        : original(path),
+    );
+    render(<LocationDetailClient locationId="location-1" />);
+    await act(async () => timeout.abort());
+    expect(
+      screen.getByRole("heading", {
+        name: "locationDetail.locationLoadFailed",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "common.retry" }),
+    ).toBeInTheDocument();
+    expect(timeoutSpy).toHaveBeenCalledWith(15_000);
+    timeoutSpy.mockRestore();
+  });
+
   it("opens an accessible image dialog and restores focus on Escape", async () => {
     location.coverImageUrl = "/cover.jpg";
     render(<LocationDetailClient locationId="location-1" />);
-    const open = await screen.findByRole("button", { name: /locationDetail.viewLargeImage/ });
+    const open = await screen.findByRole("button", {
+      name: /locationDetail.viewLargeImage/,
+    });
     open.focus();
     fireEvent.click(open);
     expect(screen.getByRole("dialog")).toHaveAttribute("aria-modal", "true");
-    expect(screen.getByRole("button", { name: "locationDetail.closeImage" })).toHaveFocus();
+    expect(
+      screen.getByRole("button", { name: "locationDetail.closeImage" }),
+    ).toHaveFocus();
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
     expect(open).toHaveFocus();
     location.coverImageUrl = null;
   });
@@ -92,12 +178,18 @@ describe("Location detail composition", () => {
   it("renders the Location page without decision information or its map action", async () => {
     render(<LocationDetailClient locationId="location-1" />);
 
-    expect(await screen.findByRole("heading", { name: "梧桐山" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "梧桐山" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Location intro")).toBeInTheDocument();
     expect(screen.queryByText("Route info")).not.toBeInTheDocument();
-    expect(screen.queryByText("locationDetail.decision.title")).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", {
-      name: "locationDetail.transport.openInMap",
-    })).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("locationDetail.decision.title"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", {
+        name: "locationDetail.transport.openInMap",
+      }),
+    ).not.toBeInTheDocument();
   });
 });
