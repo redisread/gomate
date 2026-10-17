@@ -3,7 +3,7 @@ import Layout from "@/layouts/Layout.astro";
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import { declareI18nNs } from "@/middleware";
 
-declareI18nNs(Astro.locals, ["share", "content"]);
+declareI18nNs(Astro.locals, ["content"]);
 
 interface Props {
   post?: CollectionEntry<"blog">;

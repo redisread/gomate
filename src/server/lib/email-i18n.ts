@@ -13,7 +13,6 @@ export type EmailType =
   | "passwordReset"
   | "emailVerification"
   | "welcome"
-  | "contactForm"
   | "feedback";
 
 const EMAIL_TEMPLATES: Record<EmailLocale, Record<string, unknown>> = {

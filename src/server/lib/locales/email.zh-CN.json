@@ -29,27 +29,7 @@
     "closing": "祝您徒步愉快！",
     "signature": "GoMate 团队"
   },
-  "contactForm": {
-    "subject": "[GoMate 用户反馈] {subject}",
-    "title": "用户反馈",
-    "nameLabel": "姓名：",
-    "emailLabel": "邮箱：",
-    "subjectLabel": "主题：",
-    "contentLabel": "内容："
-  },
   "feedback": {
-    "bugSubject": "[GoMate Bug反馈] 来自 {name}",
-    "suggestionSubject": "[GoMate 建议反馈] 来自 {name}",
-    "bugTitle": "Bug 反馈",
-    "suggestionTitle": "功能建议",
-    "nameLabel": "姓名：",
-    "emailLabel": "邮箱：",
-    "bugDetailsTitle": "问题详情",
-    "deviceLabel": "设备类型：",
-    "browserLabel": "浏览器：",
-    "pageUrlLabel": "问题页面：",
-    "bugDescriptionTitle": "问题描述",
-    "suggestionDescriptionTitle": "建议内容",
-    "stepsTitle": "复现步骤"
+    "title": "用户反馈"
   }
 }

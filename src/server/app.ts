@@ -14,7 +14,6 @@ import { regionsRoute } from "./routes/regions";
 import { tagsRoute } from "./routes/tags";
 import { adminUsersRoute } from "./routes/admin-users";
 import { adminTeamsRoute } from "./routes/admin-teams";
-import { contactRoute } from "./routes/contact";
 import { feedbackRoute } from "./routes/feedback";
 import {
   getRequestOrigin,
@@ -151,7 +150,6 @@ apiApp.route("/regions", regionsRoute);
 apiApp.route("/tags", tagsRoute);
 apiApp.route("/admin/users", adminUsersRoute);
 apiApp.route("/admin/teams", adminTeamsRoute);
-apiApp.route("/contact", contactRoute);
 apiApp.route("/feedback", feedbackRoute);
 
 apiApp.get("/r2/*", async (c) => {
