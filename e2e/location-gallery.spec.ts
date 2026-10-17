@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-async function setup(page: Page) {
+async function setup(page: Page, count = 3) {
   await page.route("**/api/locations/motion-gallery", (route) =>
     route.fulfill({
       json: {
@@ -14,8 +14,11 @@ async function setup(page: Page) {
           supportedActivityTypes: ["hiking"],
           extra: {},
           description: "山间营地图片展示测试",
-          coverImageUrl: "/gallery-a.svg",
-          images: ["/gallery-b.svg", "/gallery-c.svg"],
+          coverImageUrl: count ? "/gallery-a.svg" : null,
+          images: ["/gallery-b.svg", "/gallery-c.svg"].slice(
+            0,
+            Math.max(0, count - 1),
+          ),
           latitude: 22.6,
           longitude: 114.2,
         },
@@ -126,48 +129,183 @@ test.describe("touch", () => {
   });
 });
 
-test("card hover responds to reduced motion and history return", async ({
-  page,
-}) => {
+test("cover cycles and retains image on failure", async ({ page }) => {
   await setup(page);
   await page.goto("/locations/motion-gallery");
-  const image = page.getByRole("img", {
-    name: "山间营地 · 图片 1",
-    exact: true,
-  });
-  await page
-    .getByRole("button", { name: "查看大图 · 图片 1", exact: true })
-    .hover();
-  await expect(image).toHaveCSS(
-    "transform",
-    "matrix(1.015, 0, 0, 1.015, 0, 0)",
-  );
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(image).toHaveCSS("transform", "none");
-  await page.screenshot({ path: ".wrangler/motion-gallery-desktop.png" });
-  await page.mouse.move(1279, 700);
-  await page.goto("/locations");
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.goBack();
-  await expect(image).toHaveCSS("opacity", "1");
-});
-
-test("focus on a failed card retry keeps the photo strip expanded after pointer leave", async ({
-  page,
-}) => {
-  await setup(page);
+  const gallery = page.locator(".location-cover-gallery");
+  await gallery.getByRole("button", { name: "上一张", exact: true }).click();
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 3", exact: true }),
+  ).toBeVisible();
+  await gallery.getByRole("button", { name: "下一张", exact: true }).click();
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 1", exact: true }),
+  ).toBeVisible();
   await page.route("**/gallery-b.svg", (route) =>
     route.fulfill({ status: 503, body: "unavailable" }),
   );
-  await page.goto("/locations/motion-gallery");
-  const gallery = page.locator(".location-cover-gallery");
-  await page
-    .getByRole("button", { name: "查看大图 · 图片 1", exact: true })
-    .hover();
+  await gallery
+    .getByRole("button", { name: "下一张", exact: true })
+    .press("ArrowRight");
+  await expect(gallery.getByRole("alert")).toContainText("图片加载失败");
+  await expect(
+    gallery.getByRole("img", { name: "山间营地 · 图片 1", exact: true }),
+  ).toBeVisible();
+  const failedRetry = gallery.getByRole("button", {
+    name: "重试",
+    exact: true,
+  });
+  await failedRetry.focus();
+  await failedRetry.press("ArrowRight");
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 3", exact: true }),
+  ).toBeVisible();
+  await expect(
+    gallery.getByRole("button", { name: "下一张", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await expect(gallery.getByRole("alert")).toContainText("图片加载失败");
+  await page.unroute("**/gallery-b.svg");
   const retry = gallery.getByRole("button", { name: "重试", exact: true });
   await retry.focus();
-  await page.mouse.move(1279, 700);
-  await expect(gallery).toHaveAttribute("data-expanded", "true");
-  await expect(retry).toBeFocused();
-  await expect(retry).toBeEnabled();
+  await retry.press("Enter");
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 2", exact: true }),
+  ).toBeVisible();
+  const next = gallery.getByRole("button", { name: "下一张", exact: true });
+  await expect(next).toBeFocused();
+  await next.press("ArrowRight");
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 3", exact: true }),
+  ).toBeVisible();
+});
+test("drag switches cards without opening lightbox", async ({ page }) => {
+  await setup(page);
+  await page.goto("/locations/motion-gallery");
+  const gallery = page.locator(".location-cover-gallery");
+  const open = gallery.getByRole("button", {
+    name: "查看大图 · 图片 1",
+    exact: true,
+  });
+  const box = (await open.boundingBox())!;
+  const x = box.x + box.width / 2,
+    y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 18, y, { steps: 8 });
+  await page.mouse.up();
+  await expect(open).toBeVisible();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 150, y, { steps: 12 });
+  await page.mouse.up();
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 2", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await gallery.getByRole("button", { name: "下一张", exact: true }).click();
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 3", exact: true }),
+  ).toBeVisible();
+  await expect(gallery.locator("[data-cover-card]")).toHaveCount(1);
+  await expect(gallery.locator("[data-cover-card]")).toHaveCSS(
+    "transform",
+    "none",
+  );
+  await page.screenshot({ path: ".wrangler/swipe-cover-desktop.png" });
+});
+
+for (const count of [0, 1]) {
+  test("cover with " + count + " photos hides navigation", async ({ page }) => {
+    await setup(page, count);
+    await page.goto("/locations/motion-gallery");
+    const gallery = page.locator(".location-cover-gallery");
+    await expect(gallery).toBeVisible();
+    await expect(
+      gallery.getByRole("button", { name: "下一张", exact: true }),
+    ).toHaveCount(0);
+    await expect(gallery.getByRole("button")).toHaveCount(count);
+  });
+}
+test.describe("mobile swipe", () => {
+  test.use({ hasTouch: true, viewport: { width: 320, height: 800 } });
+  test("touch swipe and keyboard focus survive switching in dark mode", async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await context.addCookies([{ name: "theme", value: "dark", url: baseURL! }]);
+    await setup(page);
+    await page.goto("/locations/motion-gallery");
+    const gallery = page.locator(".location-cover-gallery");
+    const box = (await gallery
+      .getByRole("button", { name: "查看大图 · 图片 1", exact: true })
+      .boundingBox())!;
+    const session = await context.newCDPSession(page);
+    const x = box.x + box.width * 0.8,
+      y = box.y + box.height / 2;
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x, y }],
+    });
+    for (let i = 1; i <= 10; i++)
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x: x - i * 14, y }],
+      });
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    const second = gallery.getByRole("button", {
+      name: "查看大图 · 图片 2",
+      exact: true,
+    });
+    await expect(second).toBeVisible();
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await second.focus();
+    await second.press("ArrowRight");
+    const third = gallery.getByRole("button", {
+      name: "查看大图 · 图片 3",
+      exact: true,
+    });
+    await expect(third).toBeFocused();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await expect(gallery.locator("[data-cover-card]")).toHaveCount(1);
+    await page.screenshot({ path: ".wrangler/swipe-cover-mobile-dark.png" });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await third.press("Enter");
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(third).toBeFocused();
+  });
+});
+
+test("rapid full cycle restores a card that was still exiting", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.goto("/locations/motion-gallery");
+  const gallery = page.locator(".location-cover-gallery");
+  for (const index of [2, 3, 1]) {
+    await gallery.getByRole("button", { name: "下一张", exact: true }).click();
+    await expect(
+      gallery.getByRole("button", {
+        name: "查看大图 · 图片 " + index,
+        exact: true,
+      }),
+    ).toBeVisible();
+  }
+  await expect(gallery.locator("[data-cover-card]")).toHaveCount(1);
+  await expect(gallery.locator("[data-cover-card]")).toHaveCSS("opacity", "1");
+  await expect(gallery.locator("[data-cover-card]")).toHaveCSS(
+    "transform",
+    "none",
+  );
 });

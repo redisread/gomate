@@ -1,52 +1,42 @@
 .location-cover-track {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   min-height: 280px;
-  padding: 32px 24px;
+  padding: 48px 24px 28px;
+  isolation: isolate;
 }
 .location-cover-card {
   grid-area: 1 / 1;
   justify-self: center;
-  width: min(72%, 360px);
+  width: min(100%, 460px);
   padding: 8px 8px 12px;
   border-radius: 16px;
-  cursor: zoom-in;
+  user-select: none;
 }
-.location-cover-card img {
-  width: 100%;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
-  border-radius: 10px;
+.location-cover-card[data-cover-card] {
+  cursor: grab;
+}
+.location-cover-card[data-cover-card]:active {
+  cursor: grabbing;
+}
+.location-cover-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+}
+.location-cover-control:hover {
   background: var(--muted);
 }
-.location-cover-gallery[data-expanded="false"]
-  .location-cover-card:nth-child(n + 6) {
-  visibility: hidden;
-}
-.location-cover-gallery[data-expanded="false"]
-  .location-cover-card:not(:first-child) {
-  pointer-events: none;
-}
-.location-cover-gallery[data-single="true"] .location-cover-card {
-  width: min(90%, 520px);
-}
-.location-cover-gallery[data-expanded="true"] .location-cover-track {
-  grid-template-columns: none;
-  grid-auto-flow: column;
-  grid-auto-columns: min(76%, 300px);
-  justify-content: safe center;
-  gap: 16px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: 24px;
-  scrollbar-width: thin;
-}
-.location-cover-gallery[data-expanded="true"] .location-cover-card {
-  grid-area: auto;
-  width: 100%;
-  scroll-snap-align: center;
+.location-cover-control:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
 }
 .location-cover-empty {
   width: 100%;
@@ -54,10 +44,10 @@
 }
 @media (min-width: 640px) {
   .location-cover-track {
-    min-height: 360px;
-    padding-block: 40px;
+    min-height: 400px;
+    padding-block: 52px 32px;
   }
-  .location-cover-gallery[data-expanded="true"] .location-cover-track {
-    grid-auto-columns: min(42%, 300px);
-  }
+}
+.location-cover-card[data-reduced="true"] {
+  transform: none !important;
 }
