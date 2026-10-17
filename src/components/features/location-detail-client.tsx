@@ -10,17 +10,15 @@ import {
   MapPin,
   Mountain,
   Users,
-  Sparkles,
+  ArrowUpRight,
   ChevronRight,
   ChevronLeft,
   Pencil,
-  Flame,
   X,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import type { TranslationKey } from "@/i18n";
 import { fetchAPI } from "@/lib/api";
-import type { Location, Team } from "@/lib/types";
+import type { Location } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
 import { Modal } from "@/components/ui/modal";
@@ -29,71 +27,17 @@ import { LocationCoverGallery } from "@/components/features/location-detail/loca
 import { LocationIntroCard } from "@/components/features/location-detail/location-intro-card";
 import { TeamListSection } from "@/components/features/location-detail/team-list-section";
 
-// ─── 季节映射 ─────────────────────────────────────────────────────────────────
-function getSeasonLabel(t: (key: TranslationKey) => string) {
-  return {
-    spring: t("enums.season.spring"),
-    summer: t("enums.season.summer"),
-    autumn: t("enums.season.autumn"),
-    winter: t("enums.season.winter"),
-  };
-}
-// ─── 骨架屏 ───────────────────────────────────────────────────────────────────
-function LoadingNavbarSkeleton() {
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white/20 dark:bg-stone-900/20 backdrop-blur-sm">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <BrandIcon />
-            <span className="text-xl font-bold text-amber-500">GoMate</span>
-          </div>
-          <div className="hidden items-center gap-3 md:flex">
-            <div className="h-8 w-16 rounded-full bg-white/45 dark:bg-stone-800/50" />
-            <div className="h-8 w-16 rounded-full bg-white/35 dark:bg-stone-800/40" />
-            <div className="h-8 w-56 rounded-full bg-white/45 dark:bg-stone-800/50" />
-          </div>
-          <div className="h-9 w-9 rounded-lg bg-white/45 dark:bg-stone-800/50 md:hidden" />
-        </div>
-      </div>
-    </header>
-  );
-}
-
 function LoadingSkeleton() {
   return (
-    <main className="min-h-screen bg-stone-50 dark:bg-stone-950 pb-24 lg:pb-0">
-      <LoadingNavbarSkeleton />
-      <div className="relative h-[390px] sm:h-[460px] lg:h-[520px] overflow-hidden bg-stone-200 dark:bg-stone-800 skeleton">
-        <div className="absolute top-5 right-5 flex items-center gap-2">
-          <div className="h-8 w-16 rounded-full bg-stone-300/60 dark:bg-stone-700/60" />
-          <div className="h-9 w-9 rounded-full bg-stone-300/60 dark:bg-stone-700/60" />
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-8">
-          <div className="max-w-7xl mx-auto space-y-3">
-            <div className="h-4 w-28 rounded bg-stone-300/50 dark:bg-stone-700/50" />
-            <div className="flex gap-2">
-              <div className="h-6 w-16 rounded-full bg-stone-300/60 dark:bg-stone-700/60" />
-              <div className="h-6 w-20 rounded-full bg-stone-300/60 dark:bg-stone-700/60" />
-            </div>
-            <div className="h-10 w-64 rounded-lg bg-stone-300/60 dark:bg-stone-700/60" />
-            <div className="h-4 w-48 rounded bg-stone-300/50 dark:bg-stone-700/50" />
-            <div className="flex gap-3 pt-2">
-              <div className="h-8 w-20 rounded-full bg-stone-300/50 dark:bg-stone-700/50" />
-              <div className="h-8 w-20 rounded-full bg-stone-300/50 dark:bg-stone-700/50" />
-              <div className="h-8 w-20 rounded-full bg-stone-300/50 dark:bg-stone-700/50" />
-            </div>
+    <main className="min-h-screen bg-background pt-28">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <BrandIcon />
+        <div className="mt-8 grid gap-8 lg:grid-cols-2">
+          <div className="aspect-[3/2] rounded-3xl bg-muted skeleton" />
+          <div className="space-y-5 py-8">
+            <div className="h-12 w-2/3 rounded-xl bg-muted skeleton" />
+            <div className="h-24 rounded-xl bg-muted skeleton" />
           </div>
-        </div>
-      </div>
-      <div className="mx-auto max-w-6xl px-4 pb-12 pt-8 sm:px-6 sm:pb-14 sm:pt-10 lg:px-8 lg:pb-16 lg:pt-12">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10">
-          <div className="space-y-8">
-            <div className="h-48 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800" />
-            <div className="h-64 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800" />
-            <div className="h-56 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800" />
-          </div>
-          <div className="hidden h-72 rounded-2xl bg-stone-200 skeleton dark:bg-stone-800 lg:block" />
         </div>
       </div>
     </main>
@@ -110,24 +54,52 @@ interface LightboxProps {
   onSelect: (index: number) => void;
 }
 
-function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: LightboxProps) {
-  const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
+function Lightbox({
+  images,
+  index,
+  onClose,
+  onPrev,
+  onNext,
+  onSelect,
+}: LightboxProps) {
+  const { t } = useI18n([
+    "locationDetail",
+    "locations",
+    "common",
+    "errors",
+    "admin",
+    "nav",
+    "enums",
+  ]);
   const [present, remove] = usePresence();
   const reduced = useReducedMotion();
   const id = React.useId();
   React.useEffect(() => {
     const element = document.getElementById(id);
     if (!element) return;
-    if (typeof element.animate !== "function") { if (!present) remove?.(); return; }
-    const animation = animate(element, { opacity: present ? [0, 1] : 0 }, { duration: reduced ? 0 : 0.16 });
+    if (typeof element.animate !== "function") {
+      if (!present) remove?.();
+      return;
+    }
+    const animation = animate(
+      element,
+      { opacity: present ? [0, 1] : 0 },
+      { duration: reduced ? 0 : 0.16 },
+    );
     if (!present) void Promise.resolve(animation).then(() => remove?.());
     return () => animation.stop();
   }, [id, present, reduced, remove]);
   React.useEffect(() => {
     if (!present) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") { e.preventDefault(); onPrev(); }
-      if (e.key === "ArrowRight") { e.preventDefault(); onNext(); }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        onPrev();
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        onNext();
+      }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
@@ -144,7 +116,9 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: Lightbox
       backdropClassName="bg-black/92 backdrop-blur-md"
       panelClassName="pointer-events-none flex h-full w-full items-center justify-center [&_button]:pointer-events-auto [&_img]:pointer-events-auto"
     >
-      <h2 id="location-lightbox-title" className="sr-only">{t("locationDetail.photoGallery")}</h2>
+      <h2 id="location-lightbox-title" className="sr-only">
+        {t("locationDetail.photoGallery")}
+      </h2>
       {/* 关闭按钮 */}
       <button
         onClick={onClose}
@@ -175,7 +149,11 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: Lightbox
 
       {/* 图片 */}
       <div className="relative h-[75dvh] w-[80vw]">
-        <GalleryImage src={images[index]} alt={t("locationDetail.imageAlt", { index: String(index + 1) })} contain />
+        <GalleryImage
+          src={images[index]}
+          alt={t("locationDetail.imageAlt", { index: String(index + 1) })}
+          contain
+        />
       </div>
 
       {/* 下一张 */}
@@ -201,12 +179,18 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: Lightbox
           {images.map((img, i) => (
             <button
               key={i}
-              onClick={() => { if (present) onSelect(i); }}
-              aria-label={t("locationDetail.switchImage", { index: String(i + 1) })}
+              onClick={() => {
+                if (present) onSelect(i);
+              }}
+              aria-label={t("locationDetail.switchImage", {
+                index: String(i + 1),
+              })}
               aria-current={i === index ? "true" : undefined}
               className={cn(
                 "w-11 h-11 shrink-0 rounded-lg overflow-hidden border-2 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
-                i === index ? "border-white scale-110" : "border-white/30 hover:border-white/60"
+                i === index
+                  ? "border-white scale-110"
+                  : "border-white/30 hover:border-white/60",
               )}
             >
               <img src={img} alt="" className="w-full h-full object-cover" />
@@ -218,98 +202,39 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: Lightbox
   );
 }
 
-// ─── ActionCard ───────────────────────────────────────────────────────────────
-interface ActionCardProps {
-  location: Location;
-  teams: Team[];
-}
-
-function ActionCard({ location, teams }: ActionCardProps) {
-  const { t } = useI18n([
-    "locationDetail",
-    "locations",
-    "common",
-    "errors",
-    "admin",
-    "nav",
-    "enums",
-  ]);
-  const totalParticipants = teams.reduce(
-    (sum, team) => sum + team.activeParticipantCount,
-    0,
-  );
-  const avatarLeaders = teams
-    .filter((team) => Boolean(team.leader?.image))
-    .slice(0, 5);
-  const socialProofText =
-    teams.length > 0
-      ? t("locationDetail.socialProof", {
-          participants: totalParticipants,
-          teams: teams.length,
-        })
-      : t("locationDetail.firstCreator");
-
+function ActionCard({ location }: { location: Location }) {
+  const { t } = useI18n(["locationDetail", "locations"]);
   return (
     <section
       aria-labelledby="location-action-title"
-      className="rounded-2xl bg-card p-5 shadow-warm-sm"
+      className="rounded-3xl bg-warm-subtle p-6"
     >
-      <div>
-        {/* 情感标题 */}
-        <h2
-          id="location-action-title"
-          className="text-base font-bold text-foreground"
-        >
-          {t("locations.detailParticipate")}
-        </h2>
-
-        {/* 社交证明 */}
-        <div className="flex items-center gap-2.5 mb-4">
-          {avatarLeaders.length > 0 && (
-            <div className="flex -space-x-2">
-              {avatarLeaders.map((t, i) => (
-                <img
-                  key={t.id}
-                  src={t.leader!.image!}
-                  alt={t.leader!.nickname || t.leader!.name}
-                  className="w-7 h-7 rounded-full border-2 border-amber-50 object-cover shadow-sm"
-                  style={{ zIndex: avatarLeaders.length - i }}
-                />
-              ))}
-            </div>
-          )}
-          <p className="text-xs font-medium text-stone-600 dark:text-stone-400">
-            {socialProofText}
-          </p>
-        </div>
-
-        {/* 活跃度指示 */}
-        {teams.length > 0 && (
-          <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
-            <Flame className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
-            <span className="text-2xs font-semibold text-emerald-700 dark:text-emerald-400">
-              {t("locationDetail.activeRecruiting")}
-            </span>
-          </div>
-        )}
-
-        {/* 主 CTA */}
-        <a
-          href={`/teams/create?locationId=${location.id}`}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-700 py-3.5 text-sm font-bold text-white shadow-card-hover transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-amber-800 active:scale-[0.96] dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400"
-        >
-          <Users className="h-4 w-4" />
-          {t("locations.detailCreateTeam")}
-        </a>
-
-        {/* 次要 CTA */}
-        <a
-          href={`/teams?locationId=${location.id}`}
-          className="mt-3 flex w-full items-center justify-center rounded-xl border border-stone-200 bg-transparent py-2.5 text-sm font-semibold text-foreground transition-[transform,background-color,border-color] duration-150 hover:border-stone-300 hover:bg-stone-50 active:scale-[0.96] dark:border-stone-700 dark:hover:border-stone-600 dark:hover:bg-stone-800"
-        >
-          {t("locations.detailBrowseTeams")}
-        </a>
-      </div>
+      <span className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-card text-primary shadow-card">
+        <Users aria-hidden="true" className="h-5 w-5" />
+      </span>
+      <h2
+        id="location-action-title"
+        className="text-xl font-bold text-foreground"
+      >
+        {t("locations.detailParticipate")}
+      </h2>
+      <p className="mb-6 mt-3 text-sm leading-7 text-muted-foreground">
+        {t("locationDetail.actionDescription")}
+      </p>
+      <a
+        href={`/teams/create?locationId=${location.id}`}
+        className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-center text-sm font-semibold text-foreground dark:text-primary-foreground shadow-card transition-[transform,background-color] hover:bg-primary/90 active:scale-[0.96] motion-reduce:transform-none"
+      >
+        <Users aria-hidden="true" className="h-4 w-4 shrink-0" />
+        {t("locations.detailCreateTeam")}
+      </a>
+      <a
+        href="#location-teams"
+        className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-foreground hover:bg-card/60"
+      >
+        {t("locationDetail.browseTeams")}
+        <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+      </a>
     </section>
   );
 }
@@ -337,14 +262,14 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
   if (locations.length === 0) return null;
 
   return (
-    <section className="rounded-2xl bg-card p-5 shadow-warm-sm sm:p-6">
+    <section className="px-2">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100">
+        <h2 className="text-sm font-bold text-foreground">
           {t("locations.relatedTitle")}
-        </h3>
+        </h2>
         <a
           href="/locations"
-          className="text-xs text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-semibold transition-colors flex items-center gap-0.5"
+          className="min-h-11 text-xs text-accent-foreground hover:text-foreground font-semibold transition-colors flex items-center gap-0.5"
         >
           {t("common.viewAll")}
           <ChevronRight className="h-3.5 w-3.5" />
@@ -357,32 +282,32 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
             <a
               key={loc.id}
               href={`/locations/${loc.id}`}
-              className="flex items-center gap-3 group rounded-xl p-2 -mx-2 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 hover:bg-stone-50 dark:hover:bg-stone-800"
+              className="flex items-center gap-3 group rounded-xl p-2 -mx-2 transition-colors duration-150 hover:bg-muted"
             >
-              <div className="w-[68px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 dark:bg-stone-800">
+              <div className="w-[68px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-muted">
                 {loc.coverImageUrl ? (
                   <img
                     src={loc.coverImageUrl}
                     alt={loc.name}
-                    className="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 transition-transform duration-300 group-hover:scale-110 dark:outline-white/10"
+                    className="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <Mountain className="h-5 w-5 text-stone-300" />
+                    <Mountain className="h-5 w-5 text-muted-foreground" />
                   </div>
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
-                <h4
+                <h3
                   title={loc.name}
-                  className="font-semibold text-stone-900 dark:text-stone-100 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors text-sm truncate leading-snug"
+                  className="font-semibold text-foreground group-hover:text-accent-foreground transition-colors text-sm truncate leading-snug"
                 >
                   {loc.name}
-                </h4>
+                </h3>
               </div>
 
-              <ChevronRight className="h-3.5 w-3.5 text-stone-300 dark:text-stone-600 group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors flex-shrink-0" />
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-accent-foreground transition-colors flex-shrink-0" />
             </a>
           );
         })}
@@ -391,117 +316,28 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
   );
 }
 
-// ─── MobileFloatingCTA ────────────────────────────────────────────────────────
-interface MobileFloatingCTAProps {
-  location: Location;
-  heroRef: React.RefObject<HTMLDivElement>;
-}
-
-/**
- * 移动端底部浮动操作栏
- * 角色：移动端交互设计师
- * - IntersectionObserver 控制显隐
- * - 毛玻璃背景 + iOS 安全区适配
- * - 双按钮：浏览队伍 + 发起组队
- */
-function MobileFloatingCTA({ location, heroRef }: MobileFloatingCTAProps) {
-  const { t } = useI18n([
-    "locationDetail",
-    "locations",
-    "common",
-    "errors",
-    "admin",
-    "nav",
-    "enums",
-  ]);
-  const [heroLeft, setHeroLeft] = React.useState(false);
-
-  React.useEffect(() => {
-    const target = heroRef.current;
-    if (!target) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setHeroLeft(!entry.isIntersecting),
-      { threshold: 0.1 },
-    );
-    observer.observe(target);
-    return () => observer.disconnect();
-  }, [heroRef]);
-
+function MobileFloatingCTA({ location }: { location: Location }) {
+  const { t } = useI18n(["locationDetail"]);
   return (
-    <div
-      className={cn(
-        "lg:hidden fixed bottom-0 left-0 right-0 z-40 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 bg-white/96 dark:bg-stone-900/96 backdrop-blur-md",
-        heroLeft
-          ? "translate-y-0 opacity-100"
-          : "translate-y-full opacity-0 pointer-events-none",
-      )}
-      style={{
-        borderTop: "1px solid rgba(217,119,6,0.12)",
-        boxShadow: "0 -8px 32px rgba(0,0,0,0.12)",
-      }}
+    <nav
+      aria-label={t("locationDetail.gatherPartners")}
+      data-testid="location-mobile-actions"
+      className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-xl items-stretch gap-3 rounded-3xl bg-card/95 p-3 shadow-card-hover backdrop-blur-md lg:hidden"
     >
-      <div className="max-w-7xl mx-auto px-3 py-3 flex items-center gap-2.5 sm:px-4 sm:gap-3 max-[360px]:px-2 max-[360px]:gap-2">
-        {/* 地点信息 */}
-        <div className="flex-1 min-w-0 max-[360px]:hidden">
-          <p className="text-3xs text-stone-500 dark:text-stone-500 font-semibold uppercase tracking-wide">
-            {t("locationDetail.destination")}
-          </p>
-          <p
-            title={location.name}
-            className="text-sm font-bold text-stone-900 dark:text-stone-100 truncate leading-tight"
-          >
-            {location.name}
-          </p>
-        </div>
-
-        {/* 浏览队伍 */}
-        <a
-          href={`/teams?locationId=${location.id}`}
-          className="flex-shrink-0 max-[360px]:flex-1"
-        >
-          <span className="flex min-h-11 items-center justify-center rounded-xl border border-stone-200 px-3 text-sm font-semibold text-foreground transition-[transform,background-color,border-color] duration-150 hover:bg-stone-50 active:scale-[0.96] dark:border-stone-700 dark:hover:bg-stone-800 sm:px-4 max-[360px]:w-full max-[360px]:px-2">
-            {t("locationDetail.browseTeams")}
-          </span>
-        </a>
-
-        {/* 主 CTA */}
-        <a
-          href={`/teams/create?locationId=${location.id}`}
-          className="flex-shrink-0 max-[360px]:flex-1"
-        >
-          <span className="flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl bg-amber-700 px-4 text-sm font-bold text-white shadow-glow transition-[transform,background-color] duration-150 hover:bg-amber-800 active:scale-[0.96] dark:bg-amber-500 dark:text-stone-950 dark:hover:bg-amber-400 max-[360px]:px-2 sm:px-5">
-            <Users className="h-4 w-4" />
-            {t("locationDetail.gatherPartners")}
-          </span>
-        </a>
-      </div>
-      {/* iOS 安全区 */}
-      <div style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
-    </div>
-  );
-}
-
-function HeroActions({
-  location,
-  isAdmin,
-}: {
-  location: Location;
-  isAdmin: boolean;
-}) {
-  const { t } = useI18n(["admin"]);
-  if (!isAdmin) return null;
-  return (
-    <div className="absolute inset-x-4 top-20 z-20 sm:inset-x-8">
-      <div className="mx-auto flex max-w-7xl justify-end">
-        <a
-          href={`/admin/locations/${location.id}/edit`}
-          aria-label={t("admin.editLocation")}
-          className="rounded-full border border-border bg-card p-3 text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <Pencil className="h-4 w-4" />
-        </a>
-      </div>
-    </div>
+      <a
+        href="#location-teams"
+        className="flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-2xl bg-muted px-3 py-2 text-center text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
+      >
+        {t("locationDetail.browseTeams")}
+      </a>
+      <a
+        href={`/teams/create?locationId=${location.id}`}
+        className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-3 py-2 text-center text-sm font-semibold text-foreground dark:text-primary-foreground transition-[transform,background-color] hover:bg-primary/90 active:scale-[0.96] motion-reduce:transform-none"
+      >
+        <Users aria-hidden="true" className="h-4 w-4 shrink-0" />
+        {t("locationDetail.gatherPartners")}
+      </a>
+    </nav>
   );
 }
 
@@ -510,10 +346,6 @@ interface LocationDetailClientProps {
   locationId: string;
 }
 
-/**
- * 地点详情页客户端组件
- * 角色：视觉总监 + 交互设计师 + 转化率优化师 三位一体
- */
 export function LocationDetailClient({
   locationId,
 }: LocationDetailClientProps) {
@@ -528,103 +360,106 @@ export function LocationDetailClient({
   ]);
   const [location, setLocation] = React.useState<Location | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [teams, setTeams] = React.useState<Team[]>([]);
+  const [error, setError] = React.useState<"missing" | "failed" | null>(null);
+  const [attempt, setAttempt] = React.useState(0);
   const [relatedLocations, setRelatedLocations] = React.useState<Location[]>(
     [],
   );
   const [isAdmin, setIsAdmin] = React.useState(false);
-
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const closeLightbox = React.useCallback(() => setLightboxIndex(null), []);
-  const heroRef = React.useRef<HTMLDivElement>(null);
 
-  // 获取用户会话
   React.useEffect(() => {
-    fetchAPI("/auth/get-session")
-      .then((r) => r.json())
+    const controller = new AbortController();
+    void fetchAPI("/auth/get-session", { signal: controller.signal })
+      .then((res) => res.json())
       .then((data) => {
-        if (data?.user?.role === "admin") setIsAdmin(true);
+        if (!controller.signal.aborted)
+          setIsAdmin(data?.user?.role === "admin");
       })
       .catch(() => {});
+    return () => controller.abort();
   }, []);
 
-  const loadLocation = React.useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetchAPI(`/locations/${locationId}`);
-      const data = await res.json();
-      if (data.success && data.location) {
-        setLocation(data.location);
-        loadTeams(data.location.id);
-        loadRelatedLocations(data.location.id);
-      } else {
-        setError(t("errors.locationNotFound"));
-      }
-    } catch {
-      setError(t("common.loading"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [locationId, t]);
-
   React.useEffect(() => {
-    loadLocation();
-  }, [loadLocation]);
-
-  const loadTeams = async (locId: string) => {
-    try {
-      const res = await fetchAPI(
-        `/teams?locationId=${locId}&recruitmentStatus=open&limit=5`,
-      );
-      const data = await res.json();
-      if (data.success) setTeams(data.teams || []);
-    } catch (err) {
-      console.error("[LocationDetail] 获取队伍失败:", err);
-    }
-  };
-
-  const loadRelatedLocations = async (currentLocationId: string) => {
-    try {
-      const res = await fetchAPI("/locations?limit=4");
-      const data = await res.json();
-      if (data.success) {
-        setRelatedLocations(
-          (data.locations || [])
-            .filter((l: Location) => l.id !== currentLocationId)
-            .slice(0, 3),
-        );
+    const controller = new AbortController();
+    const signal = AbortSignal.any([
+      controller.signal,
+      AbortSignal.timeout(15_000),
+    ]);
+    setIsLoading(true);
+    setError(null);
+    setLocation(null);
+    setRelatedLocations([]);
+    setLightboxIndex(null);
+    void (async () => {
+      try {
+        const res = await fetchAPI(`/locations/${locationId}`, { signal });
+        if (res.status === 404) {
+          if (!signal.aborted) setError("missing");
+          return;
+        }
+        if (!res.ok) throw new Error("location_unavailable");
+        const data = await res.json();
+        if (!data.success || !data.location)
+          throw new Error("location_unavailable");
+        if (!signal.aborted) setLocation(data.location);
+      } catch {
+        if (!controller.signal.aborted) setError("failed");
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false);
       }
-    } catch (err) {
-      console.error("[LocationDetail] 获取相关地点失败:", err);
-    }
-  };
-
+    })();
+    void fetchAPI("/locations?limit=4", { signal })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!signal.aborted && data?.success)
+          setRelatedLocations(
+            (data.locations as Location[])
+              .filter((item) => item.id !== locationId)
+              .slice(0, 3),
+          );
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [locationId, attempt]);
 
   if (isLoading) return <LoadingSkeleton />;
-
-  if (error || !location) {
+  if (error || !location)
     return (
-      <main className="min-h-screen bg-stone-50 dark:bg-stone-950">
+      <main className="min-h-screen bg-background">
         <Navbar />
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="text-center">
-            <Mountain className="h-16 w-16 text-stone-200 dark:text-stone-700 mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-stone-700 dark:text-stone-300 mb-3">
-              {error || t("errors.locationNotFound")}
-            </h1>
-            <a
-              href="/locations"
-              className="text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium underline underline-offset-2 transition-colors"
+        <div className="mx-auto flex min-h-[70vh] max-w-lg flex-col items-center justify-center px-6 text-center">
+          <Mountain
+            aria-hidden="true"
+            className="mb-6 h-12 w-12 text-primary"
+          />
+          <h1 className="text-xl font-bold text-foreground">
+            {t(
+              error === "missing"
+                ? "errors.locationNotFound"
+                : "locationDetail.locationLoadFailed",
+            )}
+          </h1>
+          {error !== "missing" && (
+            <button
+              type="button"
+              onClick={() => setAttempt((value) => value + 1)}
+              className="mt-6 min-h-11 rounded-xl bg-primary px-5 text-foreground dark:text-primary-foreground"
             >
-              {t("common.back")}
-            </a>
-          </div>
+              {t("common.retry")}
+            </button>
+          )}
+          <a
+            href="/locations"
+            className="mt-4 inline-flex min-h-11 items-center rounded-lg text-accent-foreground underline underline-offset-4"
+          >
+            {t("common.back")}
+          </a>
         </div>
         <Footer />
       </main>
     );
-  }
 
   // 构建画廊图片列表
   const galleryImages: string[] = [];
@@ -636,116 +471,128 @@ export function LocationDetailClient({
   }
 
   return (
-    <main className="min-h-screen bg-stone-50 dark:bg-stone-950 pb-24 lg:pb-0">
+    <main className="location-journal min-h-screen bg-background pb-[calc(8rem+env(safe-area-inset-bottom))] lg:pb-0">
       <Navbar />
-
-      {/* 相纸卡片封面；标题保留在正常文档流中，避免多行文字与画廊重叠。 */}
-      <div ref={heroRef} className="relative overflow-hidden bg-background pt-32">
-        <HeroActions location={location} isAdmin={isAdmin} />
-
-        <LocationCoverGallery key={location.id} images={galleryImages} name={location.name} onOpen={setLightboxIndex} />
-
-        <div className="relative px-4 pb-7 pt-5 sm:px-8">
-          <div className="max-w-7xl mx-auto">
-            {/* 面包屑 */}
+      <header className="mx-auto max-w-6xl px-4 pt-24 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-4">
+          <a
+            href="/locations"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ChevronLeft aria-hidden="true" className="h-4 w-4" />
+            {t("nav.locations")}
+          </a>
+          {isAdmin && (
             <a
-              href="/locations"
-              className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs mb-3 transition-colors duration-150 font-medium"
+              href={`/admin/locations/${location.id}/edit`}
+              aria-label={t("admin.editLocation")}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-card text-foreground shadow-card hover:bg-muted"
             >
-              <MapPin className="h-3 w-3" />
-              {t("nav.locations")}
-              <ChevronRight className="h-3 w-3 opacity-60" />
+              <Pencil aria-hidden="true" className="h-4 w-4" />
             </a>
-
-            {/* 徽章行 */}
-            <div className="flex items-center gap-2 mb-2.5 flex-wrap">
-              {(location.extra.hiking?.bestSeasons?.length ?? 0) > 0 && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border">
-                  <Sparkles className="w-3 h-3" />
-                  {getSeasonLabel(t)[
-                    location.extra.hiking!.bestSeasons![0] as keyof ReturnType<
-                      typeof getSeasonLabel
-                    >
-                  ] ?? location.extra.hiking!.bestSeasons![0]}
-                </span>
-              )}
-            </div>
-
-            {/* 标题 */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground leading-tight mb-1.5">
+          )}
+        </div>
+        <div className="grid min-w-0 items-center gap-6 pb-10 pt-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-12 lg:pb-14">
+          <div className="min-w-0 rounded-3xl bg-warm-subtle pb-4">
+            <LocationCoverGallery
+              key={location.id}
+              images={galleryImages}
+              name={location.name}
+              onOpen={setLightboxIndex}
+            />
+          </div>
+          <div className="min-w-0 py-3">
+            <p className="mb-5 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground">
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 shrink-0 rounded-full bg-warm"
+              />
+              {t("locationDetail.journal")}
+            </p>
+            <h1 className="break-words text-4xl sm:text-5xl font-black text-foreground">
               {location.name}
             </h1>
             {location.subtitle && (
-              <p className="text-muted-foreground text-sm sm:text-base font-medium mb-1">
+              <p className="mt-4 break-words text-lg leading-8 text-muted-foreground">
                 {location.subtitle}
               </p>
             )}
-
-
+            <div className="mt-6 flex flex-wrap gap-2">
+              {location.supportedActivityTypes.map((activity) => (
+                <span
+                  key={activity}
+                  className="rounded-lg bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground"
+                >
+                  {t(`enums.locationType.${activity}`)}
+                </span>
+              ))}
+              {location.tags?.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="rounded-lg bg-muted px-3 py-1.5 text-sm text-muted-foreground"
+                >
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+            {location.region && (
+              <p className="mt-6 flex items-start gap-2 text-sm text-muted-foreground">
+                <MapPin aria-hidden="true" className="h-4 w-4 shrink-0" />
+                <span className="break-words">{location.region.name}</span>
+              </p>
+            )}
           </div>
         </div>
-      </div>
-
-      {/* ================================================================
-          主内容区
-          ================================================================ */}
+      </header>
       <div
         data-testid="location-detail-content"
-        className="mx-auto max-w-6xl px-4 pb-12 pt-8 sm:px-6 sm:pb-14 sm:pt-10 lg:px-8 lg:pb-16 lg:pt-12"
+        className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8"
       >
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-10">
-          {/* 左/中栏 */}
+        <div className="grid min-w-0 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-16">
           <div
             data-testid="location-detail-primary-column"
-            className="flex flex-col gap-8"
+            className="min-w-0 space-y-12"
           >
             <LocationIntroCard
+              key={location.id}
               location={location}
               address={location.address ?? undefined}
-              showGallery={false}
-              showTravelMeta
             />
-            <TeamListSection teams={teams} locationId={location.id} />
+            <TeamListSection key={location.id} locationId={location.id} />
           </div>
-
-          {/* 右栏 sticky */}
-          <div>
-            <div
-              data-testid="location-detail-sidebar"
-              className="relative z-10 space-y-5 lg:sticky lg:top-24"
-            >
-              <div className="hidden space-y-4 lg:block">
-                <ActionCard location={location} teams={teams} />
-              </div>
-              <div className="hidden lg:block">
-                <RelatedLocations locations={relatedLocations} />
-              </div>
-            </div>
-          </div>
+          <aside
+            data-testid="location-detail-sidebar"
+            className="hidden min-w-0 space-y-8 lg:sticky lg:top-24 lg:block"
+          >
+            <ActionCard location={location} />
+            <RelatedLocations locations={relatedLocations} />
+          </aside>
         </div>
       </div>
-
-      {/* 移动端浮动操作栏 */}
-      <MobileFloatingCTA location={location} heroRef={heroRef} />
+      <MobileFloatingCTA location={location} />
 
       {/* Lightbox */}
-      <AnimatePresence>
-      {lightboxIndex !== null && (
-        <Lightbox
-          images={galleryImages}
-          index={lightboxIndex}
-          onSelect={setLightboxIndex}
-          onClose={closeLightbox}
-          onPrev={() =>
-            setLightboxIndex(
-              (i) => i === null ? null : (i - 1 + galleryImages.length) % galleryImages.length,
-            )
-          }
-          onNext={() =>
-            setLightboxIndex((i) => i === null ? null : (i + 1) % galleryImages.length)
-          }
-        />
-      )}
+      <AnimatePresence initial={false}>
+        {lightboxIndex !== null && (
+          <Lightbox
+            images={galleryImages}
+            index={lightboxIndex}
+            onSelect={setLightboxIndex}
+            onClose={closeLightbox}
+            onPrev={() =>
+              setLightboxIndex((i) =>
+                i === null
+                  ? null
+                  : (i - 1 + galleryImages.length) % galleryImages.length,
+              )
+            }
+            onNext={() =>
+              setLightboxIndex((i) =>
+                i === null ? null : (i + 1) % galleryImages.length,
+              )
+            }
+          />
+        )}
       </AnimatePresence>
 
       <Footer />

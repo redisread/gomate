@@ -16,5 +16,15 @@
   "unfavorite": "Unfavorite",
   "addressAndRelated": "Address & Recommendations",
   "photoGallery": "Location photos",
-  "imageLoadFailed": "Image could not load. Please retry."
+  "imageLoadFailed": "Image could not load. Please retry.",
+  "journal": "A little inspiration for your next escape",
+  "together": "NEXT UP · GOOD COMPANY",
+  "actionDescription": "Find your people and turn a place you love into a plan.",
+  "emptyTeamsTitle": "Every good trip starts with someone",
+  "teamsLoadFailed": "Teams could not load. Please try again.",
+  "locationLoadFailed": "This place could not load. Please try again.",
+  "address": "Getting there",
+  "seasons": "When to go",
+  "copied": "Address copied",
+  "copyFailed": "Could not copy. Select the address text to copy it."
 }
