@@ -19,7 +19,7 @@ export function ToastDisplay({
     <div
       role="status"
       className={cn(
-        "fixed bottom-[calc(var(--team-action-height,0px)+1rem)] left-1/2 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 z-[60] motion-reduce:animate-none",
+        "fixed bottom-[calc(max(var(--team-action-height,0px),env(safe-area-inset-bottom))+1rem)] left-1/2 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 z-[60] motion-reduce:animate-none",
         exiting
           ? "animate-[fade-out_0.2s_ease-in_both]"
           : "animate-[fade-up_0.25s_ease_both]",

@@ -226,3 +226,32 @@ test("mobile keyboard focus remains above the fixed action bar", async ({
       .toBe(true);
   }
 });
+
+test("join success toast clears the home indicator after the mobile bar disappears", async ({
+  page,
+  context,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Emulation.setSafeAreaInsetsOverride", {
+    insets: { bottom: 34 },
+  });
+  await setup(page, "member");
+  await page.route("**/api/teams/invitation-layout/my-status", (route) =>
+    route.fulfill({ json: { success: true, status: null } }),
+  );
+  await page.route("**/api/teams/invitation-layout/join", (route) =>
+    route.fulfill({ json: { success: true } }),
+  );
+  await page.goto("/teams/invitation-layout");
+  const bar = page.getByTestId("team-mobile-action-bar");
+  await expect(bar).toHaveCSS("padding-bottom", "34px");
+  await bar.getByTestId("team-join-button").click();
+  await expect(bar).toHaveCount(0);
+  const toast = page.getByRole("status");
+  await expect(toast).toBeVisible();
+  expect(
+    await toast.evaluate((el) => parseFloat(getComputedStyle(el).bottom)),
+  ).toBeGreaterThanOrEqual(50);
+});
