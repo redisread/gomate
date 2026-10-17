@@ -1,0 +1,29 @@
+.map-atlas-surface {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(
+      circle,
+      color-mix(in oklab, var(--foreground) 16%, transparent) 0.75px,
+      transparent 1px
+    ),
+    radial-gradient(
+      ellipse at 60% 70%,
+      color-mix(in oklab, var(--primary) 9%, transparent),
+      transparent 65%
+    );
+  background-size:
+    16px 16px,
+    100% 100%;
+}
+
+.map-atlas-province[aria-pressed="true"],
+.map-atlas-province:focus-visible {
+  fill: color-mix(in oklab, var(--primary) 20%, var(--card));
+}
+
+@media (hover: hover) {
+  .map-atlas-province:hover {
+    fill: color-mix(in oklab, var(--primary) 32%, var(--card));
+    stroke: var(--primary);
+  }
+}

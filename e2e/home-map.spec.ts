@@ -66,6 +66,7 @@ async function mockMap(page: import("@playwright/test").Page) {
           {
             id: "map-location-1",
             name: "梧桐山",
+            coverImageUrl: "/map-cover-first.svg",
             region,
             latitude: 22.6,
             longitude: 114.2,
@@ -73,6 +74,7 @@ async function mockMap(page: import("@playwright/test").Page) {
           {
             id: "map-location-2",
             name: "塘朗山",
+            coverImageUrl: "/map-cover-second.svg",
             region,
             latitude: 22.7,
             longitude: 114.0,
@@ -91,7 +93,54 @@ async function mockMap(page: import("@playwright/test").Page) {
         },
       }),
   );
+  await page.route("**/map-cover-*.svg", (route) =>
+    route.fulfill({
+      contentType: "image/svg+xml",
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="192" height="128"><rect width="192" height="128" fill="darkseagreen"/><path d="M0 128L80 20L160 128M90 128L150 50L192 128" fill="seagreen"/></svg>',
+    }),
+  );
 }
+
+test("selected cover loads on demand and a failed replacement keeps the preview stable", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await mockMap(page);
+  const covers: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/map-cover-")) covers.push(request.url());
+  });
+  await page.route("**/map-cover-second.svg", (route) =>
+    route.fulfill({ status: 404 }),
+  );
+  await page.goto("/?mapProvince=广东省#map");
+  const map = page.getByTestId("home-map-section");
+  const preview = map.getByTestId("map-preview");
+  await expect(
+    map.getByRole("button", { name: "梧桐山", exact: true }),
+  ).toBeVisible();
+  expect(covers).toEqual([]);
+  await map.getByRole("button", { name: "梧桐山", exact: true }).press("Enter");
+  await preview.scrollIntoViewIfNeeded();
+  const cover = preview.locator("img");
+  await expect(cover).toHaveCSS("opacity", "1");
+  expect(
+    await cover.evaluate((image: HTMLImageElement) => image.naturalWidth),
+  ).toBeGreaterThan(0);
+  const height = (await preview.boundingBox())!.height;
+  await map.getByRole("button", { name: "塘朗山", exact: true }).press("Enter");
+  await expect(preview.getByRole("link")).toHaveAttribute(
+    "href",
+    "/locations/map-location-2",
+  );
+  await expect(cover).toHaveCount(0);
+  expect((await preview.boundingBox())!.height).toBeCloseTo(height, 0);
+  await map.getByRole("button", { name: "梧桐山", exact: true }).press("Enter");
+  await expect(cover).toHaveAttribute("src", "/map-cover-first.svg");
+  await expect(cover).toHaveCSS("opacity", "1");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(cover).toHaveCSS("transition-property", "none");
+});
 
 async function captureMap(
   page: import("@playwright/test").Page,
@@ -233,13 +282,16 @@ test("map failure is retryable and reduced motion updates without animation", as
   // Zero-duration Motion effects finish at the next browser animation frame.
   await page.evaluate(() => new Promise(requestAnimationFrame));
   expect(
-    await map.evaluate(
-      (element) =>
-        element
-          .getAnimations({ subtree: true })
-          .filter((animation) => animation.playState === "running").length,
+    await map.evaluate((element) =>
+      element
+        .getAnimations({ subtree: true })
+        .filter((animation) => animation.playState === "running")
+        .map((animation) => ({
+          target: (animation.effect as KeyframeEffect)?.target?.outerHTML,
+          frames: (animation.effect as KeyframeEffect)?.getKeyframes(),
+        })),
     ),
-  ).toBe(0);
+  ).toEqual([]);
   await captureMap(
     page,
     map,
@@ -247,9 +299,7 @@ test("map failure is retryable and reduced motion updates without animation", as
   );
 });
 
-for (const [locale, linkName] of [
-  ["en", "View location"],
-]) {
+for (const [locale, linkName] of [["en", "View location"]]) {
   test(`map preview supports ${locale} at 320px`, async ({ page, baseURL }) => {
     await page.setViewportSize({ width: 320, height: 800 });
     await page
@@ -329,7 +379,9 @@ test("camera and fixed-size markers stay aligned through an interrupted zoom", a
   ).toBeFocused();
 });
 
-test("enabling reduced motion during a preview transition settles readable text", async ({ page }) => {
+test("enabling reduced motion during a preview transition settles readable text", async ({
+  page,
+}) => {
   await mockMap(page);
   await page.goto("/?mapProvince=广东省#map");
   const map = page.getByTestId("home-map-section");
@@ -341,4 +393,32 @@ test("enabling reduced motion during a preview transition settles readable text"
   await map.getByRole("button", { name: "塘朗山", exact: true }).press("Enter");
   await expect(text).toHaveCSS("opacity", "1");
   await expect(text).toHaveCSS("transform", "none");
+});
+
+test("enabling reduced motion finishes the active province outline without replaying it", async ({
+  page,
+}) => {
+  await mockMap(page);
+  await page.goto("/#map");
+  const map = page.getByTestId("home-map-section");
+  await map.getByRole("button", { name: "广东省", exact: true }).press("Enter");
+  const outline = map.locator(
+    '[data-testid="map-content"] > path[fill="none"]',
+  );
+  await expect(outline).toBeAttached();
+  const progress = () =>
+    outline.evaluate((path) =>
+      parseFloat(path.getAttribute("stroke-dasharray")!),
+    );
+  expect(await progress()).toBeLessThan(1);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  // Read after React has committed the media update, rather than waiting out the animation.
+  await page.evaluate(async () => {
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+  });
+  expect(await progress()).toBe(1);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  expect(await progress()).toBe(1);
 });
