@@ -14,5 +14,8 @@
   "imageAlt": "画像 {index}",
   "favorite": "お気に入り",
   "unfavorite": "お気に入りを解除",
-  "addressAndRelated": "住所とおすすめ"
+  "addressAndRelated": "住所とおすすめ",
+  "photoGallery": "スポットの写真",
+  "expandPhotos": "写真を展開",
+  "collapsePhotos": "写真を折りたたむ"
 }

@@ -14,7 +14,6 @@ import {
   Pencil,
   Flame,
   X,
-  ZoomIn,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { TranslationKey } from "@/i18n";
@@ -22,7 +21,9 @@ import { fetchAPI } from "@/lib/api";
 import type { Location, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/layout/navbar";
+import { Modal } from "@/components/ui/modal";
 import { Footer } from "@/components/layout/footer";
+import { LocationCoverGallery } from "@/components/features/location-detail/location-cover-gallery";
 import { LocationIntroCard } from "@/components/features/location-detail/location-intro-card";
 import { TeamListSection } from "@/components/features/location-detail/team-list-section";
 import { LocationStoryRecapFeed } from "@/components/features/discover/story-recap-feed";
@@ -108,13 +109,13 @@ interface LightboxProps {
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
+  onSelect: (index: number) => void;
 }
 
-function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
+function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: LightboxProps) {
   const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
   React.useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
       if (e.key === "ArrowLeft") onPrev();
       if (e.key === "ArrowRight") onNext();
     };
@@ -123,14 +124,20 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
   }, [onClose, onPrev, onNext]);
 
   return (
-    <div
-      className="fixed inset-0 z-[100] bg-black/92 backdrop-blur-md flex items-center justify-center"
-      onClick={onClose}
+    <Modal
+      open
+      onClose={onClose}
+      labelledBy="location-lightbox-title"
+      lockBodyScroll
+      overlayClassName="z-[100] flex items-center justify-center"
+      backdropClassName="bg-black/92 backdrop-blur-md"
+      panelClassName="pointer-events-none flex h-full w-full items-center justify-center [&_button]:pointer-events-auto [&_img]:pointer-events-auto"
     >
+      <h2 id="location-lightbox-title" className="sr-only">{t("locationDetail.photoGallery")}</h2>
       {/* 关闭按钮 */}
       <button
         onClick={onClose}
-        className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors z-10"
+        className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors z-10"
         aria-label={t("locationDetail.closeImage")}
       >
         <X className="h-5 w-5 text-white" />
@@ -174,19 +181,17 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
       {/* 底部缩略图条 */}
       {images.length > 1 && (
         <div
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-auto flex max-w-[90vw] gap-2 overflow-x-auto p-2"
           onClick={(e) => e.stopPropagation()}
         >
-          {images.slice(0, 8).map((img, i) => (
+          {images.map((img, i) => (
             <button
               key={i}
-              onClick={() => {
-                const diff = i - index;
-                if (diff > 0) { for (let j = 0; j < diff; j++) onNext(); }
-                else { for (let j = 0; j < -diff; j++) onPrev(); }
-              }}
+              onClick={() => onSelect(i)}
+              aria-label={t("locationDetail.switchImage", { index: String(i + 1) })}
+              aria-current={i === index ? "true" : undefined}
               className={cn(
-                "w-10 h-10 rounded-lg overflow-hidden border-2 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
+                "w-11 h-11 shrink-0 rounded-lg overflow-hidden border-2 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
                 i === index ? "border-white scale-110" : "border-white/30 hover:border-white/60"
               )}
             >
@@ -195,7 +200,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext }: LightboxProps) {
           ))}
         </div>
       )}
-    </div>
+    </Modal>
   );
 }
 
@@ -506,31 +511,9 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   const [userId, setUserId] = React.useState<string | null>(null);
   const [showShareModal, setShowShareModal] = React.useState(false);
 
-  // 图片画廊
-  const [activeImageIndex, setActiveImageIndex] = React.useState(0);
-  const [imageVisible, setImageVisible] = React.useState(true);
-  const [showArrows, setShowArrows] = React.useState(false);
-  // Lightbox
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
   const resolvedLocationId = location?.id;
-
-  // 视差
-  const [parallaxOffset, setParallaxOffset] = React.useState(0);
   const heroRef = React.useRef<HTMLDivElement>(null);
-
-  // 视差滚动
-  React.useEffect(() => {
-    const handleScroll = () => {
-      if (!heroRef.current) return;
-      const scrollY = window.scrollY;
-      const heroBottom = heroRef.current.getBoundingClientRect().bottom + scrollY;
-      if (scrollY < heroBottom) {
-        setParallaxOffset(scrollY * 0.28);
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // 获取用户会话
   React.useEffect(() => {
@@ -620,21 +603,6 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
     }
   };
 
-  /** 图片切换（淡入淡出）*/
-  const switchImage = (index: number) => {
-    if (index === activeImageIndex) return;
-    setImageVisible(false);
-    setTimeout(() => {
-      setActiveImageIndex(index);
-      setImageVisible(true);
-    }, 180);
-  };
-
-  const prevImage = (images: string[]) =>
-    switchImage((activeImageIndex - 1 + images.length) % images.length);
-  const nextImage = (images: string[]) =>
-    switchImage((activeImageIndex + 1) % images.length);
-
   /** 收藏 */
   const handleFavorite = async () => {
     if (!userId) { window.location.href = "/login"; return; }
@@ -695,53 +663,20 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
   if (location.coverImageUrl) galleryImages.push(location.coverImageUrl);
   if (location.images) {
     for (const img of location.images) {
-      if (img && img !== location.coverImageUrl) galleryImages.push(img);
+      if (img && !galleryImages.includes(img)) galleryImages.push(img);
     }
   }
-  const hasMultiple = galleryImages.length > 1;
-  const currentImage = galleryImages[activeImageIndex] ?? galleryImages[0];
 
   return (
     <main className="min-h-screen bg-stone-50 dark:bg-stone-950 pb-24 lg:pb-0">
       <Navbar />
 
-      {/* ================================================================
-          Hero 封面区域
-          - 图片负责目的地氛围，核心路线信息前移到首屏下方
-          - 右上角保留编辑/分享/收藏
-          - 左右箭头：hover 时滑入
-          - 放大查看按钮 → Lightbox
-          ================================================================ */}
-      <div
-        ref={heroRef}
-        className="relative h-[390px] sm:h-[460px] lg:h-[520px] overflow-hidden bg-stone-900"
-        onMouseEnter={() => setShowArrows(true)}
-        onMouseLeave={() => setShowArrows(false)}
-      >
-        {/* 背景图（视差 + 淡入淡出）*/}
-        {currentImage ? (
-          <img
-            key={currentImage}
-            src={currentImage}
-            alt={location.name}
-            className="absolute inset-0 h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
-            style={{
-              transform: `translateY(${parallaxOffset}px) scale(1.1)`,
-              opacity: imageVisible ? 1 : 0,
-              transition: "opacity 0.18s ease",
-              transformOrigin: "center top",
-            }}
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-stone-800 to-stone-900">
-            <Mountain className="h-28 w-28 text-stone-600" />
-          </div>
+      {/* 相纸卡片封面；标题保留在正常文档流中，避免多行文字与画廊重叠。 */}
+      <div ref={heroRef} className="relative overflow-hidden bg-stone-900 pt-32">
+        {galleryImages[0] && (
+          <img src={galleryImages[0]} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-2xl" />
         )}
-
-        {/* 渐变遮罩 */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-black/15" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-transparent" />
-
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/40 to-transparent" />
         <HeroActions
           location={location}
           isAdmin={isAdmin}
@@ -751,52 +686,9 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
           onFavorite={handleFavorite}
         />
 
-        {/* 放大查看按钮（hover 时显示）*/}
-        {galleryImages.length > 0 && (
-          <button
-            onClick={() => setLightboxIndex(activeImageIndex)}
-            className={cn(
-              "absolute bottom-6 right-5 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md text-white text-xs font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 border border-white/15",
-              showArrows ? "opacity-100" : "opacity-0 pointer-events-none"
-            )}
-          >
-            <ZoomIn className="h-3.5 w-3.5" />
-            {galleryImages.length > 1 ? `${galleryImages.length} ${t("locationDetail.imagesCount")}` : t("locationDetail.viewLargeImage")}
-          </button>
-        )}
+        <LocationCoverGallery key={location.id} images={galleryImages} name={location.name} onOpen={setLightboxIndex} />
 
-        {/* 左右切换箭头 */}
-        {hasMultiple && (
-          <>
-            <button
-              onClick={() => prevImage(galleryImages)}
-              className={cn(
-                "absolute left-4 top-1/2 -translate-y-1/2 z-10",
-                "w-11 h-11 rounded-full bg-black/35 hover:bg-black/55 backdrop-blur-md",
-                "flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 border border-white/10",
-                showArrows ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-3 pointer-events-none"
-              )}
-              aria-label={t("locationDetail.prevImage")}
-            >
-              <ChevronLeft className="h-5 w-5 text-white" />
-            </button>
-            <button
-              onClick={() => nextImage(galleryImages)}
-              className={cn(
-                "absolute right-4 top-1/2 -translate-y-1/2 z-10",
-                "w-11 h-11 rounded-full bg-black/35 hover:bg-black/55 backdrop-blur-md",
-                "flex items-center justify-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 border border-white/10",
-                showArrows ? "opacity-100 translate-x-0" : "opacity-0 translate-x-3 pointer-events-none"
-              )}
-              aria-label={t("locationDetail.nextImage")}
-            >
-              <ChevronRight className="h-5 w-5 text-white" />
-            </button>
-          </>
-        )}
-
-        {/* 底部内容区 */}
-        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-7">
+        <div className="relative px-4 pb-7 pt-5 sm:px-8">
           <div className="max-w-7xl mx-auto">
 
             {/* 面包屑 */}
@@ -827,27 +719,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
               <p className="text-white/75 text-sm sm:text-base font-medium mb-1">{location.subtitle}</p>
             )}
 
-            {/* 圆点指示器 */}
-            {hasMultiple && (
-              <div className="flex items-center gap-1.5">
-                {galleryImages.slice(0, 8).map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => switchImage(idx)}
-                    className={cn(
-                      "rounded-full transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200",
-                      idx === activeImageIndex
-                        ? "w-6 h-2 bg-white shadow-sm"
-                        : "w-2 h-2 bg-white/35 hover:bg-white/60"
-                    )}
-                    aria-label={t("locationDetail.switchImage", { index: String(idx + 1) })}
-                  />
-                ))}
-                {galleryImages.length > 8 && (
-                  <span className="text-white/50 text-3xs ml-0.5">+{galleryImages.length - 8}</span>
-                )}
-              </div>
-            )}
+
           </div>
         </div>
       </div>
@@ -892,6 +764,7 @@ export function LocationDetailClient({ locationId }: LocationDetailClientProps) 
         <Lightbox
           images={galleryImages}
           index={lightboxIndex}
+          onSelect={setLightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onPrev={() => setLightboxIndex((i) => (i! - 1 + galleryImages.length) % galleryImages.length)}
           onNext={() => setLightboxIndex((i) => (i! + 1) % galleryImages.length)}

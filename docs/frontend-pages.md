@@ -65,6 +65,7 @@
 - 详情路由只使用全局 Location ID，slug 不参与路由解析。
 - 页面消费共享 Location DTO：`region`、`supportedActivityTypes`、`coverImageUrl`、`images` 与结构化 `extra`。
 - 地点详情、列表、队伍卡片和分享海报不展示徒步攻略或路线参数；最佳季节继续展示。
+- 地点详情封面使用相纸卡片：单张居中、多张堆叠；鼠标悬停或展开按钮展开完整照片带，移动端横滑浏览，点击卡片查看大图。支持键盘展开/收起、Escape 收起和 reduced-motion；图片去重，空相册显示占位。
   后台不再录入攻略，创建队伍时由发起人填写活动时长，不再按地点参数推荐。
 - 地点 Story 使用 `/api/stories?locationId=<id>`；收藏使用 `/api/favorites/locations`。
 

@@ -1,0 +1,67 @@
+.location-cover-track {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: center;
+  min-height: 280px;
+  padding: 32px 24px;
+}
+.location-cover-card {
+  grid-area: 1 / 1;
+  justify-self: center;
+  width: min(72%, 360px);
+  padding: 8px 8px 12px;
+  border-radius: 16px;
+  transform: translateX(calc(var(--card-offset) * 10px)) rotate(var(--card-angle));
+  transition: transform 450ms cubic-bezier(.22, 1, .36, 1), box-shadow 250ms ease;
+  cursor: zoom-in;
+}
+.location-cover-card img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--muted);
+}
+.location-cover-gallery[data-expanded="false"] .location-cover-card:nth-child(n + 6) {
+  visibility: hidden;
+}
+.location-cover-gallery[data-expanded="false"] .location-cover-card:not(:first-child) {
+  pointer-events: none;
+}
+.location-cover-gallery[data-single="true"] .location-cover-card {
+  width: min(90%, 520px);
+  transform: rotate(-2deg);
+}
+.location-cover-gallery[data-expanded="true"] .location-cover-track {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: min(76%, 300px);
+  justify-content: safe center;
+  gap: 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 24px;
+  scrollbar-width: thin;
+}
+.location-cover-gallery[data-expanded="true"] .location-cover-card {
+  grid-area: auto;
+  width: 100%;
+  transform: rotate(0);
+  scroll-snap-align: center;
+}
+.location-cover-empty { width: 100%; height: 220px; }
+@media (min-width: 640px) {
+  .location-cover-track { min-height: 360px; padding-block: 40px; }
+  .location-cover-gallery[data-expanded="true"] .location-cover-track { grid-auto-columns: min(42%, 300px); }
+}
+@media (hover: hover) and (pointer: fine) {
+  .location-cover-gallery[data-expanded="true"] .location-cover-card:hover {
+    transform: translateY(-8px) rotate(-1deg);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .location-cover-card { transition: none; }
+  .location-cover-gallery[data-expanded="true"] .location-cover-card:hover { transform: none; }
+}

@@ -14,5 +14,8 @@
   "imageAlt": "Image {index}",
   "favorite": "Favorite",
   "unfavorite": "Unfavorite",
-  "addressAndRelated": "Address & Recommendations"
+  "addressAndRelated": "Address & Recommendations",
+  "photoGallery": "Location photos",
+  "expandPhotos": "Expand photos",
+  "collapsePhotos": "Collapse photos"
 }
