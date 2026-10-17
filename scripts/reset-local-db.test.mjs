@@ -9,26 +9,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WRANGLER = path.join(ROOT, "node_modules", ".bin", "wrangler");
 const EXPECTED_TABLES = [
-  "accounts",
-  "conversations",
-  "d1_migrations",
-  "location_tags",
-  "locations",
-  "messages",
-  "region",
-  "sessions",
-  "stories",
-  "story_likes",
-  "story_tags",
-  "tags",
-  "team_join_requests",
-  "team_members",
-  "team_tags",
-  "teams",
-  "user_location_favorites",
-  "user_story_favorites",
-  "users",
-  "verifications",
+  "accounts", "d1_migrations", "location_tags", "locations", "region",
+  "sessions", "tags", "team_members", "team_tags", "teams", "users", "verifications",
 ];
 
 function run(command, args, options = {}) {
