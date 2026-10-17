@@ -13,7 +13,11 @@ import { APIErrors, type APIError } from "./api-errors";
 import { normalizeValidationIssues } from "./validation-issues";
 import type { Env } from "./auth";
 import { getActiveSession } from "./active-session";
-import { resolveAdminAccess, type AdminIdentity } from "./admin-access";
+import {
+  requireAdmin,
+  AdminAccessError,
+  type AdminIdentity,
+} from "./admin-access";
 
 export { createRoute, z } from "@hono/zod-openapi";
 export type { RouteHandler, RouteConfig } from "@hono/zod-openapi";
@@ -133,12 +137,14 @@ export function adminMiddleware(
   forbiddenMessage = "Administrator access required",
 ): MiddlewareHandler<ApiEnv> {
   return async (c, next) => {
-    const access = await resolveAdminAccess(c.env, c.req.raw.headers);
-    if (access.kind === "unauthenticated")
-      return c.json(APIErrors.unauthorized(unauthenticatedMessage), 401);
-    if (access.kind === "forbidden")
-      return c.json(APIErrors.forbidden(forbiddenMessage), 403);
-    c.set("admin", access.admin);
+    try {
+      c.set("admin", await requireAdmin(c));
+    } catch (error) {
+      if (!(error instanceof AdminAccessError)) throw error;
+      return error.kind === "unauthenticated"
+        ? c.json(APIErrors.unauthorized(unauthenticatedMessage), 401)
+        : c.json(APIErrors.forbidden(forbiddenMessage), 403);
+    }
     await next();
   };
 }

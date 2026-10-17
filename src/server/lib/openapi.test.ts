@@ -141,10 +141,13 @@ describe("OpenAPI request contract boundary", () => {
       },
       responses: {
         200: jsonResponse(z.object({ tags: z.array(z.string()) }), "Tags"),
+        ...errorResponses(400),
       },
     });
-    nested.openapi(route, (c) =>
-      c.json({ tags: c.req.valid("query").tags }, 200),
+    nested.openapi(
+      route,
+      (c) => c.json({ tags: c.req.valid("query").tags }, 200),
+      validationHook("Invalid tags"),
     );
     const parent = createApiApp();
     const root = createApiApp();
