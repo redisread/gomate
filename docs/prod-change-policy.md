@@ -101,7 +101,7 @@ Workers Builds 的推荐配置为：
 
 1. 生产写路径异常时，优先把同一 Worker 恢复为 `WRITE_MODE=protected`，阻止新的业务写入。
 2. 仓库当前没有受支持的自动回滚入口。事故期间只进行只读核对并暂停进一步写入；任何恢复操作必须等待精确目标、schema 兼容性和数据恢复方案获得单独批准，并通过重建后的受保护流程执行。
-3. 旧 Worker、旧 route 和旧 D1 已不存在，不得重建 split deployment 作为回滚。
+3. 旧 Worker、旧 route 已退役；仍可见的旧 D1 不作为回滚目标，不得重建 split deployment 作为回滚。
 4. 数据问题使用 D1 Time Travel/备份或经单独批准的新 v3 数据库恢复；不得修改已应用 migration。
 5. R2/KV 恢复必须基于本次变更预先记录的对象/namespace 证据，不执行模糊前缀或全 bucket 删除。
 6. 任一自动验证、日志证据或人工审批缺失时停止，不用本机命令手工补写。
