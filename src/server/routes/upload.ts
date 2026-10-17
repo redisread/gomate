@@ -1,7 +1,4 @@
-const cookieSecurity: Record<string, string[]>[] = [
-  { cookieAuth: [] },
-  { secureCookieAuth: [] },
-];
+import { cookieSecurity } from "../lib/openapi";
 import { and, eq, isNull } from "drizzle-orm";
 import type { Context } from "hono";
 

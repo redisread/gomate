@@ -1,7 +1,4 @@
-const cookieSecurity: Record<string, string[]>[] = [
-  { cookieAuth: [] },
-  { secureCookieAuth: [] },
-];
+import { cookieSecurity } from "../lib/openapi";
 import { AdminUserSummarySchema, type AdminUserSummary } from "@/contracts";
 import type { AdminErrorReason } from "@/contracts/admin-i18n";
 import { and, desc, eq, like, lt, or, type SQL } from "drizzle-orm";

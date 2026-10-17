@@ -1,3 +1,7 @@
+import { getLocaleFromCookie, resolveLocale } from "../../i18n";
+import docsZh from "../../../public/locales/zh-CN/api-docs.json";
+import docsEn from "../../../public/locales/en/api-docs.json";
+import docsJa from "../../../public/locales/ja/api-docs.json";
 import type { OpenAPIHono } from "@hono/zod-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
 import type { Context } from "hono";
@@ -135,16 +139,20 @@ export function registerDocumentation(app: DocumentationApp) {
           description: "Cross-origin Cookie write rejected",
           content,
         };
-        operation.responses[503] ??= {
-          description: "Writes are protected (WRITE_MODE or Preview policy)",
-          content,
-          headers: {
-            "Retry-After": {
-              description: "Retry delay in seconds for WRITE_PROTECTED",
-              schema: { type: "string", example: "60" },
+        const protectedResponse = operation.responses[503];
+        if (!protectedResponse || !("$ref" in protectedResponse)) {
+          operation.responses[503] = {
+            ...(protectedResponse ?? { content }),
+            description: `${protectedResponse?.description ?? "Service unavailable"}; writes may be protected (WRITE_MODE or Preview policy)`,
+            headers: {
+              ...protectedResponse?.headers,
+              "Retry-After": {
+                description: "Retry delay in seconds for WRITE_PROTECTED",
+                schema: { type: "string", example: "60" },
+              },
             },
-          },
-        };
+          };
+        }
       }
     }
     const filtered = audienceDocument(generated, audience);
@@ -183,11 +191,20 @@ export function registerDocumentation(app: DocumentationApp) {
       c.header("Cache-Control", "private, no-store");
       const hostname = new URL(c.req.url).hostname;
       const local = ["localhost", "127.0.0.1", "[::1]"].includes(hostname);
+      const cookie = c.req.header("cookie") ?? "";
+      const language = c.req
+        .header("accept-language")
+        ?.split(",")[0]
+        ?.split("-")[0];
+      const locale = cookie.includes("gomate_locale=")
+        ? getLocaleFromCookie(cookie)
+        : resolveLocale(language);
+      const titles = { "zh-CN": docsZh, en: docsEn, ja: docsJa }[locale];
       return Scalar<{ Bindings: WorkerEnv }>({
         url: `/api${prefix}/openapi.json`,
         cdn: SCALAR_ASSET_PATH,
         pageTitle:
-          audience === "admin" ? "GoMate 管理员 API 文档" : "GoMate API 文档",
+          audience === "admin" ? titles.adminTitle : titles.publicTitle,
         hideTestRequestButton: !local,
         hideClientButton: true,
         persistAuth: false,
