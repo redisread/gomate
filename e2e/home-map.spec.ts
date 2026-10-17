@@ -230,6 +230,8 @@ test("map failure is retryable and reduced motion updates without animation", as
     "href",
     "/locations/map-location-1",
   );
+  // Zero-duration Motion effects finish at the next browser animation frame.
+  await page.evaluate(() => new Promise(requestAnimationFrame));
   expect(
     await map.evaluate(
       (element) =>
@@ -325,4 +327,18 @@ test("camera and fixed-size markers stay aligned through an interrupted zoom", a
   await expect(
     map.getByRole("button", { name: "广东省", exact: true }),
   ).toBeFocused();
+});
+
+test("enabling reduced motion during a preview transition settles readable text", async ({ page }) => {
+  await mockMap(page);
+  await page.goto("/?mapProvince=广东省#map");
+  const map = page.getByTestId("home-map-section");
+  await map.getByRole("button", { name: "梧桐山", exact: true }).press("Enter");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const text = map.locator('[aria-live="polite"]');
+  await expect(text).toHaveCSS("opacity", "1");
+  await expect(text).toHaveCSS("transform", "none");
+  await map.getByRole("button", { name: "塘朗山", exact: true }).press("Enter");
+  await expect(text).toHaveCSS("opacity", "1");
+  await expect(text).toHaveCSS("transform", "none");
 });

@@ -1,6 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { AnimatePresence, usePresence } from "motion/react";
+import { animate } from "motion/mini";
+import { useReducedMotion } from "@/hooks/use-reduced-motion";
+import { GalleryImage } from "./location-detail/gallery-image";
 import { BrandIcon } from "@/components/brand-icon";
 import {
   MapPin,
@@ -108,17 +112,30 @@ interface LightboxProps {
 
 function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: LightboxProps) {
   const { t } = useI18n(["locationDetail", "locations", "common", "errors", "admin", "nav", "enums"]);
+  const [present, remove] = usePresence();
+  const reduced = useReducedMotion();
+  const id = React.useId();
   React.useEffect(() => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    if (typeof element.animate !== "function") { if (!present) remove?.(); return; }
+    const animation = animate(element, { opacity: present ? [0, 1] : 0 }, { duration: reduced ? 0 : 0.16 });
+    if (!present) void Promise.resolve(animation).then(() => remove?.());
+    return () => animation.stop();
+  }, [id, present, reduced, remove]);
+  React.useEffect(() => {
+    if (!present) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") onPrev();
-      if (e.key === "ArrowRight") onNext();
+      if (e.key === "ArrowLeft") { e.preventDefault(); onPrev(); }
+      if (e.key === "ArrowRight") { e.preventDefault(); onNext(); }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [onClose, onPrev, onNext]);
+  }, [present, onClose, onPrev, onNext]);
 
   return (
     <Modal
+      id={id}
       open
       onClose={onClose}
       labelledBy="location-lightbox-title"
@@ -149,7 +166,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: Lightbox
             e.stopPropagation();
             onPrev();
           }}
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors"
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors"
           aria-label={t("locationDetail.prevImage")}
         >
           <ChevronLeft className="h-6 w-6 text-white" />
@@ -157,12 +174,9 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: Lightbox
       )}
 
       {/* 图片 */}
-      <img
-        src={images[index]}
-        alt={t("locationDetail.imageAlt", { index: String(index + 1) })}
-        className="max-h-[85vh] max-w-[90vw] rounded-xl object-contain shadow-2xl outline outline-1 -outline-offset-1 outline-white/10"
-        onClick={(e) => e.stopPropagation()}
-      />
+      <div className="relative h-[75dvh] w-[80vw]">
+        <GalleryImage src={images[index]} alt={t("locationDetail.imageAlt", { index: String(index + 1) })} contain />
+      </div>
 
       {/* 下一张 */}
       {images.length > 1 && (
@@ -171,7 +185,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: Lightbox
             e.stopPropagation();
             onNext();
           }}
-          className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors"
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors"
           aria-label={t("locationDetail.nextImage")}
         >
           <ChevronRight className="h-6 w-6 text-white" />
@@ -187,7 +201,7 @@ function Lightbox({ images, index, onClose, onPrev, onNext, onSelect }: Lightbox
           {images.map((img, i) => (
             <button
               key={i}
-              onClick={() => onSelect(i)}
+              onClick={() => { if (present) onSelect(i); }}
               aria-label={t("locationDetail.switchImage", { index: String(i + 1) })}
               aria-current={i === index ? "true" : undefined}
               className={cn(
@@ -522,6 +536,7 @@ export function LocationDetailClient({
   const [isAdmin, setIsAdmin] = React.useState(false);
 
   const [lightboxIndex, setLightboxIndex] = React.useState<number | null>(null);
+  const closeLightbox = React.useCallback(() => setLightboxIndex(null), []);
   const heroRef = React.useRef<HTMLDivElement>(null);
 
   // 获取用户会话
@@ -718,22 +733,24 @@ export function LocationDetailClient({
       <MobileFloatingCTA location={location} heroRef={heroRef} />
 
       {/* Lightbox */}
+      <AnimatePresence>
       {lightboxIndex !== null && (
         <Lightbox
           images={galleryImages}
           index={lightboxIndex}
           onSelect={setLightboxIndex}
-          onClose={() => setLightboxIndex(null)}
+          onClose={closeLightbox}
           onPrev={() =>
             setLightboxIndex(
-              (i) => (i! - 1 + galleryImages.length) % galleryImages.length,
+              (i) => i === null ? null : (i - 1 + galleryImages.length) % galleryImages.length,
             )
           }
           onNext={() =>
-            setLightboxIndex((i) => (i! + 1) % galleryImages.length)
+            setLightboxIndex((i) => i === null ? null : (i + 1) % galleryImages.length)
           }
         />
       )}
+      </AnimatePresence>
 
       <Footer />
     </main>

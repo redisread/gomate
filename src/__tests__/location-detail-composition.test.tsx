@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Location } from "@/lib/types";
 import { LocationDetailClient } from "@/components/features/location-detail-client";
@@ -49,6 +49,7 @@ function response(body: unknown): Response {
 
 describe("Location detail composition", () => {
   beforeEach(() => {
+    location.coverImageUrl = null;
     vi.stubGlobal("IntersectionObserver", class {
       observe() {}
       disconnect() {}
@@ -72,6 +73,20 @@ describe("Location detail composition", () => {
     cleanup();
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+  });
+
+  it("opens an accessible image dialog and restores focus on Escape", async () => {
+    location.coverImageUrl = "/cover.jpg";
+    render(<LocationDetailClient locationId="location-1" />);
+    const open = await screen.findByRole("button", { name: /locationDetail.viewLargeImage/ });
+    open.focus();
+    fireEvent.click(open);
+    expect(screen.getByRole("dialog")).toHaveAttribute("aria-modal", "true");
+    expect(screen.getByRole("button", { name: "locationDetail.closeImage" })).toHaveFocus();
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(open).toHaveFocus();
+    location.coverImageUrl = null;
   });
 
   it("renders the Location page without decision information or its map action", async () => {
