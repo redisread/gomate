@@ -1,13 +1,18 @@
+import { RegionSchema } from "@/contracts";
 import { and, asc, eq } from "drizzle-orm";
-import { Hono } from "hono";
-import { z } from "zod";
+import {
+  createApiApp,
+  createRoute,
+  errorResponses,
+  jsonResponse,
+  validationHook,
+  z,
+} from "../lib/openapi";
 
 import { createDb } from "../db";
 import { region } from "../db/schema";
 import { APIErrors } from "../lib/api-errors";
-import type { Env } from "../lib/auth";
 import { logger } from "../lib/logger";
-import { apiValidator } from "../lib/validation";
 
 const querySchema = z.object({
   countryCode: z
@@ -23,11 +28,25 @@ const querySchema = z.object({
   parentId: z.string().trim().min(1).max(128).optional(),
 });
 
-const regionsRoute = new Hono<{ Bindings: Env }>();
+const regionsRoute = createApiApp();
 
-regionsRoute.get(
-  "/",
-  apiValidator("query", querySchema, "Invalid region filters", "flatten"),
+regionsRoute.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    operationId: "regionsList",
+    tags: ["regions"],
+    summary: "List service regions",
+    "x-audience": "public",
+    request: { query: querySchema },
+    responses: {
+      200: jsonResponse(
+        z.object({ success: z.literal(true), regions: z.array(RegionSchema) }),
+        "Success",
+      ),
+      ...errorResponses(400, 500),
+    },
+  }),
   async (c) => {
     const parsed = c.req.valid("query");
     try {
@@ -62,7 +81,7 @@ regionsRoute.get(
         .where(and(...filters))
         .orderBy(asc(region.sortOrder), asc(region.id));
 
-      return c.json({ success: true as const, regions });
+      return c.json({ success: true as const, regions }, 200);
     } catch (error) {
       logger.error("regions_list_failed", {
         errorType: error instanceof Error ? error.name : "UnknownError",
@@ -70,6 +89,7 @@ regionsRoute.get(
       return c.json(APIErrors.internalError("Failed to list regions"), 500);
     }
   },
+  validationHook("Invalid region filters", "flatten"),
 );
 
 export { regionsRoute };

@@ -1,24 +1,42 @@
+import { TimestampSchema } from "@/contracts";
+import {
+  FavoriteLocationsResponseSchema,
+  FavoriteStoriesResponseSchema,
+  SuccessSchema,
+} from "@/contracts/public-responses";
 import { and, desc, eq, isNull, lt, or } from "drizzle-orm";
-import type { Context } from "hono";
-import { Hono } from "hono";
-import { z } from "zod";
+import type { Context, MiddlewareHandler } from "hono";
+import {
+  createApiApp,
+  createRoute,
+  errorResponses,
+  jsonResponse,
+  legacyJsonBody,
+  validationHook,
+  z,
+  type ApiEnv,
+} from "../lib/openapi";
 
 import { createDb } from "../db";
 import * as schema from "../db/schema";
-import { APIErrors } from "../lib/api-errors";
-import type { Env } from "../lib/auth";
 import { getActiveSession } from "../lib/active-session";
+import { APIErrors } from "../lib/api-errors";
 import {
   decodeContentCursor,
   encodeContentCursor,
 } from "../lib/content-cursor";
 import { mapDatabaseError } from "../lib/database-errors";
 import { logger } from "../lib/logger";
-import { validateRequest } from "../lib/validation";
 
-const favorites = new Hono<{ Bindings: Env }>();
+const favorites = createApiApp();
 
-type FavoritesContext = Context<{ Bindings: Env }>;
+type FavoritesContext = Context<ApiEnv>;
+const favoriteSession: MiddlewareHandler<ApiEnv> = async (c, next) => {
+  const session = await getSession(c).catch(() => null);
+  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+  c.set("session", session);
+  await next();
+};
 
 const idSchema = z.string().trim().min(1).max(200);
 const listQuery = z
@@ -81,16 +99,10 @@ function databaseErrorResponse(
   return c.json(mapped.body, mapped.status);
 }
 
-async function parseListQuery(c: FavoritesContext) {
-  const parsed = await validateRequest(
-    c,
-    "query",
-    listQuery,
-    "查询参数无效",
-    "flatten",
-  );
-  if (parsed instanceof Response) return { error: parsed } as const;
-
+function parseListQuery(
+  c: FavoritesContext,
+  parsed: z.output<typeof listQuery>,
+) {
   const cursor = parsed.cursor ? decodeContentCursor(parsed.cursor) : null;
   if (parsed.cursor && !cursor) {
     return {
@@ -100,90 +112,144 @@ async function parseListQuery(c: FavoritesContext) {
   return { data: { ...parsed, cursor } } as const;
 }
 
-favorites.get("/locations", async (c) => {
-  const session = await getSession(c).catch(() => null);
-  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+favorites.openapi(
+  createRoute({
+    method: "get",
+    path: "/locations",
+    operationId: "favoritesListlocations",
+    tags: ["favorites"],
+    summary: "List favorite locations",
+    "x-audience": "public",
+    security: [{ sessionCookie: [] }],
+    middleware: [favoriteSession],
+    request: { query: listQuery },
+    responses: {
+      200: jsonResponse(FavoriteLocationsResponseSchema, "Success"),
+      ...errorResponses(400, 401, 409, 422),
+    },
+  }),
+  async (c) => {
+    const session = c.get("session");
 
-  const parsed = await parseListQuery(c);
-  if ("error" in parsed) return parsed.error;
+    const parsed = parseListQuery(c, c.req.valid("query"));
+    if (parsed.error) return parsed.error;
 
-  try {
-    const db = createDb(c.env.DB);
-    const conditions = [
-      eq(schema.userLocationFavorites.userId, session.user.id),
-      eq(schema.locations.status, "published"),
-      eq(schema.region.level, "city"),
-      eq(schema.region.serviceEnabled, true),
-    ];
-    if (parsed.data.cursor) {
-      const cursorDate = new Date(parsed.data.cursor.t);
-      conditions.push(
-        or(
-          lt(schema.userLocationFavorites.createdAt, cursorDate),
-          and(
-            eq(schema.userLocationFavorites.createdAt, cursorDate),
-            lt(schema.userLocationFavorites.locationId, parsed.data.cursor.id),
-          ),
-        )!,
+    try {
+      const db = createDb(c.env.DB);
+      const conditions = [
+        eq(schema.userLocationFavorites.userId, session.user.id),
+        eq(schema.locations.status, "published"),
+        eq(schema.region.level, "city"),
+        eq(schema.region.serviceEnabled, true),
+      ];
+      if (parsed.data.cursor) {
+        const cursorDate = new Date(parsed.data.cursor.t);
+        conditions.push(
+          or(
+            lt(schema.userLocationFavorites.createdAt, cursorDate),
+            and(
+              eq(schema.userLocationFavorites.createdAt, cursorDate),
+              lt(
+                schema.userLocationFavorites.locationId,
+                parsed.data.cursor.id,
+              ),
+            ),
+          )!,
+        );
+      }
+
+      const rows = await db
+        .select({
+          createdAt: schema.userLocationFavorites.createdAt,
+          location: schema.locations,
+        })
+        .from(schema.userLocationFavorites)
+        .innerJoin(
+          schema.locations,
+          eq(schema.userLocationFavorites.locationId, schema.locations.id),
+        )
+        .innerJoin(
+          schema.region,
+          eq(schema.region.id, schema.locations.regionId),
+        )
+        .where(and(...conditions))
+        .orderBy(
+          desc(schema.userLocationFavorites.createdAt),
+          desc(schema.userLocationFavorites.locationId),
+        )
+        .limit(parsed.data.limit + 1);
+
+      const hasMore = rows.length > parsed.data.limit;
+      const items = rows.slice(0, parsed.data.limit);
+      const last = hasMore ? items.at(-1) : undefined;
+      c.header("Cache-Control", "no-store");
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            items: items.map((item) => ({
+              createdAt: item.createdAt.toISOString(),
+              location: {
+                ...item.location,
+                createdAt: item.location.createdAt.toISOString(),
+                updatedAt: item.location.updatedAt.toISOString(),
+              },
+            })),
+            nextCursor: last
+              ? encodeContentCursor({
+                  t: last.createdAt.getTime(),
+                  id: last.location.id,
+                })
+              : null,
+          },
+        },
+        200,
       );
+    } catch (error) {
+      return databaseErrorResponse(c, "listLocations", error);
     }
+  },
+  validationHook("查询参数无效", "flatten"),
+);
 
-    const rows = await db
-      .select({
-        createdAt: schema.userLocationFavorites.createdAt,
-        location: schema.locations,
-      })
-      .from(schema.userLocationFavorites)
-      .innerJoin(
-        schema.locations,
-        eq(schema.userLocationFavorites.locationId, schema.locations.id),
-      )
-      .innerJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
-      .where(and(...conditions))
-      .orderBy(
-        desc(schema.userLocationFavorites.createdAt),
-        desc(schema.userLocationFavorites.locationId),
-      )
-      .limit(parsed.data.limit + 1);
-
-    const hasMore = rows.length > parsed.data.limit;
-    const items = rows.slice(0, parsed.data.limit);
-    const last = hasMore ? items.at(-1) : undefined;
-    c.header("Cache-Control", "no-store");
-    return c.json({
-      success: true,
-      data: {
-        items,
-        nextCursor: last
-          ? encodeContentCursor({
-              t: last.createdAt.getTime(),
-              id: last.location.id,
-            })
-          : null,
+favorites.openapi(
+  createRoute({
+    method: "post",
+    path: "/locations",
+    operationId: "favoritesCreatelocations",
+    tags: ["favorites"],
+    summary: "Favorite a location",
+    "x-audience": "public",
+    security: [{ sessionCookie: [] }],
+    middleware: [favoriteSession, legacyJsonBody("输入验证失败")],
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: locationBody } },
       },
-    });
-  } catch (error) {
-    return databaseErrorResponse(c, "listLocations", error);
-  }
-});
+    },
+    responses: {
+      201: jsonResponse(
+        SuccessSchema.extend({
+          data: z.object({
+            locationId: z.string(),
+            createdAt: TimestampSchema,
+          }),
+        }),
+        "Created",
+      ),
+      ...errorResponses(400, 401, 404, 409, 422, 403, 503),
+    },
+  }),
+  async (c) => {
+    const session = c.get("session");
 
-favorites.post("/locations", async (c) => {
-  const session = await getSession(c).catch(() => null);
-  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+    const input = c.req.valid("json");
 
-  const input = await validateRequest(
-    c,
-    "json",
-    locationBody,
-    "输入验证失败",
-    "flatten",
-  );
-  if (input instanceof Response) return input;
-
-  try {
-    const now = Date.now();
-    const result = await c.env.DB.prepare(
-      `
+    try {
+      const now = Date.now();
+      const result = await c.env.DB.prepare(
+        `
       INSERT OR IGNORE INTO user_location_favorites
         (user_id, location_id, created_at)
       SELECT ?, location.id, ?
@@ -194,171 +260,242 @@ favorites.post("/locations", async (c) => {
         AND region.level = 'city'
         AND region.service_enabled = 1
     `,
-    )
-      .bind(session.user.id, now, input.locationId)
-      .run();
-    if (changes(result) !== 1) {
+      )
+        .bind(session.user.id, now, input.locationId)
+        .run();
+      if (changes(result) !== 1) {
+        const db = createDb(c.env.DB);
+        const [target] = await db
+          .select({ id: schema.locations.id })
+          .from(schema.locations)
+          .innerJoin(
+            schema.region,
+            eq(schema.region.id, schema.locations.regionId),
+          )
+          .where(
+            and(
+              eq(schema.locations.id, input.locationId),
+              eq(schema.locations.status, "published"),
+              eq(schema.region.level, "city"),
+              eq(schema.region.serviceEnabled, true),
+            ),
+          )
+          .limit(1);
+        if (!target) return c.json(APIErrors.notFound("地点不存在"), 404);
+        return c.json(APIErrors.conflict("已经收藏该地点"), 409);
+      }
+
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            locationId: input.locationId,
+            createdAt: new Date(now).toISOString(),
+          },
+        },
+        201,
+      );
+    } catch (error) {
+      return databaseErrorResponse(c, "createLocation", error);
+    }
+  },
+  validationHook("输入验证失败", "flatten"),
+);
+
+favorites.openapi(
+  createRoute({
+    method: "delete",
+    path: "/locations",
+    operationId: "favoritesDeletelocations",
+    tags: ["favorites"],
+    summary: "Remove location favorite",
+    "x-audience": "public",
+    security: [{ sessionCookie: [] }],
+    middleware: [favoriteSession],
+    request: { query: locationDeleteQuery },
+    responses: {
+      200: jsonResponse(
+        SuccessSchema.extend({
+          data: z.object({ locationId: z.string(), removed: z.boolean() }),
+        }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 409, 422, 403, 503),
+    },
+  }),
+  async (c) => {
+    const session = c.get("session");
+
+    const input = c.req.valid("query");
+
+    try {
+      const result = await c.env.DB.prepare(
+        `
+      DELETE FROM user_location_favorites
+      WHERE user_id = ? AND location_id = ?
+    `,
+      )
+        .bind(session.user.id, input.locationId)
+        .run();
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            locationId: input.locationId,
+            removed: changes(result) === 1,
+          },
+        },
+        200,
+      );
+    } catch (error) {
+      return databaseErrorResponse(c, "deleteLocation", error);
+    }
+  },
+  validationHook("查询参数无效", "flatten"),
+);
+
+favorites.openapi(
+  createRoute({
+    method: "get",
+    path: "/stories",
+    operationId: "favoritesListstories",
+    tags: ["favorites"],
+    summary: "List favorite stories",
+    "x-audience": "public",
+    security: [{ sessionCookie: [] }],
+    middleware: [favoriteSession],
+    request: { query: listQuery },
+    responses: {
+      200: jsonResponse(FavoriteStoriesResponseSchema, "Success"),
+      ...errorResponses(400, 401, 409, 422),
+    },
+  }),
+  async (c) => {
+    const session = c.get("session");
+
+    const parsed = parseListQuery(c, c.req.valid("query"));
+    if (parsed.error) return parsed.error;
+
+    try {
       const db = createDb(c.env.DB);
-      const [target] = await db
-        .select({ id: schema.locations.id })
-        .from(schema.locations)
-        .innerJoin(
-          schema.region,
-          eq(schema.region.id, schema.locations.regionId),
-        )
-        .where(
+      const conditions = [
+        eq(schema.userStoryFavorites.userId, session.user.id),
+        eq(schema.stories.status, "published"),
+        or(
+          isNull(schema.stories.locationId),
           and(
-            eq(schema.locations.id, input.locationId),
             eq(schema.locations.status, "published"),
             eq(schema.region.level, "city"),
             eq(schema.region.serviceEnabled, true),
           ),
-        )
-        .limit(1);
-      if (!target) return c.json(APIErrors.notFound("地点不存在"), 404);
-      return c.json(APIErrors.conflict("已经收藏该地点"), 409);
-    }
-
-    return c.json(
-      {
-        success: true,
-        data: { locationId: input.locationId, createdAt: new Date(now) },
-      },
-      201,
-    );
-  } catch (error) {
-    return databaseErrorResponse(c, "createLocation", error);
-  }
-});
-
-favorites.delete("/locations", async (c) => {
-  const session = await getSession(c).catch(() => null);
-  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-  const input = await validateRequest(
-    c,
-    "query",
-    locationDeleteQuery,
-    "查询参数无效",
-    "flatten",
-  );
-  if (input instanceof Response) return input;
-
-  try {
-    const result = await c.env.DB.prepare(
-      `
-      DELETE FROM user_location_favorites
-      WHERE user_id = ? AND location_id = ?
-    `,
-    )
-      .bind(session.user.id, input.locationId)
-      .run();
-    return c.json({
-      success: true,
-      data: {
-        locationId: input.locationId,
-        removed: changes(result) === 1,
-      },
-    });
-  } catch (error) {
-    return databaseErrorResponse(c, "deleteLocation", error);
-  }
-});
-
-favorites.get("/stories", async (c) => {
-  const session = await getSession(c).catch(() => null);
-  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-  const parsed = await parseListQuery(c);
-  if ("error" in parsed) return parsed.error;
-
-  try {
-    const db = createDb(c.env.DB);
-    const conditions = [
-      eq(schema.userStoryFavorites.userId, session.user.id),
-      eq(schema.stories.status, "published"),
-      or(
-        isNull(schema.stories.locationId),
-        and(
-          eq(schema.locations.status, "published"),
-          eq(schema.region.level, "city"),
-          eq(schema.region.serviceEnabled, true),
-        ),
-      )!,
-    ];
-    if (parsed.data.cursor) {
-      const cursorDate = new Date(parsed.data.cursor.t);
-      conditions.push(
-        or(
-          lt(schema.userStoryFavorites.createdAt, cursorDate),
-          and(
-            eq(schema.userStoryFavorites.createdAt, cursorDate),
-            lt(schema.userStoryFavorites.storyId, parsed.data.cursor.id),
-          ),
         )!,
+      ];
+      if (parsed.data.cursor) {
+        const cursorDate = new Date(parsed.data.cursor.t);
+        conditions.push(
+          or(
+            lt(schema.userStoryFavorites.createdAt, cursorDate),
+            and(
+              eq(schema.userStoryFavorites.createdAt, cursorDate),
+              lt(schema.userStoryFavorites.storyId, parsed.data.cursor.id),
+            ),
+          )!,
+        );
+      }
+
+      const rows = await db
+        .select({
+          createdAt: schema.userStoryFavorites.createdAt,
+          story: schema.stories,
+        })
+        .from(schema.userStoryFavorites)
+        .innerJoin(
+          schema.stories,
+          eq(schema.userStoryFavorites.storyId, schema.stories.id),
+        )
+        .leftJoin(
+          schema.locations,
+          eq(schema.locations.id, schema.stories.locationId),
+        )
+        .leftJoin(
+          schema.region,
+          eq(schema.region.id, schema.locations.regionId),
+        )
+        .where(and(...conditions))
+        .orderBy(
+          desc(schema.userStoryFavorites.createdAt),
+          desc(schema.userStoryFavorites.storyId),
+        )
+        .limit(parsed.data.limit + 1);
+
+      const hasMore = rows.length > parsed.data.limit;
+      const items = rows.slice(0, parsed.data.limit);
+      const last = hasMore ? items.at(-1) : undefined;
+      c.header("Cache-Control", "no-store");
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            items: items.map((item) => ({
+              createdAt: item.createdAt.toISOString(),
+              story: {
+                ...item.story,
+                createdAt: item.story.createdAt.toISOString(),
+                updatedAt: item.story.updatedAt.toISOString(),
+              },
+            })),
+            nextCursor: last
+              ? encodeContentCursor({
+                  t: last.createdAt.getTime(),
+                  id: last.story.id,
+                })
+              : null,
+          },
+        },
+        200,
       );
+    } catch (error) {
+      return databaseErrorResponse(c, "listStories", error);
     }
+  },
+  validationHook("查询参数无效", "flatten"),
+);
 
-    const rows = await db
-      .select({
-        createdAt: schema.userStoryFavorites.createdAt,
-        story: schema.stories,
-      })
-      .from(schema.userStoryFavorites)
-      .innerJoin(
-        schema.stories,
-        eq(schema.userStoryFavorites.storyId, schema.stories.id),
-      )
-      .leftJoin(
-        schema.locations,
-        eq(schema.locations.id, schema.stories.locationId),
-      )
-      .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
-      .where(and(...conditions))
-      .orderBy(
-        desc(schema.userStoryFavorites.createdAt),
-        desc(schema.userStoryFavorites.storyId),
-      )
-      .limit(parsed.data.limit + 1);
-
-    const hasMore = rows.length > parsed.data.limit;
-    const items = rows.slice(0, parsed.data.limit);
-    const last = hasMore ? items.at(-1) : undefined;
-    c.header("Cache-Control", "no-store");
-    return c.json({
-      success: true,
-      data: {
-        items,
-        nextCursor: last
-          ? encodeContentCursor({
-              t: last.createdAt.getTime(),
-              id: last.story.id,
-            })
-          : null,
+favorites.openapi(
+  createRoute({
+    method: "post",
+    path: "/stories",
+    operationId: "favoritesCreatestories",
+    tags: ["favorites"],
+    summary: "Favorite a story",
+    "x-audience": "public",
+    security: [{ sessionCookie: [] }],
+    middleware: [favoriteSession, legacyJsonBody("输入验证失败")],
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: storyBody } },
       },
-    });
-  } catch (error) {
-    return databaseErrorResponse(c, "listStories", error);
-  }
-});
+    },
+    responses: {
+      201: jsonResponse(
+        SuccessSchema.extend({
+          data: z.object({ storyId: z.string(), createdAt: TimestampSchema }),
+        }),
+        "Created",
+      ),
+      ...errorResponses(400, 401, 404, 409, 422, 403, 503),
+    },
+  }),
+  async (c) => {
+    const session = c.get("session");
 
-favorites.post("/stories", async (c) => {
-  const session = await getSession(c).catch(() => null);
-  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+    const input = c.req.valid("json");
 
-  const input = await validateRequest(
-    c,
-    "json",
-    storyBody,
-    "输入验证失败",
-    "flatten",
-  );
-  if (input instanceof Response) return input;
-
-  try {
-    const now = Date.now();
-    const result = await c.env.DB.prepare(
-      `
+    try {
+      const now = Date.now();
+      const result = await c.env.DB.prepare(
+        `
       INSERT OR IGNORE INTO user_story_favorites
         (user_id, story_id, created_at)
       SELECT ?, story.id, ?
@@ -376,85 +513,108 @@ favorites.post("/stories", async (c) => {
           )
         )
     `,
-    )
-      .bind(session.user.id, now, input.storyId)
-      .run();
-    if (changes(result) !== 1) {
-      const db = createDb(c.env.DB);
-      const [publicTarget] = await db
-        .select({ id: schema.stories.id })
-        .from(schema.stories)
-        .leftJoin(
-          schema.locations,
-          eq(schema.locations.id, schema.stories.locationId),
-        )
-        .leftJoin(
-          schema.region,
-          eq(schema.region.id, schema.locations.regionId),
-        )
-        .where(
-          and(
-            eq(schema.stories.id, input.storyId),
-            eq(schema.stories.status, "published"),
-            or(
-              isNull(schema.stories.locationId),
-              and(
-                eq(schema.locations.status, "published"),
-                eq(schema.region.level, "city"),
-                eq(schema.region.serviceEnabled, true),
+      )
+        .bind(session.user.id, now, input.storyId)
+        .run();
+      if (changes(result) !== 1) {
+        const db = createDb(c.env.DB);
+        const [publicTarget] = await db
+          .select({ id: schema.stories.id })
+          .from(schema.stories)
+          .leftJoin(
+            schema.locations,
+            eq(schema.locations.id, schema.stories.locationId),
+          )
+          .leftJoin(
+            schema.region,
+            eq(schema.region.id, schema.locations.regionId),
+          )
+          .where(
+            and(
+              eq(schema.stories.id, input.storyId),
+              eq(schema.stories.status, "published"),
+              or(
+                isNull(schema.stories.locationId),
+                and(
+                  eq(schema.locations.status, "published"),
+                  eq(schema.region.level, "city"),
+                  eq(schema.region.serviceEnabled, true),
+                ),
               ),
             ),
-          ),
-        )
-        .limit(1);
-      if (!publicTarget) return c.json(APIErrors.notFound("故事不存在"), 404);
-      return c.json(APIErrors.conflict("已经收藏该故事"), 409);
+          )
+          .limit(1);
+        if (!publicTarget) return c.json(APIErrors.notFound("故事不存在"), 404);
+        return c.json(APIErrors.conflict("已经收藏该故事"), 409);
+      }
+
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            storyId: input.storyId,
+            createdAt: new Date(now).toISOString(),
+          },
+        },
+        201,
+      );
+    } catch (error) {
+      return databaseErrorResponse(c, "createStory", error);
     }
+  },
+  validationHook("输入验证失败", "flatten"),
+);
 
-    return c.json(
-      {
-        success: true,
-        data: { storyId: input.storyId, createdAt: new Date(now) },
-      },
-      201,
-    );
-  } catch (error) {
-    return databaseErrorResponse(c, "createStory", error);
-  }
-});
+favorites.openapi(
+  createRoute({
+    method: "delete",
+    path: "/stories",
+    operationId: "favoritesDeletestories",
+    tags: ["favorites"],
+    summary: "Remove story favorite",
+    "x-audience": "public",
+    security: [{ sessionCookie: [] }],
+    middleware: [favoriteSession],
+    request: { query: storyDeleteQuery },
+    responses: {
+      200: jsonResponse(
+        SuccessSchema.extend({
+          data: z.object({ storyId: z.string(), removed: z.boolean() }),
+        }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 409, 422, 403, 503),
+    },
+  }),
+  async (c) => {
+    const session = c.get("session");
 
-favorites.delete("/stories", async (c) => {
-  const session = await getSession(c).catch(() => null);
-  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+    const input = c.req.valid("query");
 
-  const input = await validateRequest(
-    c,
-    "query",
-    storyDeleteQuery,
-    "查询参数无效",
-    "flatten",
-  );
-  if (input instanceof Response) return input;
-
-  try {
-    const result = await c.env.DB.prepare(
-      `
+    try {
+      const result = await c.env.DB.prepare(
+        `
       DELETE FROM user_story_favorites
       WHERE user_id = ? AND story_id = ?
     `,
-    )
-      .bind(session.user.id, input.storyId)
-      .run();
-    return c.json({
-      success: true,
-      data: {
-        storyId: input.storyId,
-        removed: changes(result) === 1,
-      },
-    });
-  } catch (error) {
-    return databaseErrorResponse(c, "deleteStory", error);
-  }
-});
+      )
+        .bind(session.user.id, input.storyId)
+        .run();
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            storyId: input.storyId,
+            removed: changes(result) === 1,
+          },
+        },
+        200,
+      );
+    } catch (error) {
+      return databaseErrorResponse(c, "deleteStory", error);
+    }
+  },
+  validationHook("查询参数无效", "flatten"),
+);
 
 export { favorites as favoritesRoute };

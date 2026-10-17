@@ -10,12 +10,21 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../db", () => ({ createDb: mocks.createDb }));
 vi.mock("../lib/admin-access", () => ({
   requireAdmin: mocks.requireAdmin,
+  resolveAdminAccess: async () => {
+    try {
+      return { kind: "authorized", admin: await mocks.requireAdmin() };
+    } catch (error) {
+      if (error === "forbidden") return { kind: "forbidden" };
+      throw error;
+    }
+  },
   adminAccessErrorResponse: (
     c: { json: (body: unknown, status: 403) => Response },
     error: unknown,
-  ) => error === "forbidden"
-    ? c.json({ success: false, error: { code: "FORBIDDEN" } }, 403)
-    : null,
+  ) =>
+    error === "forbidden"
+      ? c.json({ success: false, error: { code: "FORBIDDEN" } }, 403)
+      : null,
 }));
 
 const { tagsRoute } = await import("./tags");
@@ -30,28 +39,33 @@ describe("tag catalog management", () => {
   it.each([
     ["PATCH", "/tag-1", { name: "新标签" }],
     ["DELETE", "/tag-1", undefined],
-  ] as const)("requires an administrator for %s %s", async (method, path, body) => {
-    mocks.requireAdmin.mockRejectedValue("forbidden");
+  ] as const)(
+    "requires an administrator for %s %s",
+    async (method, path, body) => {
+      mocks.requireAdmin.mockRejectedValue("forbidden");
 
-    const response = await tagsRoute.request(
-      path,
-      {
-        method,
-        headers: body ? { "content-type": "application/json" } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-      },
-      env,
-    );
+      const response = await tagsRoute.request(
+        path,
+        {
+          method,
+          headers: body ? { "content-type": "application/json" } : undefined,
+          body: body ? JSON.stringify(body) : undefined,
+        },
+        env,
+      );
 
-    expect(response.status).toBe(403);
-    expect(mocks.createDb).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(403);
+      expect(mocks.createDb).not.toHaveBeenCalled();
+    },
+  );
 
   it("renames a tag while keeping its stable slug", async () => {
     mocks.requireAdmin.mockResolvedValue({ id: "admin-1" });
-    const returning = vi.fn().mockResolvedValue([
-      { id: "tag-1", name: "亲子友好", slug: "family-friendly" },
-    ]);
+    const returning = vi
+      .fn()
+      .mockResolvedValue([
+        { id: "tag-1", name: "亲子友好", slug: "family-friendly" },
+      ]);
     const where = vi.fn(() => ({ returning }));
     const set = vi.fn(() => ({ where }));
     mocks.createDb.mockReturnValue({ update: vi.fn(() => ({ set })) });
@@ -74,9 +88,9 @@ describe("tag catalog management", () => {
 
   it("classifies a non-idempotent tag creation conflict", async () => {
     mocks.requireAdmin.mockResolvedValue({ id: "admin-1" });
-    const limit = vi.fn().mockResolvedValue([
-      { id: "tag-1", name: "已有名称" },
-    ]);
+    const limit = vi
+      .fn()
+      .mockResolvedValue([{ id: "tag-1", name: "已有名称" }]);
     const where = vi.fn(() => ({ limit }));
     const from = vi.fn(() => ({ where }));
     mocks.createDb.mockReturnValue({ select: vi.fn(() => ({ from })) });
@@ -134,7 +148,8 @@ describe("tag catalog management", () => {
     const orderBy = vi.fn(() => ({ limit }));
     const listFrom = vi.fn(() => ({ orderBy }));
     mocks.createDb.mockReturnValue({
-      select: vi.fn()
+      select: vi
+        .fn()
         .mockReturnValueOnce({ from: countFrom })
         .mockReturnValueOnce({ from: listFrom }),
     });
@@ -151,9 +166,11 @@ describe("tag catalog management", () => {
 
   it("detaches all references only after explicit delete confirmation", async () => {
     mocks.requireAdmin.mockResolvedValue({ id: "admin-1" });
-    const limit = vi.fn().mockResolvedValue([
-      { id: "tag-1", locationCount: 2, teamCount: 1, storyCount: 3 },
-    ]);
+    const limit = vi
+      .fn()
+      .mockResolvedValue([
+        { id: "tag-1", locationCount: 2, teamCount: 1, storyCount: 3 },
+      ]);
     const selectWhere = vi.fn(() => ({ limit }));
     const from = vi.fn(() => ({ where: selectWhere }));
     const deleteWhere = vi.fn(() => ({ statement: true }));
