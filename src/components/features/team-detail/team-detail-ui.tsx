@@ -19,7 +19,7 @@ export function ToastDisplay({
     <div
       role="status"
       className={cn(
-        "fixed bottom-24 left-1/2 -translate-x-1/2 z-[60]",
+        "fixed bottom-[calc(var(--team-action-height,0px)+1rem)] left-1/2 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 z-[60] motion-reduce:animate-none",
         exiting
           ? "animate-[fade-out_0.2s_ease-in_both]"
           : "animate-[fade-up_0.25s_ease_both]",
@@ -28,7 +28,9 @@ export function ToastDisplay({
       <div
         className={cn(
           "flex items-center gap-2 px-5 py-3 rounded-full text-sm font-medium",
-          isSuccess ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700",
+          isSuccess
+            ? "bg-success-subtle text-accent-foreground"
+            : "bg-card text-foreground ring-1 ring-destructive/40 shadow-warm-md",
         )}
       >
         {isSuccess ? (
