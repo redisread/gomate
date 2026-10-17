@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Location } from "@/lib/types";
 import { LocationIntroCard } from "./location-intro-card";
 
@@ -31,17 +31,60 @@ const baseLocation: Location = {
 };
 
 describe("LocationIntroCard", () => {
-  afterEach(() => cleanup());
+  beforeEach(() =>
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    ),
+  );
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("announces clipboard failure so the user can recover", async () => {
+    vi.stubGlobal("navigator", {
+      clipboard: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
+    });
+    render(
+      <LocationIntroCard
+        location={baseLocation}
+        address={baseLocation.address!}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "common.copyAddress" }));
+    expect(
+      await screen.findByText("locationDetail.copyFailed"),
+    ).toBeInTheDocument();
+  });
 
   it("continues to show best seasons", () => {
-    render(<LocationIntroCard location={{ ...baseLocation, extra: { hiking: { bestSeasons: ["autumn"] } } }} address={baseLocation.address!} />);
+    render(
+      <LocationIntroCard
+        location={{
+          ...baseLocation,
+          extra: { hiking: { bestSeasons: ["autumn"] } },
+        }}
+        address={baseLocation.address!}
+      />,
+    );
     expect(screen.getByText("enums.season.autumn")).toBeInTheDocument();
   });
 
   it("keeps the address visible and hides navigation without coordinates", () => {
-    render(<LocationIntroCard location={baseLocation} address={baseLocation.address!} />);
+    render(
+      <LocationIntroCard
+        location={baseLocation}
+        address={baseLocation.address!}
+      />,
+    );
 
     expect(screen.getByText("深圳市罗湖区")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "locations.navigateTooltip" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "locations.navigateTooltip" }),
+    ).not.toBeInTheDocument();
   });
 });

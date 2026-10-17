@@ -1,59 +1,61 @@
-import * as React from "react";
-import { CalendarDays, ArrowRight } from "lucide-react";
+import { CalendarDays, ArrowUpRight } from "lucide-react";
 import type { Team } from "@/lib/types";
+import { useI18n } from "@/hooks/useI18n";
 import { getTeamDisplayStatus } from "@/lib/team-display";
-import { TeamProgress, TeamUrgencyLabel, TeamLeaderMini } from "@/components/features/teams/shared";
+import {
+  TeamProgress,
+  TeamUrgencyLabel,
+  TeamLeaderMini,
+} from "@/components/features/teams/shared";
 
-interface TeamCardProps {
-  team: Team;
-}
-
-export function TeamCard({ team }: TeamCardProps) {
-  const dateInfo = React.useMemo(() => {
-    const start = new Date(team.startAt);
-    if (Number.isNaN(start.getTime())) return null;
-    const month = start.getUTCMonth() + 1;
-    const day = start.getUTCDate();
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    return {
-      month: monthNames[month - 1] ?? `${month}`,
-      day: String(day),
-      full: team.startAt,
-    };
-  }, [team.startAt]);
+export function TeamCard({ team }: { team: Team }) {
+  const { locale } = useI18n(["teams", "common"]);
+  const start = new Date(team.startAt);
+  const validDate = !Number.isNaN(start.getTime());
   const displayStatus = getTeamDisplayStatus(team);
-
   return (
-    <a href={`/teams/${team.id}`} className="block group">
-      <div className="rounded-xl bg-stone-50/70 p-4 transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-amber-50/60 hover:shadow-[0_4px_20px_rgba(217,119,6,0.12)] dark:bg-stone-900/60 dark:hover:bg-amber-950/20">
-        <div className="flex items-start gap-3 mb-3">
-          {dateInfo ? (
-              <div className="flex-shrink-0 w-12 overflow-hidden rounded-xl shadow-sm transition-[transform,box-shadow] duration-200 group-hover:shadow-md">
-              <div className="bg-amber-700 dark:bg-amber-500 group-hover:bg-amber-800 dark:group-hover:bg-amber-400 py-0.5 text-center transition-colors">
-                <span className="text-3xs font-bold text-white dark:text-stone-950 tracking-widest uppercase">
-                  {dateInfo.month}
-                </span>
-              </div>
-              <div className="bg-card py-1.5 text-center">
-                <span className="text-2xl font-black text-foreground leading-none">
-                  {dateInfo.day}
-                </span>
-              </div>
-            </div>
+    <a
+      href={`/teams/${team.id}`}
+      className="group block rounded-2xl bg-card p-4 shadow-card transition-[background-color,box-shadow] duration-150 hover:bg-warm-subtle hover:shadow-card-hover sm:p-5"
+    >
+      <div className="flex gap-4">
+        <div className="flex w-14 shrink-0 flex-col items-center justify-center border-e border-dashed border-border pe-4 sm:w-16">
+          {validDate ? (
+            <time
+              dateTime={team.startAt}
+              aria-label={start.toLocaleDateString(locale, {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+              className="text-center tabular-nums"
+            >
+              <span className="block text-xs font-semibold text-accent-foreground">
+                {start.toLocaleDateString(locale, { month: "short" })}
+              </span>
+              <span className="mt-1 block text-3xl font-bold leading-none text-foreground">
+                {start.getDate()}
+              </span>
+            </time>
           ) : (
-            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-stone-50 dark:bg-stone-900 flex items-center justify-center border border-stone-100 dark:border-stone-800">
-              <CalendarDays className="h-5 w-5 text-stone-300 dark:text-stone-600" />
-            </div>
+            <CalendarDays
+              aria-hidden="true"
+              className="h-6 w-6 text-muted-foreground"
+            />
           )}
-
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors text-sm leading-snug line-clamp-2 mb-1">
+        </div>
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex items-start gap-3">
+            <h3 className="min-w-0 flex-1 break-words text-base font-semibold leading-6 text-foreground group-hover:text-accent-foreground">
               {team.title}
             </h3>
-            <TeamLeaderMini leader={team.leader} size="sm" />
+            <ArrowUpRight
+              aria-hidden="true"
+              className="mt-1 h-4 w-4 shrink-0 text-muted-foreground"
+            />
           </div>
-
-          <div className="flex-shrink-0 flex flex-col items-end gap-1.5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <TeamLeaderMini leader={team.leader} size="sm" />
             <TeamUrgencyLabel
               status={displayStatus}
               activeParticipantCount={team.activeParticipantCount}
@@ -61,17 +63,15 @@ export function TeamCard({ team }: TeamCardProps) {
               startAt={team.startAt}
               variant="badge"
             />
-            <ArrowRight className="h-3.5 w-3.5 text-stone-400 dark:text-stone-600 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150" />
           </div>
+          <TeamProgress
+            current={team.activeParticipantCount}
+            max={team.maxParticipants}
+            status={displayStatus}
+            showLabel
+            size="sm"
+          />
         </div>
-
-        <TeamProgress
-          current={team.activeParticipantCount}
-          max={team.maxParticipants}
-          status={displayStatus}
-          showLabel={true}
-          size="sm"
-        />
       </div>
     </a>
   );
