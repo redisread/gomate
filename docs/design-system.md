@@ -96,7 +96,7 @@
   移动顶部栏和抽屉，主内容保持最少 16px inline margin，页面仍只有一个 `<h1>`。
 - 后台导航只展示真实可达的静态路由，当前项使用 `aria-current="page"`；移动抽屉提供可访问
   名称、44×44 触发目标、Escape 关闭和关闭后焦点恢复。
-- `AdminQuickAction` 只负责表现层：宽布局居中为 Dialog，窄布局贴底为 Bottom Sheet；业务
+- `AdminQuickActionDialog` 只负责表现层：宽布局居中为 Dialog，窄布局贴底为 Bottom Sheet；业务
   内容通过 `children` 注入。标题固定可达，内容区域独立滚动，底部计算 safe area。
 - 快速地点录入把名称、介绍和地区保持在首层并直接提交草稿；封面、推荐活动类型与标签放入
   原生可展开区域。成功态明确说明“已保存为草稿”，并提供继续完善全部字段的单一主操作。

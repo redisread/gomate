@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { AdminQuickAction } from "@/components/admin/admin-quick-action";
+import { AdminQuickActionDialog } from "@/components/admin/admin-quick-action";
 import { AdminQuickLocationForm } from "@/components/admin/admin-quick-location-form";
 import { useI18n } from "@/hooks/useI18n";
 
@@ -14,15 +14,17 @@ export function PublicNavbar() {
 
   return (
     <Navbar
-      renderAdminQuickAction={() => (
-        <AdminQuickAction
-          label={t("admin.platform.quickActionLabel")}
+      adminQuickActionLabel={t("admin.platform.quickActionLabel")}
+      renderAdminQuickAction={(dialogProps) => (
+        <AdminQuickActionDialog
+          {...dialogProps}
+          lockBodyScroll={false}
           title={t("admin.platform.quickActionTitle")}
           closeLabel={t("admin.platform.closeQuickAction")}
           initialFocusRef={actionRef}
         >
           <AdminQuickLocationForm initialFocusRef={actionRef} />
-        </AdminQuickAction>
+        </AdminQuickActionDialog>
       )}
     />
   );

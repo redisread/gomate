@@ -390,11 +390,17 @@ test.describe("admin platform", () => {
       await expect(onboarding).toHaveCount(0);
     }
 
-    await expect(page.getByTestId("nav-admin")).toHaveAttribute("href", "/admin");
+    await expect(page.getByTestId("nav-admin")).toHaveCount(0);
+    const userMenu = page.locator("[data-user-menu] > button");
+    await userMenu.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("nav-admin")).toHaveAttribute(
+      "href",
+      "/admin",
+    );
+    await page.screenshot({ path: "test-results/personal-menu-desktop.png" });
     expect(
-      [...scriptUrls].some((url) =>
-        /location-edit|lazy-location/u.test(url),
-      ),
+      [...scriptUrls].some((url) => /location-edit|lazy-location/u.test(url)),
     ).toBe(false);
 
     const trigger = page.getByRole("button", { name: "快速添加地点" });
@@ -414,14 +420,19 @@ test.describe("admin platform", () => {
     await region.selectOption({ index: 1 });
     await dialog.getByRole("button", { name: "保存为草稿" }).click();
     await expect(dialog.getByText("灵感已保存为草稿。")).toBeVisible();
-    await expect(dialog.getByRole("link", { name: "继续完善全部字段" }))
-      .toHaveAttribute("href", /\/admin\/locations\/[^/]+\/edit/u);
+    await expect(
+      dialog.getByRole("link", { name: "继续完善全部字段" }),
+    ).toHaveAttribute("href", /\/admin\/locations\/[^/]+\/edit/u);
     await page.keyboard.press("Escape");
-    await expect(trigger).toBeFocused();
+    await expect(userMenu).toBeFocused();
 
     await page.setViewportSize({ width: 320, height: 720 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
+    await page.getByTestId("nav-mobile-menu-toggle").click();
+    await expect(page.getByTestId("nav-admin-mobile")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "移动端导航" }).getByRole("link").first()).toBeVisible();
+    await page.screenshot({ path: "test-results/personal-menu-mobile.png" });
     const mobileTrigger = page.getByRole("button", { name: "快速添加地点" });
     await mobileTrigger.click();
     await expect(dialog).toBeVisible();
@@ -434,5 +445,47 @@ test.describe("admin platform", () => {
     );
     expect(reducedDuration).toBeLessThanOrEqual(0.001);
     await expectNoHorizontalOverflow(page);
+    await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("nav-mobile-menu-toggle")).toBeFocused();
+    await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
   });
+  test("public personal options hide admin actions from guests and regular users", async ({ page }) => {
+    await useChineseLocale(page);
+    for (const user of [null, regularUser]) {
+      if (user) await authenticate(page, user);
+      for (const width of [1440, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto("/");
+        if (width === 320) await page.getByTestId("nav-mobile-menu-toggle").click();
+        else if (user) await page.locator("[data-user-menu] > button").click();
+        else await expect(page.getByTestId("nav-login")).toBeVisible();
+        await expect(page.getByRole("link", { name: "管理后台", exact: true })).toHaveCount(0);
+        await expect(page.getByRole("button", { name: "快速添加地点" })).toHaveCount(0);
+      }
+    }
+  });
+
+  test("public personal options remain accessible in English and dark mode", async ({ page }) => {
+    await authenticate(page, admin);
+    await page.context().addCookies([{ name: "gomate_locale", value: "en", url: LOCAL_ORIGIN }]);
+    await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+    for (const width of [1440, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      const trigger = width === 320 ? page.getByTestId("nav-mobile-menu-toggle") : page.locator("[data-user-menu] > button");
+      await trigger.focus();
+      await page.keyboard.press("Enter");
+      const action = page.getByRole("button", { name: "Quick add location" });
+      await expect(action).toBeVisible();
+      await expect(page.getByRole("link", { name: "Admin", exact: true })).toBeVisible();
+      await action.focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(trigger).toBeFocused();
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
 });
