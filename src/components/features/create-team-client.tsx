@@ -1,24 +1,25 @@
 "use client";
 
+import { useCreateTeamForm } from "./teams/form/use-create-team-form";
+
+import {
+  TeamActivityField,
+  TeamDurationField,
+  TeamNameField,
+  TeamTimeField,
+  TeamCapacityField,
+  TeamDescriptionFields,
+} from "./teams/form/team-fields";
 import { RequestFailure } from "@/components/ui/request-failure";
 
-import * as React from "react";
 import {
   ArrowLeft,
-  Clock,
-  Users,
   Calendar,
   AlertCircle,
   Loader2,
   Sparkles,
 } from "lucide-react";
-import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
-import { orderActivityTypesForLocation } from "@/lib/activity-types";
-import { isActivityType } from "@/lib/activity-types";
-import { ACTIVITY_TYPES } from "@/contracts";
 import { DURATION_OPTION_DEFS } from "@/lib/duration-options";
-import type { ActivityType, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -32,215 +33,27 @@ import { Footer } from "@/components/layout/footer";
  * 分步感知 + 情感化文案 + 品牌色 focus 状态
  */
 export function CreateTeamClient() {
-  const { t } = useI18n(["teams", "errors", "common", "enums"]);
-  const [locations, setLocations] = React.useState<Location[]>([]);
-  const [locationSearch, setLocationSearch] = React.useState("");
-  const [locationSearchVersion, setLocationSearchVersion] = React.useState(0);
-  const [locationsLoading, setLocationsLoading] = React.useState(true);
-  const [locationsError, setLocationsError] = React.useState(false);
-  const [selectedLocation, setSelectedLocation] =
-    React.useState<Location | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(
-    null,
-  );
-  const [hasWechat, setHasWechat] = React.useState(false);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [sessionFailed, setSessionFailed] = React.useState(false);
-  const [error, setError] = React.useState("");
-
-  // 获取默认日期/时间
-  const now = new Date();
-  const defaultDate = now.toISOString().split("T")[0];
-  const futureTime = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-  const defaultTime = `${String(futureTime.getHours()).padStart(2, "0")}:${String(futureTime.getMinutes()).padStart(2, "0")}`;
-  const defaultDuration = 240; // 4 小时默认值
-
-  const [formData, setFormData] = React.useState({
-    title: "",
-    locationId: "",
-    activityType: "" as ActivityType | "",
-    startDateInput: defaultDate,
-    startClockInput: defaultTime,
-    durationMinutes: "240",
-    maxParticipants: "",
-    description: "",
-    meetingPoint: "",
-    requirementsInput: "",
-  });
-
-  React.useEffect(() => {
-    (async () => {
-      const u = await fetchCurrentUser(
-        `/login?redirect=${encodeURIComponent("/teams/create")}`,
-      );
-      if (!u) return;
-      setIsAuthenticated(true);
-      setHasWechat(!!u.extra.wechat);
-    })().catch(() => setSessionFailed(true));
-
-    const params = new URLSearchParams(window.location.search);
-    const locId = params.get("locationId");
-    if (locId) setFormData((prev) => ({ ...prev, locationId: locId }));
-  }, []);
-
-  React.useEffect(() => {
-    let cancelled = false;
-    const query = locationSearch.trim();
-    setLocationsLoading(true);
-    setLocationsError(false);
-    const timer = window.setTimeout(
-      () => {
-        const path = query
-          ? `/locations?search=${encodeURIComponent(query)}&limit=20`
-          : "/locations?limit=20";
-        fetchAPI(path)
-          .then((response) => response.json())
-          .then((data) => {
-            if (cancelled) return;
-            if (!data.success) throw new Error("Location search failed");
-            setLocations(data.locations ?? []);
-          })
-          .catch(() => {
-            if (!cancelled) {
-              setLocations([]);
-              setLocationsError(true);
-            }
-          })
-          .finally(() => {
-            if (!cancelled) setLocationsLoading(false);
-          });
-      },
-      query ? 300 : 0,
-    );
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [locationSearch, locationSearchVersion]);
-
-  // 当地点变化时，获取地点详情和路线列表
-  React.useEffect(() => {
-    if (!formData.locationId) {
-      setSelectedLocation(null);
-      setFormData((prev) =>
-        prev.activityType ? { ...prev, activityType: "" } : prev,
-      );
-      return;
-    }
-
-    let cancelled = false;
-    setSelectedLocation(null);
-    setFormData((prev) =>
-      prev.activityType ? { ...prev, activityType: "" } : prev,
-    );
-
-    // 获取地点详情
-    fetchAPI(`/locations/${formData.locationId}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (!cancelled && data.success && data.location) {
-          const loc = data.location as Location;
-          setSelectedLocation(loc);
-
-          setFormData((prev) => ({
-            ...prev,
-            activityType: "",
-            durationMinutes: String(defaultDuration),
-          }));
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [formData.locationId]);
-
-  const orderedActivityTypes = React.useMemo(
-    () =>
-      orderActivityTypesForLocation(
-        ACTIVITY_TYPES,
-        selectedLocation?.supportedActivityTypes ?? [],
-      ),
-    [selectedLocation],
-  );
-
-  // 手动修改活动时长
-  const handleDurationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    handleChange(e);
-  };
-
-  // 快捷设置时长
-  const handleDurationQuickSelect = (minutes: number) => {
-    setFormData((prev) => ({ ...prev, durationMinutes: String(minutes) }));
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleLocationChange = (locationId: string) => {
-    setSelectedLocation(null);
-    setFormData((prev) => ({ ...prev, locationId, activityType: "" }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError("");
-    try {
-      const activityType = formData.activityType;
-      if (
-        !activityType ||
-        selectedLocation?.id !== formData.locationId ||
-        !isActivityType(activityType)
-      ) {
-        setError(t("errors.createTeamFailed"));
-        setIsSubmitting(false);
-        return;
-      }
-      const requirements = formData.requirementsInput
-        .split(/\r?\n/u)
-        .map((requirement) => requirement.trim())
-        .filter(Boolean);
-      const startAt = new Date(
-        `${formData.startDateInput}T${formData.startClockInput}:00`,
-      );
-      const durationMinutes = parseInt(formData.durationMinutes, 10);
-      const endAt = new Date(startAt.getTime() + durationMinutes * 60_000);
-      const res = await fetchAPI("/teams", {
-        method: "POST",
-        body: JSON.stringify({
-          title: formData.title,
-          locationId: formData.locationId,
-          activityType,
-          startAt: startAt.toISOString(),
-          endAt: endAt.toISOString(),
-          maxParticipants: parseInt(formData.maxParticipants, 10),
-          meetingPoint: formData.meetingPoint.trim() || null,
-          description: formData.description || null,
-          requirements,
-          recruitmentStatus: "open",
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.team?.id) {
-        window.location.href = `/teams/${data.team.id}`;
-      } else {
-        setError(getApiErrorMessage(data, t("errors.createTeamFailed")));
-        setIsSubmitting(false);
-      }
-    } catch {
-      setError(t("errors.createTeamFailed"));
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    t,
+    formData,
+    defaultDate,
+    locations,
+    locationsLoading,
+    locationsError,
+    selectedLocation,
+    setLocationSearch,
+    setLocationSearchVersion,
+    isAuthenticated,
+    hasWechat,
+    isSubmitting,
+    sessionFailed,
+    error,
+    orderedActivityTypes,
+    handleDurationQuickSelect,
+    handleChange,
+    handleLocationChange,
+    handleSubmit,
+  } = useCreateTeamForm();
 
   if (sessionFailed) return <RequestFailure />;
   if (isAuthenticated === null) {
@@ -307,19 +120,11 @@ export function CreateTeamClient() {
         >
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 队伍标题 */}
-            <FieldGroup icon="✏️" label={t("teams.formLabel.name")} required>
-              <input
-                id="title"
-                data-testid="create-team-title"
-                name="title"
-                type="text"
-                placeholder={t("teams.formPlaceholder.name")}
-                value={formData.title}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-              />
-            </FieldGroup>
+            <TeamNameField
+              value={formData.title}
+              onChange={handleChange}
+              testId="create-team-title"
+            />
 
             {/* 目的地 */}
             <FieldGroup
@@ -351,37 +156,26 @@ export function CreateTeamClient() {
             </FieldGroup>
 
             {selectedLocation && (
-              <FieldGroup
-                icon="🧭"
-                label={t("teams.formLabel.activityType")}
-                required
+              <TeamActivityField
+                value={formData.activityType}
+                onChange={handleChange}
+                testId="create-team-activity-type"
               >
-                <select
-                  id="activityType"
-                  data-testid="create-team-activity-type"
-                  name="activityType"
-                  aria-label={t("teams.formLabel.activityType")}
-                  value={formData.activityType}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-                >
-                  <option value="">
-                    {t("teams.formPlaceholder.activityType")}
+                <option value="">
+                  {t("teams.formPlaceholder.activityType")}
+                </option>
+                {orderedActivityTypes.map((activityType) => (
+                  <option key={activityType} value={activityType}>
+                    {selectedLocation.supportedActivityTypes.includes(
+                      activityType,
+                    )
+                      ? t("teams.recommendedActivityType", {
+                          name: t(`enums.locationType.${activityType}`),
+                        })
+                      : t(`enums.locationType.${activityType}`)}
                   </option>
-                  {orderedActivityTypes.map((activityType) => (
-                    <option key={activityType} value={activityType}>
-                      {selectedLocation.supportedActivityTypes.includes(
-                        activityType,
-                      )
-                        ? t("teams.recommendedActivityType", {
-                            name: t(`enums.locationType.${activityType}`),
-                          })
-                        : t(`enums.locationType.${activityType}`)}
-                    </option>
-                  ))}
-                </select>
-              </FieldGroup>
+                ))}
+              </TeamActivityField>
             )}
 
             {/* 日期 + 时间 */}
@@ -403,25 +197,12 @@ export function CreateTeamClient() {
                 </div>
               </FieldGroup>
 
-              <FieldGroup
-                icon="⏰"
-                label={t("teams.formLabel.startTime")}
+              <TeamTimeField
+                value={formData.startClockInput}
+                onChange={handleChange}
                 required
-              >
-                <div className="relative">
-                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-                  <input
-                    id="startClockInput"
-                    data-testid="create-team-time"
-                    name="startClockInput"
-                    type="time"
-                    value={formData.startClockInput}
-                    onChange={handleChange}
-                    required
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-                  />
-                </div>
-              </FieldGroup>
+                testId="create-team-time"
+              />
             </div>
 
             {/* 日期不可修改提示 */}
@@ -432,123 +213,78 @@ export function CreateTeamClient() {
 
             {/* 时长 + 最大人数 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FieldGroup
-                icon="⌛"
-                label={t("teams.formLabel.duration")}
+              <TeamDurationField
+                value={formData.durationMinutes}
+                onChange={handleChange}
                 required
                 hint={t("teams.durationDefaultHint")}
+                testId="create-team-duration"
+                footer={
+                  <>
+                    {" "}
+                    {/* 快捷选项按钮组 */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      <QuickDurationButton
+                        label={t("teams.durationHalfDay")}
+                        minutes={240}
+                        currentValue={formData.durationMinutes}
+                        onClick={() => handleDurationQuickSelect(240)}
+                      />
+                      <QuickDurationButton
+                        label={t("teams.durationFullDay")}
+                        minutes={480}
+                        currentValue={formData.durationMinutes}
+                        onClick={() => handleDurationQuickSelect(480)}
+                      />
+                      <QuickDurationButton
+                        label={t("teams.durationTwoDays")}
+                        minutes={1200}
+                        currentValue={formData.durationMinutes}
+                        onClick={() => handleDurationQuickSelect(1200)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const select = document.getElementById(
+                            "durationMinutes",
+                          ) as HTMLSelectElement | null;
+                          if (select) {
+                            select.focus();
+                            select.click();
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 border border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary hover:text-primary"
+                      >
+                        {t("teams.durationCustom")}
+                      </button>
+                    </div>{" "}
+                  </>
+                }
               >
-                <div className="relative">
-                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
+                {DURATION_OPTION_DEFS.map(([value, key]) => (
+                  <option key={value} value={value}>
+                    {t(key)}
+                  </option>
+                ))}
+              </TeamDurationField>
 
-                  <select
-                    id="durationMinutes"
-                    data-testid="create-team-duration"
-                    name="durationMinutes"
-                    value={formData.durationMinutes}
-                    onChange={handleDurationChange}
-                    required
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-                  >
-                    {getDurationOptions(t).map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {/* 快捷选项按钮组 */}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <QuickDurationButton
-                    label={t("teams.durationHalfDay")}
-                    minutes={240}
-                    currentValue={formData.durationMinutes}
-                    onClick={() => handleDurationQuickSelect(240)}
-                  />
-                  <QuickDurationButton
-                    label={t("teams.durationFullDay")}
-                    minutes={480}
-                    currentValue={formData.durationMinutes}
-                    onClick={() => handleDurationQuickSelect(480)}
-                  />
-                  <QuickDurationButton
-                    label={t("teams.durationTwoDays")}
-                    minutes={1200}
-                    currentValue={formData.durationMinutes}
-                    onClick={() => handleDurationQuickSelect(1200)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const select = document.getElementById(
-                        "durationMinutes",
-                      ) as HTMLSelectElement | null;
-                      if (select) {
-                        select.focus();
-                        select.click();
-                      }
-                    }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 border border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary hover:text-primary"
-                  >
-                    {t("teams.durationCustom")}
-                  </button>
-                </div>
-              </FieldGroup>
-
-              <FieldGroup
-                icon="👥"
-                label={t("teams.formLabel.maxSize")}
-                required
+              <TeamCapacityField
+                value={formData.maxParticipants}
+                onChange={handleChange}
                 hint={t("teams.maxSizeHint")}
-              >
-                <div className="relative">
-                  <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-                  <input
-                    id="maxParticipants"
-                    data-testid="create-team-max-members"
-                    name="maxParticipants"
-                    type="number"
-                    min={1}
-                    max={49}
-                    placeholder={t("teams.formPlaceholder.maxSize")}
-                    value={formData.maxParticipants}
-                    onChange={handleChange}
-                    required
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-                  />
-                </div>
-              </FieldGroup>
+                testId="create-team-max-members"
+              />
             </div>
 
             {/* 队伍描述 */}
-            <FieldGroup icon="📍" label={t("teams.meetingPoint")}>
-              <textarea
-                name="meetingPoint"
-                aria-label={t("teams.meetingPoint")}
-                maxLength={1000}
-                value={formData.meetingPoint}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-border bg-background p-3"
-              />
-            </FieldGroup>
-            <FieldGroup
-              icon="📝"
-              label={t("teams.formLabel.description")}
+            <TeamDescriptionFields
+              meetingPoint={formData.meetingPoint}
+              description={formData.description}
+              onChange={handleChange}
               required
               hint={t("teams.descriptionHint")}
-            >
-              <textarea
-                id="description"
-                data-testid="create-team-description"
-                name="description"
-                placeholder={t("teams.formPlaceholder.description")}
-                value={formData.description}
-                onChange={handleChange}
-                required
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-              />
-            </FieldGroup>
+              testId="create-team-description"
+            />
 
             <FieldGroup icon="📋" label={t("teams.formLabel.requirements")}>
               <textarea
@@ -620,13 +356,4 @@ export function CreateTeamClient() {
       <Footer />
     </main>
   );
-}
-
-/**
- * Build duration option labels with translation
- */
-function getDurationOptions(
-  t: (key: string, vars?: Record<string, string | number>) => string,
-) {
-  return DURATION_OPTION_DEFS.map(([value, key]) => ({ value, label: t(key) }));
 }

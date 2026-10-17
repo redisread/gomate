@@ -1,20 +1,19 @@
 "use client";
 
+import { useEditTeamForm } from "./teams/form/use-edit-team-form";
+
+import {
+  TeamActivityField,
+  TeamDurationField,
+  TeamNameField,
+  TeamTimeField,
+  TeamCapacityField,
+  TeamDescriptionFields,
+} from "./teams/form/team-fields";
 import { RequestFailure } from "@/components/ui/request-failure";
 
-import * as React from "react";
-import {
-  ArrowLeft,
-  Clock,
-  Users,
-  AlertCircle,
-  Loader2,
-  Pencil,
-} from "lucide-react";
-import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
+import { ArrowLeft, AlertCircle, Loader2, Pencil } from "lucide-react";
 import { ACTIVITY_TYPES } from "@/contracts";
-import type { ActivityType, Team, Location } from "@/lib/types";
 import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -26,187 +25,22 @@ interface EditTeamClientProps {
 }
 
 export function EditTeamClient({ teamId }: EditTeamClientProps) {
-  const { t } = useI18n(["teams", "errors", "common", "enums"]);
-  const [team, setTeam] = React.useState<Team | null>(null);
-  const [location, setLocation] = React.useState<Location | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(
-    null,
-  );
-  const [isLeader, setIsLeader] = React.useState(false);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [sessionFailed, setSessionFailed] = React.useState(false);
-  const [error, setError] = React.useState("");
-
-  const [formData, setFormData] = React.useState({
-    title: "",
-    startDateInput: "",
-    startClockInput: "",
-    durationMinutes: "240",
-    maxParticipants: "",
-    description: "",
-    meetingPoint: "",
-    requirements: [] as string[],
-    activityType: "" as ActivityType | "",
-  });
-
-  React.useEffect(() => {
-    (async () => {
-      const u = await fetchCurrentUser(
-        `/login?redirect=${encodeURIComponent(`/teams/${teamId}/edit`)}`,
-      );
-      if (!u) return;
-      setIsAuthenticated(true);
-
-      try {
-        const res = await fetchAPI(`/teams/${teamId}`);
-        if (res.status === 404) {
-          setError(t("errors.teamNotFound"));
-          setIsLoading(false);
-          return;
-        }
-        const data = await res.json();
-        if (data.success && data.team) {
-          const t2 = data.team as Team;
-          if (t2.leaderId !== u.id) {
-            setError(t("errors.noPermission"));
-            setIsLoading(false);
-            return;
-          }
-          setIsLeader(true);
-          setTeam(t2);
-          setLocation(t2.location || null);
-
-          const startDateTime = new Date(t2.startAt);
-          const dateStr = `${startDateTime.getFullYear()}-${String(startDateTime.getMonth() + 1).padStart(2, "0")}-${String(startDateTime.getDate()).padStart(2, "0")}`;
-          const timeStr = `${String(startDateTime.getHours()).padStart(2, "0")}:${String(startDateTime.getMinutes()).padStart(2, "0")}`;
-          const durationMinutes = Math.max(
-            0,
-            Math.round(
-              (Date.parse(t2.endAt) - Date.parse(t2.startAt)) / 60_000,
-            ),
-          );
-
-          setFormData({
-            title: t2.title || "",
-            startDateInput: dateStr,
-            startClockInput: timeStr,
-            durationMinutes: String(durationMinutes || 240),
-            maxParticipants: String(t2.maxParticipants),
-            description: t2.description || "",
-            meetingPoint: t2.meetingPoint || "",
-            requirements: Array.isArray(t2.requirements) ? t2.requirements : [],
-            activityType: t2.activityType,
-          });
-        } else {
-          setError(t("errors.editTeamInfoFailed"));
-        }
-      } catch (err) {
-        console.error("[EditTeam] 获取队伍详情失败:", err);
-        setError(t("errors.editTeamInfoFailed"));
-      } finally {
-        setIsLoading(false);
-      }
-    })().catch(() => setSessionFailed(true));
-  }, [teamId, t]);
-
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const addRequirement = () => {
-    if (formData.requirements.length < 10) {
-      setFormData((prev) => ({
-        ...prev,
-        requirements: [...prev.requirements, ""],
-      }));
-    }
-  };
-
-  const removeRequirement = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      requirements: prev.requirements.filter((_, i) => i !== index),
-    }));
-  };
-
-  const updateRequirement = (index: number, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      requirements: prev.requirements.map((r, i) => (i === index ? value : r)),
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError("");
-
-    if (!formData.title.trim()) {
-      setError(t("errors.teamNameEmpty"));
-      setIsSubmitting(false);
-      return;
-    }
-
-    const maxParticipants = parseInt(formData.maxParticipants, 10);
-    if (isNaN(maxParticipants) || maxParticipants < 1 || maxParticipants > 49) {
-      setError(t("errors.maxMembersRange"));
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (team && maxParticipants < team.activeParticipantCount) {
-      setError(
-        t("errors.maxMembersBelowCurrent", {
-          current: team.activeParticipantCount,
-        }),
-      );
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      const reqList = formData.requirements
-        .map((s) => s.trim())
-        .filter(Boolean);
-      const startAt = new Date(
-        `${formData.startDateInput}T${formData.startClockInput}:00`,
-      );
-      const durationMinutes = parseInt(formData.durationMinutes, 10) || 240;
-      const endAt = new Date(startAt.getTime() + durationMinutes * 60_000);
-      const res = await fetchAPI(`/teams/${teamId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: formData.title.trim(),
-          meetingPoint: formData.meetingPoint.trim() || null,
-          description: formData.description.trim() || null,
-          maxParticipants,
-          startAt: startAt.toISOString(),
-          endAt: endAt.toISOString(),
-          requirements: reqList,
-          ...(formData.activityType !== team?.activityType
-            ? { activityType: formData.activityType }
-            : {}),
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        window.location.href = `/teams/${teamId}`;
-      } else {
-        setError(getApiErrorMessage(data, t("errors.editTeamSaveFailed")));
-        setIsSubmitting(false);
-      }
-    } catch {
-      setError(t("errors.editTeamSaveFailed"));
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    t,
+    team,
+    isLoading,
+    isAuthenticated,
+    isSubmitting,
+    sessionFailed,
+    error,
+    formData,
+    handleChange,
+    addRequirement,
+    removeRequirement,
+    updateRequirement,
+    handleSubmit,
+  } = useEditTeamForm(teamId);
+  const location = team?.location;
 
   if (sessionFailed) return <RequestFailure />;
   if (isLoading) {
@@ -224,7 +58,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
     return null;
   }
 
-  if (!isLeader || !team) {
+  if (!team) {
     return (
       <main className="min-h-screen bg-background">
         <Navbar />
@@ -273,19 +107,11 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
 
         <div className="rounded-2xl p-6 sm:p-8 card-base">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <FieldGroup icon="✏️" label={t("teams.formLabel.name")} required>
-              <input
-                id="title"
-                name="title"
-                type="text"
-                placeholder={t("teams.formPlaceholder.name")}
-                value={formData.title}
-                onChange={handleChange}
-                required
-                maxLength={60}
-                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-              />
-            </FieldGroup>
+            <TeamNameField
+              value={formData.title}
+              onChange={handleChange}
+              maxLength={60}
+            />
 
             <FieldGroup icon="📍" label={t("teams.formLabel.location")}>
               {location ? (
@@ -309,26 +135,16 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
               </p>
             </FieldGroup>
 
-            <FieldGroup
-              icon="🧭"
-              label={t("teams.formLabel.activityType")}
-              required
+            <TeamActivityField
+              value={formData.activityType}
+              onChange={handleChange}
             >
-              <select
-                id="activityType"
-                name="activityType"
-                value={formData.activityType}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-              >
-                {ACTIVITY_TYPES.map((activityType) => (
-                  <option key={activityType} value={activityType}>
-                    {t(`enums.locationType.${activityType}`)}
-                  </option>
-                ))}
-              </select>
-            </FieldGroup>
+              {ACTIVITY_TYPES.map((activityType) => (
+                <option key={activityType} value={activityType}>
+                  {t(`enums.locationType.${activityType}`)}
+                </option>
+              ))}
+            </TeamActivityField>
 
             <FieldGroup icon="📅" label={t("teams.formLabel.date")}>
               <div className="px-4 py-3 rounded-xl bg-muted border border-border">
@@ -343,97 +159,44 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             </FieldGroup>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FieldGroup icon="⏰" label={t("teams.formLabel.startTime")}>
-                <div className="relative">
-                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-                  <input
-                    id="startClockInput"
-                    name="startClockInput"
-                    type="time"
-                    value={formData.startClockInput}
-                    onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-                  />
-                </div>
-              </FieldGroup>
+              <TeamTimeField
+                value={formData.startClockInput}
+                onChange={handleChange}
+              />
 
-              <FieldGroup icon="⌛" label={t("teams.formLabel.duration")}>
-                <div className="relative">
-                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-                  <select
-                    id="durationMinutes"
-                    name="durationMinutes"
-                    value={formData.durationMinutes}
-                    onChange={handleChange}
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-                  >
-                    {[120, 180, 240, 300, 360, 420, 480, 540, 600, 720].map(
-                      (m) => (
-                        <option key={m} value={m}>
-                          {t("teams.editDurationHours", { hours: m / 60 })}
-                        </option>
-                      ),
-                    )}
-                  </select>
-                </div>
-              </FieldGroup>
+              <TeamDurationField
+                value={formData.durationMinutes}
+                onChange={handleChange}
+              >
+                {[120, 180, 240, 300, 360, 420, 480, 540, 600, 720].map((m) => (
+                  <option key={m} value={m}>
+                    {t("teams.editDurationHours", { hours: m / 60 })}
+                  </option>
+                ))}
+              </TeamDurationField>
             </div>
 
-            <FieldGroup
-              icon="👥"
-              label={t("teams.formLabel.maxSize")}
-              required
+            <TeamCapacityField
+              value={formData.maxParticipants}
+              onChange={handleChange}
+              min={Math.max(1, team.activeParticipantCount)}
               hint={t("teams.editMaxSizeHint", {
                 current: team.activeParticipantCount,
               })}
             >
-              <div className="relative">
-                <Users
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
-                  style={{ color: "var(--muted-foreground)" }}
-                />
-                <input
-                  id="maxParticipants"
-                  name="maxParticipants"
-                  type="number"
-                  min={Math.max(1, team.activeParticipantCount)}
-                  max={49}
-                  placeholder={t("teams.formPlaceholder.maxSize")}
-                  value={formData.maxParticipants}
-                  onChange={handleChange}
-                  required
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-                />
-              </div>
               <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1.5">
                 <AlertCircle className="h-3 w-3" />
                 {t("teams.editMaxMembersTip", {
                   current: team.activeParticipantCount,
                 })}
               </p>
-            </FieldGroup>
+            </TeamCapacityField>
 
-            <FieldGroup icon="📍" label={t("teams.meetingPoint")}>
-              <textarea
-                name="meetingPoint"
-                aria-label={t("teams.meetingPoint")}
-                maxLength={1000}
-                value={formData.meetingPoint}
-                onChange={handleChange}
-                className="w-full rounded-xl border border-border bg-background p-3"
-              />
-            </FieldGroup>
-            <FieldGroup icon="📝" label={t("teams.formLabel.description")}>
-              <textarea
-                id="description"
-                name="description"
-                placeholder={t("teams.formPlaceholder.description")}
-                value={formData.description}
-                onChange={handleChange}
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-              />
-            </FieldGroup>
+            <TeamDescriptionFields
+              meetingPoint={formData.meetingPoint}
+              description={formData.description}
+              onChange={handleChange}
+            />
 
             <FieldGroup
               icon="📋"
