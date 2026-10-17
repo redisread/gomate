@@ -41,8 +41,13 @@ test.describe("Team Flow", () => {
     const locationPicker = page.locator("[data-testid='create-team-location']");
     await expect(locationPicker).toBeVisible();
     await locationPicker.click();
-    await page.locator("[data-testid='create-team-location-search']").fill("梧桐山");
-    await page.getByRole("option", { name: /梧桐山/u }).first().click();
+    await page
+      .locator("[data-testid='create-team-location-search']")
+      .fill("梧桐山");
+    await page
+      .getByRole("option", { name: /梧桐山/u })
+      .first()
+      .click();
     await expect(locationPicker).toContainText("梧桐山");
     await page
       .locator("[data-testid='create-team-activity-type']")
@@ -54,7 +59,7 @@ test.describe("Team Flow", () => {
       .locator("[data-testid='create-team-date']")
       .fill(startDate.toISOString().slice(0, 10));
     await expect(
-      page.getByText(/活动开始时间|Activity Start Time|アクティビティ開始時間/u, {
+      page.getByText(/活动开始时间|Activity Start Time/u, {
         exact: true,
       }),
     ).toBeVisible();
@@ -74,6 +79,15 @@ test.describe("Team Flow", () => {
       page.getByText("E2E Test Team", { exact: true }).first(),
     ).toBeVisible();
     await expect(page.locator("text=Internal Server Error")).not.toBeVisible();
+    const teamId = new URL(page.url()).pathname.split("/").at(-1);
+    const response = await page.request.get("/api/teams/" + teamId);
+    expect(response.ok()).toBe(true);
+    const { team } = await response.json();
+    expect(team.location.coverImageUrl).toBeTruthy();
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      "content",
+      new URL(team.location.coverImageUrl, page.url()).href,
+    );
     expect(browserErrors).toEqual([]);
   });
 });

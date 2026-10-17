@@ -1,32 +1,28 @@
 ---
 /**
  * 地点详情页 - 动态路由
- * Phase 5: 添加 og:image 支持
  */
+import type { Location } from "../../contracts";
 import Layout from "../../layouts/Layout.astro";
 import { LocationDetailClient } from "../../components/features/location-detail-client";
 import { ErrorBoundary } from "../../components/ui/error-boundary";
 import { declareI18nNs } from "../../middleware";
-import { API_BASE } from "../../lib/api";
 import { serverApiGet } from "../../lib/server-api";
 
 declareI18nNs(Astro.locals, ["locationDetail", "locations", "errors", "admin", "enums", "teams", "content"]);
 
 const { id } = Astro.params;
 
-// Phase 5: 服务端获取地点数据，用于 og:image
+// Reuse the public cover for link previews.
 const locationResponse = await serverApiGet<{
-  success: boolean;
-  location?: { id: string; name: string; description: string; coverImageUrl: string };
+  success: true;
+  location: Location;
 }>(Astro.request, Astro.locals, `/locations/${id}`);
 const locationData = locationResponse?.success
   ? locationResponse.location ?? null
   : null;
 
-// 构建 og:image URL
-const ogImage = locationData
-  ? `${API_BASE}/share-image/location/${locationData.id || id}`
-  : undefined;
+const ogImage = locationData?.coverImageUrl ?? undefined;
 
 const title = locationData?.name
   ? locationData.name

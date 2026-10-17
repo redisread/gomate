@@ -363,9 +363,6 @@
   "copyLink": "Copy Link",
   "linkCopied": "Link copied",
   "close": "Close",
-  "saveImageHint": "Tip: Click \"Save to Album\" to save, or long press image to save manually",
-  "saveToAlbum": "Save to Album",
-  "qrCodeHint": "Scan to join team",
   "meetingPoint": "Meeting information",
   "removeMemberAria": "Remove {name}"
 }

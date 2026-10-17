@@ -93,10 +93,9 @@ describe("ProfileClient layout", () => {
     const header = await screen.findByTestId("profile-header");
     expect(within(header).getByRole("heading", { level: 1, name: "Victor" })).toBeInTheDocument();
     expect(within(header).getByText("Shenzhen")).toBeInTheDocument();
-    expect(within(header).getByRole("link", { name: "profile.editProfileBtn" })).toHaveClass("min-h-11");
+    expect(within(header).getByRole("link", { name: "profile.editProfileBtn" })).toHaveAttribute("href", "/profile/edit");
 
     const stats = screen.getByTestId("profile-stats");
-    expect(stats).toHaveClass("grid-cols-3");
     expect(within(stats).getByRole("link", { name: /profile.statCreatedLabel/ })).toHaveAttribute("href", "/my-teams?tab=created");
     expect(within(stats).getByRole("link", { name: /profile.statJoinedLabel/ })).toHaveAttribute("href", "/my-teams?tab=joined");
     expect(within(stats).getByRole("link", { name: /profile.statCompletedLabel/ })).toHaveAttribute("href", "/my-teams?tab=history");

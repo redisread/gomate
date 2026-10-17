@@ -1,8 +1,8 @@
 ---
 /**
  * 队伍详情页 - Partiful 风格
- * Phase 5: 添加 og:image 支持
  */
+import type { TeamResponse } from "../../contracts/team-api";
 import Layout from "../../layouts/Layout.astro";
 import { TeamDetailPartiful } from "../../components/features/team-detail/team-detail-main";
 import { declareI18nNs } from "../../middleware";
@@ -13,14 +13,11 @@ declareI18nNs(Astro.locals, ["teams", "locationDetail", "enums", "profile", "err
 const { id } = Astro.params;
 
 const data = id
-  ? await serverApiGet<{ success: boolean; team?: { title?: string; description?: string | null } }>(Astro.request, Astro.locals, `/teams/${id}`)
+  ? await serverApiGet<TeamResponse>(Astro.request, Astro.locals, `/teams/${id}`)
   : null;
 const teamData = data?.success && data.team ? data.team : null;
 
-// 构建 og:image URL
-const ogImage = teamData
-  ? `/api/share-image/team/${id}`
-  : undefined;
+const ogImage = teamData?.location?.coverImageUrl ?? undefined;
 
 const title = teamData?.title
   ? teamData.title

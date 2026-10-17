@@ -36,12 +36,6 @@
     "open": "Join Us",
     "closed": "Ended"
   },
-  "memberStatus": {
-    "pending": "Pending Review",
-    "approved": "Approved",
-    "rejected": "Rejected",
-    "cancelled": "Cancelled"
-  },
   "level": {
     "beginner": "Beginner",
     "intermediate": "Explorer",
