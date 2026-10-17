@@ -496,7 +496,7 @@ function HeroActions({
         <a
           href={`/admin/locations/${location.id}/edit`}
           aria-label={t("admin.editLocation")}
-          className="rounded-full bg-black/35 p-3 text-white focus-visible:ring-2 focus-visible:ring-white"
+          className="rounded-full border border-border bg-card p-3 text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Pencil className="h-4 w-4" />
         </a>
@@ -640,11 +640,7 @@ export function LocationDetailClient({
       <Navbar />
 
       {/* 相纸卡片封面；标题保留在正常文档流中，避免多行文字与画廊重叠。 */}
-      <div ref={heroRef} className="relative overflow-hidden bg-stone-900 pt-32">
-        {galleryImages[0] && (
-          <img src={galleryImages[0]} alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-2xl" />
-        )}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/40 to-transparent" />
+      <div ref={heroRef} className="relative overflow-hidden bg-background pt-32">
         <HeroActions location={location} isAdmin={isAdmin} />
 
         <LocationCoverGallery key={location.id} images={galleryImages} name={location.name} onOpen={setLightboxIndex} />
@@ -654,7 +650,7 @@ export function LocationDetailClient({
             {/* 面包屑 */}
             <a
               href="/locations"
-              className="inline-flex items-center gap-1 text-white/55 hover:text-white/85 text-xs mb-3 transition-colors duration-150 font-medium"
+              className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground text-xs mb-3 transition-colors duration-150 font-medium"
             >
               <MapPin className="h-3 w-3" />
               {t("nav.locations")}
@@ -664,7 +660,7 @@ export function LocationDetailClient({
             {/* 徽章行 */}
             <div className="flex items-center gap-2 mb-2.5 flex-wrap">
               {(location.extra.hiking?.bestSeasons?.length ?? 0) > 0 && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-white/15 text-white backdrop-blur-sm border border-white/20">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border">
                   <Sparkles className="w-3 h-3" />
                   {getSeasonLabel(t)[
                     location.extra.hiking!.bestSeasons![0] as keyof ReturnType<
@@ -676,11 +672,11 @@ export function LocationDetailClient({
             </div>
 
             {/* 标题 */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white leading-tight mb-1.5 drop-shadow-md">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-foreground leading-tight mb-1.5">
               {location.name}
             </h1>
             {location.subtitle && (
-              <p className="text-white/75 text-sm sm:text-base font-medium mb-1">
+              <p className="text-muted-foreground text-sm sm:text-base font-medium mb-1">
                 {location.subtitle}
               </p>
             )}

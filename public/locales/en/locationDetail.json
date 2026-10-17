@@ -16,7 +16,5 @@
   "unfavorite": "Unfavorite",
   "addressAndRelated": "Address & Recommendations",
   "photoGallery": "Location photos",
-  "expandPhotos": "Expand photos",
-  "collapsePhotos": "Collapse photos",
   "imageLoadFailed": "Image could not load. Please retry."
 }

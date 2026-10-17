@@ -7,7 +7,6 @@ interface Props {
   src: string;
   alt: string;
   contain?: boolean;
-  hovered?: boolean;
   interactive?: boolean;
 }
 
@@ -15,7 +14,6 @@ function Picture({
   src,
   alt,
   contain,
-  hovered,
   enter,
   zoom,
   reduced,
@@ -23,6 +21,7 @@ function Picture({
   const present = useIsPresent();
   return (
     <motion.img
+      draggable={false}
       src={src}
       alt={present ? alt : ""}
       aria-hidden={!present}
@@ -33,7 +32,7 @@ function Picture({
       }
       animate={{
         opacity: 1,
-        scale: !reduced && hovered && !contain ? 1.015 : 1,
+        scale: 1,
       }}
       exit={{ opacity: 0 }}
       transition={{ duration: reduced ? 0 : 0.24, ease: [0.2, 0, 0, 1] }}
@@ -43,13 +42,7 @@ function Picture({
 }
 
 /** Keeps the last decoded image visible while a newer request is pending or failed. */
-export function GalleryImage({
-  src,
-  alt,
-  contain,
-  hovered,
-  interactive = true,
-}: Props) {
+export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
   const { t } = useI18n(["locationDetail", "common"]);
   const reduced = useReducedMotion();
   const [displayed, setDisplayed] = React.useState<{
@@ -116,7 +109,6 @@ export function GalleryImage({
             src={displayed.src}
             alt={displayed.alt}
             contain={contain}
-            hovered={hovered}
             enter={enter}
             zoom={zoom}
             reduced={reduced}
