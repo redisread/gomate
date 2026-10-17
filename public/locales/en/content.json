@@ -66,7 +66,7 @@
         "items": [
           "Account information: email address, username, and password (encrypted) provided during registration",
           "Profile: nickname, bio, and hiking level you voluntarily fill in",
-          "Usage data: teams you create, activities you participate in, locations you favorite"
+          "Usage data: teams you create or join and activities you participate in"
         ]
       },
       {
@@ -213,19 +213,19 @@
     "faq": [
       {
         "question": "How to join a team?",
-        "answer": "On the team detail page, click \"Join Request\" and wait for the team leader's approval."
+        "answer": "Click \"Join Team\" on the team detail page. Once signed in, you can join directly if the team is open, has not started and has room. No approval is required."
       },
       {
         "question": "How to create my own team?",
-        "answer": "After logging in, click \"Create Team\" in the navigation bar, fill in team details, departure time, member limits, etc. Once published, other users can apply to join."
+        "answer": "After signing in, choose \"Create Team\", select a place and enter the time, capacity and meeting details. Others can then join directly while space is available."
       },
       {
         "question": "How to contact the team leader?",
-        "answer": "Approved team members can message the leader from the team detail page, and leaders can message approved members from the member list. Pending applicants cannot use in-app messages yet."
+        "answer": "Check the leader's WeChat contact details on the team page. Use Feedback for website issues. GoMate does not provide in-app chat."
       },
       {
         "question": "What do the team statuses mean?",
-        "answer": "Recruiting (accepting applications), Full (reached member limit), Confirmed (team is set to depart), Cancelled (event cancelled), Completed (event finished)."
+        "answer": "Recruitment is open or closed, and a team is full when it reaches capacity. Activity status changes with formation, start and end times, or cancellation. Check the team page for its current status."
       },
       {
         "question": "How to edit my profile?",
@@ -252,11 +252,7 @@
     "profile": "Profile",
     "profileEdit": "Edit Profile",
     "myTeams": "My Teams",
-    "messages": "Messages",
-    "chat": "Chat",
-    "favorites": "My Favorites",
     "userDetail": "User Profile",
-    "contact": "Contact Us",
     "feedback": "Feedback",
     "about": "About Us",
     "help": "Help Center",
@@ -282,16 +278,12 @@
     "profile": "Profile",
     "profileEdit": "Edit Profile",
     "myTeams": "My Teams",
-    "favorites": "My Favorites",
     "userDetail": "User Profile",
-    "contact": "Contact Us",
     "feedback": "Feedback",
     "about": "About Us",
     "help": "Help Center",
     "privacy": "Privacy Policy",
     "terms": "Terms of Service",
-    "adminLocations": "Manage Locations",
-    "storyCreate": "Publish Story - GoMate",
-    "storyEdit": "Edit Story - GoMate"
+    "adminLocations": "Manage Locations"
   }
 }
