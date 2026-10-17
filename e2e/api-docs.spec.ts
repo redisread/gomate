@@ -27,7 +27,10 @@ test("Scalar renders the public contract using only same-origin assets", async (
     "src",
     /\/generated\/scalar-1\.75\.0\/standalone\.js$/,
   );
-  await page.screenshot({ path: "e2e-report/api-docs.png", fullPage: false });
+  await page.screenshot({
+    path: testInfo.outputPath("api-docs.png"),
+    fullPage: false,
+  });
   expect(errors).toEqual([]);
   expect(externalRequests).toEqual([]);
 });

@@ -73,6 +73,8 @@ export function audienceDocument(
       } else if (key === "security" && Array.isArray(child)) {
         for (const requirement of child) {
           for (const name of Object.keys(requirement)) {
+            if (!components?.securitySchemes?.[name])
+              throw new Error(`Unresolved OpenAPI security scheme: ${name}`);
             reachable.add(`#/components/securitySchemes/${name}`);
           }
         }
@@ -190,6 +192,9 @@ export function registerDocumentation(app: DocumentationApp) {
         hideClientButton: true,
         persistAuth: false,
         withDefaultFonts: false,
+        showDeveloperTools: "never",
+        agent: { disabled: true },
+        mcp: { disabled: true },
         proxyUrl: "",
       })(c, next);
     });
