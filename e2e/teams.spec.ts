@@ -12,7 +12,7 @@ test.describe("Team Flow", () => {
     await page.waitForURL(/\/login/, { timeout: 10000 });
   });
 
-  test("create team flow", async ({ page }) => {
+  test("create and edit team flow", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const browserErrors: string[] = [];
     page.on("console", (message) => {
@@ -88,6 +88,44 @@ test.describe("Team Flow", () => {
       "content",
       new URL(team.location.coverImageUrl, page.url()).href,
     );
+    await page.goto(`/teams/${teamId}/edit`);
+    const editTitle = page.locator('input[name="title"]');
+    await expect(editTitle).toHaveValue("E2E Test Team");
+    await expect(editTitle).toHaveAccessibleName(/.+/u);
+    await expect(page.locator('input[name="startDateInput"]')).toHaveCount(0);
+    await expect(page.locator('[name="locationId"]')).toHaveCount(0);
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 844 });
+      await expect(editTitle).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+    await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
+    await editTitle.focus();
+    await page.keyboard.press("Tab");
+    await expect(
+      page.locator(`form a[href="/locations/${team.locationId}"]`),
+    ).toBeFocused();
+    await editTitle.fill("E2E Edited Team");
+    await page.locator('[name="activityType"]').selectOption("travel");
+    await page.locator('[name="durationMinutes"]').selectOption("180");
+    await page.locator('[name="meetingPoint"]').fill("  Main entrance  ");
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(`/teams/${teamId}`);
+    const edited = await (
+      await page.request.get(`/api/teams/${teamId}`)
+    ).json();
+    expect(edited.team.title).toBe("E2E Edited Team");
+    expect(edited.team.activityType).toBe("travel");
+    expect(edited.team.meetingPoint).toBe("Main entrance");
+    expect(edited.team.locationId).toBe(team.locationId);
+    expect(edited.team.startAt).toBe(team.startAt);
+    expect(
+      Date.parse(edited.team.endAt) - Date.parse(edited.team.startAt),
+    ).toBe(180 * 60_000);
     expect(browserErrors).toEqual([]);
   });
 });
