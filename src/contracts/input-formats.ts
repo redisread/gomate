@@ -42,3 +42,14 @@ export function urlTextSchema(message: string) {
         "URL accepted by the WHATWG URL parser; original text is preserved.",
     });
 }
+
+/** Preserve Hono req.query's first-value behavior for legacy scalar queries. */
+export const firstQueryStringSchema = z
+  .preprocess(
+    (value) => (Array.isArray(value) ? value[0] : value),
+    z.string().optional(),
+  )
+  .openapi({
+    type: "string",
+    description: "If repeated, only the first query value is used.",
+  });

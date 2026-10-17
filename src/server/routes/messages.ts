@@ -1,3 +1,4 @@
+import { firstQueryStringSchema } from "@/contracts/input-formats";
 import { MessageSchema } from "@/contracts";
 import {
   ConversationListResponseSchema,
@@ -46,15 +47,15 @@ import {
 
 const messagesRoute = createApiApp();
 const messageQuerySchema = z.object({
-  limit: z.string().optional().describe("Integer 1–50; default 20"),
-  cursor: z.string().optional().describe("Opaque message cursor"),
-  since: z.string().optional().describe("Unsupported; returns 400"),
+  limit: firstQueryStringSchema.describe("Integer 1–50; default 20"),
+  cursor: firstQueryStringSchema.describe("Opaque message cursor"),
+  since: firstQueryStringSchema.describe("Unsupported; returns 400"),
 });
 const conversationQuerySchema = messageQuerySchema
   .omit({ since: true })
   .extend({
-    page: z.string().optional().describe("Unsupported; returns 400"),
-    pageSize: z.string().optional().describe("Unsupported; returns 400"),
+    page: firstQueryStringSchema.describe("Unsupported; returns 400"),
+    pageSize: firstQueryStringSchema.describe("Unsupported; returns 400"),
   });
 
 const createConversationSchema = z

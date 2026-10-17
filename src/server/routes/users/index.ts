@@ -1,3 +1,4 @@
+import { firstQueryStringSchema } from "@/contracts/input-formats";
 import type { MiddlewareHandler } from "hono";
 import type { ApiEnv } from "../../lib/openapi";
 import { utcDateTimeSchema } from "@/contracts/input-formats";
@@ -60,10 +61,10 @@ const privateAccountHeaders: MiddlewareHandler<ApiEnv> = async (c, next) => {
   await next();
 };
 const timelineQuerySchema = z.object({
-  limit: z.string().optional().describe("Integer 1–50; default 10"),
-  cursor: z.string().optional().describe("Opaque timeline cursor"),
-  page: z.string().optional().describe("Unsupported; returns 400"),
-  pageSize: z.string().optional().describe("Unsupported; returns 400"),
+  limit: firstQueryStringSchema.describe("Integer 1–50; default 10"),
+  cursor: firstQueryStringSchema.describe("Opaque timeline cursor"),
+  page: firstQueryStringSchema.describe("Unsupported; returns 400"),
+  pageSize: firstQueryStringSchema.describe("Unsupported; returns 400"),
 });
 
 const nullableText = (max: number) =>

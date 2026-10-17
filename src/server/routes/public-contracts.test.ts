@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiApp, createRoute, jsonResponse, z } from "../lib/openapi";
 import { contactRoute } from "./contact";
 import { feedbackRoute } from "./feedback";
@@ -8,9 +8,13 @@ import { favoritesRoute } from "./favorites";
 import { usersRoute } from "./users";
 import messagesRoute from "./messages";
 import storiesRoute from "./stories";
+const mocks = vi.hoisted(() => ({ getActiveSession: vi.fn() }));
 vi.mock("../lib/active-session", () => ({
-  getActiveSession: vi.fn(async () => null),
+  getActiveSession: mocks.getActiveSession,
 }));
+beforeEach(() => {
+  mocks.getActiveSession.mockResolvedValue(null);
+});
 
 describe("public route contracts", () => {
   it("registers form, region and tag operations without invoking business handlers", () => {
@@ -123,3 +127,50 @@ it("preserves private account response headers on an anonymous request", async (
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("pragma")).toBe("no-cache");
 });
+
+it.each([
+  [
+    "timeline",
+    usersRoute,
+    "/me/created-teams?limit=nope&limit=10",
+    "limit must be an integer between 1 and 50",
+  ],
+  [
+    "timeline page precedence",
+    usersRoute,
+    "/me/created-teams?page=1&page=2&limit=nope",
+    "page pagination is not supported; use cursor",
+  ],
+  [
+    "conversation",
+    messagesRoute,
+    "/?limit=nope&limit=10",
+    "limit must be an integer between 1 and 50",
+  ],
+  [
+    "conversation page precedence",
+    messagesRoute,
+    "/?page=1&page=2&limit=nope",
+    "page pagination is not supported; use cursor",
+  ],
+  [
+    "message since precedence",
+    messagesRoute,
+    "/conversation-1?since=1&since=2&limit=nope",
+    "since is not supported; use cursor",
+  ],
+] as const)(
+  "preserves first-value query and unsupported parameter behavior: %s",
+  async (_name, app, path, message) => {
+    mocks.getActiveSession.mockResolvedValue({
+      user: { id: "user-1" },
+      session: { id: "session-1" },
+    });
+    const response = await app.request(path, {}, {});
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      success: false,
+      error: { code: "BAD_REQUEST", message },
+    });
+  },
+);
