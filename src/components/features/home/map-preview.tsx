@@ -1,4 +1,5 @@
 import * as React from "react";
+import { animate as animateElement } from "motion/mini";
 import { ArrowRight, MapPin, RotateCcw } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { getRegionDisplayName } from "@/components/shared/quick-city-options";
@@ -136,8 +137,8 @@ function PreviewText({
   const old = React.useRef<HTMLDivElement>(null);
   const last = React.useRef<TextContent>({ title, subtitle, selected });
   const [outgoing, setOutgoing] = React.useState<TextContent | null>(null);
-  const entering = React.useRef<Animation | null>(null);
-  const leaving = React.useRef<Animation | null>(null);
+  const entering = React.useRef<ReturnType<typeof animateElement> | null>(null);
+  const leaving = React.useRef<ReturnType<typeof animateElement> | null>(null);
   const revision = React.useRef(0);
   const outgoingStyle = React.useRef({ opacity: "1", transform: "none" });
 
@@ -147,7 +148,7 @@ function PreviewText({
     if (previous.title === title && previous.subtitle === subtitle) return;
     const element = current.current;
     if (!element) return;
-    const interrupted = entering.current?.playState === "running";
+    const interrupted = entering.current?.state === "running";
     const style = getComputedStyle(element);
     const start = interrupted
       ? { opacity: style.opacity, transform: style.transform }
@@ -156,40 +157,50 @@ function PreviewText({
       opacity: style.opacity,
       transform: style.transform,
     };
-    entering.current?.cancel();
-    leaving.current?.cancel();
+    entering.current?.stop();
+    leaving.current?.stop();
     revision.current += 1;
     if (
       !animate ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
       typeof element.animate !== "function"
     ) {
+      element.style.opacity = "1";
+      element.style.transform = "none";
       setOutgoing(null);
       return;
     }
     setOutgoing(previous);
-    entering.current = element.animate(
-      [start, { opacity: "1", transform: "translateY(0)" }],
-      { duration: 180, easing: "cubic-bezier(0.2,0,0,1)" },
+    entering.current = animateElement(
+      element,
+      {
+        opacity: [Number(start.opacity), 1],
+        transform: [start.transform, "translateY(0)"],
+      },
+      { duration: 0.18, ease: [0.2, 0, 0, 1] },
     );
   }, [title, subtitle, selected, animate]);
 
   layoutEffect(() => {
     if (!outgoing || !old.current) return;
     const version = revision.current;
-    const animation = old.current.animate(
-      [outgoingStyle.current, { opacity: "0", transform: "translateY(-4px)" }],
-      { duration: 160, easing: "ease-out", fill: "forwards" },
+    const animation = animateElement(
+      old.current,
+      {
+        opacity: [Number(outgoingStyle.current.opacity), 0],
+        transform: [outgoingStyle.current.transform, "translateY(-4px)"],
+      },
+      { duration: 0.16, ease: "easeOut" },
     );
     leaving.current = animation;
-    void animation.finished
+    void Promise.resolve(animation)
       .then(() => {
         if (revision.current === version) setOutgoing(null);
       })
       .catch(() => {
         /* A newer selection owns the outgoing layer after cancellation. */
       });
-    return () => animation.cancel();
+    return () => animation.stop();
   }, [outgoing]);
 
   React.useEffect(() => {
@@ -197,16 +208,20 @@ function PreviewText({
     const stop = () => {
       if (!media.matches) return;
       revision.current += 1;
-      entering.current?.cancel();
-      leaving.current?.cancel();
+      entering.current?.stop();
+      leaving.current?.stop();
+      if (current.current) {
+        current.current.style.opacity = "1";
+        current.current.style.transform = "none";
+      }
       setOutgoing(null);
     };
     media.addEventListener("change", stop);
     return () => {
       media.removeEventListener("change", stop);
       revision.current += 1;
-      entering.current?.cancel();
-      leaving.current?.cancel();
+      entering.current?.stop();
+      leaving.current?.stop();
     };
   }, []);
 
