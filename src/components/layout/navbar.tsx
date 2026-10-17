@@ -4,7 +4,16 @@ import { BrandIcon } from "@/components/brand-icon";
 
 import * as React from "react";
 import { authClient } from "@/lib/auth-client";
-import { Mountain, Menu, X, User, Settings, Plus, LogOut, Heart, ChevronDown, MessageCircle } from "lucide-react";
+import {
+  Mountain,
+  Menu,
+  X,
+  User,
+  Settings,
+  Plus,
+  LogOut,
+  ChevronDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fetchCurrentUser, refreshCurrentUser } from "@/lib/api";
 import type { SessionUser } from "@/lib/types";
@@ -12,13 +21,12 @@ import { Avatar } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleToggle } from "@/components/layout/locale-toggle";
 import { useI18n } from "@/hooks/useI18n";
-import { useUnreadCount } from "@/hooks/useMessages";
 
 const navLinks = (t: (key: string) => string) => [
-  { href: "/",          label: t("nav.home") },
+  { href: "/", label: t("nav.home") },
   { href: "/locations", label: t("nav.locations") },
-  { href: "/teams",     label: t("nav.teams") },
-  { href: "/discover",  label: t("nav.discover") },
+  { href: "/teams", label: t("nav.teams") },
+  { href: "/discover", label: t("nav.discover") },
 ];
 
 interface NavbarProps {
@@ -47,14 +55,16 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   const [currentPath, setCurrentPath] = React.useState("");
-  const [session, setSession] = React.useState<{
-    user: NavbarUser;
-    isAdmin: boolean;
-  } | null | undefined>(undefined);
+  const [session, setSession] = React.useState<
+    | {
+        user: NavbarUser;
+        isAdmin: boolean;
+      }
+    | null
+    | undefined
+  >(undefined);
   // 延迟应用活跃状态，避免 SSR/CSR 不一致导致 hydration mismatch
   const [_mounted, setMounted] = React.useState(false);
-  const { count: unreadCount } = useUnreadCount(!!session?.user);
-
 
   // 获取当前路径（使用静态值避免 hydration mismatch）
   React.useEffect(() => {
@@ -74,9 +84,11 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const [sessionFailed, setSessionFailed] = React.useState(false);
   const updateSession = React.useCallback((refresh: boolean) => {
     const request = refresh ? refreshCurrentUser() : fetchCurrentUser();
     void request.then((u) => {
+      setSessionFailed(false);
       setSession(
         u
           ? {
@@ -85,7 +97,7 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
             }
           : null,
       );
-    });
+    }).catch(() => setSessionFailed(true));
   }, []);
 
   // 获取登录会话，并在页面恢复后重新读取，避免旧访客态永久驻留。
@@ -110,7 +122,9 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
   // 移动菜单打开时锁定滚动
   React.useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [isMobileMenuOpen]);
 
   // 点击外部关闭用户菜单
@@ -151,13 +165,12 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
           "fixed top-0 left-0 right-0 z-50",
           "transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 ease-out",
           isScrolled ? "navbar-glass shadow-warm-sm" : "bg-transparent",
-          className
+          className,
         )}
         suppressHydrationWarning
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-
             {/* ---- Logo ---- */}
             <a
               href="/"
@@ -191,15 +204,13 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                       // inactive muted-foreground 14px 挂；stone-700 dark:stone-300 稳过
                       active
                         ? "text-amber-800 dark:text-amber-300 bg-accent"
-                        : "text-stone-700 dark:text-stone-300 hover:text-foreground hover:bg-accent"
+                        : "text-stone-700 dark:text-stone-300 hover:text-foreground hover:bg-accent",
                     )}
                   >
                     {link.label}
                     {/* 活跃下划线 */}
                     {active && (
-                      <span
-                        className="absolute bottom-0.5 left-3.5 right-3.5 h-0.5 rounded-full bg-primary"
-                      />
+                      <span className="absolute bottom-0.5 left-3.5 right-3.5 h-0.5 rounded-full bg-primary" />
                     )}
                   </a>
                 );
@@ -225,8 +236,14 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                 </a>
               )}
 
-              {session === undefined ? (
-                <div className="flex items-center gap-2" data-testid="nav-auth-loading" aria-hidden="true">
+              {sessionFailed ? (
+                <button type="button" className="min-h-11 underline" onClick={() => updateSession(true)}>{t("common.retry")}</button>
+              ) : session === undefined ? (
+                <div
+                  className="flex items-center gap-2"
+                  data-testid="nav-auth-loading"
+                  aria-hidden="true"
+                >
                   <div className="h-9 w-16 animate-pulse rounded-lg bg-muted motion-reduce:animate-none" />
                   <div className="h-9 w-24 animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
                 </div>
@@ -245,9 +262,17 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                         name={session.user.nickname || session.user.name}
                         size="xs"
                       />
-                      <span title={session.user.nickname || session.user.name} className="max-w-[80px] truncate">{session.user.nickname || session.user.name}</span>
+                      <span
+                        title={session.user.nickname || session.user.name}
+                        className="max-w-[80px] truncate"
+                      >
+                        {session.user.nickname || session.user.name}
+                      </span>
                       <ChevronDown
-                        className={cn("h-3.5 w-3.5 transition-transform duration-200", showUserMenu && "rotate-180")}
+                        className={cn(
+                          "h-3.5 w-3.5 transition-transform duration-200",
+                          showUserMenu && "rotate-180",
+                        )}
                       />
                     </button>
 
@@ -256,7 +281,8 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                       <div
                         className="absolute right-0 top-full mt-1.5 w-44 rounded-xl overflow-hidden bg-popover border border-border shadow-lg z-50"
                         style={{
-                          animation: "fade-up 0.15s cubic-bezier(0.16,1,0.3,1) both",
+                          animation:
+                            "fade-up 0.15s cubic-bezier(0.16,1,0.3,1) both",
                         }}
                       >
                         <a
@@ -275,29 +301,6 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                           <Mountain className="h-3.5 w-3.5 text-muted-foreground" />
                           {t("nav.myTeams")}
                         </a>
-                        <a
-                          href="/messages"
-                          className="flex items-center justify-between gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <span className="flex items-center gap-2.5">
-                            <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                            {t("nav.messages")}
-                          </span>
-                          {unreadCount > 0 && (
-                            <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-2xs font-medium leading-none text-white">
-                              {unreadCount > 99 ? "99+" : unreadCount}
-                            </span>
-                          )}
-                        </a>
-                        <a
-                          href="/favorites"
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <Heart className="h-3.5 w-3.5 text-muted-foreground" />
-                          {t("nav.myFavorites")}
-                        </a>
                         <div className="border-t border-border my-1" />
                         <button
                           type="button"
@@ -312,7 +315,12 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                   </div>
 
                   {/* 主 CTA：发布队伍 */}
-                  <CtaButton href="/teams/create" data-testid="nav-create-team" label={t("nav.createTeam")} icon={<Plus className="h-4 w-4" />} />
+                  <CtaButton
+                    href="/teams/create"
+                    data-testid="nav-create-team"
+                    label={t("nav.createTeam")}
+                    icon={<Plus className="h-4 w-4" />}
+                  />
                 </>
               ) : (
                 <>
@@ -324,13 +332,20 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                   >
                     {t("nav.login")}
                   </a>
-                  <CtaButton href="/register" data-testid="nav-register" label={t("nav.register")} />
+                  <CtaButton
+                    href="/register"
+                    data-testid="nav-register"
+                    label={t("nav.register")}
+                  />
                 </>
               )}
             </div>
 
             {adminQuickAction && (
-              <div className="ms-auto shrink-0 md:ms-0" data-testid="nav-admin-quick-action">
+              <div
+                className="ms-auto shrink-0 md:ms-0"
+                data-testid="nav-admin-quick-action"
+              >
                 {adminQuickAction}
               </div>
             )}
@@ -341,12 +356,17 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
               data-testid="nav-mobile-menu-toggle"
               className="md:hidden p-2 rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground transition-colors duration-150"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label={isMobileMenuOpen ? t("common.closeMenu") : t("common.openMenu")}
+              aria-label={
+                isMobileMenuOpen ? t("common.closeMenu") : t("common.openMenu")
+              }
               aria-expanded={isMobileMenuOpen}
             >
-              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {isMobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </button>
-
           </div>
         </div>
       </header>
@@ -367,12 +387,17 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
           <div
             className="absolute right-0 top-0 bottom-0 w-72 flex flex-col bg-popover border-l border-border shadow-2xl"
             style={{
-              animation: "slide-in-right 0.35s cubic-bezier(0.16,1,0.3,1) forwards",
+              animation:
+                "slide-in-right 0.35s cubic-bezier(0.16,1,0.3,1) forwards",
             }}
           >
             {/* 顶部：Logo + 关闭 */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-              <a href="/" className="flex min-h-11 items-center gap-2" onClick={() => setIsMobileMenuOpen(false)}>
+              <a
+                href="/"
+                className="flex min-h-11 items-center gap-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <BrandIcon size={28} />
                 <span className="font-bold text-foreground">GoMate</span>
               </a>
@@ -396,14 +421,22 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                     size="md"
                   />
                   <div className="min-w-0">
-                    <p title={session.user.nickname || session.user.name} className="font-semibold text-foreground text-sm truncate">{session.user.nickname || session.user.name}</p>
+                    <p
+                      title={session.user.nickname || session.user.name}
+                      className="font-semibold text-foreground text-sm truncate"
+                    >
+                      {session.user.nickname || session.user.name}
+                    </p>
                   </div>
                 </div>
               </div>
             )}
 
             {/* 导航链接 */}
-            <nav className="flex flex-col px-3 py-3 gap-0.5" aria-label={t("common.mobileNav")}>
+            <nav
+              className="flex flex-col px-3 py-3 gap-0.5"
+              aria-label={t("common.mobileNav")}
+            >
               {navLinks(t).map((link, i) => {
                 const active = isActive(link.href);
                 return (
@@ -417,7 +450,7 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                       active
                         ? "text-primary bg-accent"
                         : "text-foreground hover:bg-accent hover:text-primary",
-                      `stagger-${i + 1}`
+                      `stagger-${i + 1}`,
                     )}
                   >
                     {link.label}
@@ -432,8 +465,13 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
               <div className="flex items-center justify-center py-2">
                 <LocaleToggle />
               </div>
-              {session === undefined ? (
-                <div className="h-24 animate-pulse rounded-xl bg-muted motion-reduce:animate-none" aria-hidden="true" />
+              {sessionFailed ? (
+                <button type="button" className="min-h-11 underline" onClick={() => updateSession(true)}>{t("common.retry")}</button>
+              ) : session === undefined ? (
+                <div
+                  className="h-24 animate-pulse rounded-xl bg-muted motion-reduce:animate-none"
+                  aria-hidden="true"
+                />
               ) : session?.user ? (
                 <>
                   {session.isAdmin && (
@@ -443,7 +481,10 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent"
                     >
-                      <Settings className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                      <Settings
+                        className="h-4 w-4 text-muted-foreground"
+                        aria-hidden="true"
+                      />
                       {t("nav.admin")}
                     </a>
                   )}
@@ -462,27 +503,6 @@ export function Navbar({ className, renderAdminQuickAction }: NavbarProps) {
                   >
                     <Mountain className="h-4 w-4 text-muted-foreground" />
                     {t("nav.myTeams")}
-                  </a>
-                  <a
-                    href="/messages"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 border border-border text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-colors font-medium text-sm"
-                  >
-                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                    {t("nav.messages")}
-                    {unreadCount > 0 && (
-                      <span className="ml-1 min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-2xs font-medium leading-none text-white">
-                        {unreadCount > 99 ? "99+" : unreadCount}
-                      </span>
-                    )}
-                  </a>
-                  <a
-                    href="/favorites"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="w-full flex items-center justify-center gap-2 border border-border text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-colors font-medium text-sm"
-                  >
-                    <Heart className="h-4 w-4 text-muted-foreground" />
-                    {t("nav.myFavorites")}
                   </a>
                   <a
                     href="/teams/create"
@@ -563,7 +583,7 @@ function _NavbarSkeleton({ className }: { className?: string }) {
       className={cn(
         "fixed top-0 left-0 right-0 z-50",
         "bg-white/80 dark:bg-slate-900/80 backdrop-blur-md",
-        className
+        className,
       )}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -576,17 +596,38 @@ function _NavbarSkeleton({ className }: { className?: string }) {
 
           {/* 桌面端导航链接 */}
           <nav className="hidden md:flex items-center gap-1">
-            <div className="h-8 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "50ms" }} />
-            <div className="h-8 w-20 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "100ms" }} />
-            <div className="h-8 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "150ms" }} />
+            <div
+              className="h-8 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer"
+              style={{ animationDelay: "50ms" }}
+            />
+            <div
+              className="h-8 w-20 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer"
+              style={{ animationDelay: "100ms" }}
+            />
+            <div
+              className="h-8 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer"
+              style={{ animationDelay: "150ms" }}
+            />
           </nav>
 
           {/* 桌面端操作区 */}
           <div className="hidden md:flex items-center gap-2">
-            <div className="h-8 w-20 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "200ms" }} />
-            <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "250ms" }} />
-            <div className="h-9 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "300ms" }} />
-            <div className="h-9 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer" style={{ animationDelay: "350ms" }} />
+            <div
+              className="h-8 w-20 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer"
+              style={{ animationDelay: "200ms" }}
+            />
+            <div
+              className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 skeleton-shimmer"
+              style={{ animationDelay: "250ms" }}
+            />
+            <div
+              className="h-9 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer"
+              style={{ animationDelay: "300ms" }}
+            />
+            <div
+              className="h-9 w-16 rounded-lg bg-slate-200 dark:bg-slate-700 skeleton-shimmer"
+              style={{ animationDelay: "350ms" }}
+            />
           </div>
 
           {/* 移动端汉堡按钮占位 */}

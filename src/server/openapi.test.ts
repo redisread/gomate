@@ -86,7 +86,7 @@ describe("API documentation HTTP boundary", () => {
 
   it.each([
     ["en-US,en;q=0.9", undefined, "GoMate API Reference"],
-    ["ja-JP,ja;q=0.9", undefined, "GoMate API リファレンス"],
+    ["ja-JP,ja;q=0.9", undefined, "GoMate API 文档"],
     ["en-US", "gomate_locale=zh-CN", "GoMate API 文档"],
   ])(
     "localizes the document title for %s with cookie %s",

@@ -3,7 +3,7 @@ import type * as schema from "../../db/schema";
 import { toTeamResponse } from "./utils";
 
 describe("Team response location projection", () => {
-  it("omits retired Location equipment while preserving Team actionbook gear", () => {
+  it("omits retired Location equipment while preserving private meeting information", () => {
     const response = toTeamResponse({
       team: {
         id: "team-1",
@@ -19,17 +19,12 @@ describe("Team response location projection", () => {
         recruitmentStatus: "open",
         formedAt: null,
         cancelledAt: null,
-        checklist: {
-          gear: {
-            essential: ["队伍急救包"],
-            optional: ["队旗"],
-          },
-        },
+        meetingPoint: "Meet at station",
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
         updatedAt: new Date("2026-01-01T00:00:00.000Z"),
       } as unknown as schema.Team,
       activeParticipantCount: 1,
-      checklistVisible: true,
+      meetingPointVisible: true,
       now: new Date("2026-01-01T00:00:00.000Z"),
       location: {
         id: "location-1",
@@ -64,9 +59,6 @@ describe("Team response location projection", () => {
     });
     expect(response.location?.extra.hiking).not.toHaveProperty("gearEssential");
     expect(response.location?.extra.hiking).not.toHaveProperty("gearOptional");
-    expect(response.checklist?.gear).toEqual({
-      essential: ["队伍急救包"],
-      optional: ["队旗"],
-    });
+    expect(response.meetingPoint).toBe("Meet at station");
   });
 });

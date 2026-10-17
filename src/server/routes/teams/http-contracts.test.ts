@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { drizzle } from "drizzle-orm/sqlite-proxy";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { TeamSchema, TeamJoinRequestSchema } from "@/contracts";
+import { TeamSchema } from "@/contracts";
 import * as schema from "../../db/schema";
 import type { Env } from "../../lib/auth";
 
@@ -14,6 +14,18 @@ vi.mock("../../lib/auth", () => ({
 const { default: teams } = await import("./index");
 const env = {
   DB: {
+    async batch(statements: { run: () => Promise<unknown> }[]) {
+      sqlite.exec("BEGIN");
+      try {
+        const result = [];
+        for (const statement of statements) result.push(await statement.run());
+        sqlite.exec("COMMIT");
+        return result;
+      } catch (error) {
+        sqlite.exec("ROLLBACK");
+        throw error;
+      }
+    },
     prepare(query: string) {
       return {
         bind(...values: SQLInputValue[]) {
@@ -82,8 +94,8 @@ describe("team API wire compatibility", () => {
       INSERT INTO region (id, country_code, name, slug, level) VALUES ('r', 'CN', '深圳', 'sz', 'city');
       INSERT INTO locations (id, region_id, name, slug, description, status)
         VALUES ('l', 'r', '地点', 'place', 'description', 'published');
-      INSERT INTO teams (id, location_id, leader_id, activity_type, title, start_at, end_at, checklist)
-        VALUES ('t', 'l', 'leader', 'hiking', '队伍', 2000000000000, 2000003600000, '{"notes":"private"}');
+      INSERT INTO teams (id, location_id, leader_id, activity_type, title, start_at, end_at, meeting_point)
+        VALUES ('t', 'l', 'leader', 'hiking', '队伍', 2000000000000, 2000003600000, 'private');
     `);
   });
   afterEach(() => {
@@ -96,7 +108,6 @@ describe("team API wire compatibility", () => {
       ["POST", "/"],
       ["PUT", "/t"],
       ["POST", "/t/join"],
-      ["PUT", "/t/checklist"],
     ]) {
       const response = await request(path, method, "{", "application/json");
       expect(response.status).toBe(401);
@@ -105,24 +116,6 @@ describe("team API wire compatibility", () => {
         error: { code: "UNAUTHORIZED", message: "请先登录" },
       });
     }
-  });
-
-  it("checks checklist existence and leader access before reading malformed JSON", async () => {
-    signIn("outsider");
-    expect(
-      (await request("/missing/checklist", "PUT", "{", "application/json"))
-        .status,
-    ).toBe(404);
-    const forbidden = await request(
-      "/t/checklist",
-      "PUT",
-      "{",
-      "application/json",
-    );
-    expect(forbidden.status).toBe(403);
-    expect(await forbidden.json()).toMatchObject({
-      error: { message: "只有队长可以编辑行动本" },
-    });
   });
 
   it.each([
@@ -151,40 +144,6 @@ describe("team API wire compatibility", () => {
     });
   });
 
-  it("keeps checklist field issue details and malformed-body envelopes", async () => {
-    signIn("leader");
-    const invalid = await request(
-      "/t/checklist",
-      "PUT",
-      '{"notes":123}',
-      "text/plain",
-    );
-    expect(invalid.status).toBe(400);
-    expect(await invalid.json()).toMatchObject({
-      error: {
-        details: [
-          {
-            code: "invalid_type",
-            path: ["notes"],
-            expected: "string",
-            received: "number",
-          },
-        ],
-      },
-    });
-    const malformed = await request(
-      "/t/checklist",
-      "PUT",
-      "{",
-      "application/json",
-    );
-    expect(malformed.status).toBe(400);
-    expect(await malformed.json()).toEqual({
-      success: false,
-      error: { code: "VALIDATION_ERROR", message: "输入无效" },
-    });
-  });
-
   it("serves typed list/detail responses and hides private data from anonymous viewers", async () => {
     const response = await request(
       "/?limit=1&limit=invalid&tagIds=,,&activityType=%20hiking%20",
@@ -195,7 +154,7 @@ describe("team API wire compatibility", () => {
       total: 1,
       nextCursor: null,
       teams: [
-        { id: "t", checklist: null, leader: { extra: { wechat: null } } },
+        { id: "t", meetingPoint: null, leader: { extra: { wechat: null } } },
       ],
     });
     expect(TeamSchema.safeParse(body.teams[0]).success).toBe(true);
@@ -204,7 +163,7 @@ describe("team API wire compatibility", () => {
     expect(TeamSchema.safeParse((await detail.json()).team).success).toBe(true);
     signIn("leader");
     expect((await (await request("/t")).json()).team).toMatchObject({
-      checklist: { notes: "private" },
+      meetingPoint: "private",
       leader: { extra: { wechat: "private" } },
     });
   });
@@ -221,40 +180,135 @@ describe("team API wire compatibility", () => {
     expect(await (await request("/missing/my-status")).json()).toEqual({
       success: true,
       status: null,
-      joinRequest: null,
     });
   });
 
-  it("creates an application with ISO timestamps and rejects a duplicate without widening the contract", async () => {
+  it("joins immediately and retries without consuming another place", async () => {
     signIn("outsider");
-    const response = await request(
-      "/t/join",
-      "POST",
-      '{"message":" hello "}',
-      "text/plain",
-    );
-    expect(response.status).toBe(201);
-    const body = await response.json();
-    expect(body).toMatchObject({
+    const joined = await request("/t/join", "POST");
+    expect(joined.status).toBe(201);
+    expect(await joined.json()).toEqual({ success: true, status: "joined" });
+    expect(await (await request("/t/my-status")).json()).toEqual({
       success: true,
-      joinRequest: {
-        teamId: "t",
-        userId: "outsider",
-        status: "pending",
-        message: "hello",
-        decidedAt: null,
-      },
+      status: "member",
     });
-    expect(TeamJoinRequestSchema.safeParse(body.joinRequest).success).toBe(
-      true,
+    const retry = await request("/t/join", "POST");
+    expect(retry.status).toBe(200);
+    expect(await retry.json()).toEqual({
+      success: true,
+      status: "already_member",
+    });
+    expect(
+      (await (await request("/t")).json()).team.activeParticipantCount,
+    ).toBe(2);
+  });
+
+  it("counts the leader and admits only one competitor for the last place", async () => {
+    sqlite.exec(
+      "UPDATE teams SET max_participants=2 WHERE id='t'; INSERT INTO users(id,name,email) VALUES('second','Second','second@example.com')",
     );
-    const duplicate = await request(
-      "/t/join",
-      "POST",
-      "{}",
+    mocks.getSession.mockImplementation(({ headers }: { headers: Headers }) =>
+      Promise.resolve({ user: { id: headers.get("x-user") } }),
+    );
+    const responses = await Promise.all(
+      ["outsider", "second"].map((id) =>
+        teams.request(
+          "/t/join",
+          { method: "POST", headers: { "x-user": id } },
+          env,
+        ),
+      ),
+    );
+    expect(responses.map((r) => r.status).sort()).toEqual([201, 409]);
+    const detail = await teams.request(
+      "/t",
+      { headers: { "x-user": "leader" } },
+      env,
+    );
+    expect((await detail.json()).team.activeParticipantCount).toBe(2);
+  });
+
+  it("releases a place on exit and permits a single rejoin", async () => {
+    signIn("outsider");
+    expect((await request("/t/join", "POST")).status).toBe(201);
+    expect((await request("/t/leave", "POST")).status).toBe(200);
+    expect((await request("/t/join", "POST")).status).toBe(201);
+    expect(
+      (await (await request("/t")).json()).team.activeParticipantCount,
+    ).toBe(2);
+    signIn("leader");
+    expect((await request("/t/leave", "POST")).status).toBe(409);
+    expect((await request("/t/join", "POST")).status).toBe(200);
+    expect(
+      (await (await request("/t")).json()).team.activeParticipantCount,
+    ).toBe(2);
+  });
+
+  it.each(["recruitment_status='closed'", "cancelled_at=1", "start_at=1"])(
+    "rejects joining when %s",
+    async (state) => {
+      sqlite.exec(`UPDATE teams SET ${state} WHERE id='t'`);
+      signIn("outsider");
+      expect((await request("/t/join", "POST")).status).toBe(409);
+    },
+  );
+
+  it("requires active identity, guards member removal, and rejects removal after departure", async () => {
+    signIn("outsider");
+    expect((await request("/t/join", "POST")).status).toBe(201);
+    expect((await request("/t/members/outsider/remove", "POST")).status).toBe(
+      403,
+    );
+    signIn("leader");
+    expect((await request("/t/members/outsider/remove", "POST")).status).toBe(
+      200,
+    );
+    signIn("outsider");
+    expect((await request("/t/join", "POST")).status).toBe(201);
+    sqlite.exec("UPDATE teams SET start_at=1 WHERE id='t'");
+    expect((await request("/t/leave", "POST")).status).toBe(409);
+    signIn("leader");
+    expect((await request("/t/members/outsider/remove", "POST")).status).toBe(
+      404,
+    );
+    sqlite.exec("UPDATE users SET status='suspended' WHERE id='outsider'");
+    signIn("outsider");
+    expect((await request("/t/join", "POST")).status).toBe(401);
+  });
+
+  it("removes approval and checklist operations", async () => {
+    signIn("leader");
+    for (const [path, method] of [
+      ["/t/join-requests", "GET"],
+      ["/t/join-requests/x/approve", "POST"],
+      ["/t/join-requests/x/reject", "POST"],
+      ["/t/join-requests/x/cancel", "POST"],
+      ["/t/checklist", "PUT"],
+    ]) {
+      expect((await request(path, method)).status).toBe(404);
+    }
+  });
+
+  it("saves only simple meeting information and reveals it after joining", async () => {
+    signIn("leader");
+    const response = await request(
+      "/t",
+      "PUT",
+      JSON.stringify({ meetingPoint: "Station exit A\n09:00" }),
       "application/json",
     );
-    expect(duplicate.status).toBe(409);
+    expect(response.status).toBe(200);
+    expect((await response.json()).team.meetingPoint).toBe(
+      "Station exit A\n09:00",
+    );
+    signIn("outsider");
+    expect((await (await request("/t")).json()).team.meetingPoint).toBeNull();
+    await request("/t/join", "POST");
+    expect((await (await request("/t")).json()).team.meetingPoint).toBe(
+      "Station exit A\n09:00",
+    );
+    await request("/t/leave", "POST");
+    expect((await (await request("/t")).json()).team.meetingPoint).toBeNull();
   });
 
   it("preserves the route-specific error when authentication lookup fails", async () => {

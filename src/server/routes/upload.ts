@@ -579,53 +579,6 @@ upload.post("/location", async (c) => {
   }
 });
 
-upload.post("/story", async (c) => {
-  let attemptedKey: string | null = null;
-  try {
-    const session = await getActiveSession(c.env, c.req.raw.headers);
-    if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-    const storage = storageConfiguration(c);
-    if (!storage) {
-      return c.json(
-        APIErrors.internalError("R2 storage is not safely configured"),
-        500,
-      );
-    }
-    const formData = await boundedFormData(c.req.raw);
-    const file = await validatedFormFile(c, formData);
-    if (file instanceof Response) return file;
-    const { buffer, ext, contentType } = await normalizedImage(
-      file,
-      c.env.IMAGES,
-    );
-    const key = `temp/stories/${session.user.id}/${generateId()}.${ext}`;
-    attemptedKey = key;
-    await storage.bucket.put(key, buffer, {
-      httpMetadata: { contentType },
-    });
-    return c.json({
-      success: true,
-      key,
-      url: uploadUrl(c, storage.publicBaseUrl, key),
-      size: buffer.byteLength,
-      type: contentType,
-    });
-  } catch (error) {
-    if (error instanceof UploadRequestError)
-      return requestErrorResponse(c, error);
-    if (attemptedKey && c.env.R2) {
-      await deleteR2ObjectsWithRetry(c.env.R2, [attemptedKey]).catch(
-        () => undefined,
-      );
-    }
-    logger.error("story_image_upload_failed", {
-      errorType: error instanceof Error ? error.name : "UnknownUploadError",
-    });
-    return c.json(APIErrors.internalError("Failed to upload story image"), 500);
-  }
-});
-
 export { upload as uploadRoute };
 
 // Only bounded multipart readers use registry-only body contracts.
@@ -644,7 +597,7 @@ const uploadedImageSchema = z.object({
   size: z.number().int(),
   type: z.string(),
 });
-for (const kind of ["avatar", "location", "story"] as const) {
+for (const kind of ["avatar", "location"] as const) {
   upload.openAPIRegistry.registerPath(
     createRoute({
       method: "post",

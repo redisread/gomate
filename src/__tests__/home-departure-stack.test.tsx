@@ -31,7 +31,7 @@ const teams: Team[] = ["周末去梧桐山", "海边日落散步", "城市骑行
       cancelledAt: null,
       lifecycle: "pending",
       isFull: false,
-      checklist: null,
+      meetingPoint: null,
       createdAt: "2026-08-01",
       updatedAt: "2026-08-01",
       leader: {

@@ -22,8 +22,6 @@ const STATIC_ROUTES = [
   { path: "/profile/edit", changefreq: "monthly", priority: 0.4 },
   { path: "/my-teams", changefreq: "daily", priority: 0.6 },
   { path: "/teams/create", changefreq: "monthly", priority: 0.5 },
-  { path: "/favorites", changefreq: "weekly", priority: 0.5 },
-  { path: "/contact", changefreq: "monthly", priority: 0.4 },
   { path: "/feedback", changefreq: "monthly", priority: 0.4 },
   { path: "/about", changefreq: "monthly", priority: 0.4 },
   { path: "/help", changefreq: "monthly", priority: 0.4 },

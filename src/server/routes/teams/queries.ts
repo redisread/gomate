@@ -1,9 +1,7 @@
-import { teamCookieSecurity } from "./contracts";
 import { TeamQuerySchema } from "./contracts";
 import {
   TeamResponseSchema,
   TeamListResponseSchema,
-  JoinRequestsResponseSchema,
   MyTeamStatusSchema,
 } from "@/contracts/team-api";
 import {
@@ -274,7 +272,7 @@ queries.openapi(
           ...row,
           activeParticipantCount: Number(row.activeParticipantCount),
           tags: tags.get(row.team.id) ?? [],
-          checklistVisible: false,
+          meetingPointVisible: false,
           contactVisible: false,
         }),
       );
@@ -302,80 +300,6 @@ queries.openapi(
 queries.openapi(
   createRoute({
     method: "get",
-    path: "/{id}/join-requests",
-    operationId: "teamsJoinRequests",
-    tags: ["Teams"],
-    summary: "List join requests as team leader",
-    "x-audience": "public",
-    security: teamCookieSecurity,
-    request: { params: z.object({ id: z.string() }) },
-
-    responses: {
-      200: jsonResponse(JoinRequestsResponseSchema, "Success"),
-      ...errorResponses(401, 403, 404, 500),
-    },
-  }),
-  async (c) => {
-    try {
-      const session = await getActiveSession(c.env, c.req.raw.headers);
-      if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-      const teamId = c.req.valid("param").id;
-      const db = createDb(c.env.DB);
-      const team = await db.query.teams.findFirst({
-        where: eq(schema.teams.id, teamId),
-      });
-      if (!team) return c.json(APIErrors.notFound("队伍不存在"), 404);
-      if (team.leaderId !== session.user.id) {
-        return c.json(APIErrors.forbidden("只有队长可以查看入队申请"), 403);
-      }
-
-      const rows = await db
-        .select({ request: schema.teamJoinRequests, user: schema.users })
-        .from(schema.teamJoinRequests)
-        .innerJoin(
-          schema.users,
-          eq(schema.users.id, schema.teamJoinRequests.userId),
-        )
-        .where(eq(schema.teamJoinRequests.teamId, teamId))
-        .orderBy(
-          asc(schema.teamJoinRequests.createdAt),
-          asc(schema.teamJoinRequests.id),
-        );
-
-      return c.json(
-        {
-          success: true as const,
-          joinRequests: rows.map(({ request, user }) => ({
-            id: request.id,
-            teamId: request.teamId,
-            userId: request.userId,
-            status: request.status,
-            message: request.message,
-            decidedByUserId: request.decidedByUserId,
-            decidedAt: request.decidedAt?.toISOString() ?? null,
-            createdAt: request.createdAt.toISOString(),
-            updatedAt: request.updatedAt.toISOString(),
-            user: {
-              id: user.id,
-              name: user.name,
-              nickname: user.nickname,
-              image: user.image,
-            },
-          })),
-        },
-        200,
-      );
-    } catch (error) {
-      logger.error("team_join_requests_list_failed", error);
-      return c.json(APIErrors.internalError("获取入队申请失败"), 500);
-    }
-  },
-);
-
-queries.openapi(
-  createRoute({
-    method: "get",
     path: "/{id}/my-status",
     operationId: "teamsMyStatus",
     tags: ["Teams"],
@@ -393,10 +317,7 @@ queries.openapi(
     try {
       const session = await getActiveSession(c.env, c.req.raw.headers);
       if (!session)
-        return c.json(
-          { success: true as const, status: null, joinRequest: null },
-          200,
-        );
+        return c.json({ success: true as const, status: null }, 200);
 
       const teamId = c.req.valid("param").id;
       const userId = session.user.id;
@@ -410,46 +331,20 @@ queries.openapi(
           {
             success: true as const,
             status: "leader" as const,
-            joinRequest: null,
           },
           200,
         );
       }
 
-      const [membership, joinRequest] = await Promise.all([
-        db.query.teamMembers.findFirst({
-          where: and(
-            eq(schema.teamMembers.teamId, teamId),
-            eq(schema.teamMembers.userId, userId),
-            isNull(schema.teamMembers.leftAt),
-          ),
-        }),
-        db.query.teamJoinRequests.findFirst({
-          where: and(
-            eq(schema.teamJoinRequests.teamId, teamId),
-            eq(schema.teamJoinRequests.userId, userId),
-            eq(schema.teamJoinRequests.status, "pending"),
-          ),
-        }),
-      ]);
-
+      const member = await db.query.teamMembers.findFirst({
+        where: and(
+          eq(schema.teamMembers.teamId, teamId),
+          eq(schema.teamMembers.userId, userId),
+          isNull(schema.teamMembers.leftAt),
+        ),
+      });
       return c.json(
-        {
-          success: true as const,
-          status: membership
-            ? ("member" as const)
-            : joinRequest
-              ? ("pending" as const)
-              : null,
-          joinRequest: joinRequest
-            ? {
-                id: joinRequest.id,
-                status: joinRequest.status,
-                message: joinRequest.message,
-                createdAt: joinRequest.createdAt.toISOString(),
-              }
-            : null,
-        },
+        { success: true as const, status: member ? ("member" as const) : null },
         200,
       );
     } catch (error) {
@@ -465,7 +360,8 @@ queries.openapi(
     path: "/{id}",
     operationId: "teamsGet",
     tags: ["Teams"],
-    summary: "Read a team with viewer-dependent contacts and checklist",
+    summary:
+      "Read a team with viewer-dependent contacts and meeting information",
     "x-audience": "public",
 
     request: { params: z.object({ id: z.string() }) },
@@ -535,7 +431,7 @@ queries.openapi(
           : Promise.resolve(undefined),
       ]);
 
-      const checklistVisible =
+      const meetingPointVisible =
         userId === row.team.leaderId || Boolean(viewerMembership);
       return c.json(
         {
@@ -548,8 +444,8 @@ queries.openapi(
               user,
             })),
             tags: tags.get(teamId) ?? [],
-            checklistVisible,
-            contactVisible: checklistVisible,
+            meetingPointVisible,
+            contactVisible: meetingPointVisible,
           }),
         },
         200,

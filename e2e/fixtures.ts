@@ -51,7 +51,7 @@ function localAuthSecret() {
 function nextSyntheticClientIp() {
   const octet = syntheticIpSequence;
   syntheticIpSequence = syntheticIpSequence >= 249 ? 10 : syntheticIpSequence + 1;
-  return `198.51.100.${octet}`;
+  return `198.19.${process.pid % 254}.${octet}`;
 }
 
 function cookiePair(setCookie: string) {

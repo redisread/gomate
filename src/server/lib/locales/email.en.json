@@ -29,36 +29,7 @@
     "closing": "Happy hiking!",
     "signature": "The GoMate Team"
   },
-  "contactForm": {
-    "subject": "[GoMate User Feedback] {subject}",
-    "title": "User Feedback",
-    "nameLabel": "Name:",
-    "emailLabel": "Email:",
-    "subjectLabel": "Subject:",
-    "contentLabel": "Message:"
-  },
-  "teamJoinApplication": {
-    "subject": "{applicantName} applied to join your team",
-    "title": "New Team Application",
-    "greeting": "Hello {leaderName},",
-    "body": "{applicantName} has applied to join your team \"{teamTitle}\" ({locationName}).",
-    "prompt": "Please review the application soon — the applicant is waiting for your reply.",
-    "viewApplicationBtn": "View Application",
-    "signature": "The GoMate Team"
-  },
   "feedback": {
-    "bugSubject": "[GoMate Bug Report] from {name}",
-    "suggestionSubject": "[GoMate Suggestion] from {name}",
-    "bugTitle": "Bug Report",
-    "suggestionTitle": "Feature Suggestion",
-    "nameLabel": "Name:",
-    "emailLabel": "Email:",
-    "bugDetailsTitle": "Issue Details",
-    "deviceLabel": "Device:",
-    "browserLabel": "Browser:",
-    "pageUrlLabel": "Page URL:",
-    "bugDescriptionTitle": "Issue Description",
-    "suggestionDescriptionTitle": "Suggestion Details",
-    "stepsTitle": "Steps to Reproduce"
+    "title": "Feedback"
   }
 }

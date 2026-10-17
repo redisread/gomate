@@ -7,14 +7,6 @@ vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({ t: (key: string) => key }),
 }));
 
-vi.mock("../components/features/team-detail/team-actionbook-section", () => ({
-  TeamActionbookSection: () => <section data-testid="team-actionbook" />,
-}));
-
-vi.mock("@/components/features/discover/story-recap-feed", () => ({
-  TeamStoryRecapFeed: () => <section data-testid="team-story-recap" />,
-}));
-
 const team = {
   id: "team-1",
   locationId: "location-1",
@@ -32,28 +24,29 @@ const team = {
   cancelledAt: null,
   lifecycle: "completed",
   isFull: false,
-  checklist: null,
+  meetingPoint: "Meet at the station",
   createdAt: "2026-08-01T00:00:00.000Z",
   updatedAt: "2026-08-01T00:00:00.000Z",
 } satisfies Team;
 
 describe("TeamMainContent", () => {
-  it("does not embed the team recap feed in the team detail page", () => {
+  it("shows the team meeting information", () => {
     render(
       <TeamMainContent
-        ctx={{
-          team,
-          allMembers: [],
-          isLeader: true,
-          isMember: false,
-          userId: "leader-1",
-          show: vi.fn(),
-          loadTeam: vi.fn(),
-        } as never}
+        ctx={
+          {
+            team,
+            allMembers: [],
+            isLeader: true,
+            isMember: false,
+            userId: "leader-1",
+            show: vi.fn(),
+            loadTeam: vi.fn(),
+          } as never
+        }
       />,
     );
 
-    expect(screen.getByTestId("team-actionbook")).toBeInTheDocument();
-    expect(screen.queryByTestId("team-story-recap")).not.toBeInTheDocument();
+    expect(screen.getByText("Meet at the station")).toBeInTheDocument();
   });
 });

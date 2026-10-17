@@ -24,7 +24,7 @@ const BASE_TEAM = {
   cancelledAt: null,
   lifecycle: "pending",
   isFull: false,
-  checklist: null,
+  meetingPoint: null,
   createdAt: "2026-08-01T00:00:00.000Z",
   updatedAt: "2026-08-01T00:00:00.000Z",
 } satisfies Team;
@@ -41,10 +41,40 @@ describe("team-display", () => {
   });
 
   it("uses lifecycle and recruitment status instead of a legacy status field", () => {
-    expect(getTeamDisplayStatus({ lifecycle: "pending", recruitmentStatus: "open", isFull: true })).toBe("full");
-    expect(getTeamDisplayStatus({ lifecycle: "pending", recruitmentStatus: "closed", isFull: false })).toBe("closed");
-    expect(getTeamDisplayStatus({ lifecycle: "in_progress", recruitmentStatus: "closed", isFull: false })).toBe("ongoing");
-    expect(getTeamDisplayStatus({ lifecycle: "expired_unformed", recruitmentStatus: "closed", isFull: false })).toBe("expired_unformed");
-    expect(isTeamJoinable({ lifecycle: "pending", recruitmentStatus: "closed", isFull: false })).toBe(false);
+    expect(
+      getTeamDisplayStatus({
+        lifecycle: "pending",
+        recruitmentStatus: "open",
+        isFull: true,
+      }),
+    ).toBe("full");
+    expect(
+      getTeamDisplayStatus({
+        lifecycle: "pending",
+        recruitmentStatus: "closed",
+        isFull: false,
+      }),
+    ).toBe("closed");
+    expect(
+      getTeamDisplayStatus({
+        lifecycle: "in_progress",
+        recruitmentStatus: "closed",
+        isFull: false,
+      }),
+    ).toBe("ongoing");
+    expect(
+      getTeamDisplayStatus({
+        lifecycle: "expired_unformed",
+        recruitmentStatus: "closed",
+        isFull: false,
+      }),
+    ).toBe("expired_unformed");
+    expect(
+      isTeamJoinable({
+        lifecycle: "pending",
+        recruitmentStatus: "closed",
+        isFull: false,
+      }),
+    ).toBe(false);
   });
 });

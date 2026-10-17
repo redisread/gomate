@@ -23,7 +23,7 @@
   "emailReadonly": "Email cannot be modified",
   "wechat": "WeChat ID",
   "wechatPlaceholder": "Enter your WeChat ID",
-  "wechatHint": "So teammates can contact you (required when joining a team)",
+  "wechatHint": "So teammates can contact you",
   "genderLabel": "Gender",
   "genderHint": "Optional, for better teammate matching",
   "birthdayLabel": "Birthday",

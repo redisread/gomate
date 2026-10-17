@@ -40,6 +40,7 @@ export const createTeamSchema = z
     activityType: activityTypeSchema,
     title: z.string().trim().min(1).max(100),
     description: z.string().trim().max(2_000).nullable().optional(),
+    meetingPoint: z.string().trim().max(1000).nullable().optional(),
     startAt: offsetDateTimeSchema,
     endAt: offsetDateTimeSchema,
     maxParticipants: z.number().int().min(1).max(49),
@@ -72,6 +73,7 @@ export const updateTeamSchema = z
     activityType: activityTypeSchema.optional(),
     title: z.string().trim().min(1).max(100).optional(),
     description: z.string().trim().max(2_000).nullable().optional(),
+    meetingPoint: z.string().trim().max(1000).nullable().optional(),
     startAt: offsetDateTimeSchema.optional(),
     endAt: offsetDateTimeSchema.optional(),
     maxParticipants: z.number().int().min(1).max(49).optional(),
@@ -95,7 +97,7 @@ function isConstraintError(error: unknown): boolean {
 async function readTeamResponse(
   db: Db,
   teamId: string,
-  checklistVisible: boolean,
+  meetingPointVisible: boolean,
 ) {
   const activeCount = activeTeamParticipantCount(schema.teams.id);
   const rows = await db
@@ -128,8 +130,8 @@ async function readTeamResponse(
     ...row,
     activeParticipantCount: Number(row.activeParticipantCount),
     tags: tagRows.map(({ tag }) => tag),
-    checklistVisible,
-    contactVisible: checklistVisible,
+    meetingPointVisible,
+    contactVisible: meetingPointVisible,
   });
 }
 
@@ -198,10 +200,10 @@ mutations.openapi(
       INSERT INTO teams (
         id, location_id, leader_id, activity_type, title, description,
         start_at, end_at, max_participants, requirements,
-        recruitment_status, formed_at, cancelled_at, checklist,
+        recruitment_status, formed_at, cancelled_at, meeting_point,
         created_at, updated_at
       )
-      SELECT ?, location.id, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?
+      SELECT ?, location.id, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?
       FROM locations AS location
       WHERE location.id = ?
         AND location.status = 'published'
@@ -218,6 +220,7 @@ mutations.openapi(
         data.maxParticipants,
         JSON.stringify(data.requirements),
         data.recruitmentStatus,
+        data.meetingPoint ?? null,
         now,
         now,
         data.locationId,
@@ -345,6 +348,7 @@ mutations.openapi(
           max_participants = ?,
           requirements = ?,
           recruitment_status = ?,
+          meeting_point = ?,
           updated_at = ?
       WHERE id = ?
         AND leader_id = ?
@@ -368,6 +372,9 @@ mutations.openapi(
         maxParticipants,
         JSON.stringify(requirements),
         recruitmentStatus,
+        data.meetingPoint === undefined
+          ? existing.meetingPoint
+          : data.meetingPoint,
         now,
         teamId,
         session.user.id,
@@ -455,14 +462,13 @@ mutations.openapi(
           SELECT 1 FROM team_members
           WHERE team_members.team_id = teams.id AND team_members.left_at IS NULL
         )
-        AND NOT EXISTS (SELECT 1 FROM stories WHERE stories.team_id = teams.id)
     `,
       )
         .bind(teamId, session.user.id, Date.now())
         .run();
       if (changes(result) !== 1) {
         return c.json(
-          APIErrors.conflict("仅可删除尚未成行且没有活动成员或回顾的未来队伍"),
+          APIErrors.conflict("仅可删除尚未成行且没有活动成员的未来队伍"),
           409,
         );
       }

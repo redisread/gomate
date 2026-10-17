@@ -88,8 +88,33 @@ pnpm db:promote-admin --email admin@test.com
 
 ## 部署
 
-目标为 `main` 的 PR 由 GitHub Actions 执行应用验证、Worker bundle 检查和隔离本地 D1 的浏览器测试。已审核 PR 合并到受保护的 `main` 后，Cloudflare Workers Builds 通过 `pnpm deploy:production` 完成生产构建、D1 migration 与部署。
+目标为 `main` 的 PR 由 GitHub Actions 执行应用验证、Worker bundle 检查和隔离本地 D1 的浏览器测试。已审核 PR 合并到受保护的 `main` 后，Cloudflare Workers Builds 通过 `pnpm deploy:production` 完成生产构建、获准 migration 前缀与部署。完整本地迁移会执行 contract 阶段，但生产阶段清单当前禁用破坏性 `0011`；详情见[迁移与发布阶段](database.md#迁移与发布阶段)。
 
 其他分支由 Cloudflare Git 集成运行 `pnpm deploy:preview`，上传同一 Worker 的 Preview version，并生成稳定的分支 alias。Preview 共用生产 D1/R2，通过 `WRITE_MODE=protected` 拒绝业务写入；仅在合法 Preview 域名上允许登录、退出与创建认证 session。`PREVIEW_HOST_SUFFIX` 保留在 production vars 中。
 
 生产写入必须走受保护的 Git/Cloudflare 流程，禁止从本机或临时脚本写入生产 Worker、D1、R2、secret 或 route。具体要求见[生产变更规约](prod-change-policy.md)。
+
+## Cloudflare 运行结构与依据
+
+以下是当前代码配置，不是账号侧资源已经核验的声明。精确依赖版本以 lockfile 为准；当前使用 Astro 7、Hono 4、Zod 4、Drizzle、Better Auth 与 Wrangler 4。
+
+| 能力        | 当前实现与限制                                                           |
+| ----------- | ------------------------------------------------------------------------ |
+| 页面与 API  | 官方 Astro/Hono pipeline，单 Worker、同源 Cookie；开发入口保留 Astro HMR |
+| D1          | 核心数据，条件 SQL 与 batch 保证事务内业务约束；本地状态可隔离           |
+| R2 / Images | 头像和地点媒体，Images 识别/转换；跨 D1/R2 用补偿，不存在分布式事务      |
+| 静态资源    | 构建产物与 Scalar 固定版本浏览器资源同源发布，不由 Worker 动态下载 CDN   |
+| 邮件        | Resend 认证及反馈邮件；外部失败不能由 D1 回滚，反馈不自动重发            |
+| 防滥用      | 独立认证与反馈 Rate Limiting bindings；不是全局强一致计数                |
+| 定时任务    | 每小时关闭超期未成行队伍；尊重 WRITE_MODE                                |
+| 尚未接入    | KV、Queues、外部告警/追踪目标和自动聚合；不得描述成已实现能力            |
+
+平台资料核对日期：2026-10-17。设计采用以下官方语义，并以本地测试验证项目具体行为：
+
+- [D1 batch](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch)：多语句失败回滚；仅覆盖数据库操作。
+- [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/)：按有序迁移记录推进；项目额外增加受审查阶段清单，避免新代码发布前在线收缩旧 schema。
+- [Workers rollback](https://developers.cloudflare.com/workers/versions-and-deployments/rollbacks/)：版本回退不回退绑定资源的数据，D1/R2 恢复必须单独规划。
+- [Static Assets 配置](https://developers.cloudflare.com/workers/static-assets/binding/)：资源和 Worker 的路由配置必须同时验证；同源资源不意味着管理员文档可以绕过鉴权。
+- [Rate Limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)：边缘限流用于防滥用，不承担人数、权限或财务精确计数。
+
+每次模块、依赖、架构变动同步复核相关文档；月度巡检记录范围、证据和未解决项。这是维护要求，目前没有因此新增自动定时任务。更多设计约束见[可靠性与性能设计](../CODING_STANDARDS.md#可靠性与性能设计)。

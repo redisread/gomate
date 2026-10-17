@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "migrations": [
+    {
+      "name": "0000_init.sql",
+      "sha256": "7d5a130b3a3802581f84a21e429990723d6abd30f66e7974e7b94f4ff5a39266",
+      "phase": "historical",
+      "enabled": true
+    },
+    {
+      "name": "0001_reference_data.sql",
+      "sha256": "87ca5c947b670c6baf5dd3fbc006bc8e2b4963ed8a6e5f00c448a217d37fd323",
+      "phase": "historical",
+      "enabled": true
+    },
+    {
+      "name": "0002_account_issuer.sql",
+      "sha256": "6bbde5fbbef4243e50f939dd2e67abd3da65a4e3681e4dbd27d83685281b45c5",
+      "phase": "historical",
+      "enabled": true
+    },
+    {
+      "name": "0003_import_v2_catalog.sql",
+      "sha256": "4711c38c120790fbcc588ea1697f42a2fcba78b9d30c4ccfed3b6d8c38e09760",
+      "phase": "historical",
+      "enabled": true
+    },
+    {
+      "name": "0004_fix_wutongshan_cover_image.sql",
+      "sha256": "9faa6c4bf2d5209d6d386f6c110e673c90b6aa228321ad3792fab55481a0fc09",
+      "phase": "historical",
+      "enabled": true
+    },
+    {
+      "name": "0005_admin_location_drafts.sql",
+      "sha256": "b47bfca1fd77149f28ed61b2049d85b71eb639e4711fa1cd8acc284eb700e653",
+      "phase": "historical",
+      "enabled": true
+    },
+    {
+      "name": "0006_remove_location_decision_info.sql",
+      "sha256": "c76b8eb653cc45214ea0c03b6fb8facaf0504013ef62c1d7d4062d5058cf8de1",
+      "phase": "historical",
+      "enabled": true
+    },
+    {
+      "name": "0007_popular_city_regions.sql",
+      "sha256": "1faea43a54c0c6582720b0acde68b603f0c06a1b92caae873056587e064073f2",
+      "phase": "historical",
+      "enabled": true
+    },
+    {
+      "name": "0008_team_capacity_includes_leader.sql",
+      "sha256": "269d1a7c3f86125562f556b9b24c1e7c524f14aef066a76432b6a48c0b7fab28",
+      "phase": "historical",
+      "enabled": true
+    },
+    {
+      "name": "0009_remove_location_hiking_guides.sql",
+      "sha256": "c4ab18e087cfe9294f1798ace443a0758174acd90f0f58596f17ce283442e370",
+      "phase": "historical",
+      "enabled": true
+    },
+    {
+      "name": "0010_minimal_team_meeting_point.sql",
+      "sha256": "e8f6512f0116b8190fa2eb3f118fc52109a1fc94ced2f8ddacecbac6729ab338",
+      "phase": "expand",
+      "enabled": true
+    },
+    {
+      "name": "0011_minimal_product_contract.sql",
+      "sha256": "7c4abfcb03c7d576da99b19fa960b8e58a82f90a9a4671223080524420142447",
+      "phase": "contract",
+      "enabled": false
+    }
+  ]
+}

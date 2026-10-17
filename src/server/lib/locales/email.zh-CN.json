@@ -29,36 +29,7 @@
     "closing": "祝您徒步愉快！",
     "signature": "GoMate 团队"
   },
-  "contactForm": {
-    "subject": "[GoMate 用户反馈] {subject}",
-    "title": "用户反馈",
-    "nameLabel": "姓名：",
-    "emailLabel": "邮箱：",
-    "subjectLabel": "主题：",
-    "contentLabel": "内容："
-  },
-  "teamJoinApplication": {
-    "subject": "{applicantName} 申请加入您的队伍",
-    "title": "新的组队申请",
-    "greeting": "您好 {leaderName}，",
-    "body": "{applicantName} 申请加入您的队伍「{teamTitle}」（{locationName}）。",
-    "prompt": "请及时处理申请，申请人正在等待您的回复。",
-    "viewApplicationBtn": "查看申请",
-    "signature": "GoMate 团队"
-  },
   "feedback": {
-    "bugSubject": "[GoMate Bug反馈] 来自 {name}",
-    "suggestionSubject": "[GoMate 建议反馈] 来自 {name}",
-    "bugTitle": "Bug 反馈",
-    "suggestionTitle": "功能建议",
-    "nameLabel": "姓名：",
-    "emailLabel": "邮箱：",
-    "bugDetailsTitle": "问题详情",
-    "deviceLabel": "设备类型：",
-    "browserLabel": "浏览器：",
-    "pageUrlLabel": "问题页面：",
-    "bugDescriptionTitle": "问题描述",
-    "suggestionDescriptionTitle": "建议内容",
-    "stepsTitle": "复现步骤"
+    "title": "用户反馈"
   }
 }

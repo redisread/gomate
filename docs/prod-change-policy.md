@@ -27,10 +27,10 @@
 `production` 环境显式绑定线上 Worker、D1、R2 和 route。根配置不再指向任何生产资源，
 生产命令必须显式传入 `--env production`。
 
-仓库 migration baseline 为 19 张业务表、13 个触发器；seed 与运行时代码依赖稳定
-Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
-`region-cn-shenzhen` 还是匿名 local-circle fallback，不得随意改名。生产实际 migration
-状态必须从只读 inventory 验证，不能由仓库文件推断。
+仓库历史 baseline 为 19 张业务表、13 个触发器；完整本地 contract 迁移后为 11 张核心表，
+生产当前可执行前缀与本地全链不同。稳定 Region ID `region-cn`、`region-cn-guangdong`、
+`region-cn-shenzhen` 由参考目录管理。实际生产 migration 状态必须从只读 inventory 验证，
+不能由仓库文件推断。阶段区别见[数据库文档](database.md#迁移与发布阶段)。
 
 ## 2. 授权边界
 
@@ -54,7 +54,7 @@ Region ID `region-cn`、`region-cn-guangdong`、`region-cn-shenzhen`。
 
 ## 3. 发布能力
 
-PR 使用仓库内 `pnpm test:ci` 加隔离 D1 的 6 条 Chromium E2E 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，
+PR 使用仓库内 `pnpm test:ci` 加隔离 D1 的 Chromium 核心流程测试 做可重复质量门禁。Cloudflare Workers Builds 连接 Git 仓库，
 `main` 分支执行生产构建和自动发布，所有非 `main` 分支执行远程 Preview 构建；关联 PR 时由
 Cloudflare 原生 Git 集成评论 Preview URL。PR 审核与受保护分支仍是正式发布授权边界。
 Preview 只上传不可提升的 Worker version，不执行 D1 migration。所有测试、类型检查、bundle
@@ -68,9 +68,9 @@ Workers Builds 的推荐配置为：
 2. Build variables：`NODE_VERSION=22.23.3`、`PNPM_VERSION=11.19.0`、
    `SKIP_DEPENDENCY_INSTALL=1`；启用 build cache。仓库同时通过 `.node-version` 和
    `packageManager` 固定本地与 CI 工具链；生产依赖审计由 PR CI 执行，high/critical 漏洞阻止合并；
-3. Deploy command：`pnpm deploy:production`。脚本先执行
-   `wrangler d1 migrations apply DB --remote --env production --config wrangler.jsonc`，只有
-   migration 成功后才执行 `wrangler deploy --env production`；
+3. Deploy command：`pnpm deploy:production`。脚本先按 `migrations/production-phases.json`
+   校验 migration 名称、顺序、SQL 摘要及启用阶段，再用临时 Wrangler 配置只提供获准的连续前缀。
+   migration 成功后才执行 `wrangler deploy --env production`；不能直接对完整目录执行远程 apply；
 4. Preview deploy command：`pnpm deploy:preview`。脚本只执行
    `wrangler versions upload --env production --config dist/server/wrangler.json --keep-vars --var WRITE_MODE:protected --preview-alias <alias>`；
    命令使用同一次 Build 生成的 Astro bundle 配置，显式覆盖业务写保护并保留 production `vars` 中的 `PREVIEW_HOST_SUFFIX`，不执行 migration、
@@ -78,7 +78,7 @@ Workers Builds 的推荐配置为：
 5. Deploy command 依赖同一次 Build 已生成的 `dist/`；migration 失败时不得继续部署，Worker
    发布失败也不得回滚或手工补写数据库；
 6. 当前采用单一远程环境策略：`main` 是唯一生产分支，非 `main` Preview 使用
-   `--env production` 读取正式 D1/R2；生产 `WRITE_MODE=protected` 拒绝业务写入，仅在合法
+   `--env production` 读取正式 D1/R2；Preview version 的 `WRITE_MODE=protected` 拒绝业务写入，仅在合法
    Preview host 上允许登录/退出所需的认证 session 写入。Preview host 的公开账号后缀通过
    `wrangler.jsonc` 的 production `PREVIEW_HOST_SUFFIX` 固定，配置回归测试防止后续部署丢失；
 7. 发布后用 `/api/health`、SSR 页面、注册边界 smoke 和关键只读 API 做 smoke，记录 version ID、migration 结果和
@@ -88,7 +88,7 @@ Workers Builds 的推荐配置为：
 
 - 所有 DDL 只通过 `migrations/`；不得用 `d1 execute` 手工修改生产 schema。
 - migration 采用 expand/code/contract：先应用旧代码可接受的增量 schema，再发布使用新 schema 的代码；删除列、表、约束等 contract migration 必须先发布同时兼容旧/新 schema 的 Worker，完成观察并关闭旧版本回滚窗口后再执行。
-- contract migration 必须等待新的受保护流水线落地，并在执行前证明当前 Worker 同时兼容新旧 schema、关闭不兼容版本的回滚入口。
+- contract migration 通过发布阶段清单显式禁用；启用必须由后续受保护提交提供兼容 Worker version/commit、观察开始/结束时间、验证链接与旧版本回滚窗口关闭记录。规划器拒绝缺失证据或 SQL 摘要不一致，不提供环境变量绕过。当前 `0011` 仍禁用，`0010` 仅增量添加集合信息；本 PR 的合并不代表 contract 已执行。
 - 新 D1 v3 以 `0000_init.sql` 作为 fresh baseline，并由 `0001_reference_data.sql` 写入运行时必需的稳定 Region、Location 和 Tag；`0003_import_v2_catalog.sql` 只增量保留已退役 v2 的 16 个地区和 36 个公开地点，不覆盖 v3 现有目录，也不包含用户数据。已应用 migration 不可改写。后续新增迁移、Drizzle schema、journal 和 snapshot 必须同步，本地运行 `pnpm db:check`。
 - 生产 D1 v3 的创建/绑定是独立的受保护基础设施变更；在该资源完成只读核对前，禁止把旧 D1 UUID 填回 `wrangler.jsonc`，也禁止执行远程 migration。
 - 测试用户和可变 demo 数据不得进入 migration；测试 fixture 只在隔离的本地数据库创建。
@@ -123,8 +123,7 @@ Worker 继续按受保护版本流程回滚。Preview 不执行 migration，且�
 - SSR 页面为 2xx，且 `X-Worker-Version-ID` 等于同一目标；
 - 关键 API 响应有 `X-Request-ID`，Workers Logs 可定位对应 completion；
 - 公开 Location 与稳定深圳 Region 可读；
-- 公开海报只渲染地点/队伍/故事的公开内容和通用创建者标签，不把用户姓名、头像或用户 ID
-  带入共享边缘缓存；
+- API 文档、地点和队伍公开读取正常；管理员文档与写入权限边界正确，退役 API 返回 404；
 - 日志不包含 smoke 使用的 email/token 或故障注入信息。
 
 仓库未声明 Cloudflare notification、外部 OTel destination、Sentry/PagerDuty 或自动值班通知。
@@ -152,3 +151,7 @@ GitHub PR CI 会在 `pnpm test:ci`、Worker types/dry-run/size 通过后初始�
 `gomate` 的 production 运行时还需要 `GOOGLE_CLIENT_ID`、`GOOGLE_CLIENT_SECRET`，值不得进入仓库、日志、PR 或仓库级 Actions secrets。部署继续继承已配置的运行时 secrets；不将 OAuth secret 放入所有分支共享的 Workers Builds 环境变量，也不增加本机生产写入入口。首次配置必须按本规约的精确授权与受保护流程执行。
 
 Google 项目使用 GoMate 网站客户端，授权回调为 `https://gomate.live/api/auth/callback/google`，本地为 `http://localhost:5432/api/auth/callback/google`。仅申请 `openid email profile`。Google 前台的公开首页、隐私政策、服务条款分别为 `https://gomate.live`、`https://gomate.live/privacy`、`https://gomate.live/terms`。Google OAuth 对远程 Preview 保持关闭，无需将共享 Preview 域名加入 Google 客户端。
+
+## Preview 与增量迁移的先后关系
+
+Preview 共用生产 D1，且不执行 migration。首次发布包含 `meeting_point` 的 Worker 前，生产可能尚未应用 `0010`，此时 Preview 的队伍读取可能失败；不能据此宣称核心读取已验收。应在受保护 main 发布完成增量迁移后，验证精确 Worker version 的页面与 API；不增加旧字段兜底，也不在 Preview 或本机执行远程迁移。`0011` 仍按迁移清单保持关闭，待观察与回滚窗口证据就绪后再经后续受保护提交启用。

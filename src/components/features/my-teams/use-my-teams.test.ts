@@ -13,16 +13,14 @@ describe("my teams timeline pagination", () => {
   });
 
   it("omits the cursor on the first page", () => {
-    expect(buildTimelinePath("/users/me/join-requests", null)).toBe(
-      "/users/me/join-requests?limit=10",
+    expect(buildTimelinePath("/users/me/joined-teams", null)).toBe(
+      "/users/me/joined-teams?limit=10",
     );
   });
 
   it("deduplicates an item repeated at a page boundary", () => {
-    expect(mergeUniqueById([{ id: "a" }, { id: "b" }], [{ id: "b" }, { id: "c" }])).toEqual([
-      { id: "a" },
-      { id: "b" },
-      { id: "c" },
-    ]);
+    expect(
+      mergeUniqueById([{ id: "a" }, { id: "b" }], [{ id: "b" }, { id: "c" }]),
+    ).toEqual([{ id: "a" }, { id: "b" }, { id: "c" }]);
   });
 });

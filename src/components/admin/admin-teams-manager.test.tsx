@@ -46,7 +46,7 @@ const team: Team = {
   isFull: false,
   requirements: ["带水"],
   updatedAt: "2026-10-15T04:00:00Z",
-  checklist: { notes: "集合备注" },
+  meetingPoint: "集合备注",
   participants: [
     {
       userId: "member",

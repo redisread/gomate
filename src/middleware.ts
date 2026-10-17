@@ -9,7 +9,12 @@
  */
 
 import type { MiddlewareHandler } from "astro";
-import { DEFAULT_LOCALE, SUPPORTED_LOCALES, type Locale } from "@/i18n";
+import {
+  DEFAULT_LOCALE,
+  getRequestLocale,
+  isLocale,
+  type Locale,
+} from "@/contracts/locale";
 import { resolveAdminReturnPath } from "@/lib/admin-return-path";
 import type { ApiBindings } from "@/server/app";
 import { resolveAdminAccess } from "@/server/lib/admin-access";
@@ -56,7 +61,9 @@ export function getI18nNs(locals: unknown): string[] | undefined {
  * Dispatch API requests here during `astro dev`; production and preview use
  * src/worker.ts, where the same app is mounted before the page pipeline.
  */
-async function dispatchDevApi(context: Parameters<MiddlewareHandler>[0]): Promise<Response> {
+async function dispatchDevApi(
+  context: Parameters<MiddlewareHandler>[0],
+): Promise<Response> {
   const [{ env }, { apiApp }] = await Promise.all([
     import("cloudflare:workers"),
     import("@/server/app"),
@@ -64,79 +71,24 @@ async function dispatchDevApi(context: Parameters<MiddlewareHandler>[0]): Promis
   const apiUrl = new URL(context.request.url);
   apiUrl.pathname = apiUrl.pathname.replace(/^\/api(?=\/|$)/u, "") || "/";
   const apiRequest = new Request(apiUrl, context.request);
-  return apiApp.fetch(
-    apiRequest,
-    env as ApiBindings,
-    context.locals.cfContext,
-  );
-}
-
-/**
- * 从 Accept-Language 头匹配支持的语言
- */
-function matchAcceptLanguage(header: string): Locale {
-  const langs = header.split(",").map((part) => {
-    const [lang, q] = part.split(";");
-    return {
-      lang: lang.trim().toLowerCase(),
-      q: q ? parseFloat(q.split("=")[1] || "1") : 1,
-    };
-  });
-
-  langs.sort((a, b) => b.q - a.q);
-
-  for (const { lang } of langs) {
-    if (lang === "zh-cn" || lang === "zh") return "zh-CN";
-    if (lang === "en") return "en";
-    if (lang === "ja" || lang === "jp") return "ja";
-    if (lang.startsWith("zh")) return "zh-CN";
-    if (lang.startsWith("en")) return "en";
-    if (lang.startsWith("ja")) return "ja";
-  }
-
-  return DEFAULT_LOCALE;
-}
-
-/**
- * 确定当前请求应使用的语言
- */
-function detectLocale(request: Request): Locale {
-  const url = new URL(request.url);
-  const segments = url.pathname.split("/").filter(Boolean);
-
-  // 1. URL 前缀优先
-  const firstSegment = segments[0] as Locale | undefined;
-  if (SUPPORTED_LOCALES.includes(firstSegment as Locale)) {
-    return firstSegment as Locale;
-  }
-
-  // 2. Cookie 次之
-  const cookieHeader = request.headers.get("cookie") || "";
-  const cookieMatch = cookieHeader.match(/gomate_locale=(zh-CN|en|ja)/);
-  if (cookieMatch) {
-    return cookieMatch[1] as Locale;
-  }
-
-  // 3. Accept-Language
-  const acceptLang = request.headers.get("accept-language");
-  if (acceptLang) {
-    return matchAcceptLanguage(acceptLang);
-  }
-
-  return DEFAULT_LOCALE;
+  return apiApp.fetch(apiRequest, env as ApiBindings, context.locals.cfContext);
 }
 
 export const onRequest: MiddlewareHandler = async (context, next) => {
   const url = new URL(context.request.url);
   const segments = url.pathname.split("/").filter(Boolean);
   const firstSegment = segments[0] as Locale | undefined;
-  const hasLocalePrefix = SUPPORTED_LOCALES.includes(firstSegment as Locale);
+  const hasLocalePrefix = isLocale(firstSegment);
   const pageSegment = segments[hasLocalePrefix ? 1 : 0];
   const isAdminPage = pageSegment === "admin";
 
   if (pageSegment === "api" || url.pathname === "/api") {
     return dispatchDevApi(context);
   }
+
+  // Astro selects its 404 route for unknown paths. Negotiate languages only
+  // for real pages; a removed or mistyped URL must remain a direct 404.
+  if (!hasLocalePrefix && context.routePattern === "/404") return next();
 
   // Query tokens are a rejected legacy transport: never consume them and do
   // not forward them through locale redirects/rewrite requests. The supported
@@ -173,9 +125,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
       const cleanPathname = hasLocalePrefix
         ? `/${segments.slice(1).join("/")}`
         : url.pathname;
-      const returnTo = resolveAdminReturnPath(
-        `${cleanPathname}${url.search}`,
-      );
+      const returnTo = resolveAdminReturnPath(`${cleanPathname}${url.search}`);
       const loginUrl = new URL("/login", url);
       loginUrl.searchParams.set("returnTo", returnTo);
       return privateNoStore(context.redirect(loginUrl.toString(), 302));
@@ -192,7 +142,7 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
 
   // 如果 URL 没有 locale 前缀，且检测到的语言不是默认语言
   if (!hasLocalePrefix) {
-    const detectedLocale = detectLocale(context.request);
+    const detectedLocale = getRequestLocale(context.request.headers);
     const existingCookie = context.request.headers.get("cookie") || "";
 
     if (

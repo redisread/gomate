@@ -10,7 +10,7 @@ async function isolateAuthRateLimitBucket(page: Page) {
   // Miniflare accepts the Cloudflare client-IP header. Production Cloudflare
   // overwrites it, while local E2E uses a distinct bucket per isolated user.
   await page.context().setExtraHTTPHeaders({
-    "CF-Connecting-IP": `203.0.113.${octet}`,
+    "CF-Connecting-IP": `198.18.${process.pid % 254}.${octet}`,
   });
 }
 
