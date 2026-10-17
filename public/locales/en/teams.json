@@ -223,7 +223,7 @@
   "statusCancelled": "Cancelled",
   "statusExpiredNotFormed": "Activity has expired, team was not successfully formed",
   "memberJoinedDesc": "They are waiting to set off with you",
-  "joinTeam": "Apply to Join",
+  "joinTeam": "Join team",
   "viewLocationDetail": "View Location Details",
   "leader": "Leader",
   "registrationStatus": "{current} members joined, {remaining} more needed to set off",
@@ -285,7 +285,7 @@
   "removeMember": "Remove",
   "removeMemberConfirm": "Are you sure you want to remove this member from the team?",
   "removeMemberSuccess": "Member has been removed from the team",
-  "removeMemberFailed": "Failed to remove member",
+  "removeMemberFailed": "Unable to remove member",
   "cannotRemoveSelf": "Cannot remove yourself",
   "cannotRemoveLeader": "Cannot remove the leader",
   "contactAfterJoin": "You can view the leader's contact info after joining the team",
@@ -532,5 +532,7 @@
       "unclaimFailed": "Unclaim failed",
       "networkError": "Network error, please retry"
     }
-  }
+  },
+  "meetingPoint": "Meeting information",
+  "removeMemberAria": "Remove {name}"
 }

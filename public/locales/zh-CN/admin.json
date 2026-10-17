@@ -182,7 +182,6 @@
     "saveFailed": "保存失败，请重试",
     "deleteFailed": "删除失败，请重试",
     "teamLocationRefs": "队伍 / 地点引用",
-    "locationTeamStoryRefs": "地点 / 队伍 / 故事引用",
     "detachTagConfirm": "此标签仍有关联。确认解除全部关联并删除吗？",
     "deleteTagConfirm": "确认删除这个未使用的标签吗？",
     "searchUsers": "搜索名称或邮箱",
@@ -191,7 +190,8 @@
     "currentUser": "当前账号",
     "makeAdmin": "设为管理员",
     "revokeAdmin": "撤销管理员",
-    "roleConfirm": "确认变更该用户的管理员权限吗？"
+    "roleConfirm": "确认变更该用户的管理员权限吗？",
+    "locationTeamRefs": "地点 / 队伍引用"
   },
   "errors": {
     "adminSelfRoleChange": "不能更改当前账号的管理员权限。",

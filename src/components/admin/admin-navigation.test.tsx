@@ -215,12 +215,12 @@ describe("AdminNavigation", () => {
     trigger.focus();
     fireEvent.click(trigger);
     expect(
-      screen.getByRole("menuitemradio", { name: "日本語" }),
+      screen.getByRole("menuitemradio", { name: "English" }),
     ).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(
-      screen.queryByRole("menuitemradio", { name: "日本語" }),
+      screen.queryByRole("menuitemradio", { name: "English" }),
     ).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });

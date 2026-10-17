@@ -144,8 +144,8 @@ test.describe("admin platform", () => {
     await expect(page.locator("aside")).toHaveCount(1);
     await expectNoHorizontalOverflow(page);
 
-    await page.goto("/ja/admin");
-    await expect(page.getByRole("heading", { level: 1, name: "管理画面" })).toBeVisible();
+    await page.goto("/en/admin");
+    await expect(page.getByRole("heading", { level: 1, name: "Admin" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
     expect(pageErrors).toEqual([]);
   });
@@ -175,14 +175,6 @@ test.describe("admin platform", () => {
         locationsHref: "/en/admin/locations",
         activityLabel: "Suitable activities",
       },
-      {
-        pathPrefix: "/ja",
-        heading: "管理画面",
-        navigation: "管理ナビゲーション",
-        language: "日本語",
-        locationsHref: "/ja/admin/locations",
-        activityLabel: "適したアクティビティ",
-      },
     ] as const;
 
     for (const locale of locales) {
@@ -195,7 +187,7 @@ test.describe("admin platform", () => {
         .first();
       await expect(navigation).toBeVisible();
       await expect(
-        navigation.getByRole("link", { name: /地点管理|Locations|スポット管理/u }),
+        navigation.getByRole("link", { name: /地点管理|Locations/u }),
       ).toHaveAttribute("href", locale.locationsHref);
       await expect(
         page.getByRole("button", { name: locale.language }).first(),
@@ -227,11 +219,6 @@ test.describe("admin platform", () => {
         locale: "en",
       },
       {
-        path: "/ja/admin/locations",
-        heading: "スポット管理",
-        locale: "ja",
-      },
-      {
         path: "/admin/tags",
         heading: "标签管理",
         locale: "zh-CN",
@@ -242,11 +229,6 @@ test.describe("admin platform", () => {
         locale: "en",
       },
       {
-        path: "/ja/admin/tags",
-        heading: "タグ管理",
-        locale: "ja",
-      },
-      {
         path: "/admin/users",
         heading: "用户与管理员",
         locale: "zh-CN",
@@ -255,11 +237,6 @@ test.describe("admin platform", () => {
         path: "/en/admin/users",
         heading: "Users and administrators",
         locale: "en",
-      },
-      {
-        path: "/ja/admin/users",
-        heading: "ユーザーと管理者",
-        locale: "ja",
       },
     ] as const;
 
@@ -355,16 +332,16 @@ test.describe("admin platform", () => {
     await page.setViewportSize({ width: 320, height: 720 });
     await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
     await authenticate(page, admin);
-    await page.goto("/ja/admin");
+    await page.goto("/en/admin");
 
     const trigger = page.getByRole("button", {
-      name: "管理ナビゲーションを開く",
+      name: "Open admin navigation",
     });
     await trigger.click();
-    const drawer = page.getByRole("dialog", { name: "管理ナビゲーション" });
+    const drawer = page.getByRole("dialog", { name: "Admin navigation" });
     await expect(drawer).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "管理ナビゲーションを閉じる" }),
+      page.getByRole("button", { name: "Close admin navigation" }),
     ).toBeFocused();
     await expect(page.locator("body > [inert]")).not.toHaveCount(0);
     await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
@@ -388,7 +365,7 @@ test.describe("admin platform", () => {
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
     await expect(
-      page.getByRole("link", { name: "スポットを追加" }).last(),
+      page.getByRole("link", { name: "Add location" }).last(),
     ).toBeVisible();
     await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
   });

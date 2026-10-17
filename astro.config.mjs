@@ -24,7 +24,7 @@ export default defineConfig({
   session: false,
   i18n: {
     defaultLocale: "zh-CN",
-    locales: ["zh-CN", "en", "ja"],
+    locales: ["zh-CN", "en"],
     // Locale redirects and prefix rewrites are owned by src/middleware.ts.
     // Astro's automatic finalizer would otherwise see the rewritten URL and
     // redirect it again, creating a loop for non-default Accept-Language.

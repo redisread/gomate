@@ -44,7 +44,6 @@ beforeAll(async () => {
   const data: Record<Locale, Record<string, Record<string, unknown>>> = {
     "zh-CN": { enums: zhEnums, common: zhCommon, teams: zhTeams, auth: zhAuth, errors: zhErrors },
     en: { enums: zhEnums, common: zhCommon, teams: zhTeams, auth: zhAuth, errors: zhErrors },
-    ja: { enums: zhEnums, common: zhCommon, teams: zhTeams, auth: zhAuth, errors: zhErrors },
   };
   hydrateSSRData(data);
 });

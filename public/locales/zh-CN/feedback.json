@@ -36,5 +36,7 @@
   "subjectLabel": "主题",
   "subjectPlaceholder": "请简述您的建议主题",
   "messageLabel": "详细建议",
-  "messagePlaceholder": "请详细描述您的建议或反馈..."
+  "messagePlaceholder": "请详细描述您的建议或反馈...",
+  "description": "告诉我们使用中遇到的问题或建议。",
+  "contentPlaceholder": "请描述你的问题或建议"
 }

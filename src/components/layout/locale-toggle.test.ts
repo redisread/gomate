@@ -7,10 +7,10 @@ describe("buildLocalePath", () => {
     expect(buildLocalePath("/admin/locations/new", "en")).toBe(
       "/en/admin/locations/new",
     );
-    expect(buildLocalePath("/en/admin/locations/new", "ja")).toBe(
-      "/ja/admin/locations/new",
+    expect(buildLocalePath("/en/admin/locations/new", "zh-CN")).toBe(
+      "/admin/locations/new",
     );
-    expect(buildLocalePath("/ja/admin/locations/new", "zh-CN")).toBe(
+    expect(buildLocalePath("/admin/locations/new", "zh-CN")).toBe(
       "/admin/locations/new",
     );
   });

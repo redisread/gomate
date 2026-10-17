@@ -6,15 +6,19 @@
 
 import emailZhCn from "./locales/email.zh-CN.json";
 import emailEn from "./locales/email.en.json";
-import emailJa from "./locales/email.ja.json";
+import type { Locale } from "../../contracts/locale";
 
-export type EmailLocale = "zh-CN" | "en" | "ja";
-export type EmailType = "passwordReset" | "emailVerification" | "welcome" | "contactForm" | "feedback" | "teamJoinApplication";
+export type EmailLocale = Locale;
+export type EmailType =
+  | "passwordReset"
+  | "emailVerification"
+  | "welcome"
+  | "contactForm"
+  | "feedback";
 
 const EMAIL_TEMPLATES: Record<EmailLocale, Record<string, unknown>> = {
   "zh-CN": emailZhCn as unknown as Record<string, unknown>,
   en: emailEn as unknown as Record<string, unknown>,
-  ja: emailJa as unknown as Record<string, unknown>,
 };
 
 /**
@@ -30,7 +34,10 @@ function interpolate(template: string, vars?: Record<string, string>): string {
 /**
  * 从嵌套对象中通过点号路径获取值
  */
-function getNestedValue(obj: Record<string, unknown>, path: string): string | undefined {
+function getNestedValue(
+  obj: Record<string, unknown>,
+  path: string,
+): string | undefined {
   const keys = path.split(".");
   let current: unknown = obj;
   for (const key of keys) {
@@ -46,7 +53,9 @@ function getNestedValue(obj: Record<string, unknown>, path: string): string | un
  */
 function getTemplateData(locale: EmailLocale): Record<string, unknown> {
   if (!EMAIL_TEMPLATES[locale]) {
-    console.warn(`[Email i18n] Invalid locale "${locale}", falling back to zh-CN`);
+    console.warn(
+      `[Email i18n] Invalid locale "${locale}", falling back to zh-CN`,
+    );
   }
   return EMAIL_TEMPLATES[locale] ?? EMAIL_TEMPLATES["zh-CN"];
 }
@@ -80,7 +89,10 @@ export function getEmailField(
  * @param type 邮件类型
  * @returns 包含 subject 和模板字段的对象
  */
-export function getEmailTemplate(locale: EmailLocale, type: EmailType): Record<string, unknown> {
+export function getEmailTemplate(
+  locale: EmailLocale,
+  type: EmailType,
+): Record<string, unknown> {
   const data = getTemplateData(locale);
-  return ((data[type] as Record<string, unknown>) ?? {});
+  return (data[type] as Record<string, unknown>) ?? {};
 }
