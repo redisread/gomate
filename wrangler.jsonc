@@ -36,6 +36,11 @@
   },
   "ratelimits": [
     {
+      "name": "FEEDBACK_RATE_LIMITER",
+      "namespace_id": "gomate-local-feedback",
+      "simple": { "limit": 3, "period": 60 },
+    },
+    {
       "name": "AUTH_SIGN_IN_RATE_LIMITER",
       "namespace_id": "gomate-local-auth-sign-in",
       "simple": { "limit": 5, "period": 60 },
@@ -110,6 +115,11 @@
         "binding": "IMAGES",
       },
       "ratelimits": [
+        {
+          "name": "FEEDBACK_RATE_LIMITER",
+          "namespace_id": "26084",
+          "simple": { "limit": 3, "period": 60 },
+        },
         {
           "name": "AUTH_SIGN_IN_RATE_LIMITER",
           "namespace_id": "26081",

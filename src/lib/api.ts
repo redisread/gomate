@@ -187,16 +187,7 @@ export function refreshCurrentUser(
 /**
  * 提交用户反馈（功能建议 / Bug 反馈）
  */
-export async function submitFeedback(data: {
-  type: "suggestion" | "bug";
-  name: string;
-  email: string;
-  content: string;
-  device?: string;
-  browser?: string;
-  steps?: string;
-  pageUrl?: string;
-}): Promise<{ success: boolean; message: string }> {
+export async function submitFeedback(data: import("@/contracts/feedback").FeedbackInput): Promise<{ success: boolean; message: string }> {
   return apiPost("/feedback", data);
 }
 
