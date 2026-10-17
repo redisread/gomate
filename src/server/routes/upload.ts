@@ -433,7 +433,7 @@ const avatarSessionBoundary: import("hono").MiddlewareHandler<ApiEnv> = async (
 
 const deleteAvatarContract = createRoute({
   description:
-    "需要登录，仅删除当前用户头像。通过条件更新和对象清理处理并发修改，冲突返回 409；不会删除其他用户的媒体。成功响应包含更新后的头像结果。",
+    "需要登录，查询参数 key 必须与当前用户正在使用的头像对象一致。对象不属于当前用户、头像已移除或并发替换均返回 403。成功清空头像引用并删除对象后返回 { success: true }；重复删除需先查询当前头像状态，不能直接视为成功。对象清理失败时尝试有条件地恢复引用并返回 500。",
   method: "delete",
   path: "/avatar",
   operationId: "deleteAvatar",
