@@ -1,13 +1,19 @@
-import { APIErrors } from "../lib/api-errors";
-import { logger } from "../lib/logger";
-import { Hono } from "hono";
-import { z } from "zod";
-import { sendFeedbackEmail } from "../lib/email";
-import type { Env } from "../lib/auth";
-import type { EmailLocale } from "../lib/email-i18n";
-import { validateRequest } from "../lib/validation";
+import {
+  createApiApp,
+  createRoute,
+  errorResponses,
+  jsonResponse,
+  legacyJsonBody,
+  validationHook,
+  z,
+} from "../lib/openapi";
 
-const feedback = new Hono<{ Bindings: Env }>();
+import { APIErrors } from "../lib/api-errors";
+import { sendFeedbackEmail } from "../lib/email";
+import type { EmailLocale } from "../lib/email-i18n";
+import { logger } from "../lib/logger";
+
+const feedback = createApiApp();
 
 const feedbackSchema = z.object({
   type: z.enum(["suggestion", "bug"], {
@@ -26,55 +32,76 @@ const feedbackSchema = z.object({
  * POST /feedback
  * 提交用户反馈（功能建议 / Bug 反馈）
  */
-feedback.post("/", async (c) => {
-  try {
-    const input = await validateRequest(
-      c,
-      "json",
-      feedbackSchema,
-      "输入无效",
-      "issues",
-    );
-    if (input instanceof Response) return input;
-    const { type, name, email, content, device, browser, steps, pageUrl } =
-      input;
-
-    // 提取用户 locale
-    const cookie = c.req.raw.headers.get("Cookie") || "";
-    const localeMatch = cookie.match(/gomate_locale=(zh-CN|en|ja)/);
-    const locale: EmailLocale = localeMatch
-      ? (localeMatch[1] as EmailLocale)
-      : "zh-CN";
-
-    // 发送邮件
-    const result = await sendFeedbackEmail(
-      {
-        type,
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        content: content.trim(),
-        device: device?.trim(),
-        browser: browser?.trim(),
-        steps: steps?.trim(),
-        pageUrl: pageUrl?.trim(),
+feedback.openapi(
+  createRoute({
+    method: "post",
+    path: "/",
+    operationId: "feedbackSubmit",
+    tags: ["feedback"],
+    summary: "Submit feedback",
+    "x-audience": "public",
+    middleware: [legacyJsonBody("输入无效")],
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: feedbackSchema } },
       },
-      c.env,
-      locale,
-    );
+    },
+    responses: {
+      200: jsonResponse(
+        z.object({ success: z.literal(true), message: z.string() }),
+        "Success",
+      ),
+      ...errorResponses(400, 500, 403, 503),
+    },
+  }),
+  async (c) => {
+    try {
+      const input = c.req.valid("json");
+      const { type, name, email, content, device, browser, steps, pageUrl } =
+        input;
 
-    if (!result.success) {
-      logger.error("feedback_email_delivery_failed", result.error);
-      return c.json(APIErrors.internalError("发送失败，请稍后重试"), 500);
+      // 提取用户 locale
+      const cookie = c.req.raw.headers.get("Cookie") || "";
+      const localeMatch = cookie.match(/gomate_locale=(zh-CN|en|ja)/);
+      const locale: EmailLocale = localeMatch
+        ? (localeMatch[1] as EmailLocale)
+        : "zh-CN";
+
+      // 发送邮件
+      const result = await sendFeedbackEmail(
+        {
+          type,
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          content: content.trim(),
+          device: device?.trim(),
+          browser: browser?.trim(),
+          steps: steps?.trim(),
+          pageUrl: pageUrl?.trim(),
+        },
+        c.env,
+        locale,
+      );
+
+      if (!result.success) {
+        logger.error("feedback_email_delivery_failed", result.error);
+        return c.json(APIErrors.internalError("发送失败，请稍后重试"), 500);
+      }
+
+      return c.json(
+        {
+          success: true as const,
+          message: "感谢您的反馈！我们会认真查看每一条反馈，持续改进产品。",
+        },
+        200,
+      );
+    } catch (error) {
+      logger.error("feedback_request_failed", error);
+      return c.json(APIErrors.internalError("服务器错误，请稍后重试"), 500);
     }
-
-    return c.json({
-      success: true,
-      message: "感谢您的反馈！我们会认真查看每一条反馈，持续改进产品。",
-    });
-  } catch (error) {
-    logger.error("feedback_request_failed", error);
-    return c.json(APIErrors.internalError("服务器错误，请稍后重试"), 500);
-  }
-});
+  },
+  validationHook("输入无效", "issues"),
+);
 
 export { feedback as feedbackRoute };

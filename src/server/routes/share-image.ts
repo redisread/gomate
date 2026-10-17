@@ -7,8 +7,13 @@
  *
  * Skill: `zero-tech-debt` — Step 3 "Reshape around the final product surface".
  */
-import { Hono } from "hono";
-import type { Env } from "../lib/auth";
+import {
+  createApiApp,
+  createRoute,
+  z,
+  jsonResponse,
+  errorResponses,
+} from "../lib/openapi";
 import { APIErrors } from "../lib/api-errors";
 import { logger } from "../lib/logger";
 import {
@@ -16,7 +21,10 @@ import {
   renderPoster,
   type PosterKind,
 } from "../services/share-image/poster";
-import { SUPPORTED_POSTER_LOCALES, resolvePosterLocale } from "../services/share-image/poster-i18n";
+import {
+  SUPPORTED_POSTER_LOCALES,
+  resolvePosterLocale,
+} from "../services/share-image/poster-i18n";
 import { resolvePosterPreset } from "../../contracts/share-image";
 
 const POSTER_KINDS = new Set<PosterKind>(["location", "team", "story"]);
@@ -43,65 +51,125 @@ function logPosterRenderFailure(kind: PosterKind, error: unknown): void {
  * browser navigation to the poster URL from "show image" into "download".
  * If a download feature returns later, add the header conditionally.
  */
-function svgResponse(
-  svg: string,
-  opts: { cacheKey: string },
-): Response {
+function svgResponse(svg: string, opts: { cacheKey: string }): Response {
   const headers: Record<string, string> = {
     "Content-Type": "image/svg+xml; charset=utf-8",
     "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
     Vary: "Accept-Language",
     "X-Content-Type-Options": "nosniff",
-    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:",
+    "Content-Security-Policy":
+      "default-src 'none'; style-src 'unsafe-inline'; img-src data:",
     "X-Cache-Key": opts.cacheKey,
   };
   return new Response(svg, { headers });
 }
 
-const shareImageRoute = new Hono<{ Bindings: Env }>();
+const shareImageRoute = createApiApp();
+// Hono query() historically selected the first repeated value.
+const firstQueryValue = z.preprocess(
+  (value) => (Array.isArray(value) ? value[0] : value),
+  z.string().optional(),
+);
 
-shareImageRoute.get("/:kind/:id", async (c) => {
-  const kindParam = c.req.param("kind");
-  const id = c.req.param("id");
-  if (!POSTER_KINDS.has(kindParam as PosterKind)) {
-    return c.json(
-      APIErrors.badRequest(
-        `Unknown kind '${kindParam}'. Supported: ${[...POSTER_KINDS].join(", ")}`,
-      ),
-      400,
-    );
-  }
-  const kind = kindParam as PosterKind;
-  if (c.req.query("refresh") !== undefined) {
-    return c.json(
-      APIErrors.badRequest("Poster refresh is not supported; retry without the refresh parameter"),
-      400,
-    );
-  }
-  const preset = resolvePosterPreset(c.req.query("preset"));
-  if (!preset) {
-    return c.json(
-      APIErrors.badRequest("Unknown poster preset"),
-      400,
-    );
-  }
-  // accept-language falls back to ?locale; ?locale must be supported.
-  const locale = resolvePosterLocale(c.req.header("accept-language"), c.req.query("locale"));
-
-  try {
-    const result = await renderPoster(c.env, kind, id, { locale, preset });
-    return svgResponse(result.svg, { cacheKey: result.cacheKey });
-  } catch (error) {
-    if (error instanceof PosterNotFoundError) {
-      return c.json(APIErrors.notFound(error.message), 404);
+shareImageRoute.openapi(
+  createRoute({
+    method: "get",
+    path: "/{kind}/{id}",
+    operationId: "getShareImage",
+    tags: ["Sharing"],
+    "x-audience": "public",
+    request: {
+      params: z.object({
+        kind: z
+          .string()
+          .describe(
+            "location, team or story; unknown kinds return BAD_REQUEST",
+          ),
+        id: z.string(),
+      }),
+      query: z.object({
+        locale: firstQueryValue.describe(
+          "zh-CN, en or ja; unknown values fall back to zh-CN",
+        ),
+        preset: firstQueryValue.describe(
+          "dusk (default), ridge or journal; unknown values return BAD_REQUEST",
+        ),
+        refresh: firstQueryValue.describe(
+          "Unsupported; returns BAD_REQUEST when present",
+        ),
+      }),
+    },
+    responses: {
+      200: {
+        description: "SVG poster",
+        content: { "image/svg+xml": { schema: z.string() } },
+      },
+      ...errorResponses(400, 404, 500),
+    },
+  }),
+  async (c) => {
+    const kindParam = c.req.param("kind");
+    const id = c.req.param("id");
+    if (!POSTER_KINDS.has(kindParam as PosterKind)) {
+      return c.json(
+        APIErrors.badRequest(
+          `Unknown kind '${kindParam}'. Supported: ${[...POSTER_KINDS].join(", ")}`,
+        ),
+        400,
+      );
     }
-    logPosterRenderFailure(kind, error);
-    return c.json(APIErrors.internalError(`Failed to generate ${kind} image`), 500);
-  }
-});
+    const kind = kindParam as PosterKind;
+    if (c.req.query("refresh") !== undefined) {
+      return c.json(
+        APIErrors.badRequest(
+          "Poster refresh is not supported; retry without the refresh parameter",
+        ),
+        400,
+      );
+    }
+    const preset = resolvePosterPreset(c.req.query("preset"));
+    if (!preset) {
+      return c.json(APIErrors.badRequest("Unknown poster preset"), 400);
+    }
+    // accept-language falls back to ?locale; ?locale must be supported.
+    const locale = resolvePosterLocale(
+      c.req.header("accept-language"),
+      c.req.query("locale"),
+    );
+
+    try {
+      const result = await renderPoster(c.env, kind, id, { locale, preset });
+      return svgResponse(result.svg, { cacheKey: result.cacheKey });
+    } catch (error) {
+      if (error instanceof PosterNotFoundError) {
+        return c.json(APIErrors.notFound(error.message), 404);
+      }
+      logPosterRenderFailure(kind, error);
+      return c.json(
+        APIErrors.internalError(`Failed to generate ${kind} image`),
+        500,
+      );
+    }
+  },
+);
 
 // Expose supported locale list as a separate endpoint for clients/UI introspection.
 // Cheap; rebuild-safe; serves a single source of truth for what the server will accept.
-shareImageRoute.get("/locales", (c) => c.json({ locales: SUPPORTED_POSTER_LOCALES }));
+shareImageRoute.openapi(
+  createRoute({
+    method: "get",
+    path: "/locales",
+    operationId: "getShareImageLocales",
+    tags: ["Sharing"],
+    "x-audience": "public",
+    responses: {
+      200: jsonResponse(
+        z.object({ locales: z.array(z.enum(SUPPORTED_POSTER_LOCALES)) }),
+        "Supported locales",
+      ),
+    },
+  }),
+  (c) => c.json({ locales: [...SUPPORTED_POSTER_LOCALES] }, 200),
+);
 
 export { shareImageRoute };

@@ -2,7 +2,32 @@ allowBuilds:
   better-sqlite3: false
   esbuild: true
   sharp: true
+  vue-demi: false
   workerd: true
+minimumReleaseAgeExclude:
+  - '@scalar/client-side-rendering@0.4.12'
+  - '@scalar/helpers@0.16.4'
+  - '@scalar/hono-api-reference@0.12.13'
+  - '@scalar/schemas@0.14.0'
+  - '@scalar/types@0.24.0'
+  - '@scalar/agent-chat@0.12.44'
+  - '@scalar/api-client@3.23.1'
+  - '@scalar/api-reference@1.75.0'
+  - '@scalar/asyncapi-upgrader@0.1.18'
+  - '@scalar/blocks@0.5.3'
+  - '@scalar/code-highlight@0.4.10'
+  - '@scalar/components@0.32.0'
+  - '@scalar/icons@0.7.7'
+  - '@scalar/json-magic@0.16.0'
+  - '@scalar/localization@0.2.8'
+  - '@scalar/oas-utils@0.20.13'
+  - '@scalar/openapi-to-markdown@1.6.0'
+  - '@scalar/openapi-upgrader@0.4.5'
+  - '@scalar/sidebar@0.12.1'
+  - '@scalar/snippetz@0.10.9'
+  - '@scalar/themes@0.19.2'
+  - '@scalar/use-hooks@0.4.21'
+  - '@scalar/workspace-store@0.68.4'
 overrides:
   "@esbuild-kit/core-utils>esbuild": 0.28.2
   # miniflare 固定的旧版本包含安全漏洞，限定同一系列的修复版本。

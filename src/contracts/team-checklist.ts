@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 /**
  * Team「行动本」checklist 类型与通知事件 payload。
  *
@@ -8,50 +10,64 @@
  */
 
 /** 集合信息 */
-export interface ActionbookMeetingPoint {
-  name: string;
-  /** 集合时间（可选，与 team.startTime 不同才填） */
-  time?: string;
-  /** 备注：例如「不见不散，迟到 15 分钟不等」 */
-  note?: string;
-}
+export const ActionbookMeetingPointSchema = z.object({
+  name: z.string(),
+  /** 集合时间（可选，与队伍开始时间不同才填） */
+  time: z.string().optional(),
+  note: z.string().optional(),
+});
+export type ActionbookMeetingPoint = z.infer<
+  typeof ActionbookMeetingPointSchema
+>;
 
 /** 交通方案 */
-export type ActionbookTransportMode = "self_drive" | "public" | "charter" | "other";
+export const ActionbookTransportModeSchema = z.enum([
+  "self_drive",
+  "public",
+  "charter",
+  "other",
+]);
+export type ActionbookTransportMode = z.infer<
+  typeof ActionbookTransportModeSchema
+>;
 
-export interface ActionbookTransport {
-  mode: ActionbookTransportMode;
-  /** 自由文本：车辆数/拼车联系人/公交路线等 */
-  detail?: string;
-}
+export const ActionbookTransportSchema = z.object({
+  mode: ActionbookTransportModeSchema,
+  /** 自由文本：车辆数、拼车联系人或公交路线等 */
+  detail: z.string().optional(),
+});
+export type ActionbookTransport = z.infer<typeof ActionbookTransportSchema>;
 
 /** 装备清单（分级） */
-export interface ActionbookGear {
-  essential: string[];
-  optional: string[];
-  note?: string;
-}
+export const ActionbookGearSchema = z.object({
+  essential: z.array(z.string()),
+  optional: z.array(z.string()),
+  note: z.string().optional(),
+});
+export type ActionbookGear = z.infer<typeof ActionbookGearSchema>;
 
 /**
  * 分工任务。
  * - id 稳定，认领接口按 id 定位（不用 index，防并发漂移）
  * - assigneeIds 支持多人认领；server 负责去重、只允许操作自己
  */
-export interface ActionbookAssignment {
-  id: string;
-  task: string;
-  assigneeIds: string[];
-}
+export const ActionbookAssignmentSchema = z.object({
+  id: z.string(),
+  task: z.string(),
+  assigneeIds: z.array(z.string()),
+});
+export type ActionbookAssignment = z.infer<typeof ActionbookAssignmentSchema>;
 
 /** Team「行动本」checklist 完整结构 */
-export interface TeamChecklist {
-  meetingPoint?: ActionbookMeetingPoint;
-  transport?: ActionbookTransport;
-  gear?: ActionbookGear;
-  assignments?: ActionbookAssignment[];
-  /** 其他约定（自由文本，支持基础 markdown） */
-  notes?: string;
-}
+export const TeamChecklistSchema = z.object({
+  meetingPoint: ActionbookMeetingPointSchema.optional(),
+  transport: ActionbookTransportSchema.optional(),
+  gear: ActionbookGearSchema.optional(),
+  assignments: z.array(ActionbookAssignmentSchema).optional(),
+  /** 其他约定（自由文本，支持基础 Markdown） */
+  notes: z.string().optional(),
+});
+export type TeamChecklist = z.infer<typeof TeamChecklistSchema>;
 
 // ============================================================================
 // 通知钩子事件（T5 合并进 T1，本 spec 只留 payload 类型 + emit 点，不接推送渠道）

@@ -75,3 +75,6 @@ midscene_run/
 
 # Astro generated files
 .astro/
+
+# Pinned API documentation browser assets generated during Astro setup
+/public/generated/scalar-*/

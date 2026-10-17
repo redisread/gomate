@@ -1,10 +1,9 @@
-import { Hono } from "hono";
-import type { Env } from "../../lib/auth";
+import { createApiApp } from "../../lib/openapi";
 
 import queries from "./queries";
 import mutations from "./mutations";
 
-const locations = new Hono<{ Bindings: Env }>();
+const locations = createApiApp();
 
 // Mount query routes (GET endpoints)
 // GET /locations

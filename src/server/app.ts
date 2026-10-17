@@ -1,6 +1,6 @@
-import { Hono } from "hono";
+import { createApiApp, createRoute, z, jsonResponse } from "./lib/openapi";
+import { registerDocumentation } from "./lib/api-documentation";
 import { routePath } from "hono/route";
-import { z } from "zod";
 import { createRequestId, logger } from "./lib/logger";
 import { fetchWithTimeout } from "./lib/timeout";
 import { APIErrors } from "./lib/api-errors";
@@ -21,7 +21,6 @@ import messagesRoute from "./routes/messages";
 import storiesRoute from "./routes/stories";
 import { shareImageRoute } from "./routes/share-image";
 import { localCircleHomeRoute } from "./routes/local-circle/home";
-import { apiValidator } from "./lib/validation";
 import {
   getRequestOrigin,
   isPreviewAuthMutation,
@@ -39,18 +38,16 @@ function effectiveWriteMode(request: Request, env: ApiBindings): WriteMode {
   // Preview versions share production bindings, so their host must remain a
   // protected boundary even if a deployment variable is accidentally copied
   // from the production configuration.
-  return isPreviewRequest(request, env) ? "protected" : resolveWriteMode(env.WRITE_MODE);
+  return isPreviewRequest(request, env)
+    ? "protected"
+    : resolveWriteMode(env.WRITE_MODE);
 }
 
 export function resolveWriteMode(value: unknown): WriteMode {
   return value === "open" ? "open" : "protected";
 }
 
-export const apiApp = new Hono<{ Bindings: ApiBindings }>();
-
-const queryValueSchema = z.union([z.string(), z.array(z.string())]);
-const queryInputSchema = z.record(queryValueSchema);
-const paramInputSchema = z.record(z.string());
+export const apiApp = createApiApp<{ Bindings: ApiBindings }>();
 
 apiApp.use("*", async (c, next) => {
   const requestId = createRequestId(c.req.header("CF-Ray"));
@@ -117,21 +114,38 @@ apiApp.use("*", async (c, next) => {
   await next();
 });
 
-apiApp.use(
-  "*",
-  apiValidator("query", queryInputSchema, "Invalid query", "none") as never,
-  apiValidator("param", paramInputSchema, "Invalid path", "none") as never,
+apiApp.openapi(
+  createRoute({
+    method: "get",
+    path: "/health",
+    operationId: "getHealth",
+    tags: ["Platform"],
+    "x-audience": "platform",
+    responses: {
+      200: jsonResponse(
+        z.object({
+          status: z.literal("ok"),
+          writeMode: z.enum(["open", "protected"]),
+          timestamp: z.string(),
+          versionId: z.string().optional(),
+        }),
+        "Worker health",
+      ),
+    },
+  }),
+  (c) => {
+    const versionId = c.env?.CF_VERSION_METADATA?.id;
+    return c.json(
+      {
+        status: "ok" as const,
+        writeMode: effectiveWriteMode(c.req.raw, c.env),
+        timestamp: new Date().toISOString(),
+        ...(versionId ? { versionId } : {}),
+      },
+      200,
+    );
+  },
 );
-
-apiApp.get("/health", (c) => {
-  const versionId = c.env?.CF_VERSION_METADATA?.id;
-  return c.json({
-    status: "ok",
-    writeMode: effectiveWriteMode(c.req.raw, c.env),
-    timestamp: new Date().toISOString(),
-    ...(versionId ? { versionId } : {}),
-  });
-});
 
 apiApp.route("/auth", authRoute);
 apiApp.route("/teams", teamsRoute);
@@ -248,5 +262,7 @@ apiApp.onError((error, c) => {
   logger.error("api_unhandled_error", error);
   return c.json(APIErrors.internalError("Internal server error"), 500);
 });
+
+registerDocumentation(apiApp);
 
 export type ApiApp = typeof apiApp;

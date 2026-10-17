@@ -1,0 +1,268 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`preserves nested union, literal and authored error details 1`] = `
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "details": [
+      {
+        "code": "invalid_union",
+        "message": "Invalid input",
+        "path": [
+          "nested",
+          "value",
+        ],
+        "unionErrors": [
+          {
+            "issues": [
+              {
+                "code": "invalid_type",
+                "expected": "string",
+                "message": "Expected string, received boolean",
+                "path": [
+                  "nested",
+                  "value",
+                ],
+                "received": "boolean",
+              },
+            ],
+            "name": "ZodError",
+          },
+          {
+            "issues": [
+              {
+                "code": "invalid_type",
+                "expected": "null",
+                "message": "Expected null, received boolean",
+                "path": [
+                  "nested",
+                  "value",
+                ],
+                "received": "boolean",
+              },
+            ],
+            "name": "ZodError",
+          },
+        ],
+      },
+      {
+        "code": "invalid_literal",
+        "expected": "DELETE",
+        "message": "Invalid literal value, expected "DELETE"",
+        "path": [
+          "confirmation",
+        ],
+        "received": "NO",
+      },
+      {
+        "code": "too_big",
+        "exact": false,
+        "inclusive": true,
+        "maximum": 1,
+        "message": "Array must contain at most 1 element(s)",
+        "path": [
+          "values",
+        ],
+        "type": "array",
+      },
+      {
+        "code": "too_small",
+        "exact": false,
+        "inclusive": true,
+        "message": "标题太短",
+        "minimum": 2,
+        "path": [
+          "title",
+        ],
+        "type": "string",
+      },
+    ],
+    "message": "Invalid input",
+  },
+  "success": false,
+}
+`;
+
+exports[`validation HTTP compatibility > preserves issue fields and messages for {"name":"","count":1.5,"status":"bad","email":"bad","code":"b","extra":1} 1`] = `
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "details": [
+      {
+        "code": "too_small",
+        "exact": false,
+        "inclusive": true,
+        "message": "String must contain at least 1 character(s)",
+        "minimum": 1,
+        "path": [
+          "name",
+        ],
+        "type": "string",
+      },
+      {
+        "code": "invalid_type",
+        "expected": "integer",
+        "message": "Expected integer, received float",
+        "path": [
+          "count",
+        ],
+        "received": "float",
+      },
+      {
+        "code": "invalid_enum_value",
+        "message": "Invalid enum value. Expected 'open' | 'closed', received 'bad'",
+        "options": [
+          "open",
+          "closed",
+        ],
+        "path": [
+          "status",
+        ],
+        "received": "bad",
+      },
+      {
+        "code": "invalid_string",
+        "message": "Invalid email",
+        "path": [
+          "email",
+        ],
+        "validation": "email",
+      },
+      {
+        "code": "invalid_string",
+        "message": "Invalid",
+        "path": [
+          "code",
+        ],
+        "validation": "regex",
+      },
+      {
+        "code": "unrecognized_keys",
+        "keys": [
+          "extra",
+        ],
+        "message": "Unrecognized key(s) in object: 'extra'",
+        "path": [],
+      },
+    ],
+    "message": "Invalid input",
+  },
+  "success": false,
+}
+`;
+
+exports[`validation HTTP compatibility > preserves issue fields and messages for {"name":null,"count":0,"status":7,"email":1,"code":false} 1`] = `
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "details": [
+      {
+        "code": "invalid_type",
+        "expected": "string",
+        "message": "Expected string, received null",
+        "path": [
+          "name",
+        ],
+        "received": "null",
+      },
+      {
+        "code": "too_small",
+        "exact": false,
+        "inclusive": true,
+        "message": "Number must be greater than or equal to 1",
+        "minimum": 1,
+        "path": [
+          "count",
+        ],
+        "type": "number",
+      },
+      {
+        "code": "invalid_type",
+        "expected": "'open' | 'closed'",
+        "message": "Expected 'open' | 'closed', received number",
+        "path": [
+          "status",
+        ],
+        "received": "number",
+      },
+      {
+        "code": "invalid_type",
+        "expected": "string",
+        "message": "Expected string, received number",
+        "path": [
+          "email",
+        ],
+        "received": "number",
+      },
+      {
+        "code": "invalid_type",
+        "expected": "string",
+        "message": "Expected string, received boolean",
+        "path": [
+          "code",
+        ],
+        "received": "boolean",
+      },
+    ],
+    "message": "Invalid input",
+  },
+  "success": false,
+}
+`;
+
+exports[`validation HTTP compatibility > preserves issue fields and messages for {} 1`] = `
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "details": [
+      {
+        "code": "invalid_type",
+        "expected": "string",
+        "message": "Required",
+        "path": [
+          "name",
+        ],
+        "received": "undefined",
+      },
+      {
+        "code": "invalid_type",
+        "expected": "number",
+        "message": "Required",
+        "path": [
+          "count",
+        ],
+        "received": "undefined",
+      },
+      {
+        "code": "invalid_type",
+        "expected": "'open' | 'closed'",
+        "message": "Required",
+        "path": [
+          "status",
+        ],
+        "received": "undefined",
+      },
+      {
+        "code": "invalid_type",
+        "expected": "string",
+        "message": "Required",
+        "path": [
+          "email",
+        ],
+        "received": "undefined",
+      },
+      {
+        "code": "invalid_type",
+        "expected": "string",
+        "message": "Required",
+        "path": [
+          "code",
+        ],
+        "received": "undefined",
+      },
+    ],
+    "message": "Invalid input",
+  },
+  "success": false,
+}
+`;

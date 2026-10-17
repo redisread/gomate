@@ -43,8 +43,8 @@
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.4",
     "@astrojs/react": "^6.0.4",
-    "@hono/standard-validator": "^0.4.0",
-    "@standard-schema/spec": "^1.1.0",
+    "@hono/zod-openapi": "1.6.3",
+    "@scalar/hono-api-reference": "0.12.13",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "~7.3.7",
     "better-auth": "^1.7.1",
@@ -61,7 +61,7 @@
     "satori": "^0.12.0",
     "tailwind-merge": "^2.5.0",
     "tailwindcss": "^4.0.0",
-    "zod": "^3.23.0"
+    "zod": "^4.6.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
@@ -69,6 +69,7 @@
     "@cloudflare/vitest-plugin": "^1.0.0",
     "@eslint/js": "^9.0.0",
     "@playwright/test": "^1.61.1",
+    "@scalar/api-reference": "1.75.0",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

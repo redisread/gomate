@@ -1,3 +1,7 @@
+import type { Story as StoryDto } from "@/contracts";
+import { StorySchema, TagSchema, cursorPageSchema } from "@/contracts";
+import { urlTextSchema } from "@/contracts/input-formats";
+import { SuccessSchema } from "@/contracts/public-responses";
 import {
   and,
   count,
@@ -10,16 +14,24 @@ import {
   lt,
   or,
 } from "drizzle-orm";
-import type { Story as StoryDto } from "@/contracts";
-import type { Context } from "hono";
-import { Hono } from "hono";
-import { z } from "zod";
+import type { Context, MiddlewareHandler } from "hono";
+import {
+  cookieSecurity,
+  createApiApp,
+  createRoute,
+  errorResponses,
+  jsonResponse,
+  legacyJsonBody,
+  validationHook,
+  z,
+  type ApiEnv,
+} from "../lib/openapi";
 
 import { createDb } from "../db";
 import * as schema from "../db/schema";
+import { getActiveSession } from "../lib/active-session";
 import { APIErrors } from "../lib/api-errors";
 import type { Env } from "../lib/auth";
-import { getActiveSession } from "../lib/active-session";
 import {
   decodeContentCursor,
   encodeContentCursor,
@@ -27,16 +39,21 @@ import {
 import { mapDatabaseError } from "../lib/database-errors";
 import { generateId } from "../lib/id";
 import { logger } from "../lib/logger";
-import { validateRequest } from "../lib/validation";
 import { deleteR2ObjectsWithRetry, getR2PublicBaseUrl } from "../lib/r2-media";
 import {
   createStoryTagUpdateBatch,
   createStoryTagWriteStatements,
 } from "../lib/story-tag-write";
 
-const stories = new Hono<{ Bindings: Env }>();
+const stories = createApiApp();
 
-type StoriesContext = Context<{ Bindings: Env }>;
+type StoriesContext = Context<ApiEnv>;
+const storySession: MiddlewareHandler<ApiEnv> = async (c, next) => {
+  const session = await getSession(c).catch(() => null);
+  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+  c.set("session", session);
+  await next();
+};
 
 const MAX_IMAGES = 9;
 const MAX_TAGS = 10;
@@ -62,10 +79,10 @@ function isAllowedImageUrl(value: string): boolean {
   }
 }
 
-const imageSchema = z
-  .string()
-  .url("图片必须是有效 URL")
-  .refine(isAllowedImageUrl, "图片必须使用受信任域名的 HTTPS URL");
+const imageSchema = urlTextSchema("图片必须是有效 URL").refine(
+  isAllowedImageUrl,
+  "图片必须使用受信任域名的 HTTPS URL",
+);
 
 const imagesSchema = z
   .array(imageSchema)
@@ -132,6 +149,22 @@ const listStoriesQuery = z
 
 const idQuery = z.string().trim().min(1).max(200);
 const storyIdParams = z.object({ id: idQuery });
+
+// Preserve path-before-body error precedence on the update endpoint.
+const storyPathBeforeBody: MiddlewareHandler<ApiEnv> = async (c, next) => {
+  const data = c.req.param();
+  const parsed = storyIdParams.safeParse(data);
+  if (!parsed.success) {
+    const result = {
+      target: "param" as const,
+      success: false,
+      error: parsed.error,
+      data,
+    };
+    return validationHook("故事 ID 无效", "none")(result, c);
+  }
+  await next();
+};
 
 function changes(result: D1Result<unknown> | undefined): number {
   return Number(result?.meta?.changes ?? 0);
@@ -410,395 +443,513 @@ function toStoryResponse(
   };
 }
 
-stories.get("/stats", async (c) => {
-  try {
-    const db = createDb(c.env.DB);
-    const weekStart = new Date();
-    weekStart.setHours(0, 0, 0, 0);
-    weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
-
-    const [{ total: weeklyNewStories }] = await db
-      .select({ total: count() })
-      .from(schema.stories)
-      .leftJoin(
-        schema.locations,
-        eq(schema.locations.id, schema.stories.locationId),
-      )
-      .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
-      .where(
-        and(
-          eq(schema.stories.status, "published"),
-          publicStoryLocationCondition(),
-          gte(schema.stories.createdAt, weekStart),
-        ),
-      );
-
-    const popular = await db
-      .select({
-        locationId: schema.stories.locationId,
-        locationName: schema.locations.name,
-        locationSlug: schema.locations.slug,
-        storyCount: count(),
-      })
-      .from(schema.stories)
-      .leftJoin(
-        schema.locations,
-        eq(schema.locations.id, schema.stories.locationId),
-      )
-      .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
-      .where(
-        and(
-          eq(schema.stories.status, "published"),
-          publicStoryLocationCondition(),
-          isNotNull(schema.stories.locationId),
-        ),
-      )
-      .groupBy(
-        schema.stories.locationId,
-        schema.locations.name,
-        schema.locations.slug,
-      )
-      .orderBy(desc(count()))
-      .limit(1);
-
-    const popularLocation = popular[0]?.locationId
-      ? {
-          id: popular[0].locationId,
-          name: popular[0].locationName,
-          slug: popular[0].locationSlug,
-        }
-      : null;
-
-    return c.json({
-      success: true,
-      data: {
-        weeklyNewStories,
-        popularLocation: popularLocation
-          ? { ...popularLocation, storyCount: popular[0].storyCount }
-          : null,
-      },
-    });
-  } catch (error) {
-    return databaseErrorResponse(c, "getStats", error);
-  }
-});
-
-stories.get("/tags", async (c) => {
-  try {
-    const db = createDb(c.env.DB);
-    const items = await db
-      .select({
-        id: schema.tags.id,
-        name: schema.tags.name,
-        slug: schema.tags.slug,
-        count: count(),
-      })
-      .from(schema.tags)
-      .innerJoin(schema.storyTags, eq(schema.tags.id, schema.storyTags.tagId))
-      .innerJoin(
-        schema.stories,
-        eq(schema.storyTags.storyId, schema.stories.id),
-      )
-      .leftJoin(
-        schema.locations,
-        eq(schema.locations.id, schema.stories.locationId),
-      )
-      .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
-      .where(
-        and(
-          eq(schema.stories.status, "published"),
-          publicStoryLocationCondition(),
-        ),
-      )
-      .groupBy(schema.tags.id, schema.tags.name, schema.tags.slug)
-      .orderBy(desc(count()), schema.tags.name)
-      .limit(15);
-
-    return c.json({ success: true, data: { items } });
-  } catch (error) {
-    return databaseErrorResponse(c, "getTags", error);
-  }
-});
-
-stories.get("/", async (c) => {
-  const parsed = await validateRequest(
-    c,
-    "query",
-    listStoriesQuery,
-    "查询参数无效",
-    "flatten",
-  );
-  if (parsed instanceof Response) return parsed;
-
-  const cursor = parsed.cursor ? decodeContentCursor(parsed.cursor) : null;
-  if (parsed.cursor && !cursor) {
-    return c.json(APIErrors.validationError("游标无效"), 400);
-  }
-
-  const session = await getOptionalSession(c);
-  if (parsed.status === "draft" && !session) {
-    return c.json(APIErrors.unauthorized("请先登录"), 401);
-  }
-
-  try {
-    const db = createDb(c.env.DB);
-    const conditions = [
-      eq(schema.stories.status, parsed.status),
-      publicStoryLocationCondition(),
-    ];
-    if (parsed.status === "draft" && session) {
-      conditions.push(eq(schema.stories.authorId, session.user.id));
-    }
-    if (parsed.locationId) {
-      conditions.push(eq(schema.stories.locationId, parsed.locationId));
-    }
-    if (parsed.teamId) {
-      conditions.push(eq(schema.stories.teamId, parsed.teamId));
-    }
-    if (cursor) {
-      const cursorDate = new Date(cursor.t);
-      conditions.push(
-        or(
-          lt(schema.stories.createdAt, cursorDate),
-          and(
-            eq(schema.stories.createdAt, cursorDate),
-            lt(schema.stories.id, cursor.id),
-          ),
-        )!,
-      );
-    }
-    if (parsed.tag) {
-      const matchingStoryIds = db
-        .select({ storyId: schema.storyTags.storyId })
-        .from(schema.storyTags)
-        .innerJoin(schema.tags, eq(schema.storyTags.tagId, schema.tags.id))
-        .where(eq(schema.tags.name, parsed.tag));
-      conditions.push(inArray(schema.stories.id, matchingStoryIds));
-    }
-
-    const rows = await db
-      .select({
-        story: schema.stories,
-        author: {
-          id: schema.users.id,
-          name: schema.users.name,
-          nickname: schema.users.nickname,
-          image: schema.users.image,
-        },
-        location: {
-          id: schema.locations.id,
-          name: schema.locations.name,
-          slug: schema.locations.slug,
-        },
-        team: { id: schema.teams.id, title: schema.teams.title },
-      })
-      .from(schema.stories)
-      .innerJoin(schema.users, eq(schema.stories.authorId, schema.users.id))
-      .leftJoin(
-        schema.locations,
-        eq(schema.stories.locationId, schema.locations.id),
-      )
-      .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
-      .leftJoin(schema.teams, eq(schema.stories.teamId, schema.teams.id))
-      .where(and(...conditions))
-      .orderBy(desc(schema.stories.createdAt), desc(schema.stories.id))
-      .limit(parsed.limit + 1);
-
-    const hasMore = rows.length > parsed.limit;
-    const pageRows = rows.slice(0, parsed.limit);
-    const storyIds = pageRows.map(({ story }) => story.id);
-    const [tagsByStory, likedStoryIds] = await Promise.all([
-      loadTagsByStoryIds(db, storyIds),
-      loadLikedStoryIds(db, session?.user.id, storyIds),
-    ]);
-    const items = pageRows.map(({ story, author, location, team }) =>
-      toStoryResponse(
-        story,
-        { author, location, team },
-        tagsByStory.get(story.id) ?? [],
-        likedStoryIds.has(story.id),
-      ),
-    );
-    const last = hasMore ? pageRows.at(-1)?.story : undefined;
-
-    c.header("Cache-Control", "no-store");
-    return c.json({
-      success: true,
-      data: {
-        items,
-        nextCursor: last
-          ? encodeContentCursor({ t: last.createdAt.getTime(), id: last.id })
-          : null,
-      },
-    });
-  } catch (error) {
-    return databaseErrorResponse(c, "list", error);
-  }
-});
-
-stories.get("/:id", async (c) => {
-  const id = await validateRequest(
-    c,
-    "param",
-    storyIdParams,
-    "故事 ID 无效",
-    "none",
-  );
-  if (id instanceof Response) return id;
-
-  try {
-    const db = createDb(c.env.DB);
-    const session = await getOptionalSession(c);
-    const row = await db
-      .select({
-        story: schema.stories,
-        author: {
-          id: schema.users.id,
-          name: schema.users.name,
-          nickname: schema.users.nickname,
-          image: schema.users.image,
-        },
-        location: {
-          id: schema.locations.id,
-          name: schema.locations.name,
-          slug: schema.locations.slug,
-        },
-        team: { id: schema.teams.id, title: schema.teams.title },
-      })
-      .from(schema.stories)
-      .innerJoin(schema.users, eq(schema.stories.authorId, schema.users.id))
-      .leftJoin(
-        schema.locations,
-        eq(schema.stories.locationId, schema.locations.id),
-      )
-      .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
-      .leftJoin(schema.teams, eq(schema.stories.teamId, schema.teams.id))
-      .where(and(eq(schema.stories.id, id.id), publicStoryLocationCondition()))
-      .limit(1)
-      .then((rows) => rows[0]);
-
-    if (
-      !row ||
-      row.story.status === "hidden" ||
-      (row.story.status === "draft" && !canManageStory(session, row.story))
-    ) {
-      return c.json(APIErrors.notFound("故事不存在"), 404);
-    }
-
-    const story = row.story;
-
-    const [tagsByStory, likedStoryIds] = await Promise.all([
-      loadTagsByStoryIds(db, [story.id]),
-      loadLikedStoryIds(db, session?.user.id, [story.id]),
-    ]);
-    c.header("Cache-Control", "no-store");
-    return c.json({
-      success: true,
-      data: toStoryResponse(
-        story,
-        { author: row.author, location: row.location, team: row.team },
-        tagsByStory.get(story.id) ?? [],
-        likedStoryIds.has(story.id),
-      ),
-    });
-  } catch (error) {
-    return databaseErrorResponse(c, "get", error);
-  }
-});
-
-stories.post("/", async (c) => {
-  const session = await getSession(c).catch(() => null);
-  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-  const parsed = await validateRequest(
-    c,
-    "json",
-    createStoryInput,
-    "输入验证失败",
-    "flatten",
-  );
-  if (parsed instanceof Response) return parsed;
-
-  const tempKeys = parsed.imageKeys ?? [];
-  if (tempKeys.some((key) => !isOwnedTempStoryKey(key, session.user.id))) {
-    return c.json(APIErrors.forbidden("只能使用当前用户上传的临时图片"), 403);
-  }
-
-  const storyId = generateId();
-  const finalKeys: string[] = [];
-  let copyStarted = false;
-
-  try {
-    const db = createDb(c.env.DB);
-    const input = parsed;
-    let recapTeam: schema.Team | undefined;
-    let locationId = input.locationId ?? null;
-
-    if (input.teamId) {
-      recapTeam = await db.query.teams.findFirst({
-        where: eq(schema.teams.id, input.teamId),
-      });
-      if (!recapTeam) return c.json(APIErrors.notFound("队伍不存在"), 404);
-
-      const authorized =
-        recapTeam.leaderId === session.user.id ||
-        Boolean(
-          await db.query.teamMembers.findFirst({
-            where: and(
-              eq(schema.teamMembers.teamId, recapTeam.id),
-              eq(schema.teamMembers.userId, session.user.id),
-              isNull(schema.teamMembers.leftAt),
-            ),
-            columns: { userId: true },
+stories.openapi(
+  createRoute({
+    method: "get",
+    path: "/stats",
+    operationId: "storiesStats",
+    tags: ["stories"],
+    summary: "Read story statistics",
+    "x-audience": "public",
+    request: {},
+    responses: {
+      200: jsonResponse(
+        SuccessSchema.extend({
+          data: z.object({
+            weeklyNewStories: z.number(),
+            popularLocation: z
+              .object({
+                id: z.string(),
+                name: z.string().nullable(),
+                slug: z.string().nullable(),
+                storyCount: z.number(),
+              })
+              .nullable(),
           }),
-        );
-      if (!authorized) {
-        return c.json(
-          APIErrors.forbidden("只有队长或活动成员可以发布回顾"),
-          403,
-        );
-      }
-      if (!recapTeam.formedAt) {
-        return c.json(APIErrors.conflict("队伍尚未成行"), 409);
-      }
-      if (recapTeam.cancelledAt) {
-        return c.json(APIErrors.conflict("已取消的队伍不能发布回顾"), 409);
-      }
-      if (recapTeam.endAt.getTime() > Date.now()) {
-        return c.json(APIErrors.conflict("活动结束后才能发布回顾"), 409);
-      }
-      if (input.locationId && input.locationId !== recapTeam.locationId) {
-        return c.json(APIErrors.conflict("回顾地点必须与队伍地点一致"), 409);
-      }
-      locationId = recapTeam.locationId;
-    }
-    if (locationId && !(await findPublicLocation(db, locationId))) {
-      return c.json(APIErrors.notFound("地点不存在"), 404);
-    }
-
-    const now = Date.now();
-    const tags = input.tags ?? [];
-    copyStarted = tempKeys.length > 0;
-    let images: string[];
+        }),
+        "Success",
+      ),
+      ...errorResponses(409, 422),
+    },
+  }),
+  async (c) => {
     try {
-      images = await copyTempStoryImages(c, storyId, tempKeys, finalKeys);
+      const db = createDb(c.env.DB);
+      const weekStart = new Date();
+      weekStart.setHours(0, 0, 0, 0);
+      weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7));
+
+      const [{ total: weeklyNewStories }] = await db
+        .select({ total: count() })
+        .from(schema.stories)
+        .leftJoin(
+          schema.locations,
+          eq(schema.locations.id, schema.stories.locationId),
+        )
+        .leftJoin(
+          schema.region,
+          eq(schema.region.id, schema.locations.regionId),
+        )
+        .where(
+          and(
+            eq(schema.stories.status, "published"),
+            publicStoryLocationCondition(),
+            gte(schema.stories.createdAt, weekStart),
+          ),
+        );
+
+      const popular = await db
+        .select({
+          locationId: schema.stories.locationId,
+          locationName: schema.locations.name,
+          locationSlug: schema.locations.slug,
+          storyCount: count(),
+        })
+        .from(schema.stories)
+        .leftJoin(
+          schema.locations,
+          eq(schema.locations.id, schema.stories.locationId),
+        )
+        .leftJoin(
+          schema.region,
+          eq(schema.region.id, schema.locations.regionId),
+        )
+        .where(
+          and(
+            eq(schema.stories.status, "published"),
+            publicStoryLocationCondition(),
+            isNotNull(schema.stories.locationId),
+          ),
+        )
+        .groupBy(
+          schema.stories.locationId,
+          schema.locations.name,
+          schema.locations.slug,
+        )
+        .orderBy(desc(count()))
+        .limit(1);
+
+      const popularLocation = popular[0]?.locationId
+        ? {
+            id: popular[0].locationId,
+            name: popular[0].locationName,
+            slug: popular[0].locationSlug,
+          }
+        : null;
+
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            weeklyNewStories,
+            popularLocation: popularLocation
+              ? { ...popularLocation, storyCount: popular[0].storyCount }
+              : null,
+          },
+        },
+        200,
+      );
     } catch (error) {
-      if (copyStarted) scheduleR2Delete(c, [...finalKeys, ...tempKeys]);
-      if (error instanceof StoryMediaError) {
-        if (error.status === 400) {
-          return c.json(APIErrors.badRequest(error.clientMessage), 400);
-        }
-        logger.error("story_media_archive_failed", {
-          errorType: error.name,
-        });
-        return c.json(APIErrors.internalError(error.clientMessage), 500);
-      }
-      return c.json(APIErrors.internalError("图片归档失败"), 500);
+      return databaseErrorResponse(c, "getStats", error);
+    }
+  },
+);
+
+stories.openapi(
+  createRoute({
+    method: "get",
+    path: "/tags",
+    operationId: "storiesTags",
+    tags: ["stories"],
+    summary: "List popular story tags",
+    "x-audience": "public",
+    request: {},
+    responses: {
+      200: jsonResponse(
+        SuccessSchema.extend({
+          data: z.object({
+            items: z.array(TagSchema.extend({ count: z.number() })),
+          }),
+        }),
+        "Success",
+      ),
+      ...errorResponses(409, 422),
+    },
+  }),
+  async (c) => {
+    try {
+      const db = createDb(c.env.DB);
+      const items = await db
+        .select({
+          id: schema.tags.id,
+          name: schema.tags.name,
+          slug: schema.tags.slug,
+          count: count(),
+        })
+        .from(schema.tags)
+        .innerJoin(schema.storyTags, eq(schema.tags.id, schema.storyTags.tagId))
+        .innerJoin(
+          schema.stories,
+          eq(schema.storyTags.storyId, schema.stories.id),
+        )
+        .leftJoin(
+          schema.locations,
+          eq(schema.locations.id, schema.stories.locationId),
+        )
+        .leftJoin(
+          schema.region,
+          eq(schema.region.id, schema.locations.regionId),
+        )
+        .where(
+          and(
+            eq(schema.stories.status, "published"),
+            publicStoryLocationCondition(),
+          ),
+        )
+        .groupBy(schema.tags.id, schema.tags.name, schema.tags.slug)
+        .orderBy(desc(count()), schema.tags.name)
+        .limit(15);
+
+      return c.json({ success: true as const, data: { items } }, 200);
+    } catch (error) {
+      return databaseErrorResponse(c, "getTags", error);
+    }
+  },
+);
+
+stories.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    operationId: "storiesList",
+    tags: ["stories"],
+    summary: "List stories",
+    "x-audience": "public",
+    request: { query: listStoriesQuery },
+    responses: {
+      200: jsonResponse(
+        SuccessSchema.extend({ data: cursorPageSchema(StorySchema) }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 409, 422),
+    },
+  }),
+  async (c) => {
+    const parsed = c.req.valid("query");
+
+    const cursor = parsed.cursor ? decodeContentCursor(parsed.cursor) : null;
+    if (parsed.cursor && !cursor) {
+      return c.json(APIErrors.validationError("游标无效"), 400);
     }
 
-    const insertStory = recapTeam
-      ? c.env.DB.prepare(
-          `
+    const session = await getOptionalSession(c);
+    if (parsed.status === "draft" && !session) {
+      return c.json(APIErrors.unauthorized("请先登录"), 401);
+    }
+
+    try {
+      const db = createDb(c.env.DB);
+      const conditions = [
+        eq(schema.stories.status, parsed.status),
+        publicStoryLocationCondition(),
+      ];
+      if (parsed.status === "draft" && session) {
+        conditions.push(eq(schema.stories.authorId, session.user.id));
+      }
+      if (parsed.locationId) {
+        conditions.push(eq(schema.stories.locationId, parsed.locationId));
+      }
+      if (parsed.teamId) {
+        conditions.push(eq(schema.stories.teamId, parsed.teamId));
+      }
+      if (cursor) {
+        const cursorDate = new Date(cursor.t);
+        conditions.push(
+          or(
+            lt(schema.stories.createdAt, cursorDate),
+            and(
+              eq(schema.stories.createdAt, cursorDate),
+              lt(schema.stories.id, cursor.id),
+            ),
+          )!,
+        );
+      }
+      if (parsed.tag) {
+        const matchingStoryIds = db
+          .select({ storyId: schema.storyTags.storyId })
+          .from(schema.storyTags)
+          .innerJoin(schema.tags, eq(schema.storyTags.tagId, schema.tags.id))
+          .where(eq(schema.tags.name, parsed.tag));
+        conditions.push(inArray(schema.stories.id, matchingStoryIds));
+      }
+
+      const rows = await db
+        .select({
+          story: schema.stories,
+          author: {
+            id: schema.users.id,
+            name: schema.users.name,
+            nickname: schema.users.nickname,
+            image: schema.users.image,
+          },
+          location: {
+            id: schema.locations.id,
+            name: schema.locations.name,
+            slug: schema.locations.slug,
+          },
+          team: { id: schema.teams.id, title: schema.teams.title },
+        })
+        .from(schema.stories)
+        .innerJoin(schema.users, eq(schema.stories.authorId, schema.users.id))
+        .leftJoin(
+          schema.locations,
+          eq(schema.stories.locationId, schema.locations.id),
+        )
+        .leftJoin(
+          schema.region,
+          eq(schema.region.id, schema.locations.regionId),
+        )
+        .leftJoin(schema.teams, eq(schema.stories.teamId, schema.teams.id))
+        .where(and(...conditions))
+        .orderBy(desc(schema.stories.createdAt), desc(schema.stories.id))
+        .limit(parsed.limit + 1);
+
+      const hasMore = rows.length > parsed.limit;
+      const pageRows = rows.slice(0, parsed.limit);
+      const storyIds = pageRows.map(({ story }) => story.id);
+      const [tagsByStory, likedStoryIds] = await Promise.all([
+        loadTagsByStoryIds(db, storyIds),
+        loadLikedStoryIds(db, session?.user.id, storyIds),
+      ]);
+      const items = pageRows.map(({ story, author, location, team }) =>
+        toStoryResponse(
+          story,
+          { author, location, team },
+          tagsByStory.get(story.id) ?? [],
+          likedStoryIds.has(story.id),
+        ),
+      );
+      const last = hasMore ? pageRows.at(-1)?.story : undefined;
+
+      c.header("Cache-Control", "no-store");
+      return c.json(
+        {
+          success: true as const,
+          data: {
+            items,
+            nextCursor: last
+              ? encodeContentCursor({
+                  t: last.createdAt.getTime(),
+                  id: last.id,
+                })
+              : null,
+          },
+        },
+        200,
+      );
+    } catch (error) {
+      return databaseErrorResponse(c, "list", error);
+    }
+  },
+  validationHook("查询参数无效", "flatten"),
+);
+
+stories.openapi(
+  createRoute({
+    method: "get",
+    path: "/{id}",
+    operationId: "storiesGet",
+    tags: ["stories"],
+    summary: "Read story detail",
+    "x-audience": "public",
+    request: { params: storyIdParams },
+    responses: {
+      200: jsonResponse(SuccessSchema.extend({ data: StorySchema }), "Success"),
+      ...errorResponses(400, 404, 409, 422),
+    },
+  }),
+  async (c) => {
+    const id = c.req.valid("param");
+
+    try {
+      const db = createDb(c.env.DB);
+      const session = await getOptionalSession(c);
+      const row = await db
+        .select({
+          story: schema.stories,
+          author: {
+            id: schema.users.id,
+            name: schema.users.name,
+            nickname: schema.users.nickname,
+            image: schema.users.image,
+          },
+          location: {
+            id: schema.locations.id,
+            name: schema.locations.name,
+            slug: schema.locations.slug,
+          },
+          team: { id: schema.teams.id, title: schema.teams.title },
+        })
+        .from(schema.stories)
+        .innerJoin(schema.users, eq(schema.stories.authorId, schema.users.id))
+        .leftJoin(
+          schema.locations,
+          eq(schema.stories.locationId, schema.locations.id),
+        )
+        .leftJoin(
+          schema.region,
+          eq(schema.region.id, schema.locations.regionId),
+        )
+        .leftJoin(schema.teams, eq(schema.stories.teamId, schema.teams.id))
+        .where(
+          and(eq(schema.stories.id, id.id), publicStoryLocationCondition()),
+        )
+        .limit(1)
+        .then((rows) => rows[0]);
+
+      if (
+        !row ||
+        row.story.status === "hidden" ||
+        (row.story.status === "draft" && !canManageStory(session, row.story))
+      ) {
+        return c.json(APIErrors.notFound("故事不存在"), 404);
+      }
+
+      const story = row.story;
+
+      const [tagsByStory, likedStoryIds] = await Promise.all([
+        loadTagsByStoryIds(db, [story.id]),
+        loadLikedStoryIds(db, session?.user.id, [story.id]),
+      ]);
+      c.header("Cache-Control", "no-store");
+      return c.json(
+        {
+          success: true as const,
+          data: toStoryResponse(
+            story,
+            { author: row.author, location: row.location, team: row.team },
+            tagsByStory.get(story.id) ?? [],
+            likedStoryIds.has(story.id),
+          ),
+        },
+        200,
+      );
+    } catch (error) {
+      return databaseErrorResponse(c, "get", error);
+    }
+  },
+  validationHook("故事 ID 无效", "none"),
+);
+
+stories.openapi(
+  createRoute({
+    method: "post",
+    path: "/",
+    operationId: "storiesCreate",
+    tags: ["stories"],
+    summary: "Publish a story or team recap",
+    "x-audience": "public",
+    security: cookieSecurity,
+    middleware: [storySession, legacyJsonBody("输入验证失败")],
+    request: {
+      body: {
+        required: true,
+        content: { "application/json": { schema: createStoryInput } },
+      },
+    },
+    responses: {
+      201: jsonResponse(
+        SuccessSchema.extend({ data: z.object({ id: z.string() }) }),
+        "Created",
+      ),
+      ...errorResponses(400, 401, 403, 404, 409, 422, 500, 503),
+    },
+  }),
+  async (c) => {
+    const session = c.get("session");
+
+    const parsed = c.req.valid("json");
+
+    const tempKeys = parsed.imageKeys ?? [];
+    if (tempKeys.some((key) => !isOwnedTempStoryKey(key, session.user.id))) {
+      return c.json(APIErrors.forbidden("只能使用当前用户上传的临时图片"), 403);
+    }
+
+    const storyId = generateId();
+    const finalKeys: string[] = [];
+    let copyStarted = false;
+
+    try {
+      const db = createDb(c.env.DB);
+      const input = parsed;
+      let recapTeam: schema.Team | undefined;
+      let locationId = input.locationId ?? null;
+
+      if (input.teamId) {
+        recapTeam = await db.query.teams.findFirst({
+          where: eq(schema.teams.id, input.teamId),
+        });
+        if (!recapTeam) return c.json(APIErrors.notFound("队伍不存在"), 404);
+
+        const authorized =
+          recapTeam.leaderId === session.user.id ||
+          Boolean(
+            await db.query.teamMembers.findFirst({
+              where: and(
+                eq(schema.teamMembers.teamId, recapTeam.id),
+                eq(schema.teamMembers.userId, session.user.id),
+                isNull(schema.teamMembers.leftAt),
+              ),
+              columns: { userId: true },
+            }),
+          );
+        if (!authorized) {
+          return c.json(
+            APIErrors.forbidden("只有队长或活动成员可以发布回顾"),
+            403,
+          );
+        }
+        if (!recapTeam.formedAt) {
+          return c.json(APIErrors.conflict("队伍尚未成行"), 409);
+        }
+        if (recapTeam.cancelledAt) {
+          return c.json(APIErrors.conflict("已取消的队伍不能发布回顾"), 409);
+        }
+        if (recapTeam.endAt.getTime() > Date.now()) {
+          return c.json(APIErrors.conflict("活动结束后才能发布回顾"), 409);
+        }
+        if (input.locationId && input.locationId !== recapTeam.locationId) {
+          return c.json(APIErrors.conflict("回顾地点必须与队伍地点一致"), 409);
+        }
+        locationId = recapTeam.locationId;
+      }
+      if (locationId && !(await findPublicLocation(db, locationId))) {
+        return c.json(APIErrors.notFound("地点不存在"), 404);
+      }
+
+      const now = Date.now();
+      const tags = input.tags ?? [];
+      copyStarted = tempKeys.length > 0;
+      let images: string[];
+      try {
+        images = await copyTempStoryImages(c, storyId, tempKeys, finalKeys);
+      } catch (error) {
+        if (copyStarted) scheduleR2Delete(c, [...finalKeys, ...tempKeys]);
+        if (error instanceof StoryMediaError) {
+          if (error.status === 400) {
+            return c.json(APIErrors.badRequest(error.clientMessage), 400);
+          }
+          logger.error("story_media_archive_failed", {
+            errorType: error.name,
+          });
+          return c.json(APIErrors.internalError(error.clientMessage), 500);
+        }
+        return c.json(APIErrors.internalError("图片归档失败"), 500);
+      }
+
+      const insertStory = recapTeam
+        ? c.env.DB.prepare(
+            `
           INSERT INTO stories (
             id, author_id, team_id, location_id, title, summary, content,
             images, status, view_count, like_count, created_at, updated_at
@@ -825,25 +976,25 @@ stories.post("/", async (c) => {
               )
             )
         `,
-        ).bind(
-          storyId,
-          session.user.id,
-          input.title ?? null,
-          input.summary ?? null,
-          input.content,
-          JSON.stringify(images),
-          input.status,
-          now,
-          now,
-          recapTeam.id,
-          now,
-          locationId,
-          session.user.id,
-          session.user.id,
-        )
-      : locationId
-        ? c.env.DB.prepare(
-            `
+          ).bind(
+            storyId,
+            session.user.id,
+            input.title ?? null,
+            input.summary ?? null,
+            input.content,
+            JSON.stringify(images),
+            input.status,
+            now,
+            now,
+            recapTeam.id,
+            now,
+            locationId,
+            session.user.id,
+            session.user.id,
+          )
+        : locationId
+          ? c.env.DB.prepare(
+              `
             INSERT INTO stories (
               id, author_id, team_id, location_id, title, summary, content,
               images, status, view_count, like_count, created_at, updated_at
@@ -856,133 +1007,152 @@ stories.post("/", async (c) => {
               AND region.level = 'city'
               AND region.service_enabled = 1
           `,
-          ).bind(
-            storyId,
-            session.user.id,
-            input.title,
-            input.summary ?? null,
-            input.content,
-            JSON.stringify(images),
-            input.status,
-            now,
-            now,
-            locationId,
-          )
-        : c.env.DB.prepare(
-            `
+            ).bind(
+              storyId,
+              session.user.id,
+              input.title,
+              input.summary ?? null,
+              input.content,
+              JSON.stringify(images),
+              input.status,
+              now,
+              now,
+              locationId,
+            )
+          : c.env.DB.prepare(
+              `
           INSERT INTO stories (
             id, author_id, team_id, location_id, title, summary, content,
             images, status, view_count, like_count, created_at, updated_at
           ) VALUES (?, ?, NULL, NULL, ?, ?, ?, ?, ?, 0, 0, ?, ?)
         `,
-          ).bind(
-            storyId,
-            session.user.id,
-            input.title,
-            input.summary ?? null,
-            input.content,
-            JSON.stringify(images),
-            input.status,
-            now,
-            now,
-          );
+            ).bind(
+              storyId,
+              session.user.id,
+              input.title,
+              input.summary ?? null,
+              input.content,
+              JSON.stringify(images),
+              input.status,
+              now,
+              now,
+            );
 
-    const results = await c.env.DB.batch([
-      insertStory,
-      ...createStoryTagWriteStatements(c.env.DB, { storyId, tags, now }),
-    ]);
-    if (changes(results[0]) !== 1) {
-      if (copyStarted) scheduleR2Delete(c, [...finalKeys, ...tempKeys]);
-      return c.json(APIErrors.conflict("故事关联状态已变化，未创建故事"), 409);
-    }
-
-    if (tempKeys.length > 0) scheduleR2Delete(c, tempKeys);
-    return c.json({ success: true, data: { id: storyId } }, 201);
-  } catch (error) {
-    if (copyStarted) scheduleR2Delete(c, [...finalKeys, ...tempKeys]);
-    return databaseErrorResponse(c, "create", error);
-  }
-});
-
-stories.put("/:id", async (c) => {
-  const session = await getSession(c).catch(() => null);
-  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-  const id = await validateRequest(
-    c,
-    "param",
-    storyIdParams,
-    "故事 ID 无效",
-    "none",
-  );
-  if (id instanceof Response) return id;
-  const parsed = await validateRequest(
-    c,
-    "json",
-    updateStoryInput,
-    "输入验证失败",
-    "flatten",
-  );
-  if (parsed instanceof Response) return parsed;
-
-  try {
-    const db = createDb(c.env.DB);
-    const story = await db.query.stories.findFirst({
-      where: eq(schema.stories.id, id.id),
-    });
-    if (!story) return c.json(APIErrors.notFound("故事不存在"), 404);
-    if (!canManageStory(session, story)) {
-      return c.json(APIErrors.forbidden("无权修改该故事"), 403);
-    }
-
-    const input = parsed;
-    if (
-      input.images &&
-      input.images.some((image) => !story.images.includes(image))
-    ) {
-      return c.json(
-        APIErrors.validationError("编辑时只能保留或删除故事已有图片"),
-        400,
-      );
-    }
-    if (!story.teamId && input.title === null) {
-      return c.json(APIErrors.validationError("普通故事标题不能为空"), 400);
-    }
-    if (story.teamId && input.locationId !== undefined) {
-      const team = await db.query.teams.findFirst({
-        where: eq(schema.teams.id, story.teamId),
-        columns: { locationId: true },
-      });
-      if (!team || input.locationId !== team.locationId) {
-        return c.json(APIErrors.conflict("回顾地点必须与队伍地点一致"), 409);
+      const results = await c.env.DB.batch([
+        insertStory,
+        ...createStoryTagWriteStatements(c.env.DB, { storyId, tags, now }),
+      ]);
+      if (changes(results[0]) !== 1) {
+        if (copyStarted) scheduleR2Delete(c, [...finalKeys, ...tempKeys]);
+        return c.json(
+          APIErrors.conflict("故事关联状态已变化，未创建故事"),
+          409,
+        );
       }
-    }
-    if (!story.teamId && input.locationId) {
-      const location = await findPublicLocation(db, input.locationId);
-      if (!location) return c.json(APIErrors.notFound("地点不存在"), 404);
-    }
 
-    const fields: string[] = [];
-    const values: unknown[] = [];
-    const addField = (column: string, value: unknown) => {
-      fields.push(`${column} = ?`);
-      values.push(value);
-    };
-    if (input.locationId !== undefined)
-      addField("location_id", input.locationId);
-    if (input.title !== undefined) addField("title", input.title);
-    if (input.summary !== undefined) addField("summary", input.summary);
-    if (input.content !== undefined) addField("content", input.content);
-    if (input.images !== undefined)
-      addField("images", JSON.stringify(input.images));
-    if (input.status !== undefined) addField("status", input.status);
-    const now = Date.now();
-    addField("updated_at", now);
-    values.push(story.id);
+      if (tempKeys.length > 0) scheduleR2Delete(c, tempKeys);
+      return c.json({ success: true as const, data: { id: storyId } }, 201);
+    } catch (error) {
+      if (copyStarted) scheduleR2Delete(c, [...finalKeys, ...tempKeys]);
+      return databaseErrorResponse(c, "create", error);
+    }
+  },
+  validationHook("输入验证失败", "flatten"),
+);
 
-    let locationVisibility = "";
-    if (input.locationId === undefined) {
-      locationVisibility = `
+stories.openapi(
+  createRoute({
+    method: "put",
+    path: "/{id}",
+    operationId: "storiesUpdate",
+    tags: ["stories"],
+    summary: "Update a story",
+    "x-audience": "public",
+    security: cookieSecurity,
+    middleware: [
+      storySession,
+      storyPathBeforeBody,
+      legacyJsonBody("输入验证失败"),
+    ],
+    request: {
+      params: storyIdParams,
+      body: {
+        required: true,
+        content: { "application/json": { schema: updateStoryInput } },
+      },
+    },
+    responses: {
+      200: jsonResponse(
+        SuccessSchema.extend({ data: z.object({ id: z.string() }) }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 403, 404, 409, 422, 503),
+    },
+  }),
+  async (c) => {
+    const session = c.get("session");
+
+    const id = c.req.valid("param");
+    const parsed = c.req.valid("json");
+
+    try {
+      const db = createDb(c.env.DB);
+      const story = await db.query.stories.findFirst({
+        where: eq(schema.stories.id, id.id),
+      });
+      if (!story) return c.json(APIErrors.notFound("故事不存在"), 404);
+      if (!canManageStory(session, story)) {
+        return c.json(APIErrors.forbidden("无权修改该故事"), 403);
+      }
+
+      const input = parsed;
+      if (
+        input.images &&
+        input.images.some((image) => !story.images.includes(image))
+      ) {
+        return c.json(
+          APIErrors.validationError("编辑时只能保留或删除故事已有图片"),
+          400,
+        );
+      }
+      if (!story.teamId && input.title === null) {
+        return c.json(APIErrors.validationError("普通故事标题不能为空"), 400);
+      }
+      if (story.teamId && input.locationId !== undefined) {
+        const team = await db.query.teams.findFirst({
+          where: eq(schema.teams.id, story.teamId),
+          columns: { locationId: true },
+        });
+        if (!team || input.locationId !== team.locationId) {
+          return c.json(APIErrors.conflict("回顾地点必须与队伍地点一致"), 409);
+        }
+      }
+      if (!story.teamId && input.locationId) {
+        const location = await findPublicLocation(db, input.locationId);
+        if (!location) return c.json(APIErrors.notFound("地点不存在"), 404);
+      }
+
+      const fields: string[] = [];
+      const values: unknown[] = [];
+      const addField = (column: string, value: unknown) => {
+        fields.push(`${column} = ?`);
+        values.push(value);
+      };
+      if (input.locationId !== undefined)
+        addField("location_id", input.locationId);
+      if (input.title !== undefined) addField("title", input.title);
+      if (input.summary !== undefined) addField("summary", input.summary);
+      if (input.content !== undefined) addField("content", input.content);
+      if (input.images !== undefined)
+        addField("images", JSON.stringify(input.images));
+      if (input.status !== undefined) addField("status", input.status);
+      const now = Date.now();
+      addField("updated_at", now);
+      values.push(story.id);
+
+      let locationVisibility = "";
+      if (input.locationId === undefined) {
+        locationVisibility = `
         AND (
           location_id IS NULL
           OR EXISTS (
@@ -996,8 +1166,8 @@ stories.put("/:id", async (c) => {
           )
         )
       `;
-    } else if (input.locationId !== null) {
-      locationVisibility = `
+      } else if (input.locationId !== null) {
+        locationVisibility = `
         AND EXISTS (
           SELECT 1
           FROM locations AS location
@@ -1008,129 +1178,168 @@ stories.put("/:id", async (c) => {
             AND region.service_enabled = 1
         )
       `;
-      values.push(input.locationId);
+        values.push(input.locationId);
+      }
+
+      const update = c.env.DB.prepare(
+        `UPDATE stories SET ${fields.join(", ")} WHERE id = ? ${locationVisibility}`,
+      ).bind(...values);
+      const statements =
+        input.tags === undefined
+          ? [update]
+          : createStoryTagUpdateBatch(c.env.DB, update, {
+              storyId: story.id,
+              tags: input.tags,
+              now,
+            });
+
+      const results = await c.env.DB.batch(statements);
+      if (changes(results[0]) !== 1) {
+        return c.json(APIErrors.conflict("故事状态已变化"), 409);
+      }
+      if (input.images) {
+        const retained = new Set(input.images);
+        const removedKeys = story.images
+          .filter((image) => !retained.has(image))
+          .map((image) => getOwnedFinalStoryKey(c.env, story.id, image))
+          .filter((key): key is string => key !== null);
+        scheduleR2Delete(c, removedKeys);
+      }
+      return c.json({ success: true as const, data: { id: story.id } }, 200);
+    } catch (error) {
+      return databaseErrorResponse(c, "update", error);
     }
+  },
+  (result, c) =>
+    result.target === "param"
+      ? validationHook("故事 ID 无效", "none")(result, c)
+      : validationHook("输入验证失败", "flatten")(result, c),
+);
 
-    const update = c.env.DB.prepare(
-      `UPDATE stories SET ${fields.join(", ")} WHERE id = ? ${locationVisibility}`,
-    ).bind(...values);
-    const statements =
-      input.tags === undefined
-        ? [update]
-        : createStoryTagUpdateBatch(c.env.DB, update, {
-            storyId: story.id,
-            tags: input.tags,
-            now,
-          });
+stories.openapi(
+  createRoute({
+    method: "delete",
+    path: "/{id}",
+    operationId: "storiesDelete",
+    tags: ["stories"],
+    summary: "Hide a story",
+    "x-audience": "public",
+    security: cookieSecurity,
+    middleware: [storySession],
+    request: { params: storyIdParams },
+    responses: {
+      200: jsonResponse(
+        SuccessSchema.extend({
+          data: z.object({ id: z.string(), status: z.literal("hidden") }),
+        }),
+        "Success",
+      ),
+      ...errorResponses(400, 401, 403, 404, 409, 422, 503),
+    },
+  }),
+  async (c) => {
+    const session = c.get("session");
 
-    const results = await c.env.DB.batch(statements);
-    if (changes(results[0]) !== 1) {
-      return c.json(APIErrors.conflict("故事状态已变化"), 409);
-    }
-    if (input.images) {
-      const retained = new Set(input.images);
-      const removedKeys = story.images
-        .filter((image) => !retained.has(image))
-        .map((image) => getOwnedFinalStoryKey(c.env, story.id, image))
-        .filter((key): key is string => key !== null);
-      scheduleR2Delete(c, removedKeys);
-    }
-    return c.json({ success: true, data: { id: story.id } });
-  } catch (error) {
-    return databaseErrorResponse(c, "update", error);
-  }
-});
+    const id = c.req.valid("param");
 
-stories.delete("/:id", async (c) => {
-  const session = await getSession(c).catch(() => null);
-  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
+    try {
+      const db = createDb(c.env.DB);
+      const story = await db.query.stories.findFirst({
+        where: eq(schema.stories.id, id.id),
+      });
+      if (!story) return c.json(APIErrors.notFound("故事不存在"), 404);
+      if (!canManageStory(session, story)) {
+        return c.json(APIErrors.forbidden("无权删除该故事"), 403);
+      }
 
-  const id = await validateRequest(
-    c,
-    "param",
-    storyIdParams,
-    "故事 ID 无效",
-    "none",
-  );
-  if (id instanceof Response) return id;
-
-  try {
-    const db = createDb(c.env.DB);
-    const story = await db.query.stories.findFirst({
-      where: eq(schema.stories.id, id.id),
-    });
-    if (!story) return c.json(APIErrors.notFound("故事不存在"), 404);
-    if (!canManageStory(session, story)) {
-      return c.json(APIErrors.forbidden("无权删除该故事"), 403);
-    }
-
-    const result = await c.env.DB.prepare(
-      `
+      const result = await c.env.DB.prepare(
+        `
       UPDATE stories SET status = 'hidden', updated_at = ? WHERE id = ?
     `,
-    )
-      .bind(Date.now(), story.id)
-      .run();
-    if (changes(result) !== 1) {
-      return c.json(APIErrors.conflict("故事状态已变化"), 409);
+      )
+        .bind(Date.now(), story.id)
+        .run();
+      if (changes(result) !== 1) {
+        return c.json(APIErrors.conflict("故事状态已变化"), 409);
+      }
+
+      return c.json(
+        {
+          success: true as const,
+          data: { id: story.id, status: "hidden" as const },
+        },
+        200,
+      );
+    } catch (error) {
+      return databaseErrorResponse(c, "delete", error);
     }
+  },
+  validationHook("故事 ID 无效", "none"),
+);
 
-    return c.json({
-      success: true,
-      data: { id: story.id, status: "hidden" as const },
-    });
-  } catch (error) {
-    return databaseErrorResponse(c, "delete", error);
-  }
-});
-
-stories.post("/:id/like", async (c) => {
-  const session = await getSession(c).catch(() => null);
-  if (!session) return c.json(APIErrors.unauthorized("请先登录"), 401);
-
-  const id = await validateRequest(
-    c,
-    "param",
-    storyIdParams,
-    "故事 ID 无效",
-    "none",
-  );
-  if (id instanceof Response) return id;
-
-  try {
-    const db = createDb(c.env.DB);
-    const [story] = await db
-      .select({ id: schema.stories.id })
-      .from(schema.stories)
-      .leftJoin(
-        schema.locations,
-        eq(schema.locations.id, schema.stories.locationId),
-      )
-      .leftJoin(schema.region, eq(schema.region.id, schema.locations.regionId))
-      .where(
-        and(
-          eq(schema.stories.id, id.id),
-          eq(schema.stories.status, "published"),
-          publicStoryLocationCondition(),
-        ),
-      )
-      .limit(1);
-    if (!story) return c.json(APIErrors.notFound("故事不存在"), 404);
-
-    const existing = await db.query.storyLikes.findFirst({
-      where: and(
-        eq(schema.storyLikes.userId, session.user.id),
-        eq(schema.storyLikes.storyId, story.id),
+stories.openapi(
+  createRoute({
+    method: "post",
+    path: "/{id}/like",
+    operationId: "storiesToggleLike",
+    tags: ["stories"],
+    summary: "Toggle a story like",
+    "x-audience": "public",
+    security: cookieSecurity,
+    middleware: [storySession],
+    request: { params: storyIdParams },
+    responses: {
+      200: jsonResponse(
+        SuccessSchema.extend({
+          data: z.object({ liked: z.boolean(), likeCount: z.number() }),
+        }),
+        "Success",
       ),
-      columns: { storyId: true },
-    });
-    const liked = !existing;
-    const statement = existing
-      ? c.env.DB.prepare(
-          "DELETE FROM story_likes WHERE user_id = ? AND story_id = ?",
-        ).bind(session.user.id, story.id)
-      : c.env.DB.prepare(
-          `
+      ...errorResponses(400, 401, 404, 409, 422, 403, 503),
+    },
+  }),
+  async (c) => {
+    const session = c.get("session");
+
+    const id = c.req.valid("param");
+
+    try {
+      const db = createDb(c.env.DB);
+      const [story] = await db
+        .select({ id: schema.stories.id })
+        .from(schema.stories)
+        .leftJoin(
+          schema.locations,
+          eq(schema.locations.id, schema.stories.locationId),
+        )
+        .leftJoin(
+          schema.region,
+          eq(schema.region.id, schema.locations.regionId),
+        )
+        .where(
+          and(
+            eq(schema.stories.id, id.id),
+            eq(schema.stories.status, "published"),
+            publicStoryLocationCondition(),
+          ),
+        )
+        .limit(1);
+      if (!story) return c.json(APIErrors.notFound("故事不存在"), 404);
+
+      const existing = await db.query.storyLikes.findFirst({
+        where: and(
+          eq(schema.storyLikes.userId, session.user.id),
+          eq(schema.storyLikes.storyId, story.id),
+        ),
+        columns: { storyId: true },
+      });
+      const liked = !existing;
+      const statement = existing
+        ? c.env.DB.prepare(
+            "DELETE FROM story_likes WHERE user_id = ? AND story_id = ?",
+          ).bind(session.user.id, story.id)
+        : c.env.DB.prepare(
+            `
           INSERT INTO story_likes (user_id, story_id, created_at)
           SELECT ?, story.id, ?
           FROM stories AS story
@@ -1147,23 +1356,28 @@ stories.post("/:id/like", async (c) => {
               )
             )
         `,
-        ).bind(session.user.id, Date.now(), story.id);
-    const result = await statement.run();
-    if (changes(result) !== 1) {
-      return c.json(APIErrors.conflict("点赞状态已变化，请重试"), 409);
-    }
+          ).bind(session.user.id, Date.now(), story.id);
+      const result = await statement.run();
+      if (changes(result) !== 1) {
+        return c.json(APIErrors.conflict("点赞状态已变化，请重试"), 409);
+      }
 
-    const updated = await db.query.stories.findFirst({
-      where: eq(schema.stories.id, story.id),
-      columns: { likeCount: true },
-    });
-    return c.json({
-      success: true,
-      data: { liked, likeCount: updated?.likeCount ?? 0 },
-    });
-  } catch (error) {
-    return databaseErrorResponse(c, "toggleLike", error);
-  }
-});
+      const updated = await db.query.stories.findFirst({
+        where: eq(schema.stories.id, story.id),
+        columns: { likeCount: true },
+      });
+      return c.json(
+        {
+          success: true as const,
+          data: { liked, likeCount: updated?.likeCount ?? 0 },
+        },
+        200,
+      );
+    } catch (error) {
+      return databaseErrorResponse(c, "toggleLike", error);
+    }
+  },
+  validationHook("故事 ID 无效", "none"),
+);
 
 export default stories;

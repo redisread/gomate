@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { AdminAccessError } from "../lib/admin-access";
 import type { Env } from "../lib/auth";
 
 const mocks = vi.hoisted(() => ({
@@ -8,14 +9,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../db", () => ({ createDb: mocks.createDb }));
-vi.mock("../lib/admin-access", () => ({
+vi.mock("../lib/admin-access", async (original) => ({
+  ...(await original<typeof import("../lib/admin-access")>()),
   requireAdmin: mocks.requireAdmin,
-  adminAccessErrorResponse: (
-    c: { json: (body: unknown, status: 403) => Response },
-    error: unknown,
-  ) => error === "forbidden"
-    ? c.json({ success: false, error: { code: "FORBIDDEN" } }, 403)
-    : null,
 }));
 
 const { adminUsersRoute } = await import("./admin-users");
@@ -29,7 +25,7 @@ describe("administrator user role management", () => {
   });
 
   it("rejects a non-administrator before reading users", async () => {
-    mocks.requireAdmin.mockRejectedValue("forbidden");
+    mocks.requireAdmin.mockRejectedValue(new AdminAccessError("forbidden"));
 
     const response = await adminUsersRoute.request("/", {}, env);
 

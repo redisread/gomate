@@ -18,18 +18,45 @@ API 由统一 Cloudflare Worker 中的 Hono 应用提供，外部路径统一以
 - 时间在 HTTP DTO 中使用 ISO 8601，在 D1 中存 Unix 毫秒。
 - 业务错误统一为 `{ success: false, error: { code, message, details? } }`。
 - 列表使用有界 `limit` 与 opaque `cursor`；具体排序和响应形状由对应路由 schema 定义。
-- JSON、query、path 等 API 边界统一使用 `@hono/standard-validator` 对接现有 Zod
-  Standard Schema；校验失败继续返回现有 API error envelope。认证 JSON 和 multipart 上传在
- 读取前分别保留大小限制，因此会在有界读取后调用同一 Standard Schema 校验协议。
+- 普通路由使用 `@hono/zod-openapi` 的 `createRoute` / `app.openapi`，同一份 Zod 4 schema
+  负责输入校验、响应类型和 OpenAPI 3.1 输出；跨端 DTO 从 `src/contracts/` schema 推导。
+  校验失败保留既有 error envelope、details 和消息；权限检查仍在读取 body 之前。
+- 认证 JSON 和 multipart 上传保留有界读取后校验，第三方认证透传保持供应商行为；这些
+  特殊入口在同一 registry 注册契约并标记 `x-validation-mode`，不安装提前读取 body 的 validator。
 - 纯管理员 API 共用一个访问解析器：先验证同源 session，再从当前 D1 `users` 行复核账号为
-  active 且 `role=admin`。无 session 使用统一 401 envelope，当前角色或状态不满足时使用统一
-  403 envelope；不信任客户端 UI 或 session 中缓存的旧角色。
+  active 且 `role=admin`。无 session、停用或已删除账号使用统一 401 envelope，
+  活跃普通用户使用统一 403 envelope；不信任客户端 UI 或 session 中缓存的旧角色。
 - 管理员写入的可操作冲突或校验失败在 `error.details.reason` 提供语言无关分类；服务端
   `message` 只用于诊断，管理员 UI 不直接展示。当前稳定 reason 为
   `admin_self_role_change`、`admin_last_active_revoke`、`tag_already_exists`、
   `tag_update_conflict`、`location_changed_concurrently`、`location_has_references`、
   `location_invalid_region`、`location_image_host_disallowed`。客户端只翻译已知 reason；未知、
   畸形、授权、网络和服务端错误使用对应操作的本地化通用失败文案。
+
+## 自动生成的 API 文档
+
+| 入口 | 可见内容 | 权限 |
+| --- | --- | --- |
+| `/api/openapi.json` | 公开及需登录的产品 API、健康检查 | 可匿名读取 |
+| `/api/docs` | 上述规范的 Scalar 页面 | 可匿名读取 |
+| `/api/admin/openapi.json` | 全量产品及管理员 API | 当前 active admin |
+| `/api/admin/docs` | 全量规范的 Scalar 页面 | 当前 active admin |
+
+`API_DOCS_ENABLED=true` 开启四个入口；其他值均返回 404，不影响业务接口。
+管理员入口每次请求重新授权并返回 `Cache-Control: private, no-store`。
+公开规范按操作的 `x-audience` 过滤，再递归裁剪不可达 schema/security components，
+不会因为共享 registry 泄露管理员 DTO。文档生成不读取 D1、R2 或外部服务。
+
+Scalar 浏览器资源由锁定的 `@scalar/api-reference` 版本在构建时复制到
+`/generated/scalar-<version>/`，运行时从同源加载；不使用远程 CDN、字体或请求代理。
+只有 localhost 页面显示请求执行按钮；生产及 Preview 页面隐藏执行入口，
+不持久化认证信息。接口权限、同源 Cookie 写保护和 `WRITE_MODE` 仍由实际 API 强制执行。
+
+新增普通 API 必须声明唯一 `operationId`、受众、请求及具体响应 schema；
+文档覆盖测试对实际路由与 registry 进行核对。内部资源代理、文档自身和关闭的认证兜底入口
+通过带原因的明确排除清单管理。不要手工维护另一份 OpenAPI JSON。
+
+升级 Scalar 时同时更新精确依赖版本、资源复制版本校验及文档脚本 URL，运行构建和浏览器测试。
 
 ## 端点目录
 

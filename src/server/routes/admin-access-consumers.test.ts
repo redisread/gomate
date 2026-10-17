@@ -19,6 +19,16 @@ const mocks = vi.hoisted(() => {
 vi.mock("../db", () => ({ createDb: mocks.createDb }));
 vi.mock("../lib/admin-access", () => ({
   requireAdmin: mocks.requireAdmin,
+  AdminAccessError: mocks.MockAdminAccessError,
+  resolveAdminAccess: async () => {
+    try {
+      return { kind: "authorized", admin: await mocks.requireAdmin() };
+    } catch (error) {
+      if (error instanceof mocks.MockAdminAccessError)
+        return { kind: error.kind };
+      throw error;
+    }
+  },
   adminAccessErrorResponse: (
     c: { json: (body: unknown, status: 401 | 403) => Response },
     error: unknown,
@@ -49,13 +59,13 @@ const r2 = {
 } as unknown as R2Bucket;
 
 const imageOutput = {
-  response: () => new Response(
-    new Uint8Array([
-      0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00,
-      0x57, 0x45, 0x42, 0x50,
-    ]),
-    { headers: { "content-type": "image/webp" } },
-  ),
+  response: () =>
+    new Response(
+      new Uint8Array([
+        0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50,
+      ]),
+      { headers: { "content-type": "image/webp" } },
+    ),
 };
 const imageTransformer = {
   output: vi.fn().mockResolvedValue(imageOutput),
@@ -89,11 +99,7 @@ function locationImageBody() {
   form.set(
     "file",
     new File(
-      [
-        new Uint8Array([
-          0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-        ]),
-      ],
+      [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])],
       "cover.png",
       { type: "image/png" },
     ),
@@ -108,11 +114,8 @@ function locationHeicBody() {
     new File(
       [
         new Uint8Array([
-          0x00, 0x00, 0x00, 0x18,
-          0x66, 0x74, 0x79, 0x70,
-          0x6d, 0x69, 0x66, 0x31,
-          0x00, 0x00, 0x00, 0x00,
-          0x68, 0x65, 0x69, 0x63,
+          0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x6d, 0x69, 0x66,
+          0x31, 0x00, 0x00, 0x00, 0x00, 0x68, 0x65, 0x69, 0x63,
         ]),
       ],
       "iphone.heic",
@@ -126,11 +129,9 @@ function mismatchedLocationImageBody() {
   const form = new FormData();
   form.set(
     "file",
-    new File(
-      [new Uint8Array([0x89, 0x50, 0x4e, 0x47])],
-      "renamed.jpg",
-      { type: "image/jpeg" },
-    ),
+    new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], "renamed.jpg", {
+      type: "image/jpeg",
+    }),
   );
   return form;
 }
@@ -139,11 +140,9 @@ function iphoneTranscodedImageBody() {
   const form = new FormData();
   form.set(
     "file",
-    new File(
-      [new Uint8Array([0xff, 0xd8, 0xff, 0xd9])],
-      "iphone.heic",
-      { type: "image/heic" },
-    ),
+    new File([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], "iphone.heic", {
+      type: "image/heic",
+    }),
   );
   return form;
 }
@@ -277,7 +276,9 @@ describe("shared administrator access consumers", () => {
       url: expect.stringMatching(/\.webp$/u),
     });
     expect(vi.mocked(images.input)).toHaveBeenCalledOnce();
-    expect(imageTransformer.output).toHaveBeenCalledWith({ format: "image/webp" });
+    expect(imageTransformer.output).toHaveBeenCalledWith({
+      format: "image/webp",
+    });
     expect(vi.mocked(r2.put)).toHaveBeenCalledWith(
       expect.stringMatching(/\.webp$/u),
       expect.any(ArrayBuffer),
@@ -469,7 +470,9 @@ describe("shared administrator access consumers", () => {
       width: 1,
       height: 1,
     });
-    imageTransformer.output.mockRejectedValueOnce(new Error("service unavailable"));
+    imageTransformer.output.mockRejectedValueOnce(
+      new Error("service unavailable"),
+    );
 
     const response = await uploadRoute.request(
       "/location",
