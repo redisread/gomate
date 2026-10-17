@@ -77,9 +77,11 @@ export function normalizeValidationIssues(
         return {
           ...common,
           code: "invalid_string",
-          validation: issue.format,
+          validation: issue.format.replace(/^gomate-/, ""),
           message: message(
-            issue.format === "regex" ? "Invalid" : `Invalid ${issue.format}`,
+            issue.format === "regex"
+              ? "Invalid"
+              : `Invalid ${issue.format.replace(/^gomate-/, "")}`,
           ),
         };
       case "invalid_value": {

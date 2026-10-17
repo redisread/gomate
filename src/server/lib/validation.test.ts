@@ -2,8 +2,12 @@ import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
+import { utcDateTimeSchema } from "@/contracts/input-formats";
 import { updateTeamSchema } from "../routes/teams/mutations";
-import { updateLocationInputSchema } from "../routes/locations/utils";
+import {
+  createLocationInputSchema,
+  updateLocationInputSchema,
+} from "../routes/locations/utils";
 import { APIErrors } from "./api-errors";
 import { apiValidator, validateRequest } from "./validation";
 
@@ -162,4 +166,106 @@ it("accepts the existing compact timezone offset on team updates", async () => {
   });
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual(body);
+});
+
+it("preserves nested union, literal and authored error details", async () => {
+  const app = new Hono();
+  const schema = z.object({
+    nested: z.object({ value: z.union([z.string(), z.null()]) }),
+    confirmation: z.literal("DELETE"),
+    values: z.array(z.string()).max(1),
+    title: z.string().min(2, "标题太短"),
+  });
+  app.post("/", async (c) => {
+    const value = await validateRequest(c, "json", schema, "Invalid input");
+    return value instanceof Response ? value : c.json(value);
+  });
+  const response = await app.request("/", {
+    method: "POST",
+    body: JSON.stringify({
+      nested: { value: false },
+      confirmation: "NO",
+      values: ["a", "b"],
+      title: "",
+    }),
+  });
+  expect(response.status).toBe(400);
+  expect(await response.json()).toMatchSnapshot();
+});
+
+it("preserves image URL text while accepting existing creation defaults", async () => {
+  const app = new Hono();
+  app.post("/", async (c) => {
+    const value = await validateRequest(
+      c,
+      "json",
+      createLocationInputSchema,
+      "Invalid input",
+    );
+    return value instanceof Response ? value : c.json(value);
+  });
+  const response = await app.request("/", {
+    method: "POST",
+    body: JSON.stringify({
+      regionId: "city-1",
+      name: "Place",
+      description: "Description",
+      images: [" https://example.com/image.png "],
+    }),
+  });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({
+    regionId: "city-1",
+    name: "Place",
+    description: "Description",
+    images: [" https://example.com/image.png "],
+    supportedActivityTypes: [],
+    status: "draft",
+    latitude: null,
+    longitude: null,
+    coverImageUrl: null,
+    extra: {},
+  });
+});
+
+it.each(["2030-01-01T10:00Z", "2030-01-01T10:00:00.123Z"])(
+  "retains accepted UTC timestamp precision: %s",
+  async (birthday) => {
+    const app = new Hono();
+    app.post("/", async (c) => {
+      const value = await validateRequest(
+        c,
+        "json",
+        z.object({ birthday: utcDateTimeSchema.nullable().optional() }),
+        "Invalid input",
+      );
+      return value instanceof Response ? value : c.json(value);
+    });
+    const response = await app.request("/", {
+      method: "POST",
+      body: JSON.stringify({ birthday }),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ birthday });
+  },
+);
+
+it("keeps query defaults, coercion and stripped unknown keys at the HTTP boundary", async () => {
+  const app = new Hono();
+  const schema = z.object({
+    limit: z.coerce.number().int().min(1).max(100).default(12),
+    enabled: z
+      .enum(["true", "false"])
+      .transform((value) => value === "true")
+      .prefault("true"),
+  });
+  app.get("/", apiValidator("query", schema, "Invalid query"), (c) =>
+    c.json(c.req.valid("query")),
+  );
+  const defaults = await app.request("/?unknown=ignored");
+  expect(await defaults.json()).toEqual({ limit: 12, enabled: true });
+  const query = await app.request("/?limit=20&enabled=false");
+  expect(await query.json()).toEqual({ limit: 20, enabled: false });
+  const invalid = await app.request("/?limit=0");
+  expect(invalid.status).toBe(400);
 });

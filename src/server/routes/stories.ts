@@ -14,6 +14,7 @@ import type { Story as StoryDto } from "@/contracts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { z } from "zod";
+import { urlTextSchema } from "@/contracts/input-formats";
 
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -62,9 +63,7 @@ function isAllowedImageUrl(value: string): boolean {
   }
 }
 
-const imageSchema = z
-  .string()
-  .url("图片必须是有效 URL")
+const imageSchema = urlTextSchema("图片必须是有效 URL")
   .refine(isAllowedImageUrl, "图片必须使用受信任域名的 HTTPS URL");
 
 const imagesSchema = z

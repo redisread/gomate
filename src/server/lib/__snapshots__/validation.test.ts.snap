@@ -1,5 +1,88 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`preserves nested union, literal and authored error details 1`] = `
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "details": [
+      {
+        "code": "invalid_union",
+        "message": "Invalid input",
+        "path": [
+          "nested",
+          "value",
+        ],
+        "unionErrors": [
+          {
+            "issues": [
+              {
+                "code": "invalid_type",
+                "expected": "string",
+                "message": "Expected string, received boolean",
+                "path": [
+                  "nested",
+                  "value",
+                ],
+                "received": "boolean",
+              },
+            ],
+            "name": "ZodError",
+          },
+          {
+            "issues": [
+              {
+                "code": "invalid_type",
+                "expected": "null",
+                "message": "Expected null, received boolean",
+                "path": [
+                  "nested",
+                  "value",
+                ],
+                "received": "boolean",
+              },
+            ],
+            "name": "ZodError",
+          },
+        ],
+      },
+      {
+        "code": "invalid_literal",
+        "expected": "DELETE",
+        "message": "Invalid literal value, expected "DELETE"",
+        "path": [
+          "confirmation",
+        ],
+        "received": "NO",
+      },
+      {
+        "code": "too_big",
+        "exact": false,
+        "inclusive": true,
+        "maximum": 1,
+        "message": "Array must contain at most 1 element(s)",
+        "path": [
+          "values",
+        ],
+        "type": "array",
+      },
+      {
+        "code": "too_small",
+        "exact": false,
+        "inclusive": true,
+        "message": "标题太短",
+        "minimum": 2,
+        "path": [
+          "title",
+        ],
+        "type": "string",
+      },
+    ],
+    "message": "Invalid input",
+  },
+  "success": false,
+}
+`;
+
 exports[`validation HTTP compatibility > preserves issue fields and messages for {"name":"","count":1.5,"status":"bad","email":"bad","code":"b","extra":1} 1`] = `
 {
   "error": {

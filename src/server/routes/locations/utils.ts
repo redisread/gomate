@@ -7,6 +7,7 @@ import type {
 import { ACTIVITY_TYPES } from "@/contracts";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
+import { urlTextSchema } from "@/contracts/input-formats";
 
 import type { Db } from "../../db";
 import * as schema from "../../db/schema";
@@ -14,9 +15,7 @@ import * as schema from "../../db/schema";
 const activityTypeSchema = z.enum(ACTIVITY_TYPES);
 const locationStatusSchema = z.enum(["draft", "published", "archived"]);
 
-const httpsUrlSchema = z
-  .string()
-  .url("Image must be a valid URL")
+const httpsUrlSchema = urlTextSchema("Image must be a valid URL")
   .max(2_048)
   .refine(
     (value) => {

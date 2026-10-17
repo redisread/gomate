@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { utcDateTimeSchema } from "@/contracts/input-formats";
 import {
   and,
   desc,
@@ -48,7 +49,7 @@ const updateProfileSchema = z
     nickname: nullableText(100).optional(),
     bio: nullableText(1000).optional(),
     gender: z.enum(["male", "female", "other"]).nullable().optional(),
-    birthday: z.string().datetime().nullable().optional(),
+    birthday: utcDateTimeSchema.nullable().optional(),
     extra: z
       .object({
         level: z
