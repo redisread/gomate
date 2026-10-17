@@ -153,7 +153,14 @@ async function main() {
   const { token } = JSON.parse(stdout);
   if (!token) throw new Error("Missing build credentials");
   const base = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/r2/buckets/gomate/objects`;
+  let requestQueue = Promise.resolve();
   async function request(url, method = "GET") {
+    // Keep this batch below the account API request budget; no write retries.
+    const turn = requestQueue;
+    requestQueue = turn.then(
+      () => new Promise((resolve) => setTimeout(resolve, 350)),
+    );
+    await turn;
     const response = await fetch(url, {
       method,
       headers: { Authorization: `Bearer ${token}` },
