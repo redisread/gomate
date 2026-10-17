@@ -5,7 +5,6 @@ import {
   RECRUITMENT_STATUS_KEYS,
   TEAM_LIFECYCLE_KEYS,
 } from "@/lib/admin-team-filters";
-import { AdminTeamActionbook } from "./admin-team-actionbook";
 
 export function AdminTeamDetailContent({
   team,
@@ -127,7 +126,12 @@ export function AdminTeamDetailContent({
           ))}
         </ul>
       </section>
-      <AdminTeamActionbook team={team} />
+      {team.meetingPoint && (
+        <section>
+          <h3>{t("teams.meetingPoint")}</h3>
+          <p className="whitespace-pre-wrap">{team.meetingPoint}</p>
+        </section>
+      )}
     </>
   );
 }

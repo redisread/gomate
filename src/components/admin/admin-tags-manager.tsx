@@ -10,7 +10,7 @@ interface ManagedTag {
   id: string;
   name: string;
   slug: string;
-  references: { locations: number; teams: number; stories: number };
+  references: { locations: number; teams: number };
 }
 
 export function AdminTagsManager() {
@@ -114,8 +114,8 @@ export function AdminTagsManager() {
                 <input value={tag.name} onChange={(event) => setItems((current) => current.map((item) => item.id === tag.id ? { ...item, name: event.target.value } : item))} className="min-h-11 rounded-lg border border-border bg-background px-3" />
               </label>
               <div className="text-sm">
-                <span className="block text-muted-foreground">{t("admin.management.locationTeamStoryRefs")}</span>
-                <span className="font-medium">{tag.references.locations} / {tag.references.teams} / {tag.references.stories}</span>
+                <span className="block text-muted-foreground">{t("admin.management.locationTeamRefs")}</span>
+                <span className="font-medium">{tag.references.locations} / {tag.references.teams}</span>
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={() => void rename(tag)} className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold">{t("admin.management.save")}</button>

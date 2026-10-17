@@ -23,23 +23,23 @@
   English &nbsp;/&nbsp; <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-[![GoMate homepage in Chinese, with featured destinations and group navigation](docs/images/gomate-home.png)](https://gomate.live)
-
 ## What is GoMate?
 
 Want to head out but need somewhere to go or someone to join you? GoMate brings place discovery and group planning together.
 
 - **Discover places** — Browse a map or filter by city and interests. Check tags and transport information before choosing a destination.
 - **Create a group** — Pick a place, set a time, group size, and requirements, then invite others to join.
-- **Join an outing** — Apply to a group and wait for the organizer's approval. Manage your groups and applications in one place.
+- **Join an outing** — Join an open group directly when a place is available. Manage your groups in one place.
 
-Browse places → Choose a destination → Create or join a group → Get confirmed → Head out together.
+Browse places → Choose a destination → Create or join a group → Head out together.
 
 ### Explore places
 
 Browse destinations, interests, and transport information before choosing where to go. The screenshots show the Chinese interface.
 
 <img src="docs/images/gomate-locations.png" width="960" alt="GoMate place discovery page showing destination photos, descriptions, city labels, and interest tags">
+
+The interface supports Simplified Chinese and English.
 
 ## Tech stack
 
@@ -60,7 +60,7 @@ The technical guides below are currently written in Chinese.
 | ---------------------------------------------------------------- | -------------------------------------------------------- |
 | [Development and deployment](docs/development-and-deployment.md) | Quick start, local commands, testing, and deployment     |
 | [Local development](docs/local-dev-worktrees.md)                 | Worktrees, environment variables, local storage, and E2E |
-| [API](docs/backend-api.md)                                       | Endpoints, authentication, and response contracts        |
+| [API](docs/backend-api.md)                                       | Generated API docs, authentication, and contracts        |
 | [Database](docs/database.md)                                     | Data relationships, migrations, and storage constraints  |
 | [Frontend pages](docs/frontend-pages.md)                         | Pages, SSR, and client-side behavior                     |
 | [Design system](docs/design-system.md)                           | Components, visual conventions, and interaction patterns |

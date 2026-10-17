@@ -43,7 +43,7 @@ describe("admin catalog managers", () => {
               id: "tag-1",
               name: "亲子",
               slug: "family",
-              references: { locations: 2, teams: 1, stories: 0 },
+              references: { locations: 2, teams: 1 },
             },
           ],
           pagination: { hasMore: false },
@@ -55,7 +55,7 @@ describe("admin catalog managers", () => {
     render(<AdminTagsManager />);
 
     expect(await screen.findByDisplayValue("亲子")).toBeInTheDocument();
-    expect(screen.getByText("2 / 1 / 0")).toBeInTheDocument();
+    expect(screen.getByText("2 / 1")).toBeInTheDocument();
   });
 
   it("disables role changes for the current administrator", async () => {
@@ -296,7 +296,7 @@ describe("admin catalog managers", () => {
                 id: "tag-1",
                 name: "First tag",
                 slug: "first-tag",
-                references: { locations: 0, teams: 0, stories: 0 },
+                references: { locations: 0, teams: 0 },
               },
             ],
             pagination: { page: 1, pageSize: 200, hasMore: true },
@@ -312,7 +312,7 @@ describe("admin catalog managers", () => {
                 id: "tag-2",
                 name: "Second tag",
                 slug: "second-tag",
-                references: { locations: 0, teams: 0, stories: 0 },
+                references: { locations: 0, teams: 0 },
               },
             ],
             pagination: { page: 2, pageSize: 200, hasMore: false },

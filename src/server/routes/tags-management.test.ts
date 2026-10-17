@@ -176,9 +176,7 @@ describe("tag catalog management", () => {
     mocks.requireAdmin.mockResolvedValue({ id: "admin-1" });
     const limit = vi
       .fn()
-      .mockResolvedValue([
-        { id: "tag-1", locationCount: 2, teamCount: 1, storyCount: 3 },
-      ]);
+      .mockResolvedValue([{ id: "tag-1", locationCount: 2, teamCount: 1 }]);
     const selectWhere = vi.fn(() => ({ limit }));
     const from = vi.fn(() => ({ where: selectWhere }));
     const deleteWhere = vi.fn(() => ({ statement: true }));
@@ -198,9 +196,9 @@ describe("tag catalog management", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       success: true,
-      detached: { locations: 2, teams: 1, stories: 3 },
+      detached: { locations: 2, teams: 1 },
     });
     expect(batch).toHaveBeenCalledOnce();
-    expect(batch.mock.calls[0]?.[0]).toHaveLength(4);
+    expect(batch.mock.calls[0]?.[0]).toHaveLength(3);
   });
 });

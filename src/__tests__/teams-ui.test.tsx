@@ -9,9 +9,7 @@ import {
   TeamsErrorState,
   TeamsCtaSection,
 } from "../components/features/teams/teams-ui";
-import {
-  TeamsQuickFilters,
-} from "../components/features/teams/teams-quick-filters";
+import { TeamsQuickFilters } from "../components/features/teams/teams-quick-filters";
 import { TeamsSelectedFilters } from "../components/features/teams/teams-selected-filters";
 
 vi.mock("@/hooks/useI18n", () => ({
@@ -48,7 +46,7 @@ function makeTeam(overrides: Partial<Team> = {}): Team {
     cancelledAt: null,
     lifecycle: "pending",
     isFull: false,
-    checklist: null,
+    meetingPoint: null,
     createdAt: "2026-08-01T00:00:00.000Z",
     updatedAt: "2026-08-01T00:00:00.000Z",
     location: {
@@ -115,13 +113,31 @@ describe("teams list UI", () => {
   });
 
   it("only shows clear filters when the empty result is caused by criteria", () => {
-    const { rerender } = render(<EmptyState onClear={vi.fn()} onClearRegion={vi.fn()} hasActiveCriteria={false} />);
+    const { rerender } = render(
+      <EmptyState
+        onClear={vi.fn()}
+        onClearRegion={vi.fn()}
+        hasActiveCriteria={false}
+      />,
+    );
 
-    expect(screen.queryByRole("button", { name: "teams.clearFilters" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "teams.createBtn" })).toHaveAttribute("href", "/teams/create");
+    expect(
+      screen.queryByRole("button", { name: "teams.clearFilters" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "teams.createBtn" }),
+    ).toHaveAttribute("href", "/teams/create");
 
-    rerender(<EmptyState onClear={vi.fn()} onClearRegion={vi.fn()} hasActiveCriteria />);
-    expect(screen.getByRole("button", { name: "teams.clearFilters" })).toBeInTheDocument();
+    rerender(
+      <EmptyState
+        onClear={vi.fn()}
+        onClearRegion={vi.fn()}
+        hasActiveCriteria
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "teams.clearFilters" }),
+    ).toBeInTheDocument();
   });
 
   it("exposes search and filter state to keyboard and assistive technology users", () => {
@@ -175,9 +191,16 @@ describe("teams list UI", () => {
       </>,
     );
 
-    expect(screen.getByRole("button", { name: "徒步" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("link", { name: "teams.createBtn" })).toHaveAttribute("href", "/teams/create");
-    expect(screen.queryByRole("button", { name: "teams.createBtn" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "徒步" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(
+      screen.getByRole("link", { name: "teams.createBtn" }),
+    ).toHaveAttribute("href", "/teams/create");
+    expect(
+      screen.queryByRole("button", { name: "teams.createBtn" }),
+    ).not.toBeInTheDocument();
   });
 
   it("keeps popular regions and departure time available as one-tap filters", () => {
@@ -202,27 +225,46 @@ describe("teams list UI", () => {
       />,
     );
 
-    expect(screen.getByRole("group", { name: "filter.city" })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "filter.dateRange" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "深圳" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "filter.dateQuickWeekend" })).toHaveAttribute("aria-pressed", "true");
+    expect(
+      screen.getByRole("group", { name: "filter.city" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "filter.dateRange" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "深圳" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(
+      screen.getByRole("button", { name: "filter.dateQuickWeekend" }),
+    ).toHaveAttribute("aria-pressed", "true");
 
     fireEvent.click(screen.getByRole("button", { name: "广州" }));
-    fireEvent.click(screen.getByRole("button", { name: "filter.dateQuickTomorrow" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "filter.dateQuickTomorrow" }),
+    );
 
     expect(onRegionSelect).toHaveBeenCalledWith("gz");
     expect(onDateQuickSelect).toHaveBeenCalledWith("tomorrow");
 
     fireEvent.click(screen.getByRole("button", { name: "teams.moreCities" }));
-    const regionSearch = screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" });
+    const regionSearch = screen.getByRole("searchbox", {
+      name: "teams.citySearchPlaceholder",
+    });
     fireEvent.change(regionSearch, { target: { value: "惠州" } });
     fireEvent.click(screen.getByRole("option", { name: /惠州/ }));
 
     expect(onRegionSelect).toHaveBeenCalledWith("hz");
 
     fireEvent.click(screen.getByRole("button", { name: "teams.moreCities" }));
-    fireEvent.keyDown(screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" }), { key: "ArrowDown" });
-    fireEvent.keyDown(screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" }), { key: "Enter" });
+    fireEvent.keyDown(
+      screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" }),
+      { key: "ArrowDown" },
+    );
+    fireEvent.keyDown(
+      screen.getByRole("searchbox", { name: "teams.citySearchPlaceholder" }),
+      { key: "Enter" },
+    );
     expect(onRegionSelect).toHaveBeenCalledWith("sz");
   });
 
@@ -249,8 +291,12 @@ describe("teams list UI", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "teams.removeCityFilter" }));
-    fireEvent.click(screen.getByRole("button", { name: "teams.removeDateFilter" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "teams.removeCityFilter" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "teams.removeDateFilter" }),
+    );
 
     expect(onRegionSelect).toHaveBeenCalledWith("");
     expect(onDateQuickSelect).toHaveBeenCalledWith("clear");
@@ -277,8 +323,12 @@ describe("teams list UI", () => {
       />,
     );
 
-    expect(screen.getByText("filter.dateRange 2026-08-08–2026-08-10")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "teams.removeDateFilter" }));
+    expect(
+      screen.getByText("filter.dateRange 2026-08-08–2026-08-10"),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", { name: "teams.removeDateFilter" }),
+    );
     expect(onDateQuickSelect).toHaveBeenCalledWith("clear");
   });
 

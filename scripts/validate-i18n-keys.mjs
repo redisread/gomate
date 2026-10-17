@@ -18,8 +18,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const LOCALES_DIR = path.join(PROJECT_ROOT, "public", "locales");
-// task #158：ja 纳入 key 一致性校验（此前仅 zh-CN/en，漏 ja 的 key  CI 不拦截）
-const LOCALES = ["zh-CN", "en", "ja"];
+const LOCALES = ["zh-CN", "en"];
 const BASE_LOCALE = "zh-CN";
 // home.howItWorks.steps.*.title/description legitimately uses four levels.
 const MAX_NESTING_DEPTH = 4;
@@ -329,7 +328,6 @@ function main() {
   }
 
   // ── Check 5: Island Namespace Coverage ──
-  // task #158：island 组件树里 useI18n 声明的 ns 必须 ⊆ 页面 declareI18nNs ∪ 基座三件套，
   // 否则 SSR 数据缺口导致 hydration mismatch（task #162 事故的静态防线）。
   console.log("\n── Island Namespace Coverage ──");
   const nsErrors = checkIslandNsCoverage();

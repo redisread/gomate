@@ -1,5 +1,7 @@
 "use client";
 
+import { RequestFailure } from "@/components/ui/request-failure";
+
 import * as React from "react";
 import {
   ArrowLeft,
@@ -36,10 +38,14 @@ export function CreateTeamClient() {
   const [locationSearchVersion, setLocationSearchVersion] = React.useState(0);
   const [locationsLoading, setLocationsLoading] = React.useState(true);
   const [locationsError, setLocationsError] = React.useState(false);
-  const [selectedLocation, setSelectedLocation] = React.useState<Location | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(null);
+  const [selectedLocation, setSelectedLocation] =
+    React.useState<Location | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(
+    null,
+  );
   const [hasWechat, setHasWechat] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [sessionFailed, setSessionFailed] = React.useState(false);
   const [error, setError] = React.useState("");
 
   // 获取默认日期/时间
@@ -58,16 +64,19 @@ export function CreateTeamClient() {
     durationMinutes: "240",
     maxParticipants: "",
     description: "",
+    meetingPoint: "",
     requirementsInput: "",
   });
 
   React.useEffect(() => {
     (async () => {
-      const u = await fetchCurrentUser(`/login?redirect=${encodeURIComponent("/teams/create")}`);
+      const u = await fetchCurrentUser(
+        `/login?redirect=${encodeURIComponent("/teams/create")}`,
+      );
       if (!u) return;
       setIsAuthenticated(true);
       setHasWechat(!!u.extra.wechat);
-    })();
+    })().catch(() => setSessionFailed(true));
 
     const params = new URLSearchParams(window.location.search);
     const locId = params.get("locationId");
@@ -79,27 +88,30 @@ export function CreateTeamClient() {
     const query = locationSearch.trim();
     setLocationsLoading(true);
     setLocationsError(false);
-    const timer = window.setTimeout(() => {
-      const path = query
-        ? `/locations?search=${encodeURIComponent(query)}&limit=20`
-        : "/locations?limit=20";
-      fetchAPI(path)
-        .then((response) => response.json())
-        .then((data) => {
-          if (cancelled) return;
-          if (!data.success) throw new Error("Location search failed");
-          setLocations(data.locations ?? []);
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setLocations([]);
-            setLocationsError(true);
-          }
-        })
-        .finally(() => {
-          if (!cancelled) setLocationsLoading(false);
-        });
-    }, query ? 300 : 0);
+    const timer = window.setTimeout(
+      () => {
+        const path = query
+          ? `/locations?search=${encodeURIComponent(query)}&limit=20`
+          : "/locations?limit=20";
+        fetchAPI(path)
+          .then((response) => response.json())
+          .then((data) => {
+            if (cancelled) return;
+            if (!data.success) throw new Error("Location search failed");
+            setLocations(data.locations ?? []);
+          })
+          .catch(() => {
+            if (!cancelled) {
+              setLocations([]);
+              setLocationsError(true);
+            }
+          })
+          .finally(() => {
+            if (!cancelled) setLocationsLoading(false);
+          });
+      },
+      query ? 300 : 0,
+    );
 
     return () => {
       cancelled = true;
@@ -146,10 +158,11 @@ export function CreateTeamClient() {
   }, [formData.locationId]);
 
   const orderedActivityTypes = React.useMemo(
-    () => orderActivityTypesForLocation(
-      ACTIVITY_TYPES,
-      selectedLocation?.supportedActivityTypes ?? [],
-    ),
+    () =>
+      orderActivityTypesForLocation(
+        ACTIVITY_TYPES,
+        selectedLocation?.supportedActivityTypes ?? [],
+      ),
     [selectedLocation],
   );
 
@@ -163,7 +176,11 @@ export function CreateTeamClient() {
     setFormData((prev) => ({ ...prev, durationMinutes: String(minutes) }));
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -192,7 +209,9 @@ export function CreateTeamClient() {
         .split(/\r?\n/u)
         .map((requirement) => requirement.trim())
         .filter(Boolean);
-      const startAt = new Date(`${formData.startDateInput}T${formData.startClockInput}:00`);
+      const startAt = new Date(
+        `${formData.startDateInput}T${formData.startClockInput}:00`,
+      );
       const durationMinutes = parseInt(formData.durationMinutes, 10);
       const endAt = new Date(startAt.getTime() + durationMinutes * 60_000);
       const res = await fetchAPI("/teams", {
@@ -204,6 +223,7 @@ export function CreateTeamClient() {
           startAt: startAt.toISOString(),
           endAt: endAt.toISOString(),
           maxParticipants: parseInt(formData.maxParticipants, 10),
+          meetingPoint: formData.meetingPoint.trim() || null,
           description: formData.description || null,
           requirements,
           recruitmentStatus: "open",
@@ -222,10 +242,14 @@ export function CreateTeamClient() {
     }
   };
 
+  if (sessionFailed) return <RequestFailure />;
   if (isAuthenticated === null) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "var(--primary)" }} />
+        <Loader2
+          className="h-8 w-8 animate-spin"
+          style={{ color: "var(--primary)" }}
+        />
       </main>
     );
   }
@@ -248,9 +272,7 @@ export function CreateTeamClient() {
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="h-5 w-5" style={{ color: "var(--primary)" }} />
-            <h1 className="text-page-h1">
-              {t("teams.createTitle")}
-            </h1>
+            <h1 className="text-page-h1">{t("teams.createTitle")}</h1>
           </div>
           <p className="text-sm text-muted-foreground">
             {t("teams.createSubtitle")}
@@ -259,9 +281,7 @@ export function CreateTeamClient() {
 
         {/* 微信号提醒 */}
         {!hasWechat && (
-          <div
-            className="mb-6 rounded-2xl p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50"
-          >
+          <div className="mb-6 rounded-2xl p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50">
             <div className="flex items-start gap-3">
               <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
               <div className="flex-1">
@@ -272,9 +292,7 @@ export function CreateTeamClient() {
                   {t("teams.wechatRequiredDesc")}
                 </p>
                 <a href="/profile/edit">
-                  <button
-                    className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 bg-card border border-amber-300/50 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 hover:bg-accent"
-                  >
+                  <button className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 bg-card border border-amber-300/50 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 hover:bg-accent">
                     {t("teams.fillWechatBtn")}
                   </button>
                 </a>
@@ -288,7 +306,6 @@ export function CreateTeamClient() {
           className={`rounded-2xl p-6 sm:p-8 card-base ${!hasWechat ? "opacity-50 pointer-events-none" : ""}`}
         >
           <form onSubmit={handleSubmit} className="space-y-6">
-
             {/* 队伍标题 */}
             <FieldGroup icon="✏️" label={t("teams.formLabel.name")} required>
               <input
@@ -305,7 +322,11 @@ export function CreateTeamClient() {
             </FieldGroup>
 
             {/* 目的地 */}
-            <FieldGroup icon="📍" label={t("teams.formLabel.location")} required>
+            <FieldGroup
+              icon="📍"
+              label={t("teams.formLabel.location")}
+              required
+            >
               <TeamLocationPicker
                 value={formData.locationId}
                 selectedLocation={selectedLocation}
@@ -313,7 +334,9 @@ export function CreateTeamClient() {
                 loading={locationsLoading}
                 error={locationsError}
                 onSearch={setLocationSearch}
-                onRetry={() => setLocationSearchVersion((version) => version + 1)}
+                onRetry={() =>
+                  setLocationSearchVersion((version) => version + 1)
+                }
                 onSelect={handleLocationChange}
               />
               {selectedLocation && (
@@ -346,15 +369,17 @@ export function CreateTeamClient() {
                   <option value="">
                     {t("teams.formPlaceholder.activityType")}
                   </option>
-                  {orderedActivityTypes.map(
-                    (activityType) => (
-                      <option key={activityType} value={activityType}>
-                        {selectedLocation.supportedActivityTypes.includes(activityType)
-                          ? t("teams.recommendedActivityType", { name: t(`enums.locationType.${activityType}`) })
-                          : t(`enums.locationType.${activityType}`)}
-                      </option>
-                    ),
-                  )}
+                  {orderedActivityTypes.map((activityType) => (
+                    <option key={activityType} value={activityType}>
+                      {selectedLocation.supportedActivityTypes.includes(
+                        activityType,
+                      )
+                        ? t("teams.recommendedActivityType", {
+                            name: t(`enums.locationType.${activityType}`),
+                          })
+                        : t(`enums.locationType.${activityType}`)}
+                    </option>
+                  ))}
                 </select>
               </FieldGroup>
             )}
@@ -378,7 +403,11 @@ export function CreateTeamClient() {
                 </div>
               </FieldGroup>
 
-              <FieldGroup icon="⏰" label={t("teams.formLabel.startTime")} required>
+              <FieldGroup
+                icon="⏰"
+                label={t("teams.formLabel.startTime")}
+                required
+              >
                 <div className="relative">
                   <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
@@ -451,7 +480,9 @@ export function CreateTeamClient() {
                   <button
                     type="button"
                     onClick={() => {
-                      const select = document.getElementById("durationMinutes") as HTMLSelectElement | null;
+                      const select = document.getElementById(
+                        "durationMinutes",
+                      ) as HTMLSelectElement | null;
                       if (select) {
                         select.focus();
                         select.click();
@@ -464,7 +495,12 @@ export function CreateTeamClient() {
                 </div>
               </FieldGroup>
 
-              <FieldGroup icon="👥" label={t("teams.formLabel.maxSize")} required hint={t("teams.maxSizeHint")}>
+              <FieldGroup
+                icon="👥"
+                label={t("teams.formLabel.maxSize")}
+                required
+                hint={t("teams.maxSizeHint")}
+              >
                 <div className="relative">
                   <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
                   <input
@@ -485,7 +521,22 @@ export function CreateTeamClient() {
             </div>
 
             {/* 队伍描述 */}
-            <FieldGroup icon="📝" label={t("teams.formLabel.description")} required hint={t("teams.descriptionHint")}>
+            <FieldGroup icon="📍" label={t("teams.meetingPoint")}>
+              <textarea
+                name="meetingPoint"
+                aria-label={t("teams.meetingPoint")}
+                maxLength={1000}
+                value={formData.meetingPoint}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-border bg-background p-3"
+              />
+            </FieldGroup>
+            <FieldGroup
+              icon="📝"
+              label={t("teams.formLabel.description")}
+              required
+              hint={t("teams.descriptionHint")}
+            >
               <textarea
                 id="description"
                 data-testid="create-team-description"
@@ -499,10 +550,7 @@ export function CreateTeamClient() {
               />
             </FieldGroup>
 
-            <FieldGroup
-              icon="📋"
-              label={t("teams.formLabel.requirements")}
-            >
+            <FieldGroup icon="📋" label={t("teams.formLabel.requirements")}>
               <textarea
                 id="requirementsInput"
                 data-testid="create-team-requirements"
@@ -524,18 +572,16 @@ export function CreateTeamClient() {
             </FieldGroup>
 
             {/* 温馨提示 */}
-            <div
-              className="rounded-xl px-4 py-3.5 text-sm flex items-start gap-2.5 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/40"
-            >
+            <div className="rounded-xl px-4 py-3.5 text-sm flex items-start gap-2.5 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/40">
               <span className="text-base flex-shrink-0 mt-0.5">💡</span>
-              <p className="text-amber-800 dark:text-amber-300">{t("teams.createTip")}</p>
+              <p className="text-amber-800 dark:text-amber-300">
+                {t("teams.createTip")}
+              </p>
             </div>
 
             {/* 错误提示 */}
             {error && (
-              <div
-                className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-red-400 border border-destructive/20 dark:border-red-500/30"
-              >
+              <div className="rounded-xl px-4 py-3 text-sm flex items-center gap-2 bg-destructive/10 dark:bg-destructive/20 text-destructive dark:text-red-400 border border-destructive/20 dark:border-red-500/30">
                 <span className="text-base">⚠️</span>
                 {error}
               </div>
@@ -553,14 +599,18 @@ export function CreateTeamClient() {
               <SubmitButton
                 data-testid="create-team-submit"
                 loading={isSubmitting || !hasWechat}
-                loadingText={!hasWechat ? t("teams.wechatRequiredBtn") : t("teams.createBtnLoading")}
+                loadingText={
+                  !hasWechat
+                    ? t("teams.wechatRequiredBtn")
+                    : t("teams.createBtnLoading")
+                }
                 className="flex-2"
               >
                 {!hasWechat
                   ? t("teams.wechatRequiredBtn")
                   : isSubmitting
-                  ? t("teams.createBtnLoading")
-                  : t("teams.createBtn")}
+                    ? t("teams.createBtnLoading")
+                    : t("teams.createBtn")}
               </SubmitButton>
             </div>
           </form>
@@ -575,6 +625,8 @@ export function CreateTeamClient() {
 /**
  * Build duration option labels with translation
  */
-function getDurationOptions(t: (key: string, vars?: Record<string, string | number>) => string) {
+function getDurationOptions(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+) {
   return DURATION_OPTION_DEFS.map(([value, key]) => ({ value, label: t(key) }));
 }

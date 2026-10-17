@@ -1,39 +1,52 @@
 import * as React from "react";
-import { ChevronDown, Loader2, MessageCircle } from "lucide-react";
+import { ChevronDown, Loader2, UserMinus } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { TeamMember } from "@/lib/types";
-import { createConversation } from "@/hooks/useMessages";
+import { fetchAPI, getApiErrorMessage } from "@/lib/api";
 
 export function MemberAvatarGrid({
   members,
   teamId,
-  canMessageMembers = false,
+  canRemoveMembers = false,
+  onRemoved,
 }: {
   members: TeamMember[];
   teamId?: string;
-  canMessageMembers?: boolean;
+  canRemoveMembers?: boolean;
+  onRemoved?: () => Promise<void>;
 }) {
   const { t } = useI18n(["teams"]);
   const [expanded, setExpanded] = React.useState(false);
-  const [messagingUserId, setMessagingUserId] = React.useState<string | null>(null);
+  const [removingUserId, setRemovingUserId] = React.useState<string | null>(
+    null,
+  );
   const [messageError, setMessageError] = React.useState<string | null>(null);
   const GRID_THRESHOLD = 8;
   const visible = expanded ? members : members.slice(0, GRID_THRESHOLD);
   const hidden = members.length - GRID_THRESHOLD;
 
-  const handleMessageMember = async (member: TeamMember) => {
+  const handleRemoveMember = async (member: TeamMember) => {
     if (!teamId) return;
-    setMessagingUserId(member.userId);
+    setRemovingUserId(member.userId);
     setMessageError(null);
     try {
-      const conversation = await createConversation(teamId, member.userId);
-      window.location.href = `/messages/${conversation.id}`;
+      const response = await fetchAPI(
+        `/teams/${teamId}/members/${member.userId}/remove`,
+        { method: "POST" },
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(
+          getApiErrorMessage(data, t("teams.removeMemberFailed")),
+        );
+      await onRemoved?.();
     } catch (err) {
-      console.error("Failed to create member conversation:", err);
-      setMessageError(t("teams.messageStartFailed"));
+      setMessageError(
+        err instanceof Error ? err.message : t("teams.removeMemberFailed"),
+      );
     } finally {
-      setMessagingUserId(null);
+      setRemovingUserId(null);
     }
   };
 
@@ -44,25 +57,30 @@ export function MemberAvatarGrid({
           const user = m.user;
           if (!user) return null;
           const name = user.nickname || user.name;
-          const canMessageMember =
-            canMessageMembers &&
-            !!teamId &&
-            m.leftAt === null;
+          const canRemoveMember =
+            canRemoveMembers && !!teamId && m.leftAt === null;
 
           return (
             <div
               key={m.userId}
               className="relative group flex flex-col items-center gap-1.5"
             >
-              <a href={`/users/${m.userId}`} className="relative flex flex-col items-center gap-1.5 cursor-pointer">
+              <a
+                href={`/users/${m.userId}`}
+                className="relative flex flex-col items-center gap-1.5 cursor-pointer"
+              >
                 <div
                   className={cn(
                     "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150",
-                    "bg-secondary ring-1 ring-secondary/50 group-hover:scale-105 group-hover:ring-amber-300"
+                    "bg-secondary ring-1 ring-secondary/50 group-hover:scale-105 group-hover:ring-amber-300",
                   )}
                 >
                   {user.image ? (
-                    <img src={user.image} alt={name} className="w-full h-full object-cover" />
+                    <img
+                      src={user.image}
+                      alt={name}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <span className="font-semibold text-sm text-stone-500 text-muted-foreground/70">
                       {name?.[0] || "?"}
@@ -70,25 +88,28 @@ export function MemberAvatarGrid({
                   )}
                 </div>
                 {user.extra.wechat && (
-                  <p title={user.extra.wechat} className="text-xs text-muted-foreground min-w-0 truncate text-center leading-tight">
+                  <p
+                    title={user.extra.wechat}
+                    className="text-xs text-muted-foreground min-w-0 truncate text-center leading-tight"
+                  >
                     {user.extra.wechat}
                   </p>
                 )}
               </a>
-              {canMessageMember && (
+              {canRemoveMember && (
                 <button
                   type="button"
-                  onClick={() => handleMessageMember(m)}
-                  disabled={messagingUserId === m.userId}
-                  aria-label={t("teams.messageMemberAria", { name })}
+                  onClick={() => handleRemoveMember(m)}
+                  disabled={removingUserId === m.userId}
+                  aria-label={t("teams.removeMemberAria", { name })}
                   className="inline-flex h-7 items-center gap-1 rounded-full bg-primary/10 px-2.5 text-xs font-medium text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {messagingUserId === m.userId ? (
+                  {removingUserId === m.userId ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
                   ) : (
-                    <MessageCircle className="h-3 w-3" />
+                    <UserMinus className="h-3 w-3" />
                   )}
-                  {t("teams.messageMember")}
+                  {t("teams.removeMember")}
                 </button>
               )}
             </div>
@@ -105,7 +126,9 @@ export function MemberAvatarGrid({
                 +{hidden}
               </span>
             </div>
-            <p className="text-3xs text-muted-foreground/60">{t('teams.viewAll')}</p>
+            <p className="text-3xs text-muted-foreground/60">
+              {t("teams.viewAll")}
+            </p>
           </button>
         )}
       </div>
@@ -116,10 +139,12 @@ export function MemberAvatarGrid({
           className="mt-3 flex items-center gap-1 text-xs text-muted-foreground/70 hover:text-amber-600 transition-colors"
         >
           <ChevronDown className="w-3.5 h-3.5 rotate-180" />
-          {t('teams.collapseText')}
+          {t("teams.collapseText")}
         </button>
       )}
-      {messageError && <p className="mt-3 text-xs text-red-600">{messageError}</p>}
+      {messageError && (
+        <p className="mt-3 text-xs text-red-600">{messageError}</p>
+      )}
     </div>
   );
 }

@@ -41,11 +41,11 @@ pnpm dev:wt
 
 ## 环境变量
 
-| 变量                     | 默认值                     | 说明                                      |
-| ------------------------ | -------------------------- | ----------------------------------------- |
-| `GOMATE_WEB_PORT`        | `5432`                     | 统一 Worker 端口；显式设置时不自动选择    |
-| `GOMATE_LOCAL_STATE`     | `~/.gomate/wrangler-state` | D1/R2 本地持久化目录，建议使用绝对路径    |
-| `GOMATE_DEV_VARS_SOURCE` | 无                         | `.dev.vars` 的复制来源                    |
+| 变量                     | 默认值                     | 说明                                   |
+| ------------------------ | -------------------------- | -------------------------------------- |
+| `GOMATE_WEB_PORT`        | `5432`                     | 统一 Worker 端口；显式设置时不自动选择 |
+| `GOMATE_LOCAL_STATE`     | `~/.gomate/wrangler-state` | D1/R2 本地持久化目录，建议使用绝对路径 |
+| `GOMATE_DEV_VARS_SOURCE` | 无                         | `.dev.vars` 的复制来源                 |
 
 Astro Cloudflare adapter 与数据库脚本使用同一个 `GOMATE_LOCAL_STATE`，因此所有
 worktree 默认共享本地数据。若需要隔离，为该 worktree 指定独立绝对路径。
@@ -65,7 +65,7 @@ D1 binding。随后重新应用完整 migration 链和 seed。执行前停止所
 
 ## E2E
 
-Playwright 固定保留首页/健康检查、登录、认证保护、建队、申请审批 5 条关键路径，默认针对同一个 origin：
+Playwright 验证首页/健康检查、登录、认证保护、建队、直接加入与退出等核心路径，默认针对同一个 origin：
 
 - 页面：`http://localhost:5432`
 - API：`http://localhost:5432/api`

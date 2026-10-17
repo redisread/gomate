@@ -1,5 +1,7 @@
 "use client";
 
+import { RequestFailure } from "@/components/ui/request-failure";
+
 import * as React from "react";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -16,6 +18,7 @@ export function ProfileEditClient() {
   const { t } = useI18n(["profile", "common"]);
   const ctx = useProfileForm();
 
+  if (ctx.sessionFailed) return <RequestFailure />;
   if (ctx.isLoading) {
     return (
       <main className="min-h-screen bg-stone-50 dark:bg-stone-950">

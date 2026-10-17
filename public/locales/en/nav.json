@@ -1,6 +1,5 @@
 {
   "home": "Home",
-  "discover": "Discover",
   "locations": "Explore Locations",
   "teams": "Find Teams",
   "about": "About Us",
@@ -9,8 +8,6 @@
   "register": "Join free",
   "profile": "Profile",
   "myTeams": "My Teams",
-  "messages": "Messages",
-  "myFavorites": "My Favorites",
   "logout": "Logout",
   "admin": "Admin"
 }

@@ -19,6 +19,7 @@ interface ProfileFormData {
 export function useProfileForm() {
   const { t } = useI18n(["profile", "common", "errors"]);
   const [user, setUser] = React.useState<SessionUser | null>(null);
+  const [sessionFailed, setSessionFailed] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -68,7 +69,7 @@ export function useProfileForm() {
           regionId: user.extra.city || "",
         });
       } catch {
-        window.location.href = "/login?redirect=/profile/edit";
+        setSessionFailed(true);
       } finally {
         setIsLoading(false);
       }
@@ -163,6 +164,7 @@ export function useProfileForm() {
   const bioAtLimit = bioLength >= 200;
 
   return {
+    sessionFailed,
     user, isLoading, isSaving, isUploading, savedDone, message,
     avatarPreview, selectedFile, fileInputRef, regions,
     formData, bioLength, bioNearLimit, bioAtLimit,

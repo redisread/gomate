@@ -1,6 +1,5 @@
 {
   "home": "首页",
-  "discover": "发现",
   "locations": "探索地点",
   "teams": "找队伍",
   "about": "关于我们",
@@ -9,8 +8,6 @@
   "register": "免费加入",
   "profile": "个人资料",
   "myTeams": "我的队伍",
-  "messages": "消息中心",
-  "myFavorites": "我的收藏",
   "logout": "退出登录",
   "admin": "管理后台"
 }

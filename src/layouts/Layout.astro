@@ -142,23 +142,17 @@ const titleMap: Record<string, string> = {
   "个人资料 - GoMate": "content.seo_pages.profile",
   "编辑资料 - GoMate": "content.seo_pages.profileEdit",
   "我的队伍 - GoMate": "content.seo_pages.myTeams",
-  "消息中心 - GoMate": "content.seo_pages.messages",
-  "聊天 - GoMate": "content.seo_pages.chat",
   "发布队伍 - GoMate": "content.seo_pages.createTeam",
   "编辑队伍 - GoMate": "content.seo_pages.editTeam",
   "地点详情 - GoMate": "content.seo_pages.locationDetail",
   "队伍详情 - GoMate": "content.seo_pages.teamDetail",
-  "我的收藏 - GoMate": "content.seo_pages.favorites",
   "用户资料 - GoMate": "content.seo_pages.userDetail",
-  "联系我们 - GoMate": "content.seo_pages.contact",
   "反馈建议 - GoMate": "content.seo_pages.feedback",
   "关于我们 - GoMate": "content.seo_pages.about",
   "帮助中心 - GoMate": "content.seo_pages.help",
   "隐私政策 - GoMate": "content.seo_pages.privacy",
   "服务条款 - GoMate": "content.seo_pages.terms",
   "管理地点 - GoMate": "content.seo_pages.adminLocations",
-  "发布故事": "content.seo_pages.storyCreate",
-  "编辑故事": "content.seo_pages.storyEdit",
 };
 
 const titleKey = titleMap[propTitle];
@@ -353,7 +347,7 @@ function getHreflangUrl(loc: Locale) {
     {showNavbar && <PublicNavbar client:visible />}
     {/*
       #main-content 是 skip-link 锚点，不是 <main>：
-      各 page/组件（skeleton.tsx、create-team、home-main、story-detail 等）自带 <main> landmark，
+      各 page/组件（skeleton.tsx、create-team、home-main 等）自带 <main> landmark，
       Layout 层再包 <main> 会造成嵌套双 landmark。tabindex=-1 让键盘焦点可跳到内容起点。
     */}
     <div id="main-content" tabindex="-1" class="outline-none">

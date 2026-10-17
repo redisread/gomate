@@ -227,7 +227,7 @@ adminTeamsRoute.openapi(
         ...row,
         participants: members.map(({ member, user }) => ({ ...member, user })),
         tags: tags.map(({ tag }) => tag),
-        checklistVisible: true,
+        meetingPointVisible: true,
         contactVisible: false,
       }),
     };

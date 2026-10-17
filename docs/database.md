@@ -1,176 +1,77 @@
-# GoMate 数据库
+# GoMate 数据与存储
 
-本文记录当前 D1 模型的领域边界、关系和必须长期保持的约束。可执行事实的优先级为：
+可执行事实来源为 [Drizzle schema](../src/server/db/schema.ts)、[有序 migrations](../migrations/) 与数据库/HTTP 测试。本文描述当前分支模型，不代表远程 D1 已应用全部迁移。
 
-1. [`src/server/db/schema.ts`](../src/server/db/schema.ts)
-2. [`migrations/`](../migrations/)
-3. migration journal、snapshot 与数据库合同测试
-4. 本文
+## 核心模型
 
-不要把本文当作 DDL 来源，也不要在文档中复制完整字段清单。
+完整本地迁移后的应用模型为 11 张表（不计 Wrangler migration 元数据）：
 
-## 基线与约定
-
-- Cloudflare D1 / SQLite，binding 为 `DB`，数据库为 `gomate-db-v3`。
-- 当前 migration 链为 `0000_init.sql` baseline、`0001_reference_data.sql` 稳定参考数据、
-  `0002_account_issuer.sql` Better Auth 账户 issuer 升级、`0003_import_v2_catalog.sql`
-  旧库公开目录导入、`0004_fix_wutongshan_cover_image.sql` 梧桐山封面 URL 修复，以及
-  `0005_admin_location_drafts.sql` 地点草稿与活动类型代码枚举升级、
-  `0006_remove_location_decision_info.sql` 地点装备 JSON 清理；journal 与 snapshot 必须逐条对应。
-- 当前 schema 包含 19 张业务表和 13 个触发器；CI 会校验 schema、migration 链与 snapshot 一致。
-- 时间在 D1 中存 Unix 毫秒，HTTP DTO 输出 ISO 8601。
-- JSON 列使用 Drizzle `mode: "json"`，D1 通过 `json_valid` 与 `json_type` CHECK 约束形状；业务层只传对象或数组。
-- 稳定 Region、Location、Tag 参考数据由 `0001_reference_data.sql` 管理；
-  `0003_import_v2_catalog.sql` 在保留 v3 现有数据的前提下，从已退役的 v2 补入 16 个地区和
-  36 个公开地点；`0004_fix_wutongshan_cover_image.sql` 只修复仍使用已退役静态路径的
-  v3 梧桐山参考地点。旧库没有可迁移的用户、凭据、会话、团队或故事数据；测试用户和可变
-  demo 数据只能由测试 fixture 创建。
-- 所有 DDL 只通过 migration；已应用 migration 不可改写。
-
-## 领域表
-
-| 领域 | 表                                                 | 核心职责                                |
-| ---- | -------------------------------------------------- | --------------------------------------- |
-| 认证 | `users`, `sessions`, `accounts`, `verifications`   | 用户、凭据、会话与一次性 challenge      |
-| 地理 | `region`, `locations`                              | Region 层级、地点内容与推荐活动类型     |
-| 标签 | `tags`, `location_tags`, `team_tags`, `story_tags` | 共享标签词典与明确的资源关联            |
-| 组队 | `teams`, `team_join_requests`, `team_members`      | Team 生命周期、申请和 active membership |
-| 内容 | `stories`, `story_likes`                           | 普通 Story、队伍回顾与点赞计数          |
-| 收藏 | `user_location_favorites`, `user_story_favorites`  | 资源专用收藏关系                        |
-| 消息 | `conversations`, `messages`                        | Team leader 与单个 member 的双人会话    |
-
-## 关系
+| 领域 | 表                                               | 职责                               |
+| ---- | ------------------------------------------------ | ---------------------------------- |
+| 账号 | `users`、`accounts`、`sessions`、`verifications` | 用户状态、登录凭据、会话、验证挑战 |
+| 目录 | `region`、`locations`、`tags`、`location_tags`   | 地区、地点与兴趣分类               |
+| 组队 | `teams`、`team_members`、`team_tags`             | 队伍、成员状态和分类               |
 
 ```mermaid
 erDiagram
-    USERS ||--o{ SESSIONS : owns
-    USERS ||--o{ ACCOUNTS : authenticates
-    USERS ||--o{ LOCATIONS : creates
-    USERS ||--o{ TEAMS : leads
-    USERS ||--o{ TEAM_JOIN_REQUESTS : requests
-    USERS ||--o{ TEAM_MEMBERS : joins
-    USERS ||--o{ STORIES : authors
-    USERS ||--o{ STORY_LIKES : likes
-    USERS ||--o{ USER_LOCATION_FAVORITES : favorites
-    USERS ||--o{ USER_STORY_FAVORITES : favorites
-    USERS ||--o{ CONVERSATIONS : participates
-    USERS ||--o{ MESSAGES : sends
-
-    REGION ||--o{ REGION : contains
-    REGION ||--o{ LOCATIONS : contains
-    LOCATIONS ||--o{ TEAMS : hosts
-    LOCATIONS ||--o{ STORIES : references
-    TEAMS ||--o{ TEAM_JOIN_REQUESTS : receives
-    TEAMS ||--o{ TEAM_MEMBERS : includes
-    TEAMS ||--o{ STORIES : recaps
-    TEAMS ||--o{ CONVERSATIONS : scopes
-    CONVERSATIONS ||--o{ MESSAGES : contains
-
-    LOCATIONS ||--o{ LOCATION_TAGS : tagged
-    TEAMS ||--o{ TEAM_TAGS : tagged
-    STORIES ||--o{ STORY_TAGS : tagged
-    TAGS ||--o{ LOCATION_TAGS : classifies
-    TAGS ||--o{ TEAM_TAGS : classifies
-    TAGS ||--o{ STORY_TAGS : classifies
-    STORIES ||--o{ STORY_LIKES : receives
+  region ||--o{ locations : contains
+  locations ||--o{ teams : hosts
+  users ||--o{ teams : leads
+  users ||--o{ team_members : joins
+  teams ||--o{ team_members : contains
+  locations ||--o{ location_tags : tagged
+  tags ||--o{ location_tags : categorizes
+  teams ||--o{ team_tags : tagged
+  tags ||--o{ team_tags : categorizes
+  users ||--o{ accounts : owns
+  users ||--o{ sessions : authenticates
 ```
 
-Mermaid 只展示主要关系。可空 FK、删除动作、部分唯一索引和 CHECK 必须以 schema 与 migration 为准。
+关系图省略了可空字段、索引和所有 CHECK；具体约束由 schema 与 migration 共同定义。公开 DTO 不直接暴露整行数据库记录。
 
-## 关键模型决策
+## 地点与队伍约束
 
-### Region 与地点
+- Region 层级与服务开关决定地点公开资格；稳定参考目录由 migration 管理。测试账号与可变 demo 数据只存在本地 fixture，不进入 migration。
+- Location 路由使用全局 ID；地点支持的活动类型是共享代码枚举，标签属于目录实体。
+- 队长属于人数总数，但不重复写成 active member。`team_members` 以队伍/用户唯一，`left_at` 表示退出，重新加入复用同一行。
+- 加入以条件 SQL 在最终写入复核 active 用户、开放招募、未取消、开始时间与剩余名额；触发器阻止超员、队长重复计入及把上限缩到当前人数以下。
+- `recruitment_status` 描述开放/关闭招募；生命周期由 `formed_at`、`cancelled_at`、开始/结束时间派生。已成行活动在结束时间后为 completed，不维护另一套漂移的完成状态字段。
+- 集合信息存于 `teams.meeting_point`；JSON 要求字段使用 Drizzle JSON mode，业务传数组/对象，不维护字符串兼容层。
+- Cron 每小时关闭结束超过 24 小时、未成行且仍开放的队伍；最终 UPDATE 复核条件，`WRITE_MODE` 非 open 则跳过。
 
-- `region` 是自引用层级；只有字段完整的 city Region 可以启用服务。
-- Location 必须属于 Region，slug 只在 Region 内唯一；公开路由使用全局 Location ID。
-- Location 保存可选的多值 `supported_activity_types`，语义是地点推荐活动，不是 Team 的选择约束。
-- 草稿 Location 只要求 Region、名称和介绍；坐标与封面可空。切换为 `published` 时 API 必须补齐
-  坐标和封面，推荐活动类型仍可为空。
-- 地点图片与活动扩展保存在有形状约束的 JSON 中；hiking 扩展仅保留 `best_seasons`。
-  `0009` 清理历史地点攻略参数、概述、提示、警告和地点装备，保留季节及其他扩展数据。
-  Team 行动本装备仍归 Team 所有。
-- 创建者引用允许 `SET NULL`，业务内容仍保留。
+D1 多语句原子操作使用 `batch()` 与条件 DML；不要使用客户端 `db.transaction()` 或裸 `BEGIN`/`COMMIT`。[D1 的 batch 事务语义](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch) 保证序列中失败时回滚整个批次；单次业务外的 R2/邮件不属于此事务。
 
-### 活动类型与 Team
+## 认证、删除和媒体
 
-- 活动类型是 [`src/contracts/enums.ts`](../src/contracts/enums.ts) 中的小型代码枚举，名称由
-  i18n 提供；新增类型需要同步代码、三种语言文案与测试，不建立运行时目录表。
-- Team 的 `activity_type` 必填。API schema 与最终条件 DML 都必须复核值属于代码枚举；地点推荐
-  只影响客户端排序，不限制可选集合。
-- `teams.activity_type` 不设置数据库 CHECK 或目录外键，避免每次扩展枚举都必须重建 D1 表；写入
-  完整性由共享契约、输入校验和最终条件写语句共同保证。
+认证挑战、会话创建与使用必须复核用户 active 且未删除。账号删除保留匿名墓碑及核心历史外键，并清除凭据、会话、挑战和自有头像。管理员的角色来自当前用户记录。
 
-### Team 生命周期与成员
+地点默认归档。物理删除需要显式确认且无队伍引用，Location/Team 历史关系受 RESTRICT 保护。成员与标签连接按业务父记录删除；迁移重建父表时不能误触级联而丢失需要保留的子表。
 
-- Team 持久化招募状态、成团时间和取消时间；“未开始 / 进行中 / 已完成”等展示状态由时间与这些字段派生，不由定时任务回写。
-- 每小时定时关闭 `end_at` 已满 24 小时、仍开放招募、未成团且未取消的 Team：只将
-  `recruitment_status` 设为 `closed` 并更新 `updated_at`，保留详情、成员和申请记录。
-  已成团且已结束的 Team 已派生为 completed，不受自动关闭影响；条件在单条 UPDATE 中复核，重复执行无副作用。
-- leader 不写入 `team_members`，`max_participants` 只限制 active member。
-- join request 是申请历史，`team_members.left_at IS NULL` 才表示当前成员。
-- 同一用户对同一 Team 最多存在一个 pending 申请；批准申请时必须在最终写入中复核 leader、申请状态和剩余名额。
-- 行动本是 Team 上的有界 JSON；API 使用内容 CAS 处理覆盖、认领和取消认领冲突。
+R2 保存头像与地点媒体，D1 保存所有权和引用。跨 R2/D1 操作采用临时/最终对象、条件 DML 和补偿清理，不声称具有跨存储原子性。历史故事/海报对象不再由应用引用，但此次 schema 清理不执行全 bucket 或模糊前缀删除；对象处置需另行清单与恢复方案。
 
-### Story、收藏与消息
+### 待执行的退役 R2 对象处置
 
-- 普通 Story 与 Team 回顾使用同一张表；回顾可引用 Team，Location 可由 Team 推导。
-- `like_count` 是由触发器维护的派生计数；收藏使用两个资源专用连接表，不使用多态外键。
-- 每个会话由 `(team_id, member_user_id)` 唯一确定，访问者必须是该 member 或 Team 当前 leader。
-- `messages.read_at` 同时表达已读状态和时间；消息与会话列表使用稳定复合 cursor。
+此次代码/DDL 删除不执行任何远程 R2 删除。2026-10-17 控制台盘点发现 `stories/` 下有一个 179 B 的历史对象（2026-07-18），`temp/stories/` 为空。当前 v3 的故事表为空，无法由其证明该历史对象归属及恢复副本，因此保留该对象。共享桶还存在旧 `share/`、`incremental-cache/` 和 `location/`，这些不因目录名称而被认定为可删除。旧代码可确认故事临时对象前缀为 `temp/stories/{userId}/`，正式故事对象为 `stories/{storyId}/`；它们只是盘点候选，不能仅按字符串前缀直接删除。
 
-### 认证与隐私
+后续处置需要在受保护流程中先生成只读 inventory：列出精确 key、大小、ETag/版本、创建时间与可恢复副本，记录旧故事记录能够证明的归属；再从保留的用户头像、地点封面/图片及其扩展资料中提取当前引用，与候选集合相减。外部 URL、归属不明对象、仍被核心数据引用的对象均排除并人工核对。批准后的精确清单分批执行，失败可重入并记录结果，不递归删除共享 bucket。
 
-- session 真相只在 D1 `sessions`；KV 不是 session 或权限来源。
-- `accounts` 使用 Better Auth 1.7 的 `(issuer, account_id)` 唯一身份；升级 migration 将
-  既有 credential 账户回填为 `local:credential`，不得恢复旧 `(provider_id, account_id)` 唯一键。
-- 用户变为非 active 或软删除时，同一数据库更新会撤销其 session 和未消费的密码重置 challenge。
-- 新建 session、签发 challenge 和消费 challenge 都在最终写语句复核用户仍 active 且未删除。
-- 用户可扩展资料保存在 `users.extra`；敏感字段的读取仍由 API 权限决定。
-- 账户删除使用匿名墓碑保留历史外键，同时清除 PII、凭据、session、关联 challenge 和自有头像。
+`avatars/`、`locations/`、`temp/avatars/`、`temp/locations/` 和 `temp/location-delete-backups/` 属于保留媒体及补偿流程，不能纳入故事清理。旧海报的 `share/location`、`share/team`、`share/story` 是缓存身份，不足以证明存在可删 R2 对象；字体也需独立盘点引用，不能把删除海报代码等同于授权删字体。数据恢复与 Worker 回滚分开记录。
 
-## 数据库护栏
+## 迁移与发布阶段
 
-当前 13 个触发器：
+已应用的历史 migration 不改写。`0001` 是稳定参考数据，`0003` 是已退役 v2 的公开目录导入；历史脚本里存在旧功能名称不代表这些功能仍开放。
 
-1. `sessions_active_user_insert_guard`：拒绝为非 active 或已删除用户创建 session。
-2. `users_auth_revoke_after_inactive`：用户停用或软删除时撤销认证状态。
-3. `users_deleted_state_validate_insert`、`users_deleted_state_validate_update`：强制
-   `status = deleted` 与 `deleted_at` 同时成立。
-4. `team_members_capacity_validate_insert`、`team_members_capacity_validate_reactivate`：
-   新增或重新激活 active member 前按 leader 加 active member 的总人数验证容量。
-5. `team_members_leader_validate_insert`、`team_members_leader_validate_reactivate`：禁止 leader
-   成为 active member。
-6. `teams_capacity_validate_update`：人数上限不得低于 leader 加 active member 的总人数。
-7. `teams_leader_validate_update`：禁止把 active member 直接设为 leader。
-8. `story_likes_count_after_insert`、`story_likes_count_after_delete`：原子维护 Story 点赞计数。
-9. `messages_summary_after_insert`：更新会话最后消息摘要与时间。
+本轮分两阶段：
 
-触发器只承担数据库最终护栏。跨语句原子写仍使用 D1 `batch()` 与条件 DML；禁止
-`db.transaction()` 或裸 `BEGIN` / `COMMIT`。
+1. `0010_minimal_team_meeting_point.sql` 添加集合信息字段并提取旧行动本中的集合信息。旧列/旧表仍在，允许先部署不再读取它们的新 Worker。
+2. `0011_minimal_product_contract.sql` 删除 8 张退役表和旧 `checklist` 列。重建 Team 时先保留成员与标签数据再恢复，重建核心触发器并验证外键；完整本地数据库走到此状态。
 
-## 删除与存储边界
+生产使用 [发布阶段清单](../migrations/production-phases.json) 和 [迁移规划器](../scripts/production-migrations.mjs) 校验 SQL 摘要、顺序和连续前缀。`0011` 已在发布清单中启用：兼容 Worker、观察时间段、验证链接及旧版本回滚窗口关闭记录均随清单审核。生产只推进获准的连续前缀；实际执行状态仍需读取 D1 migration 记录确认，无环境变量绕过。具体授权见 [生产变更规约](prod-change-policy.md)。
 
-- 凭据、session、成员/申请、标签连接、点赞和收藏按父记录级联。
-- Region 与被 Team 引用的 Location 使用 RESTRICT，避免破坏业务历史。
-- 管理员删除 Location 默认改为 `archived`；只有显式永久确认且不存在 Team、Story 或收藏引用时
-  才物理删除。
-- Story 的 Team 回顾引用使用 RESTRICT，Location 引用删除时置空；需要保留历史的
-  creator/decision 引用使用 SET NULL。
-- 账户删除保留匿名用户墓碑与历史 Team、Story、Conversation、Message 引用，不物理删除用户行。
-- R2 保存媒体对象；D1 保存所有权和业务引用。媒体写入采用临时对象、最终对象、条件 DML 与补偿清理。
-- 当前运行时不使用共享 KV 缓存；用户相关数据只从 D1/R2 按请求读取，避免 isolate 级跨请求泄漏。未来非敏感路由元数据的 KV 副本须遵循[可靠性与性能设计](../CODING_STANDARDS.md#可靠性与性能设计)，不能替代 D1 的权限与业务约束。
+[Cloudflare migrations](https://developers.cloudflare.com/d1/reference/migrations/) 按 migration 记录执行；Worker 版本回滚不会恢复删除的 D1 数据。删表后的恢复需匹配的数据恢复方案与兼容 Worker，不能仅回退旧代码。
 
-## 聚合与异步派生数据
+## 验证与尚未采用的能力
 
-新增统计、汇总表或异步派生数据时，必须按[可靠性与性能设计](../CODING_STANDARDS.md#可靠性与性能设计)检查预计算、最终一致性、幂等恢复与负载验证；在相关模型决策中记录统计口径、刷新水位、允许延迟和重建方式。现有触发器维护的精确计数与最终写入护栏不能直接替换成延迟汇总。
+`pnpm db:check` 检查 schema、journal、snapshot 与迁移链同步；本地迁移测试覆盖空库重放、带旧数据升级、核心记录保留、外键完整性和人数竞争。迁移验证不能由 TypeScript 通过替代。
 
-## 迁移与验证
-
-新增 migration 时必须同步更新 Drizzle schema、journal 和 snapshot，并运行：
-
-```bash
-pnpm db:check
-pnpm test:server
-```
-
-生产 migration、恢复和 rollback 还必须遵守 [`prod-change-policy.md`](prod-change-policy.md)。
+当前没有 KV、Queues、outbox、异步聚合或读副本 session 调度。未来非敏感路由副本、汇总表、队列与预计算按 [可靠性与性能设计](../CODING_STANDARDS.md#可靠性与性能设计) 记录统计口径、允许延迟、恢复方式和实测收益；权限与人数约束不得改用最终一致缓存。

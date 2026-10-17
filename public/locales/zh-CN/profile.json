@@ -23,7 +23,7 @@
   "emailReadonly": "邮箱暂不支持修改",
   "wechat": "微信号",
   "wechatPlaceholder": "请输入微信号",
-  "wechatHint": "方便队友联系你（加入队伍时需要填写）",
+  "wechatHint": "方便队友联系你",
   "genderLabel": "性别",
   "genderHint": "可选填写，用于更好的匹配队友",
   "birthdayLabel": "生日",

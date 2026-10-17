@@ -8,7 +8,7 @@ import { fillLoginForm } from "./helpers";
 
 const RUN_ID = Date.now().toString(36);
 const PASSWORD = "test1234";
-const LOCAL_ORIGIN = "http://localhost:5432";
+const LOCAL_ORIGIN = process.env.E2E_ORIGIN || "http://localhost:5432";
 
 let admin: FixtureUser;
 let regularUser: FixtureUser;
@@ -144,8 +144,8 @@ test.describe("admin platform", () => {
     await expect(page.locator("aside")).toHaveCount(1);
     await expectNoHorizontalOverflow(page);
 
-    await page.goto("/ja/admin");
-    await expect(page.getByRole("heading", { level: 1, name: "管理画面" })).toBeVisible();
+    await page.goto("/en/admin");
+    await expect(page.getByRole("heading", { level: 1, name: "Admin" })).toBeVisible();
     await expectNoHorizontalOverflow(page);
     expect(pageErrors).toEqual([]);
   });
@@ -175,14 +175,6 @@ test.describe("admin platform", () => {
         locationsHref: "/en/admin/locations",
         activityLabel: "Suitable activities",
       },
-      {
-        pathPrefix: "/ja",
-        heading: "管理画面",
-        navigation: "管理ナビゲーション",
-        language: "日本語",
-        locationsHref: "/ja/admin/locations",
-        activityLabel: "適したアクティビティ",
-      },
     ] as const;
 
     for (const locale of locales) {
@@ -195,7 +187,7 @@ test.describe("admin platform", () => {
         .first();
       await expect(navigation).toBeVisible();
       await expect(
-        navigation.getByRole("link", { name: /地点管理|Locations|スポット管理/u }),
+        navigation.getByRole("link", { name: /地点管理|Locations/u }),
       ).toHaveAttribute("href", locale.locationsHref);
       await expect(
         page.getByRole("button", { name: locale.language }).first(),
@@ -227,11 +219,6 @@ test.describe("admin platform", () => {
         locale: "en",
       },
       {
-        path: "/ja/admin/locations",
-        heading: "スポット管理",
-        locale: "ja",
-      },
-      {
         path: "/admin/tags",
         heading: "标签管理",
         locale: "zh-CN",
@@ -242,11 +229,6 @@ test.describe("admin platform", () => {
         locale: "en",
       },
       {
-        path: "/ja/admin/tags",
-        heading: "タグ管理",
-        locale: "ja",
-      },
-      {
         path: "/admin/users",
         heading: "用户与管理员",
         locale: "zh-CN",
@@ -255,11 +237,6 @@ test.describe("admin platform", () => {
         path: "/en/admin/users",
         heading: "Users and administrators",
         locale: "en",
-      },
-      {
-        path: "/ja/admin/users",
-        heading: "ユーザーと管理者",
-        locale: "ja",
       },
     ] as const;
 
@@ -355,16 +332,16 @@ test.describe("admin platform", () => {
     await page.setViewportSize({ width: 320, height: 720 });
     await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
     await authenticate(page, admin);
-    await page.goto("/ja/admin");
+    await page.goto("/en/admin");
 
     const trigger = page.getByRole("button", {
-      name: "管理ナビゲーションを開く",
+      name: "Open admin navigation",
     });
     await trigger.click();
-    const drawer = page.getByRole("dialog", { name: "管理ナビゲーション" });
+    const drawer = page.getByRole("dialog", { name: "Admin navigation" });
     await expect(drawer).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "管理ナビゲーションを閉じる" }),
+      page.getByRole("button", { name: "Close admin navigation" }),
     ).toBeFocused();
     await expect(page.locator("body > [inert]")).not.toHaveCount(0);
     await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
@@ -388,7 +365,7 @@ test.describe("admin platform", () => {
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
     await expect(
-      page.getByRole("link", { name: "スポットを追加" }).last(),
+      page.getByRole("link", { name: "Add location" }).last(),
     ).toBeVisible();
     await cdp.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
   });
@@ -413,11 +390,17 @@ test.describe("admin platform", () => {
       await expect(onboarding).toHaveCount(0);
     }
 
-    await expect(page.getByTestId("nav-admin")).toHaveAttribute("href", "/admin");
+    await expect(page.getByTestId("nav-admin")).toHaveCount(0);
+    const userMenu = page.locator("[data-user-menu] > button");
+    await userMenu.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("nav-admin")).toHaveAttribute(
+      "href",
+      "/admin",
+    );
+    await page.screenshot({ path: "test-results/personal-menu-desktop.png" });
     expect(
-      [...scriptUrls].some((url) =>
-        /location-edit|lazy-location/u.test(url),
-      ),
+      [...scriptUrls].some((url) => /location-edit|lazy-location/u.test(url)),
     ).toBe(false);
 
     const trigger = page.getByRole("button", { name: "快速添加地点" });
@@ -437,14 +420,19 @@ test.describe("admin platform", () => {
     await region.selectOption({ index: 1 });
     await dialog.getByRole("button", { name: "保存为草稿" }).click();
     await expect(dialog.getByText("灵感已保存为草稿。")).toBeVisible();
-    await expect(dialog.getByRole("link", { name: "继续完善全部字段" }))
-      .toHaveAttribute("href", /\/admin\/locations\/[^/]+\/edit/u);
+    await expect(
+      dialog.getByRole("link", { name: "继续完善全部字段" }),
+    ).toHaveAttribute("href", /\/admin\/locations\/[^/]+\/edit/u);
     await page.keyboard.press("Escape");
-    await expect(trigger).toBeFocused();
+    await expect(userMenu).toBeFocused();
 
     await page.setViewportSize({ width: 320, height: 720 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
+    await page.getByTestId("nav-mobile-menu-toggle").click();
+    await expect(page.getByTestId("nav-admin-mobile")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "移动端导航" }).getByRole("link").first()).toBeVisible();
+    await page.screenshot({ path: "test-results/personal-menu-mobile.png" });
     const mobileTrigger = page.getByRole("button", { name: "快速添加地点" });
     await mobileTrigger.click();
     await expect(dialog).toBeVisible();
@@ -457,5 +445,47 @@ test.describe("admin platform", () => {
     );
     expect(reducedDuration).toBeLessThanOrEqual(0.001);
     await expectNoHorizontalOverflow(page);
+    await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("nav-mobile-menu-toggle")).toBeFocused();
+    await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
   });
+  test("public personal options hide admin actions from guests and regular users", async ({ page }) => {
+    await useChineseLocale(page);
+    for (const user of [null, regularUser]) {
+      if (user) await authenticate(page, user);
+      for (const width of [1440, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto("/");
+        if (width === 320) await page.getByTestId("nav-mobile-menu-toggle").click();
+        else if (user) await page.locator("[data-user-menu] > button").click();
+        else await expect(page.getByTestId("nav-login")).toBeVisible();
+        await expect(page.getByRole("link", { name: "管理后台", exact: true })).toHaveCount(0);
+        await expect(page.getByRole("button", { name: "快速添加地点" })).toHaveCount(0);
+      }
+    }
+  });
+
+  test("public personal options remain accessible in English and dark mode", async ({ page }) => {
+    await authenticate(page, admin);
+    await page.context().addCookies([{ name: "gomate_locale", value: "en", url: LOCAL_ORIGIN }]);
+    await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+    for (const width of [1440, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      const trigger = width === 320 ? page.getByTestId("nav-mobile-menu-toggle") : page.locator("[data-user-menu] > button");
+      await trigger.focus();
+      await page.keyboard.press("Enter");
+      const action = page.getByRole("button", { name: "Quick add location" });
+      await expect(action).toBeVisible();
+      await expect(page.getByRole("link", { name: "Admin", exact: true })).toBeVisible();
+      await action.focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("dialog")).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(trigger).toBeFocused();
+      await expectNoHorizontalOverflow(page);
+    }
+  });
+
 });

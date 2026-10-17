@@ -3,10 +3,11 @@ import { useI18n } from "@/hooks/useI18n";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
 import { Avatar } from "@/components/ui/avatar";
 import type { Team } from "@/lib/types";
-import { formatTeamStart } from "@/lib/team-display";
+import { useHomeTeamTime } from "./home-time";
 
 export function HomeDepartureBoard({ teams }: { teams: Team[] }) {
   const { t } = useI18n(["home", "common"]);
+  const formatTeamStart = useHomeTeamTime();
   const departures = teams.slice(0, 3);
 
   return (

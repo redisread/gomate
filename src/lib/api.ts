@@ -14,25 +14,42 @@ type APIRequestInit = RequestInit & {
 
 function assertResourcePath(path: string): void {
   if (!path.startsWith("/") || path === "/api" || path.startsWith("/api/")) {
-    throw new Error(`API resource path must start with '/' and must not include '/api': ${path}`);
+    throw new Error(
+      `API resource path must start with '/' and must not include '/api': ${path}`,
+    );
   }
 }
 
-function isJsonRequest(method: string, body: BodyInit | null | undefined): boolean {
-  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
-  return method !== "GET" && method !== "HEAD" && body !== undefined && !isFormData;
+function isJsonRequest(
+  method: string,
+  body: BodyInit | null | undefined,
+): boolean {
+  const isFormData =
+    typeof FormData !== "undefined" && body instanceof FormData;
+  return (
+    method !== "GET" && method !== "HEAD" && body !== undefined && !isFormData
+  );
 }
 
-function buildHeaders(options: APIRequestInit, method: string): HeadersInit | undefined {
+function buildHeaders(
+  options: APIRequestInit,
+  method: string,
+): HeadersInit | undefined {
   const headers = new Headers(options.headers);
-  if (isJsonRequest(method, options.body as BodyInit | null | undefined) && !headers.has("Content-Type")) {
+  if (
+    isJsonRequest(method, options.body as BodyInit | null | undefined) &&
+    !headers.has("Content-Type")
+  ) {
     headers.set("Content-Type", "application/json");
   }
   const entries = Array.from(headers.entries());
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
-async function requestAPI(path: string, options: APIRequestInit = {}): Promise<Response> {
+async function requestAPI(
+  path: string,
+  options: APIRequestInit = {},
+): Promise<Response> {
   const { auth = true, ...fetchOptions } = options;
   assertResourcePath(path);
   const method = (fetchOptions.method || "GET").toUpperCase();
@@ -49,7 +66,7 @@ async function requestAPI(path: string, options: APIRequestInit = {}): Promise<R
  */
 export async function fetchAPI(
   path: string,
-  options?: APIRequestInit
+  options?: APIRequestInit,
 ): Promise<Response> {
   return requestAPI(path, options);
 }
@@ -59,7 +76,7 @@ export async function fetchAPI(
  */
 export async function fetchPublicAPI(
   path: string,
-  options?: Omit<APIRequestInit, "auth">
+  options?: Omit<APIRequestInit, "auth">,
 ): Promise<Response> {
   return requestAPI(path, { ...options, auth: false });
 }
@@ -95,7 +112,9 @@ export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    throw new Error(await readErrorMessage(res, `API POST ${path} failed: ${res.status}`));
+    throw new Error(
+      await readErrorMessage(res, `API POST ${path} failed: ${res.status}`),
+    );
   }
   return res.json();
 }
@@ -109,7 +128,9 @@ export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    throw new Error(await readErrorMessage(res, `API PUT ${path} failed: ${res.status}`));
+    throw new Error(
+      await readErrorMessage(res, `API PUT ${path} failed: ${res.status}`),
+    );
   }
   return res.json();
 }
@@ -120,7 +141,9 @@ export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
-    throw new Error(await readErrorMessage(res, `API PATCH ${path} failed: ${res.status}`));
+    throw new Error(
+      await readErrorMessage(res, `API PATCH ${path} failed: ${res.status}`),
+    );
   }
   return res.json();
 }
@@ -140,29 +163,42 @@ export async function apiDelete<T>(path: string): Promise<T> {
  * 加载当前登录用户的最新数据库数据。
  *
  * task #183：模块级 promise memo —— 同页并发 dedupe + 会话内复用。
- * 首页 navbar + use-local-circle 同时调用时复用同一个 `/users/me` 请求。
+ * 导航与业务页面同时调用时复用同一个 `/users/me` 请求。
  * Astro MPA 整页刷新天然重置 memo，无跨页脏读面；
  * profile 保存走 PATCH 后 location.replace 整页跳转，memo 同样重置（无同页脏读）。
  * redirect 副作用在 memo 外层处理，缓存值保持纯净（不含跳转行为）。
  *
- * @param redirectOnFail 未登录或出错时跳转的 URL，不传则静默返回 null
+ * @param redirectOnFail 仅确认未登录时跳转的 URL；服务故障抛出错误，不缓存为访客
  */
-let currentUserMemo: Promise<import("./types").SessionUser | null> | null = null;
+let currentUserMemo: Promise<import("./types").SessionUser | null> | null =
+  null;
 
-async function loadCurrentUser(): Promise<import("./types").SessionUser | null> {
-  try {
-    const userRes = await fetchAPI("/users/me", { cache: "no-store" });
-    if (!userRes.ok) return null;
-    const userData = await userRes.json();
-    return userData.user ?? null;
-  } catch {
-    return null;
-  }
+async function loadCurrentUser(): Promise<
+  import("./types").SessionUser | null
+> {
+  const userRes = await fetchAPI("/users/me", { cache: "no-store" });
+  if (userRes.status === 401) return null;
+  if (!userRes.ok) throw new Error("Current user unavailable");
+  const userData = await userRes.json();
+  if (!userData?.user || typeof userData.user.id !== "string")
+    throw new Error("Invalid current user response");
+  return userData.user;
 }
 
-export function fetchCurrentUser(redirectOnFail?: string): Promise<import("./types").SessionUser | null> {
-  if (!currentUserMemo) currentUserMemo = loadCurrentUser();
-  return currentUserMemo.then((user) => {
+function beginCurrentUserRequest() {
+  const pending = loadCurrentUser().catch((error) => {
+    if (currentUserMemo === pending) currentUserMemo = null;
+    throw error;
+  });
+  currentUserMemo = pending;
+  return pending;
+}
+
+export function fetchCurrentUser(
+  redirectOnFail?: string,
+): Promise<import("./types").SessionUser | null> {
+  if (!currentUserMemo) beginCurrentUserRequest();
+  return currentUserMemo!.then((user) => {
     if (!user && redirectOnFail) window.location.href = redirectOnFail;
     return user;
   });
@@ -177,8 +213,8 @@ export function fetchCurrentUser(redirectOnFail?: string): Promise<import("./typ
 export function refreshCurrentUser(
   redirectOnFail?: string,
 ): Promise<import("./types").SessionUser | null> {
-  currentUserMemo = loadCurrentUser();
-  return currentUserMemo.then((user) => {
+  beginCurrentUserRequest();
+  return currentUserMemo!.then((user) => {
     if (!user && redirectOnFail) window.location.href = redirectOnFail;
     return user;
   });
@@ -187,16 +223,9 @@ export function refreshCurrentUser(
 /**
  * 提交用户反馈（功能建议 / Bug 反馈）
  */
-export async function submitFeedback(data: {
-  type: "suggestion" | "bug";
-  name: string;
-  email: string;
-  content: string;
-  device?: string;
-  browser?: string;
-  steps?: string;
-  pageUrl?: string;
-}): Promise<{ success: boolean; message: string }> {
+export async function submitFeedback(
+  data: import("@/contracts/feedback").FeedbackInput,
+): Promise<{ success: boolean; message: string }> {
   return apiPost("/feedback", data);
 }
 
@@ -218,7 +247,10 @@ export function getApiErrorMessage(payload: unknown, fallback: string): string {
   return fallback;
 }
 
-async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+async function readErrorMessage(
+  response: Response,
+  fallback: string,
+): Promise<string> {
   const payload = await response.json().catch(() => null);
   return getApiErrorMessage(payload, fallback);
 }

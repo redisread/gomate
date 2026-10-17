@@ -522,8 +522,6 @@ mutations.openapi(
           references: z
             .object({
               teams: z.number(),
-              stories: z.number(),
-              favorites: z.number(),
             })
             .optional(),
         }),
@@ -585,16 +583,12 @@ mutations.openapi(
       const [references] = await db
         .select({
           teams: sql<number>`(select count(*) from teams where teams.location_id = ${locationId})`,
-          stories: sql<number>`(select count(*) from stories where stories.location_id = ${locationId})`,
-          favorites: sql<number>`(select count(*) from user_location_favorites where user_location_favorites.location_id = ${locationId})`,
         })
         .from(schema.locations)
         .where(eq(schema.locations.id, locationId))
         .limit(1);
       const blockingReferences = {
         teams: Number(references?.teams ?? 0),
-        stories: Number(references?.stories ?? 0),
-        favorites: Number(references?.favorites ?? 0),
       };
       if (Object.values(blockingReferences).some((count) => count > 0)) {
         return c.json(
@@ -646,8 +640,6 @@ mutations.openapi(
             sql`${schema.locations.coverImageUrl} is ${existing.coverImageUrl}`,
             eq(schema.locations.images, existing.images),
             sql`not exists (select 1 from teams where teams.location_id = ${locationId})`,
-            sql`not exists (select 1 from stories where stories.location_id = ${locationId})`,
-            sql`not exists (select 1 from user_location_favorites where user_location_favorites.location_id = ${locationId})`,
           ),
         )
         .returning({ id: schema.locations.id });

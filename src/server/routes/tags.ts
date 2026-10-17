@@ -86,7 +86,6 @@ tagsRoute.openapi(
                 .object({
                   locations: z.number(),
                   teams: z.number(),
-                  stories: z.number(),
                 })
                 .optional(),
             }),
@@ -150,10 +149,6 @@ tagsRoute.openapi(
               select count(*) from team_tags
               where team_tags.tag_id = ${schema.tags.id}
             )`,
-              storyCount: sql<number>`(
-              select count(*) from story_tags
-              where story_tags.tag_id = ${schema.tags.id}
-            )`,
             })
             .from(schema.tags)
             .orderBy(asc(schema.tags.name), asc(schema.tags.id))
@@ -178,7 +173,6 @@ tagsRoute.openapi(
             const references = tag as typeof tag & {
               locationCount?: number;
               teamCount?: number;
-              storyCount?: number;
             };
             return {
               id: tag.id,
@@ -189,7 +183,6 @@ tagsRoute.openapi(
                     references: {
                       locations: Number(references.locationCount ?? 0),
                       teams: Number(references.teamCount ?? 0),
-                      stories: Number(references.storyCount ?? 0),
                     },
                   }
                 : {}),
@@ -372,7 +365,6 @@ tagsRoute.openapi(
           detached: z.object({
             locations: z.number(),
             teams: z.number(),
-            stories: z.number(),
           }),
         }),
         "Success",
@@ -383,7 +375,6 @@ tagsRoute.openapi(
           references: z.object({
             locations: z.number(),
             teams: z.number(),
-            stories: z.number(),
           }),
         }),
         "Tag has references; explicit detachment confirmation required",
@@ -403,9 +394,6 @@ tagsRoute.openapi(
         teamCount: sql<number>`(
         select count(*) from team_tags where team_tags.tag_id = ${schema.tags.id}
       )`,
-        storyCount: sql<number>`(
-        select count(*) from story_tags where story_tags.tag_id = ${schema.tags.id}
-      )`,
       })
       .from(schema.tags)
       .where(eq(schema.tags.id, tagId))
@@ -415,7 +403,6 @@ tagsRoute.openapi(
     const references = {
       locations: Number(tag.locationCount),
       teams: Number(tag.teamCount),
-      stories: Number(tag.storyCount),
     };
     const referenceCount = Object.values(references).reduce(
       (total, count) => total + count,
@@ -436,7 +423,6 @@ tagsRoute.openapi(
         .delete(schema.locationTags)
         .where(eq(schema.locationTags.tagId, tagId)),
       db.delete(schema.teamTags).where(eq(schema.teamTags.tagId, tagId)),
-      db.delete(schema.storyTags).where(eq(schema.storyTags.tagId, tagId)),
       db.delete(schema.tags).where(eq(schema.tags.id, tagId)),
     ]);
     return c.json(

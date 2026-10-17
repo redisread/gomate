@@ -80,7 +80,9 @@ function dbWithSelectPages(pages: unknown[][]) {
     select: vi.fn(() => ({
       from: vi.fn(() => ({
         where: vi.fn(() => ({
-          limit: vi.fn().mockImplementation(() => Promise.resolve(pages[page++] ?? [])),
+          limit: vi
+            .fn()
+            .mockImplementation(() => Promise.resolve(pages[page++] ?? [])),
         })),
       })),
     })),
@@ -119,7 +121,9 @@ describe("administrator location mutation error reasons", () => {
       {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: validCreateBody({ coverImageUrl: "https://images.example.com/cover.jpg" }),
+        body: validCreateBody({
+          coverImageUrl: "https://images.example.com/cover.jpg",
+        }),
       },
       envWithChanges(),
     );
@@ -200,7 +204,9 @@ describe("administrator location mutation error reasons", () => {
   });
 
   it("classifies a concurrent archive", async () => {
-    const database = dbWithSelectPages([[existingLocation]]) as ReturnType<typeof dbWithSelectPages> & {
+    const database = dbWithSelectPages([[existingLocation]]) as ReturnType<
+      typeof dbWithSelectPages
+    > & {
       update: ReturnType<typeof vi.fn>;
     };
     database.update = vi.fn(() => ({
@@ -228,10 +234,9 @@ describe("administrator location mutation error reasons", () => {
   });
 
   it("preserves reference counts when permanent deletion is blocked", async () => {
-    mocks.createDb.mockReturnValue(dbWithSelectPages([
-      [existingLocation],
-      [{ teams: 2, stories: 1, favorites: 3 }],
-    ]));
+    mocks.createDb.mockReturnValue(
+      dbWithSelectPages([[existingLocation], [{ teams: 2 }]]),
+    );
 
     const response = await mutations.request(
       "/location-1?permanent=true&confirm=location-1",
@@ -245,7 +250,7 @@ describe("administrator location mutation error reasons", () => {
         code: "CONFLICT",
         details: { reason: "location_has_references" },
       },
-      references: { teams: 2, stories: 1, favorites: 3 },
+      references: { teams: 2 },
     });
   });
 });

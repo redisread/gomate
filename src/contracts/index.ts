@@ -9,15 +9,12 @@ import {
   LocationStatusSchema,
   RecruitmentStatusSchema,
   RegionLevelSchema,
-  StoryStatusSchema,
-  TeamJoinRequestStatusSchema,
   TeamLifecycleSchema,
   UserGenderSchema,
   UserLevelSchema,
   UserRoleSchema,
   UserStatusSchema,
 } from "./enums";
-import { TeamChecklistSchema } from "./team-checklist";
 
 /** API timestamps are ISO 8601 strings; D1 stores Unix milliseconds. */
 export const TimestampSchema = z.iso.datetime({ offset: true });
@@ -160,19 +157,6 @@ export const TeamParticipantSchema = z.object({
 });
 export type TeamParticipant = z.infer<typeof TeamParticipantSchema>;
 
-export const TeamJoinRequestSchema = z.object({
-  id: z.string(),
-  teamId: z.string(),
-  userId: z.string(),
-  status: TeamJoinRequestStatusSchema,
-  message: z.string().nullable(),
-  decidedByUserId: z.string().nullable(),
-  decidedAt: TimestampSchema.nullable(),
-  createdAt: TimestampSchema,
-  updatedAt: TimestampSchema,
-});
-export type TeamJoinRequest = z.infer<typeof TeamJoinRequestSchema>;
-
 export const TeamSchema = z.object({
   id: z.string(),
   locationId: z.string(),
@@ -190,7 +174,7 @@ export const TeamSchema = z.object({
   cancelledAt: TimestampSchema.nullable(),
   lifecycle: TeamLifecycleSchema,
   isFull: z.boolean(),
-  checklist: TeamChecklistSchema.nullable(),
+  meetingPoint: z.string().nullable(),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
   leader: SessionUserSchema.pick({
@@ -241,46 +225,6 @@ export const AdminTeamResponseSchema = z.object({
 });
 export type AdminTeamResponse = z.infer<typeof AdminTeamResponseSchema>;
 
-export const StorySchema = z.object({
-  id: z.string(),
-  authorId: z.string(),
-  teamId: z.string().nullable(),
-  locationId: z.string().nullable(),
-  title: z.string().nullable(),
-  summary: z.string().nullable(),
-  content: z.string(),
-  images: z.array(z.string()),
-  status: StoryStatusSchema,
-  viewCount: z.number(),
-  likeCount: z.number(),
-  createdAt: TimestampSchema,
-  updatedAt: TimestampSchema,
-  displayTitle: z.string(),
-  author: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      image: z.string().nullable(),
-    })
-    .nullable(),
-  location: z
-    .object({
-      id: z.string(),
-      name: z.string(),
-      slug: z.string(),
-    })
-    .nullable(),
-  team: z
-    .object({
-      id: z.string(),
-      title: z.string(),
-    })
-    .nullable(),
-  tags: z.array(TagSchema),
-  isLiked: z.boolean(),
-});
-export type Story = z.infer<typeof StorySchema>;
-
 export const UserPublicProfileSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -296,47 +240,6 @@ export const UserPublicProfileSchema = z.object({
   }),
 });
 export type UserPublicProfile = z.infer<typeof UserPublicProfileSchema>;
-
-export const ConversationSchema = z.object({
-  id: z.string(),
-  teamId: z.string(),
-  memberUserId: z.string(),
-  initiatedByUserId: z.string(),
-  lastMessagePreview: z.string().nullable(),
-  lastMessageAt: TimestampSchema.nullable(),
-  createdAt: TimestampSchema,
-  updatedAt: TimestampSchema,
-  team: z.object({
-    id: z.string(),
-    title: z.string(),
-  }),
-  otherUser: SessionUserSchema.pick({
-    id: true,
-    name: true,
-    nickname: true,
-    image: true,
-  }).nullable(),
-  unreadCount: z.number(),
-});
-export type Conversation = z.infer<typeof ConversationSchema>;
-
-export const MessageSchema = z.object({
-  id: z.string(),
-  conversationId: z.string(),
-  senderId: z.string(),
-  content: z.string(),
-  readAt: TimestampSchema.nullable(),
-  createdAt: TimestampSchema,
-  sender: SessionUserSchema.pick({
-    id: true,
-    name: true,
-    nickname: true,
-    image: true,
-  })
-    .nullable()
-    .optional(),
-});
-export type Message = z.infer<typeof MessageSchema>;
 
 export const cursorPageSchema = <T extends z.ZodType>(itemSchema: T) =>
   z.object({ items: z.array(itemSchema), nextCursor: z.string().nullable() });
