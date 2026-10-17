@@ -46,7 +46,7 @@ const team = {
   cancelledAt: null,
   lifecycle: "pending",
   isFull: false,
-  checklist: null,
+  meetingPoint: null,
   createdAt: "2026-08-01T00:00:00Z",
   updatedAt: "2026-08-01T00:00:00Z",
   leader: {
@@ -55,7 +55,12 @@ const team = {
     nickname: null,
     image: null,
     bio: "",
-    extra: { level: "advanced", completedHikes: 8, wechat: null, city: "huizhou" },
+    extra: {
+      level: "advanced",
+      completedHikes: 8,
+      wechat: null,
+      city: "huizhou",
+    },
   },
 } satisfies Team;
 
@@ -109,7 +114,6 @@ describe("team detail responsive information architecture", () => {
         team={team}
         location={location}
         statusLabel="等你一起"
-        canMessageLeader={false}
         desktopAction={<button type="button">Apply to join</button>}
       />,
     );
@@ -120,7 +124,9 @@ describe("team detail responsive information architecture", () => {
 
     expect(brief).toContainElement(image);
     expect(brief).toContainElement(heading);
-    expect(image.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      image.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(image).toHaveAttribute("width", "1200");
     expect(image).toHaveAttribute("height", "900");
     expect(image).toHaveAttribute("loading", "eager");
@@ -140,7 +146,6 @@ describe("team detail responsive information architecture", () => {
         team={team}
         location={location}
         statusLabel="等你一起"
-        canMessageLeader={false}
       />,
     );
 
@@ -150,7 +155,11 @@ describe("team detail responsive information architecture", () => {
 
     expect(media).toHaveClass("h-full", "lg:min-h-[34rem]");
     expect(media).not.toHaveClass("lg:h-[28rem]");
-    expect(metadata).toHaveClass("rounded-2xl", "bg-secondary/60", "sm:grid-cols-2");
+    expect(metadata).toHaveClass(
+      "rounded-2xl",
+      "bg-secondary/60",
+      "sm:grid-cols-2",
+    );
     expect(metadata).not.toHaveClass("border-y", "lg:grid-cols-1");
   });
 
@@ -163,7 +172,6 @@ describe("team detail responsive information architecture", () => {
         isFull={false}
         isLeader={false}
         isMember={false}
-        isPending={false}
         onJoin={vi.fn()}
       />,
     );
@@ -172,7 +180,9 @@ describe("team detail responsive information architecture", () => {
       "href",
       "/login?redirect=/teams/team-1",
     );
-    expect(screen.queryByRole("button", { name: "Apply to join" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Apply to join" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the join action for an authenticated visitor when the team has space", () => {
@@ -184,13 +194,16 @@ describe("team detail responsive information architecture", () => {
         isFull={false}
         isLeader={false}
         isMember={false}
-        isPending={false}
         onJoin={vi.fn()}
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Apply to join" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Log in" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Apply to join" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Log in" }),
+    ).not.toBeInTheDocument();
   });
 
   it("does not invite an anonymous visitor to log in when the team has ended", () => {
@@ -202,12 +215,13 @@ describe("team detail responsive information architecture", () => {
         isFull={false}
         isLeader={false}
         isMember={false}
-        isPending={false}
         onJoin={vi.fn()}
       />,
     );
 
     expect(screen.getByText("Ended")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Log in" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Log in" }),
+    ).not.toBeInTheDocument();
   });
 });

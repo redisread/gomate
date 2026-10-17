@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiApp, createRoute, jsonResponse, z } from "../lib/openapi";
-import { contactRoute } from "./contact";
 import { feedbackRoute } from "./feedback";
 import { regionsRoute } from "./regions";
 import { tagsRoute } from "./tags";
@@ -17,7 +16,6 @@ describe("public route contracts", () => {
   it("registers form, region and tag operations without invoking business handlers", () => {
     const app = createApiApp();
     app
-      .route("/contact", contactRoute)
       .route("/feedback", feedbackRoute)
       .route("/regions", regionsRoute)
       .route("/tags", tagsRoute);
@@ -25,7 +23,7 @@ describe("public route contracts", () => {
       openapi: "3.1.0",
       info: { title: "API", version: "1" },
     });
-    expect(document.paths?.["/contact"]?.post?.requestBody).toBeDefined();
+    expect(document.paths?.["/feedback"]?.post?.requestBody).toBeDefined();
     expect(document.paths?.["/regions"]?.get?.parameters).toHaveLength(4);
     expect(
       document.paths?.["/tags/{id}"]?.patch?.responses?.["200"],
@@ -35,10 +33,14 @@ describe("public route contracts", () => {
     });
   });
   it("preserves malformed form validation without invoking email delivery", async () => {
-    const response = await contactRoute.request("/", {
-      method: "POST",
-      body: "{",
-    });
+    const response = await feedbackRoute.request(
+      "/",
+      {
+        method: "POST",
+        body: "{",
+      },
+      { FEEDBACK_RATE_LIMITER: { limit: async () => ({ success: true }) } },
+    );
     expect(response.status).toBe(400);
     expect(await response.json()).toMatchObject({
       success: false,

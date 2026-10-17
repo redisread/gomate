@@ -29,9 +29,14 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-4">
-            <p className="text-muted-foreground/70">{error || t('teams.notFound')}</p>
-            <a href="/teams" className="text-amber-600 hover:text-amber-700 underline underline-offset-2">
-              {t('common.backTeams')}
+            <p className="text-muted-foreground/70">
+              {error || t("teams.notFound")}
+            </p>
+            <a
+              href="/teams"
+              className="text-amber-600 hover:text-amber-700 underline underline-offset-2"
+            >
+              {t("common.backTeams")}
             </a>
           </div>
         </div>
@@ -41,28 +46,31 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
   }
 
   const statusInfo = getStatusInfo(getTeamDisplayStatus(team), t);
-  const desktopAction = !ctx.isLeader && !ctx.isMember && !ctx.isPending ? (
-    <TeamDecisionPrimaryAction
-      team={team}
-      userId={ctx.userId}
-      canJoin={ctx.canJoin}
-      isFull={ctx.isFull}
-      isLeader={ctx.isLeader}
-      isMember={ctx.isMember}
-      isPending={ctx.isPending}
-      onJoin={() => ctx.setShowJoinModal(true)}
-    />
-  ) : null;
+  const desktopAction =
+    !ctx.isLeader && !ctx.isMember ? (
+      <TeamDecisionPrimaryAction
+        team={team}
+        userId={ctx.userId}
+        canJoin={ctx.canJoin}
+        isFull={ctx.isFull}
+        isLeader={ctx.isLeader}
+        isMember={ctx.isMember}
+        onJoin={ctx.handleJoin}
+        joining={ctx.joining}
+      />
+    ) : null;
 
   return (
     <main className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <div data-testid="team-detail-content" className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-24 sm:px-6 lg:pb-16 lg:pt-28">
+      <div
+        data-testid="team-detail-content"
+        className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-24 sm:px-6 lg:pb-16 lg:pt-28"
+      >
         <TeamDepartureBrief
           team={team}
           location={ctx.location}
           statusLabel={statusInfo.label}
-          canMessageLeader={ctx.isMember}
           desktopAction={desktopAction}
         />
 

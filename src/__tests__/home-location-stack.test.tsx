@@ -12,7 +12,13 @@ vi.mock("@/hooks/useI18n", () => ({
   }),
 }));
 
-const locations: Location[] = ["香港", "麦理浩径", "大理", "牛奶排", "澳门"].map((name, index) => ({
+const locations: Location[] = [
+  "香港",
+  "麦理浩径",
+  "大理",
+  "牛奶排",
+  "澳门",
+].map((name, index) => ({
   id: `location-${index}`,
   regionId: "hong-kong",
   name,
@@ -55,22 +61,24 @@ describe("HomeLocationStack", () => {
     const cards = screen.getAllByTestId("home-location-stack-card");
     expect(cards).toHaveLength(3);
     expect(cards.map((card) => card.textContent)).toEqual([
-      expect.stringContaining("牛奶排"),
-      expect.stringContaining("大理"),
       expect.stringContaining("香港"),
+      expect.stringContaining("麦理浩径"),
+      expect.stringContaining("大理"),
     ]);
-    expect(screen.getByRole("link", { name: /牛奶排/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /麦理浩径/ })).toHaveAttribute(
       "href",
-      "/locations/location-3",
+      "/locations/location-1",
     );
     expect(cards[1]).toHaveClass("lg:z-30");
-    expect(screen.queryByText("麦理浩径")).not.toBeInTheDocument();
+    expect(screen.queryByText("牛奶排")).not.toBeInTheDocument();
   });
 
   it("没有地点时显示占位状态", () => {
     render(<HomeLocationStack locations={[]} />);
 
     expect(screen.getByTestId("home-location-stack-empty")).toBeInTheDocument();
-    expect(screen.queryByTestId("home-location-stack-card")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("home-location-stack-card"),
+    ).not.toBeInTheDocument();
   });
 });

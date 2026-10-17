@@ -59,8 +59,8 @@ describe("read-only administrator teams", () => {
     `);
     const insert = sqlite.prepare(`INSERT INTO teams
       (id, location_id, leader_id, activity_type, title, start_at, end_at, formed_at,
-       cancelled_at, recruitment_status, created_at, checklist)
-      VALUES (?, 'l', 'leader', 'hiking', ?, ?, ?, ?, ?, ?, ?, '{"notes":"集合说明"}')`);
+       cancelled_at, recruitment_status, created_at, meeting_point)
+      VALUES (?, 'l', 'leader', 'hiking', ?, ?, ?, ?, ?, ?, ?, '集合说明')`);
     for (const [id, start, end, formed, cancelled, recruitment, created] of [
       ["pending", now + 1000, now + 2000, null, null, "open", 1000],
       ["closed", now + 1000, now + 2000, null, null, "closed", 2000],
@@ -198,7 +198,7 @@ describe("read-only administrator teams", () => {
     const { team }: AdminTeamResponse = await response.json();
     expect(team).toMatchObject({
       lifecycle: "completed",
-      checklist: { notes: "集合说明" },
+      meetingPoint: "集合说明",
       activeParticipantCount: 2,
     });
     expect(team.participants?.map((member) => member.userId)).toEqual([

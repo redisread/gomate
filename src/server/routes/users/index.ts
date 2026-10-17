@@ -6,7 +6,6 @@ import {
   PublicUserResponseSchema,
   SelfUserResponseSchema,
   SuccessSchema,
-  TimelineRequestsResponseSchema,
   TimelineTeamsResponseSchema,
 } from "@/contracts/public-responses";
 import {
@@ -46,7 +45,7 @@ import {
 import { deleteR2ObjectsWithRetry } from "../../lib/r2-media";
 import { getTeamLifecycle } from "../../lib/team-lifecycle";
 import { activeTeamParticipantCount } from "../../lib/team-participant-count";
-import { parseUserExtra, userExtraPatchExpression } from "../../lib/user-extra";
+import { userExtraPatchExpression } from "../../lib/user-extra";
 import {
   getUserOngoingTeams,
   getUserStats,
@@ -145,7 +144,7 @@ function teamSummary(row: {
   recruitmentStatus: schema.RecruitmentStatus;
   formedAt: Date | null;
   cancelledAt: Date | null;
-  checklist: import("@/contracts").TeamChecklist | null;
+  meetingPoint: string | null;
   createdAt: Date;
   updatedAt: Date;
   activeParticipantCount: number;
@@ -169,7 +168,7 @@ function teamSummary(row: {
     cancelledAt: row.cancelledAt?.toISOString() ?? null,
     lifecycle: getTeamLifecycle(row),
     isFull: Number(row.activeParticipantCount) >= row.maxParticipants,
-    checklist: row.checklist,
+    meetingPoint: row.meetingPoint,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     location: {
@@ -196,7 +195,7 @@ const teamSummarySelection = {
   recruitmentStatus: schema.teams.recruitmentStatus,
   formedAt: schema.teams.formedAt,
   cancelledAt: schema.teams.cancelledAt,
-  checklist: schema.teams.checklist,
+  meetingPoint: schema.teams.meetingPoint,
   createdAt: schema.teams.createdAt,
   updatedAt: schema.teams.updatedAt,
   activeParticipantCount: participantCount,
@@ -254,106 +253,6 @@ export function buildJoinedTeamsPageQuery(
     )
     .where(descendingTeamCursor(cursor))
     .orderBy(desc(schema.teams.createdAt), desc(schema.teams.id))
-    .limit(limit);
-}
-
-const ownJoinRequestSelection = {
-  id: schema.teamJoinRequests.id,
-  teamId: schema.teamJoinRequests.teamId,
-  userId: schema.teamJoinRequests.userId,
-  status: schema.teamJoinRequests.status,
-  message: schema.teamJoinRequests.message,
-  decidedByUserId: schema.teamJoinRequests.decidedByUserId,
-  decidedAt: schema.teamJoinRequests.decidedAt,
-  createdAt: schema.teamJoinRequests.createdAt,
-  updatedAt: schema.teamJoinRequests.updatedAt,
-  teamTitle: schema.teams.title,
-};
-
-const pendingJoinRequestSelection = {
-  id: schema.teamJoinRequests.id,
-  teamId: schema.teamJoinRequests.teamId,
-  userId: schema.teamJoinRequests.userId,
-  status: schema.teamJoinRequests.status,
-  message: schema.teamJoinRequests.message,
-  createdAt: schema.teamJoinRequests.createdAt,
-  updatedAt: schema.teamJoinRequests.updatedAt,
-  teamTitle: schema.teams.title,
-  applicantName: schema.users.name,
-  applicantNickname: schema.users.nickname,
-  applicantImage: schema.users.image,
-  applicantBio: schema.users.bio,
-  applicantExtra: schema.users.extra,
-};
-
-function descendingJoinRequestCursor(
-  cursor: ContentCursor | null,
-): SQL | undefined {
-  if (!cursor) return undefined;
-  const cursorDate = new Date(cursor.t);
-  return or(
-    lt(schema.teamJoinRequests.createdAt, cursorDate),
-    and(
-      eq(schema.teamJoinRequests.createdAt, cursorDate),
-      lt(schema.teamJoinRequests.id, cursor.id),
-    ),
-  );
-}
-
-export function buildOwnJoinRequestsPageQuery(
-  db: ReturnType<typeof createDb>,
-  userId: string,
-  cursor: ContentCursor | null,
-  limit: number,
-) {
-  return db
-    .select(ownJoinRequestSelection)
-    .from(schema.teamJoinRequests)
-    .innerJoin(
-      schema.teams,
-      eq(schema.teams.id, schema.teamJoinRequests.teamId),
-    )
-    .where(
-      and(
-        eq(schema.teamJoinRequests.userId, userId),
-        descendingJoinRequestCursor(cursor),
-      ),
-    )
-    .orderBy(
-      desc(schema.teamJoinRequests.createdAt),
-      desc(schema.teamJoinRequests.id),
-    )
-    .limit(limit);
-}
-
-export function buildPendingJoinRequestsPageQuery(
-  db: ReturnType<typeof createDb>,
-  leaderId: string,
-  cursor: ContentCursor | null,
-  limit: number,
-) {
-  return db
-    .select(pendingJoinRequestSelection)
-    .from(schema.teamJoinRequests)
-    .innerJoin(
-      schema.teams,
-      eq(schema.teams.id, schema.teamJoinRequests.teamId),
-    )
-    .innerJoin(
-      schema.users,
-      eq(schema.users.id, schema.teamJoinRequests.userId),
-    )
-    .where(
-      and(
-        eq(schema.teams.leaderId, leaderId),
-        eq(schema.teamJoinRequests.status, "pending"),
-        descendingJoinRequestCursor(cursor),
-      ),
-    )
-    .orderBy(
-      desc(schema.teamJoinRequests.createdAt),
-      desc(schema.teamJoinRequests.id),
-    )
     .limit(limit);
 }
 
@@ -568,121 +467,6 @@ usersRoute.openapi(
       {
         success: true as const,
         teams: teams.map(teamSummary),
-        nextCursor:
-          hasMore && last
-            ? encodeContentCursor({ t: last.createdAt.getTime(), id: last.id })
-            : null,
-      },
-      200,
-    );
-  },
-  validationHook("Invalid input", "issues"),
-);
-
-usersRoute.openapi(
-  createRoute({
-    method: "get",
-    path: "/me/join-requests",
-    operationId: "usersJoinRequests",
-    tags: ["users"],
-    summary: "List my join requests",
-    "x-audience": "public",
-    security: cookieSecurity,
-    middleware: [sessionMiddleware()],
-    request: { query: timelineQuerySchema },
-    responses: {
-      200: jsonResponse(TimelineRequestsResponseSchema, "Success"),
-      ...errorResponses(400, 401, 500),
-    },
-  }),
-  async (c) => {
-    const userId = c.get("session").user.id;
-    const page = parseCursorPage(c);
-    if (!page.ok) return c.json(APIErrors.badRequest(page.message), 400);
-    const db = createDb(c.env.DB);
-    const rows = await buildOwnJoinRequestsPageQuery(
-      db,
-      userId,
-      page.cursor,
-      page.limit + 1,
-    );
-    const hasMore = rows.length > page.limit;
-    const requests = rows.slice(0, page.limit);
-    const last = requests.at(-1);
-    return c.json(
-      {
-        success: true as const,
-        requests: requests.map((request) => ({
-          ...request,
-          decidedAt: request.decidedAt?.toISOString() ?? null,
-          createdAt: request.createdAt.toISOString(),
-          updatedAt: request.updatedAt.toISOString(),
-          team: { id: request.teamId, title: request.teamTitle },
-        })),
-        nextCursor:
-          hasMore && last
-            ? encodeContentCursor({ t: last.createdAt.getTime(), id: last.id })
-            : null,
-      },
-      200,
-    );
-  },
-  validationHook("Invalid input", "issues"),
-);
-
-usersRoute.openapi(
-  createRoute({
-    method: "get",
-    path: "/me/pending-join-requests",
-    operationId: "usersPendingJoinRequests",
-    tags: ["users"],
-    summary: "List requests awaiting my decision",
-    "x-audience": "public",
-    security: cookieSecurity,
-    middleware: [sessionMiddleware()],
-    request: { query: timelineQuerySchema },
-    responses: {
-      200: jsonResponse(TimelineRequestsResponseSchema, "Success"),
-      ...errorResponses(400, 401, 500),
-    },
-  }),
-  async (c) => {
-    const userId = c.get("session").user.id;
-    const page = parseCursorPage(c);
-    if (!page.ok) return c.json(APIErrors.badRequest(page.message), 400);
-    const db = createDb(c.env.DB);
-    const rows = await buildPendingJoinRequestsPageQuery(
-      db,
-      userId,
-      page.cursor,
-      page.limit + 1,
-    );
-    const hasMore = rows.length > page.limit;
-    const requests = rows.slice(0, page.limit);
-    const last = requests.at(-1);
-    return c.json(
-      {
-        success: true as const,
-        requests: requests.map((request) => ({
-          id: request.id,
-          teamId: request.teamId,
-          userId: request.userId,
-          status: request.status,
-          message: request.message,
-          decidedByUserId: null,
-          decidedAt: null,
-          createdAt: request.createdAt.toISOString(),
-          updatedAt: request.updatedAt.toISOString(),
-          team: { id: request.teamId, title: request.teamTitle },
-          user: {
-            id: request.userId,
-            name: request.applicantName,
-            nickname: request.applicantNickname,
-            image: request.applicantImage,
-            bio: request.applicantBio,
-            extra: parseUserExtra(request.applicantExtra),
-          },
-        })),
         nextCursor:
           hasMore && last
             ? encodeContentCursor({ t: last.createdAt.getTime(), id: last.id })

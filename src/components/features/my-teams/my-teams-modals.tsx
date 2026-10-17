@@ -1,124 +1,15 @@
-import * as React from "react";
-import { XCircle, CheckCircle, Loader2 } from "lucide-react";
+import { Loader2, XCircle, CheckCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { formatTimeAgo } from "@/lib/date-utils";
-import type { PendingApproval } from "./my-teams-types";
-
-function getLevelConfig(t: (key: string, vars?: Record<string, string | number>) => string): Record<string, { label: string; emoji: string; color: string }> {
-  return {
-    beginner: { label: t("myTeams.levelBeginner"), emoji: "🌱", color: "bg-green-50 text-green-700 border border-green-200" },
-    intermediate: { label: t("myTeams.levelIntermediate"), emoji: "🥾", color: "bg-blue-50 text-blue-700 border border-blue-200" },
-    advanced: { label: t("myTeams.levelAdvanced"), emoji: "⛰️", color: "bg-purple-50 text-purple-700 border border-purple-200" },
-    expert: { label: t("myTeams.levelExpert"), emoji: "🏔️", color: "bg-amber-50 text-amber-700 border border-amber-200" },
-  };
-}
-
-export function ApprovalDetailModal({ approval, isProcessing, onApprove, onReject, onClose }: {
-  approval: PendingApproval; isProcessing: boolean;
-  onApprove: () => Promise<void>; onReject: () => Promise<void>; onClose: () => void;
-}) {
-  const { t } = useI18n(["myTeams", "teams", "common"]);
-  const applicant = approval.user;
-  const displayName = applicant.nickname || applicant.name;
-  const levelConfig = getLevelConfig(t);
-  const lv = levelConfig[applicant.extra.level];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-card rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
-        <div className="h-2 bg-gradient-to-r from-amber-400 to-amber-600" />
-        <div className="p-6">
-          <div className="flex flex-col items-center mb-5">
-            <div className="w-20 h-20 rounded-full bg-stone-200 dark:bg-stone-700 flex items-center justify-center overflow-hidden mb-3 ring-4 ring-amber-50">
-              {applicant.image ? (
-                <img src={applicant.image} alt={displayName} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-2xl font-semibold text-stone-500 dark:text-stone-500">{displayName.charAt(0) || "?"}</span>
-              )}
-            </div>
-            <h3 className="text-xl font-bold text-foreground">{displayName}</h3>
-            {lv ? (
-              <span className={`mt-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${lv.color}`}>{lv.emoji} {lv.label}</span>
-            ) : (
-              <span className="mt-1.5 text-xs px-2.5 py-1 rounded-full font-medium bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-500">{applicant.extra.level}</span>
-            )}
-          </div>
-          {applicant.bio ? (
-            <div className="mb-4 pl-4 border-l-4 border-amber-300 py-1">
-              <p className="text-sm text-stone-600 dark:text-stone-500 italic leading-relaxed">{applicant.bio}</p>
-            </div>
-          ) : (
-            <p className="mb-4 text-sm text-stone-400 dark:text-stone-500 text-center">{t("myTeams.noBio")}</p>
-          )}
-          {applicant.extra.wechat && (
-            <div className="mb-4 flex items-center gap-2 text-sm text-stone-600 dark:text-stone-500 bg-stone-50 dark:bg-stone-900 rounded-xl px-4 py-2.5">
-              <span className="font-medium text-stone-700 dark:text-stone-300">{t("myTeams.wechatLabel")}</span>
-              <span className="text-stone-600 dark:text-stone-500">{applicant.extra.wechat}</span>
-            </div>
-          )}
-          {approval.team && (
-            <div className="mb-4 bg-stone-50 dark:bg-stone-900 rounded-2xl p-4">
-              <p className="text-xs text-stone-400 dark:text-stone-500 mb-2 font-medium uppercase tracking-wide">{t("myTeams.applyTeamLabel")}</p>
-              <p className="font-semibold text-stone-800 mb-2">{approval.team.title}</p>
-              {approval.message && <p className="text-xs text-stone-500 dark:text-stone-400">{approval.message}</p>}
-            </div>
-          )}
-          <p className="text-xs text-stone-400 dark:text-stone-500 text-center mb-5">
-            {t("myTeams.applyTime")}：{formatTimeAgo(approval.createdAt)}
-          </p>
-          <div className="flex gap-3">
-            <button onClick={onReject} disabled={isProcessing}
-              className="flex-1 border-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-3 rounded-2xl font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 disabled:opacity-50 flex items-center justify-center gap-2">
-              <XCircle className="h-4 w-4" />{t("myTeams.rejectBtn")}
-            </button>
-            <button onClick={onApprove} disabled={isProcessing}
-              className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-2xl font-semibold transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-amber-200">
-              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-              {t("myTeams.approveBtn")}
-            </button>
-          </div>
-          <button onClick={onClose}
-            className="mt-3 w-full text-sm text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:text-stone-500 py-2 transition-colors">
-            {t("myTeams.skipAction")}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function RejectConfirmModal({ isOpen, isProcessing, onConfirm, onCancel }: {
-  isOpen: boolean; isProcessing: boolean; onConfirm: () => Promise<void>; onCancel: () => void;
-}) {
-  const { t } = useI18n(["myTeams", "teams", "common"]);
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
-      <div className="bg-card rounded-3xl max-w-sm w-full p-6 shadow-2xl">
-        <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-          <XCircle className="h-6 w-6 text-red-500" />
-        </div>
-        <h2 className="text-lg font-bold text-foreground mb-2 text-center">{t("myTeams.rejectConfirmTitle")}</h2>
-        <p className="text-sm text-stone-500 dark:text-stone-500 mb-6 text-center">{t("myTeams.rejectConfirmDesc")}</p>
-        <div className="flex gap-3">
-          <button onClick={onCancel}
-            className="flex-1 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:bg-stone-900 py-3 rounded-2xl font-semibold transition-colors">
-            {t("myTeams.cancelBtn")}
-          </button>
-          <button onClick={onConfirm} disabled={isProcessing}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-2xl font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : t("myTeams.confirmRejectBtn")}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function CancelTeamModal({ teamId, isCancelling, onConfirm, onCancel }: {
-  teamId: string | null; isCancelling: boolean; onConfirm: () => Promise<void>; onCancel: () => void;
+export function CancelTeamModal({
+  teamId,
+  isCancelling,
+  onConfirm,
+  onCancel,
+}: {
+  teamId: string | null;
+  isCancelling: boolean;
+  onConfirm: () => Promise<void>;
+  onCancel: () => void;
 }) {
   const { t } = useI18n(["myTeams", "teams", "common"]);
   if (!teamId) return null;
@@ -129,17 +20,28 @@ export function CancelTeamModal({ teamId, isCancelling, onConfirm, onCancel }: {
           <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
             <XCircle className="h-5 w-5 text-red-500" />
           </div>
-          <h3 className="text-base font-bold text-foreground">{t("teams.cancelTeam")}</h3>
+          <h3 className="text-base font-bold text-foreground">
+            {t("teams.cancelTeam")}
+          </h3>
         </div>
-        <p className="text-sm text-stone-500 dark:text-stone-500 leading-relaxed mb-5">{t("teams.cancelTeamConfirm")}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-500 leading-relaxed mb-5">
+          {t("teams.cancelTeamConfirm")}
+        </p>
         <div className="flex gap-2">
-          <button onClick={onCancel} disabled={isCancelling}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-500 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors disabled:opacity-50">
+          <button
+            onClick={onCancel}
+            disabled={isCancelling}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-500 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors disabled:opacity-50"
+          >
             {t("common.cancel")}
           </button>
-          <button onClick={onConfirm} disabled={isCancelling}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-            {isCancelling && <Loader2 className="h-4 w-4 animate-spin" />}{t("teams.cancelTeam")}
+          <button
+            onClick={onConfirm}
+            disabled={isCancelling}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isCancelling && <Loader2 className="h-4 w-4 animate-spin" />}
+            {t("teams.cancelTeam")}
           </button>
         </div>
       </div>
@@ -147,8 +49,18 @@ export function CancelTeamModal({ teamId, isCancelling, onConfirm, onCancel }: {
   );
 }
 
-export function FormTeamModal({ teamId, isFull, isForming, onConfirm, onCancel }: {
-  teamId: string | null; isFull: boolean; isForming: boolean; onConfirm: () => Promise<void>; onCancel: () => void;
+export function FormTeamModal({
+  teamId,
+  isFull,
+  isForming,
+  onConfirm,
+  onCancel,
+}: {
+  teamId: string | null;
+  isFull: boolean;
+  isForming: boolean;
+  onConfirm: () => Promise<void>;
+  onCancel: () => void;
 }) {
   const { t } = useI18n(["myTeams", "teams", "common"]);
   if (!teamId) return null;
@@ -160,17 +72,27 @@ export function FormTeamModal({ teamId, isFull, isForming, onConfirm, onCancel }
             <CheckCircle className="h-5 w-5 text-amber-500" />
           </div>
           <h3 className="text-base font-bold text-foreground">
-            {isFull ? t("teams.formTeamConfirm") : t("teams.formTeamUnderfilledConfirm")}
+            {isFull
+              ? t("teams.formTeamConfirm")
+              : t("teams.formTeamUnderfilledConfirm")}
           </h3>
         </div>
-        <p className="text-sm text-stone-500 dark:text-stone-500 leading-relaxed mb-5">{t("teams.formTeamWarning")}</p>
+        <p className="text-sm text-stone-500 dark:text-stone-500 leading-relaxed mb-5">
+          {t("teams.formTeamWarning")}
+        </p>
         <div className="flex gap-2">
-          <button onClick={onCancel} disabled={isForming}
-            className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-500 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors disabled:opacity-50">
+          <button
+            onClick={onCancel}
+            disabled={isForming}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-500 text-sm font-medium hover:bg-stone-50 dark:bg-stone-900 transition-colors disabled:opacity-50"
+          >
             {t("common.cancel")}
           </button>
-          <button onClick={onConfirm} disabled={isForming}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-white text-sm font-medium hover:from-amber-700 hover:to-amber-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+          <button
+            onClick={onConfirm}
+            disabled={isForming}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-white text-sm font-medium hover:from-amber-700 hover:to-amber-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
             {isForming && <Loader2 className="h-4 w-4 animate-spin" />}
             {isFull ? t("teams.formTeam") : t("teams.formTeamUnderfilled")}
           </button>
