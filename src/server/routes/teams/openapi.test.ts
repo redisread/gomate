@@ -15,11 +15,8 @@ describe("team HTTP contracts", () => {
     expect(document.paths["/api/teams/{id}/join"].post.operationId).toBe(
       "teamsJoin",
     );
-    expect(
-      document.paths["/api/teams/{id}/checklist"].put.requestBody.content[
-        "application/json"
-      ].schema.properties.assignments,
-    ).toBeDefined();
+    expect(document.paths["/api/teams/{id}/checklist"]).toBeUndefined();
+    expect(document.paths["/api/teams/{id}/join-requests"]).toBeUndefined();
     const params = document.paths["/api/teams"].get.parameters;
     expect(
       params.find((p: { name: string }) => p.name === "tagIds").schema.type,

@@ -44,7 +44,8 @@ async function noOverflow(page: Page) {
 
 test.describe("read-only administrator teams", () => {
   test.beforeAll(async ({ browserName }, workerInfo) => {
-    if (browserName !== "chromium") throw new Error("Team E2E requires Chromium");
+    if (browserName !== "chromium")
+      throw new Error("Team E2E requires Chromium");
     if (!["localhost", "127.0.0.1"].includes(new URL(origin).hostname))
       throw new Error("Team fixtures require localhost");
     const fixtureOrigin = new URL(origin).origin;
@@ -97,7 +98,7 @@ test.describe("read-only administrator teams", () => {
         sqlFile,
         `
         UPDATE teams SET start_at=${now - 7200000}, end_at=${now - 3600000}, formed_at=${now - 10800000},
-          recruitment_status='closed', checklist='{"notes":"队伍集合说明"}' WHERE id=${quote(completedId)};
+          recruitment_status='closed', meeting_point='队伍集合说明' WHERE id=${quote(completedId)};
         UPDATE teams SET start_at=${now - 3600000}, end_at=${now + 3600000}, formed_at=${now - 7200000}
           WHERE id=${quote(ongoingId)};
         UPDATE teams SET recruitment_status='closed' WHERE id=${quote(closedId)};

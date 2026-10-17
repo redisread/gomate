@@ -10,7 +10,6 @@ export type {
   Tag,
   Team,
   TeamChecklist,
-  TeamJoinRequest,
   TeamLifecycle,
   TeamParticipant,
   UserExtra,

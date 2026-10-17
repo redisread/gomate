@@ -9,14 +9,12 @@ import {
   LocationStatusSchema,
   RecruitmentStatusSchema,
   RegionLevelSchema,
-  TeamJoinRequestStatusSchema,
   TeamLifecycleSchema,
   UserGenderSchema,
   UserLevelSchema,
   UserRoleSchema,
   UserStatusSchema,
 } from "./enums";
-import { TeamChecklistSchema } from "./team-checklist";
 
 /** API timestamps are ISO 8601 strings; D1 stores Unix milliseconds. */
 export const TimestampSchema = z.iso.datetime({ offset: true });
@@ -159,19 +157,6 @@ export const TeamParticipantSchema = z.object({
 });
 export type TeamParticipant = z.infer<typeof TeamParticipantSchema>;
 
-export const TeamJoinRequestSchema = z.object({
-  id: z.string(),
-  teamId: z.string(),
-  userId: z.string(),
-  status: TeamJoinRequestStatusSchema,
-  message: z.string().nullable(),
-  decidedByUserId: z.string().nullable(),
-  decidedAt: TimestampSchema.nullable(),
-  createdAt: TimestampSchema,
-  updatedAt: TimestampSchema,
-});
-export type TeamJoinRequest = z.infer<typeof TeamJoinRequestSchema>;
-
 export const TeamSchema = z.object({
   id: z.string(),
   locationId: z.string(),
@@ -189,7 +174,7 @@ export const TeamSchema = z.object({
   cancelledAt: TimestampSchema.nullable(),
   lifecycle: TeamLifecycleSchema,
   isFull: z.boolean(),
-  checklist: TeamChecklistSchema.nullable(),
+  meetingPoint: z.string().nullable(),
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
   leader: SessionUserSchema.pick({

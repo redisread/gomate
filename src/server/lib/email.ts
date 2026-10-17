@@ -4,13 +4,17 @@ import { withTimeout } from "./timeout";
 import { logger } from "./logger";
 
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>'"]/gu, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    "'": "&#39;",
-    '"': "&quot;",
-  })[character]!);
+  return value.replace(
+    /[&<>'"]/gu,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#39;",
+        '"': "&quot;",
+      })[character]!,
+  );
 }
 
 /** Send the ownership challenge required before an email identity can sign in. */
@@ -38,11 +42,12 @@ export async function sendEmailVerificationEmail(
     const safeUrl = escapeHtml(parsedUrl.toString());
 
     await withTimeout(
-      () => resend.emails.send({
-        from: fromEmail,
-        to: email,
-        subject: getEmailField(locale, "emailVerification", "subject"),
-        html: `
+      () =>
+        resend.emails.send({
+          from: fromEmail,
+          to: email,
+          subject: getEmailField(locale, "emailVerification", "subject"),
+          html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>${getEmailField(locale, "emailVerification", "title")}</h2>
             <p>${getEmailField(locale, "emailVerification", "greeting", { name: safeName })}</p>
@@ -52,7 +57,7 @@ export async function sendEmailVerificationEmail(
             <p>${getEmailField(locale, "emailVerification", "ignoreNote")}</p>
           </div>
         `,
-      }),
+        }),
       10000,
       "Send email verification timeout",
     );
@@ -90,14 +95,17 @@ export async function sendPasswordResetEmail(
     const safeName = name ? escapeHtml(name) : "";
     const safeUrl = escapeHtml(parsedUrl.toString());
     const nameStr = safeName ? `，${safeName}` : "";
-    const greeting = getEmailField(locale, "passwordReset", "greeting", { name: nameStr });
+    const greeting = getEmailField(locale, "passwordReset", "greeting", {
+      name: nameStr,
+    });
 
     await withTimeout(
-      () => resend.emails.send({
-        from: fromEmail,
-        to: email,
-        subject: getEmailField(locale, "passwordReset", "subject"),
-        html: `
+      () =>
+        resend.emails.send({
+          from: fromEmail,
+          to: email,
+          subject: getEmailField(locale, "passwordReset", "subject"),
+          html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>${getEmailField(locale, "passwordReset", "title")}</h2>
             <p>${greeting}</p>
@@ -107,9 +115,9 @@ export async function sendPasswordResetEmail(
             <p>${getEmailField(locale, "passwordReset", "ignoreNote")}</p>
           </div>
         `,
-      }),
+        }),
       10000,
-      "Send password reset email timeout"
+      "Send password reset email timeout",
     );
 
     return { success: true };
@@ -137,11 +145,12 @@ export async function sendWelcomeEmail(
     const safeName = escapeHtml(name);
 
     await withTimeout(
-      () => resend.emails.send({
-        from: fromEmail,
-        to: email,
-        subject: getEmailField(locale, "welcome", "subject"),
-        html: `
+      () =>
+        resend.emails.send({
+          from: fromEmail,
+          to: email,
+          subject: getEmailField(locale, "welcome", "subject"),
+          html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>${getEmailField(locale, "welcome", "title")}</h2>
             <p>${getEmailField(locale, "welcome", "greeting", { name: safeName })}</p>
@@ -156,9 +165,9 @@ export async function sendWelcomeEmail(
             <p>${getEmailField(locale, "welcome", "signature")}</p>
           </div>
         `,
-      }),
+        }),
       10000,
-      "Send welcome email timeout"
+      "Send welcome email timeout",
     );
 
     return { success: true };
@@ -184,12 +193,15 @@ export async function sendContactFormEmail(
     const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
 
     await withTimeout(
-      () => resend.emails.send({
-        from: fromEmail,
-        to: "support@gomate.live",
-        replyTo: data.email,
-        subject: getEmailField(locale, "contactForm", "subject", { subject: data.subject }),
-        html: `
+      () =>
+        resend.emails.send({
+          from: fromEmail,
+          to: "support@gomate.live",
+          replyTo: data.email,
+          subject: getEmailField(locale, "contactForm", "subject", {
+            subject: data.subject,
+          }),
+          html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>${getEmailField(locale, "contactForm", "title")}</h2>
             <p><strong>${getEmailField(locale, "contactForm", "nameLabel")}</strong>${data.name}</p>
@@ -199,9 +211,9 @@ export async function sendContactFormEmail(
             <p style="white-space: pre-wrap;">${data.message}</p>
           </div>
         `,
-      }),
+        }),
       10000,
-      "Send contact form email timeout"
+      "Send contact form email timeout",
     );
 
     return { success: true };
@@ -213,61 +225,6 @@ export async function sendContactFormEmail(
 
 /**
  * 发送队伍加入申请通知邮件给队长
- */
-export async function sendTeamJoinApplicationEmail(
-  data: {
-    leaderEmail: string;
-    leaderName: string;
-    applicantName: string;
-    teamTitle: string;
-    locationName: string;
-    teamUrl: string;
-  },
-  env: { RESEND_API_KEY?: string; RESEND_FROM_EMAIL?: string },
-  locale: EmailLocale = "zh-CN",
-): Promise<{ success: boolean; error?: string }> {
-  const apiKey = env.RESEND_API_KEY;
-  if (!apiKey) return { success: false, error: "Email service not configured" };
-
-  try {
-    const resend = new Resend(apiKey);
-    const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
-    const vars = {
-      leaderName: data.leaderName,
-      applicantName: data.applicantName,
-      teamTitle: data.teamTitle,
-      locationName: data.locationName,
-    };
-
-    await withTimeout(
-      () => resend.emails.send({
-        from: fromEmail,
-        to: data.leaderEmail,
-        subject: getEmailField(locale, "teamJoinApplication", "subject", vars),
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #16a34a;">${getEmailField(locale, "teamJoinApplication", "title")}</h2>
-            <p>${getEmailField(locale, "teamJoinApplication", "greeting", vars)}</p>
-            <p>${getEmailField(locale, "teamJoinApplication", "body", vars)}</p>
-            <p>${getEmailField(locale, "teamJoinApplication", "prompt")}</p>
-            <a href="${data.teamUrl}" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;margin:16px 0;">${getEmailField(locale, "teamJoinApplication", "viewApplicationBtn")}</a>
-            <p style="color:#6b7280;font-size:14px;">${getEmailField(locale, "teamJoinApplication", "signature")}</p>
-          </div>
-        `,
-      }),
-      10000,
-      "Send team join application email timeout"
-    );
-
-    return { success: true };
-  } catch (error) {
-    logger.error("email_team_join_application_send_failed", error);
-    return { success: false, error: (error as Error).message };
-  }
-}
-
-/**
- * 发送用户反馈邮件（功能建议 / Bug 反馈）
  */
 export async function sendFeedbackEmail(
   data: {
@@ -291,8 +248,17 @@ export async function sendFeedbackEmail(
     const fromEmail = env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>";
     const isBug = data.type === "bug";
 
-    const subject = getEmailField(locale, "feedback", isBug ? "bugSubject" : "suggestionSubject", { name: data.name });
-    const title = getEmailField(locale, "feedback", isBug ? "bugTitle" : "suggestionTitle");
+    const subject = getEmailField(
+      locale,
+      "feedback",
+      isBug ? "bugSubject" : "suggestionSubject",
+      { name: data.name },
+    );
+    const title = getEmailField(
+      locale,
+      "feedback",
+      isBug ? "bugTitle" : "suggestionTitle",
+    );
     const nameLabel = getEmailField(locale, "feedback", "nameLabel");
     const emailLabel = getEmailField(locale, "feedback", "emailLabel");
 
@@ -332,15 +298,16 @@ export async function sendFeedbackEmail(
     htmlContent += `</div>`;
 
     await withTimeout(
-      () => resend.emails.send({
-        from: fromEmail,
-        to: "support@gomate.live",
-        replyTo: data.email,
-        subject,
-        html: htmlContent,
-      }),
+      () =>
+        resend.emails.send({
+          from: fromEmail,
+          to: "support@gomate.live",
+          replyTo: data.email,
+          subject,
+          html: htmlContent,
+        }),
       10000,
-      "Send feedback email timeout"
+      "Send feedback email timeout",
     );
 
     return { success: true };

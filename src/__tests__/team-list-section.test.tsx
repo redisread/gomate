@@ -26,7 +26,9 @@ vi.mock("@/hooks/useI18n", () => ({
 
 // TeamCard 依赖多个 shared 组件（时间/头像），本测试只关心 TeamListSection 的 CTA 逻辑
 vi.mock("../components/features/location-detail/team-card", () => ({
-  TeamCard: ({ team }: { team: Team }) => <div data-testid="team-card">{team.title}</div>,
+  TeamCard: ({ team }: { team: Team }) => (
+    <div data-testid="team-card">{team.title}</div>
+  ),
 }));
 
 function makeTeam(overrides: Partial<Team> = {}): Team {
@@ -47,7 +49,7 @@ function makeTeam(overrides: Partial<Team> = {}): Team {
     cancelledAt: null,
     lifecycle: "pending",
     isFull: false,
-    checklist: null,
+    meetingPoint: null,
     createdAt: "2026-08-01T00:00:00.000Z",
     updatedAt: "2026-08-01T00:00:00.000Z",
     ...overrides,

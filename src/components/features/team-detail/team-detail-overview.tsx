@@ -7,14 +7,11 @@ import {
   Calendar,
   Clock,
   Crown,
-  Loader2,
   MapPin,
-  MessageCircle,
   Mountain,
   Timer,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { createConversation } from "@/hooks/useMessages";
 import { TeamLeaderMini } from "@/components/features/teams/shared";
 import type { Location, Team } from "@/lib/types";
 import { formatTeamStart, getTeamDurationMinutes } from "@/lib/team-display";
@@ -25,7 +22,6 @@ interface TeamDepartureBriefProps {
   team: Team;
   location: Location | null;
   statusLabel: string;
-  canMessageLeader: boolean;
   desktopAction?: React.ReactNode;
 }
 
@@ -33,29 +29,11 @@ export function TeamDepartureBrief({
   team,
   location,
   statusLabel,
-  canMessageLeader,
   desktopAction,
 }: TeamDepartureBriefProps) {
   const { t } = useI18n(["teams", "common"]);
   const start = formatTeamStart(team);
   const durationMinutes = getTeamDurationMinutes(team);
-  const [isStartingConversation, setIsStartingConversation] = React.useState(false);
-  const [messageError, setMessageError] = React.useState<string | null>(null);
-
-  const handleMessageLeader = async () => {
-    setIsStartingConversation(true);
-    setMessageError(null);
-    try {
-      const conversation = await createConversation(team.id);
-      window.location.href = `/messages/${conversation.id}`;
-    } catch (error) {
-      console.error("Failed to create conversation:", error);
-      setMessageError(t("teams.messageStartFailed"));
-    } finally {
-      setIsStartingConversation(false);
-    }
-  };
-
   return (
     <section
       data-testid="team-departure-brief"
@@ -114,12 +92,17 @@ export function TeamDepartureBrief({
 
         {team.description && (
           <div className="prose prose-stone mt-5 max-w-none text-pretty text-sm leading-7 text-muted-foreground prose-p:my-0">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{team.description}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {team.description}
+            </ReactMarkdown>
           </div>
         )}
 
         {desktopAction && (
-          <div data-testid="team-desktop-primary-action" className="mt-6 hidden rounded-2xl bg-secondary/60 p-4 lg:block">
+          <div
+            data-testid="team-desktop-primary-action"
+            className="mt-6 hidden rounded-2xl bg-secondary/60 p-4 lg:block"
+          >
             {desktopAction}
           </div>
         )}
@@ -134,30 +117,14 @@ export function TeamDepartureBrief({
                 <Crown className="h-4 w-4" aria-hidden="true" />
               </span>
               <span>
-                <span className="block text-xs text-muted-foreground">{t("teams.creatorLabel")}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {t("teams.creatorLabel")}
+                </span>
                 <TeamLeaderMini leader={team.leader} showLevel size="sm" />
               </span>
             </a>
-
-            {canMessageLeader && (
-              <button
-                type="button"
-                onClick={handleMessageLeader}
-                disabled={isStartingConversation}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary/10 px-4 text-sm font-semibold text-primary transition-[transform,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isStartingConversation ? (
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                )}
-                {t("teams.messageLeader")}
-              </button>
-            )}
           </div>
         )}
-
-        {messageError && <p className="mt-2 text-sm text-red-600">{messageError}</p>}
       </div>
     </section>
   );
@@ -190,7 +157,9 @@ function LocationMedia({ location }: { location: Location | null }) {
             {t("teams.activityLocation")}
           </span>
           <div className="flex items-end justify-between gap-4">
-            <span className="text-2xl font-bold leading-tight sm:text-3xl">{location.name}</span>
+            <span className="text-2xl font-bold leading-tight sm:text-3xl">
+              {location.name}
+            </span>
             <span className="shrink-0 text-xs font-medium text-white/70 sm:text-sm">
               {t("teams.viewLocationDetail")}
             </span>
@@ -207,7 +176,10 @@ function MetaItem({
   icon: Icon,
   label,
 }: {
-  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
+  icon: React.ComponentType<{
+    className?: string;
+    "aria-hidden"?: boolean | "true" | "false";
+  }>;
   label: string;
 }) {
   return (

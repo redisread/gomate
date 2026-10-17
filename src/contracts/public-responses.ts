@@ -2,7 +2,6 @@ import { z } from "@hono/zod-openapi";
 import {
   TeamSchema,
   SessionUserSchema,
-  TeamJoinRequestSchema,
   TimestampSchema,
   UserPublicProfileSchema,
 } from "./index";
@@ -25,15 +24,6 @@ export const TimelineTeamSchema = TeamSchema.omit({
 });
 export const TimelineTeamsResponseSchema = SuccessSchema.extend({
   teams: z.array(TimelineTeamSchema),
-  nextCursor: z.string().nullable(),
-});
-export const TimelineRequestsResponseSchema = SuccessSchema.extend({
-  requests: z.array(
-    TeamJoinRequestSchema.extend({
-      team: z.object({ id: z.string(), title: z.string() }),
-      teamTitle: z.string().optional(),
-    }),
-  ),
   nextCursor: z.string().nullable(),
 });
 export const PublicUserResponseSchema = SuccessSchema.extend({
