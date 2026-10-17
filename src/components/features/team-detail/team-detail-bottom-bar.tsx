@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { useTeamDetail } from "./use-team-detail";
@@ -12,26 +13,52 @@ export function TeamModalsAndFooter({
 }: {
   ctx: ReturnType<typeof useTeamDetail>;
 }) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const hasMobileAction = !ctx.isLeader && !ctx.isMember;
+  useEffect(() => {
+    const bar = barRef.current;
+    const main = bar?.closest("main");
+    if (!bar || !main) return;
+    const root = document.documentElement;
+    const previousScrollPadding = root.style.scrollPaddingBottom;
+    const update = () => {
+      const height = bar.getBoundingClientRect().height;
+      main.style.setProperty("--team-action-height", `${height}px`);
+      root.style.scrollPaddingBottom =
+        height > 0 ? `${height + 16}px` : previousScrollPadding;
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(bar);
+    return () => {
+      observer.disconnect();
+      main.style.removeProperty("--team-action-height");
+      root.style.scrollPaddingBottom = previousScrollPadding;
+    };
+  }, [hasMobileAction]);
   if (!ctx.team) return null;
   return (
     <>
       <ConfirmDialogs ctx={ctx} />
       <ToastDisplay toast={ctx.toast} exiting={ctx.exiting} />
-      {!ctx.isLeader && !ctx.isMember && (
+      {hasMobileAction && (
         <div
+          ref={barRef}
           data-testid="team-mobile-action-bar"
-          className="fixed bottom-0 inset-x-0 z-40 border-t bg-background p-4 lg:hidden"
+          className="fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md lg:hidden"
         >
-          <TeamDecisionPrimaryAction
-            team={ctx.team}
-            userId={ctx.userId}
-            canJoin={ctx.canJoin}
-            joining={ctx.joining}
-            isFull={ctx.isFull}
-            isLeader={ctx.isLeader}
-            isMember={ctx.isMember}
-            onJoin={ctx.handleJoin}
-          />
+          <div className="mx-auto max-w-lg">
+            <TeamDecisionPrimaryAction
+              team={ctx.team}
+              userId={ctx.userId}
+              canJoin={ctx.canJoin}
+              joining={ctx.joining}
+              isFull={ctx.isFull}
+              isLeader={ctx.isLeader}
+              isMember={ctx.isMember}
+              onJoin={ctx.handleJoin}
+            />
+          </div>
         </div>
       )}
     </>

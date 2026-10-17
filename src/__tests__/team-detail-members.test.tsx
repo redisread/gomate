@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MemberAvatarGrid } from "../components/features/team-detail/team-detail-members";
 import type { TeamMember } from "../lib/types";
@@ -52,6 +52,25 @@ const members: TeamMember[] = [
 ];
 
 describe("MemberAvatarGrid", () => {
+  it("shows names without contact information and expands with an accessible control", () => {
+    const many = Array.from({ length: 10 }, (_, i) => ({
+      ...members[0],
+      userId: `member-${i}`,
+      user: { ...members[0].user!, name: `Partner ${i}` },
+    }));
+    render(<MemberAvatarGrid members={many} />);
+    expect(screen.getByRole("link", { name: "Partner 0" })).toBeVisible();
+    expect(screen.queryByText("Partner 9")).not.toBeInTheDocument();
+    const expand = screen.getByRole("button", { name: /View all/ });
+    expect(expand).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(expand);
+    expect(screen.getByText("Partner 9")).toBeVisible();
+    const collapse = screen.getByRole("button", { name: "Collapse" });
+    expect(collapse).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(collapse);
+    expect(screen.queryByText("Partner 9")).not.toBeInTheDocument();
+  });
+
   it("shows remove action only for active participants when viewed by the leader", () => {
     render(
       <MemberAvatarGrid members={members} teamId="team-1" canRemoveMembers />,
