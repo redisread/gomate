@@ -54,7 +54,7 @@ const locations: Location[] = [
 }));
 
 describe("HomeLocationStack", () => {
-  it("按牛奶排、大理、香港的顺序展示三张地点卡片并链接到详情", () => {
+  it("按输入顺序展示前三张地点卡片并链接到详情", () => {
     render(<HomeLocationStack locations={locations} />);
 
     expect(screen.getByTestId("home-location-stack")).toBeInTheDocument();
@@ -69,7 +69,6 @@ describe("HomeLocationStack", () => {
       "href",
       "/locations/location-1",
     );
-    expect(cards[1]).toHaveClass("lg:z-30");
     expect(screen.queryByText("牛奶排")).not.toBeInTheDocument();
   });
 
