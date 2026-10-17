@@ -16,6 +16,7 @@ import {
 } from "drizzle-orm";
 import type { Context, MiddlewareHandler } from "hono";
 import {
+  cookieSecurity,
   createApiApp,
   createRoute,
   errorResponses,
@@ -848,7 +849,7 @@ stories.openapi(
     tags: ["stories"],
     summary: "Publish a story or team recap",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [storySession, legacyJsonBody("输入验证失败")],
     request: {
       body: {
@@ -1067,7 +1068,7 @@ stories.openapi(
     tags: ["stories"],
     summary: "Update a story",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [
       storySession,
       storyPathBeforeBody,
@@ -1223,7 +1224,7 @@ stories.openapi(
     tags: ["stories"],
     summary: "Hide a story",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [storySession],
     request: { params: storyIdParams },
     responses: {
@@ -1284,7 +1285,7 @@ stories.openapi(
     tags: ["stories"],
     summary: "Toggle a story like",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [storySession],
     request: { params: storyIdParams },
     responses: {

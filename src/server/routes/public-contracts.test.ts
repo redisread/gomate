@@ -83,6 +83,10 @@ it("documents every ordinary module without accessing a database", () => {
     ),
   ).toHaveLength(28);
   expect(document.paths?.["/stories/{id}"]?.put?.requestBody).toBeDefined();
+  expect(document.paths?.["/stories/{id}"]?.put?.security).toEqual([
+    { cookieAuth: [] },
+    { secureCookieAuth: [] },
+  ]);
 });
 
 it("keeps concrete success response fields and status codes checked by TypeScript", () => {

@@ -7,6 +7,7 @@ import {
 import { and, desc, eq, isNull, lt, or } from "drizzle-orm";
 import type { Context, MiddlewareHandler } from "hono";
 import {
+  cookieSecurity,
   createApiApp,
   createRoute,
   errorResponses,
@@ -120,7 +121,7 @@ favorites.openapi(
     tags: ["favorites"],
     summary: "List favorite locations",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [favoriteSession],
     request: { query: listQuery },
     responses: {
@@ -220,7 +221,7 @@ favorites.openapi(
     tags: ["favorites"],
     summary: "Favorite a location",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [favoriteSession, legacyJsonBody("输入验证失败")],
     request: {
       body: {
@@ -310,7 +311,7 @@ favorites.openapi(
     tags: ["favorites"],
     summary: "Remove location favorite",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [favoriteSession],
     request: { query: locationDeleteQuery },
     responses: {
@@ -362,7 +363,7 @@ favorites.openapi(
     tags: ["favorites"],
     summary: "List favorite stories",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [favoriteSession],
     request: { query: listQuery },
     responses: {
@@ -469,7 +470,7 @@ favorites.openapi(
     tags: ["favorites"],
     summary: "Favorite a story",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [favoriteSession, legacyJsonBody("输入验证失败")],
     request: {
       body: {
@@ -573,7 +574,7 @@ favorites.openapi(
     tags: ["favorites"],
     summary: "Remove story favorite",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [favoriteSession],
     request: { query: storyDeleteQuery },
     responses: {

@@ -3,6 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "../lib/auth";
 
 const mocks = vi.hoisted(() => ({
+  AdminAccessError: class extends Error {
+    constructor(readonly kind: "unauthenticated" | "forbidden") {
+      super(kind);
+    }
+  },
   createDb: vi.fn(),
   requireAdmin: vi.fn(),
 }));
@@ -10,11 +15,12 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../db", () => ({ createDb: mocks.createDb }));
 vi.mock("../lib/admin-access", () => ({
   requireAdmin: mocks.requireAdmin,
+  AdminAccessError: mocks.AdminAccessError,
   resolveAdminAccess: async () => {
     try {
       return { kind: "authorized", admin: await mocks.requireAdmin() };
     } catch (error) {
-      if (error === "forbidden") return { kind: "forbidden" };
+      if (error instanceof mocks.AdminAccessError) return { kind: "forbidden" };
       throw error;
     }
   },
@@ -42,7 +48,9 @@ describe("tag catalog management", () => {
   ] as const)(
     "requires an administrator for %s %s",
     async (method, path, body) => {
-      mocks.requireAdmin.mockRejectedValue("forbidden");
+      mocks.requireAdmin.mockRejectedValue(
+        new mocks.AdminAccessError("forbidden"),
+      );
 
       const response = await tagsRoute.request(
         path,

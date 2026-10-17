@@ -32,6 +32,7 @@ import {
 } from "../../lib/content-cursor";
 import { logger } from "../../lib/logger";
 import {
+  cookieSecurity,
   createApiApp,
   createRoute,
   errorResponses,
@@ -363,7 +364,7 @@ usersRoute.openapi(
     tags: ["users"],
     summary: "Read current account",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [privateAccountHeaders, sessionMiddleware()],
     request: {},
     responses: {
@@ -392,7 +393,7 @@ usersRoute.openapi(
     tags: ["users"],
     summary: "Update account profile",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware(), legacyJsonBody("Invalid profile")],
     request: {
       body: {
@@ -495,7 +496,7 @@ usersRoute.openapi(
     tags: ["users"],
     summary: "List teams I created",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware()],
     request: { query: timelineQuerySchema },
     responses: {
@@ -540,7 +541,7 @@ usersRoute.openapi(
     tags: ["users"],
     summary: "List teams I joined",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware()],
     request: { query: timelineQuerySchema },
     responses: {
@@ -585,7 +586,7 @@ usersRoute.openapi(
     tags: ["users"],
     summary: "List my join requests",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware()],
     request: { query: timelineQuerySchema },
     responses: {
@@ -636,7 +637,7 @@ usersRoute.openapi(
     tags: ["users"],
     summary: "List requests awaiting my decision",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware()],
     request: { query: timelineQuerySchema },
     responses: {
@@ -700,7 +701,7 @@ usersRoute.openapi(
     tags: ["users"],
     summary: "Delete current account",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [
       sessionMiddleware("请先登录"),
       legacyJsonBody("请输入 DELETE 确认删除账户"),

@@ -1,6 +1,4 @@
-import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
 
 import { utcDateTimeSchema } from "@/contracts/input-formats";
 import { updateTeamSchema } from "../routes/teams/mutations";
@@ -9,20 +7,41 @@ import {
   updateLocationInputSchema,
 } from "../routes/locations/utils";
 import { APIErrors } from "./api-errors";
-import { apiValidator, validateRequest } from "./validation";
+import {
+  createApiApp,
+  createRoute,
+  z,
+  jsonResponse,
+  errorResponses,
+  legacyJsonBody,
+  validationHook,
+} from "./openapi";
 
-describe("apiValidator", () => {
+describe("contract validation", () => {
   it("returns the existing validation error envelope with issue details", async () => {
-    const app = new Hono();
-    app.post(
-      "/",
-      apiValidator(
-        "json",
-        z.object({ name: z.string().min(1) }),
-        "Invalid input",
-        "issues",
-      ),
-      (c) => c.json({ success: true }),
+    const app = createApiApp();
+    app.openapi(
+      createRoute({
+        method: "post",
+        path: "/",
+        middleware: [legacyJsonBody("Invalid input")],
+        request: {
+          body: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: z.object({ name: z.string().min(1) }),
+              },
+            },
+          },
+        },
+        responses: {
+          200: jsonResponse(z.object({ success: z.literal(true) }), "Success"),
+          ...errorResponses(400),
+        },
+      }),
+      (c) => c.json({ success: true as const }, 200),
+      validationHook("Invalid input", "issues"),
     );
 
     const response = await app.request("/", {
@@ -43,16 +62,19 @@ describe("apiValidator", () => {
   });
 
   it("preserves the existing flattened validation detail shape", async () => {
-    const app = new Hono();
-    app.get(
-      "/",
-      apiValidator(
-        "query",
-        z.object({ page: z.string().regex(/^\\d+$/) }),
-        "Invalid query",
-        "flatten",
-      ),
-      (c) => c.json({ success: true }),
+    const app = createApiApp();
+    app.openapi(
+      createRoute({
+        method: "get",
+        path: "/",
+        request: { query: z.object({ page: z.string().regex(/^\\d+$/) }) },
+        responses: {
+          200: jsonResponse(z.object({ success: z.literal(true) }), "Success"),
+          ...errorResponses(400),
+        },
+      }),
+      (c) => c.json({ success: true as const }, 200),
+      validationHook("Invalid query", "flatten"),
     );
 
     const response = await app.request("/?page=nope");
@@ -71,18 +93,34 @@ describe("apiValidator", () => {
   });
 
   it("keeps parsing JSON bodies when clients omit content-type", async () => {
-    const app = new Hono();
-    app.post("/", async (c) => {
-      const result = await validateRequest(
-        c,
-        "json",
-        z.object({ name: z.string() }),
-        "Invalid input",
-        "issues",
-      );
-      if (result instanceof Response) return result;
-      return c.json({ success: true, name: result.name });
-    });
+    const app = createApiApp();
+    app.openapi(
+      createRoute({
+        method: "post",
+        path: "/",
+        middleware: [legacyJsonBody("Invalid input")],
+        request: {
+          body: {
+            required: true,
+            content: {
+              "application/json": { schema: z.object({ name: z.string() }) },
+            },
+          },
+        },
+        responses: {
+          200: jsonResponse(
+            z.object({ success: z.literal(true), name: z.string() }),
+            "Success",
+          ),
+          ...errorResponses(400),
+        },
+      }),
+      async (c) => {
+        const result = c.req.valid("json");
+        return c.json({ success: true as const, name: result.name }, 200);
+      },
+      validationHook("Invalid input", "issues"),
+    );
 
     const response = await app.request("/", {
       method: "POST",
@@ -91,7 +129,7 @@ describe("apiValidator", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      success: true,
+      success: true as const,
       name: "Victor",
     });
   });
@@ -114,11 +152,29 @@ describe("validation HTTP compatibility", () => {
     { name: "", count: 1.5, status: "bad", email: "bad", code: "b", extra: 1 },
     { name: null, count: 0, status: 7, email: 1, code: false },
   ])("preserves issue fields and messages for %j", async (body) => {
-    const app = new Hono();
-    app.post("/", async (c) => {
-      const input = await validateRequest(c, "json", schema, "Invalid input");
-      return input instanceof Response ? input : c.json(input);
-    });
+    const app = createApiApp();
+    app.openapi(
+      createRoute({
+        method: "post",
+        path: "/",
+        middleware: [legacyJsonBody("Invalid input")],
+        request: {
+          body: {
+            required: true,
+            content: { "application/json": { schema: schema } },
+          },
+        },
+        responses: {
+          200: jsonResponse(schema, "Success"),
+          ...errorResponses(400),
+        },
+      }),
+      async (c) => {
+        const input = c.req.valid("json");
+        return c.json(input, 200);
+      },
+      validationHook("Invalid input", "issues"),
+    );
     const response = await app.request("/", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -130,16 +186,31 @@ describe("validation HTTP compatibility", () => {
 });
 
 it("does not reset omitted location fields in a partial HTTP update", async () => {
-  const app = new Hono();
-  app.put("/", async (c) => {
-    const value = await validateRequest(
-      c,
-      "json",
-      updateLocationInputSchema,
-      "Invalid input",
-    );
-    return value instanceof Response ? value : c.json(value);
-  });
+  const app = createApiApp();
+  app.openapi(
+    createRoute({
+      method: "put",
+      path: "/",
+      middleware: [legacyJsonBody("Invalid input")],
+      request: {
+        body: {
+          required: true,
+          content: {
+            "application/json": { schema: updateLocationInputSchema },
+          },
+        },
+      },
+      responses: {
+        200: jsonResponse(updateLocationInputSchema, "Success"),
+        ...errorResponses(400),
+      },
+    }),
+    async (c) => {
+      const value = c.req.valid("json");
+      return c.json(value, 200);
+    },
+    validationHook("Invalid input", "issues"),
+  );
   const response = await app.request("/", {
     method: "PUT",
     body: JSON.stringify({ id: "loc-1", name: " New name " }),
@@ -149,16 +220,29 @@ it("does not reset omitted location fields in a partial HTTP update", async () =
 });
 
 it("accepts the existing compact timezone offset on team updates", async () => {
-  const app = new Hono();
-  app.put("/", async (c) => {
-    const value = await validateRequest(
-      c,
-      "json",
-      updateTeamSchema,
-      "Invalid input",
-    );
-    return value instanceof Response ? value : c.json(value);
-  });
+  const app = createApiApp();
+  app.openapi(
+    createRoute({
+      method: "put",
+      path: "/",
+      middleware: [legacyJsonBody("Invalid input")],
+      request: {
+        body: {
+          required: true,
+          content: { "application/json": { schema: updateTeamSchema } },
+        },
+      },
+      responses: {
+        200: jsonResponse(updateTeamSchema, "Success"),
+        ...errorResponses(400),
+      },
+    }),
+    async (c) => {
+      const value = c.req.valid("json");
+      return c.json(value, 200);
+    },
+    validationHook("Invalid input", "issues"),
+  );
   const body = { startAt: "2030-01-01T10:00:00+0800" };
   const response = await app.request("/", {
     method: "PUT",
@@ -169,17 +253,35 @@ it("accepts the existing compact timezone offset on team updates", async () => {
 });
 
 it("preserves nested union, literal and authored error details", async () => {
-  const app = new Hono();
+  const app = createApiApp();
   const schema = z.object({
     nested: z.object({ value: z.union([z.string(), z.null()]) }),
     confirmation: z.literal("DELETE"),
     values: z.array(z.string()).max(1),
     title: z.string().min(2, "标题太短"),
   });
-  app.post("/", async (c) => {
-    const value = await validateRequest(c, "json", schema, "Invalid input");
-    return value instanceof Response ? value : c.json(value);
-  });
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/",
+      middleware: [legacyJsonBody("Invalid input")],
+      request: {
+        body: {
+          required: true,
+          content: { "application/json": { schema: schema } },
+        },
+      },
+      responses: {
+        200: jsonResponse(schema, "Success"),
+        ...errorResponses(400),
+      },
+    }),
+    async (c) => {
+      const value = c.req.valid("json");
+      return c.json(value, 200);
+    },
+    validationHook("Invalid input", "issues"),
+  );
   const response = await app.request("/", {
     method: "POST",
     body: JSON.stringify({
@@ -194,16 +296,31 @@ it("preserves nested union, literal and authored error details", async () => {
 });
 
 it("preserves image URL text while accepting existing creation defaults", async () => {
-  const app = new Hono();
-  app.post("/", async (c) => {
-    const value = await validateRequest(
-      c,
-      "json",
-      createLocationInputSchema,
-      "Invalid input",
-    );
-    return value instanceof Response ? value : c.json(value);
-  });
+  const app = createApiApp();
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/",
+      middleware: [legacyJsonBody("Invalid input")],
+      request: {
+        body: {
+          required: true,
+          content: {
+            "application/json": { schema: createLocationInputSchema },
+          },
+        },
+      },
+      responses: {
+        200: jsonResponse(createLocationInputSchema, "Success"),
+        ...errorResponses(400),
+      },
+    }),
+    async (c) => {
+      const value = c.req.valid("json");
+      return c.json(value, 200);
+    },
+    validationHook("Invalid input", "issues"),
+  );
   const response = await app.request("/", {
     method: "POST",
     body: JSON.stringify({
@@ -231,16 +348,38 @@ it("preserves image URL text while accepting existing creation defaults", async 
 it.each(["2030-01-01T10:00Z", "2030-01-01T10:00:00.123Z"])(
   "retains accepted UTC timestamp precision: %s",
   async (birthday) => {
-    const app = new Hono();
-    app.post("/", async (c) => {
-      const value = await validateRequest(
-        c,
-        "json",
-        z.object({ birthday: utcDateTimeSchema.nullable().optional() }),
-        "Invalid input",
-      );
-      return value instanceof Response ? value : c.json(value);
-    });
+    const app = createApiApp();
+    app.openapi(
+      createRoute({
+        method: "post",
+        path: "/",
+        middleware: [legacyJsonBody("Invalid input")],
+        request: {
+          body: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: z.object({
+                  birthday: utcDateTimeSchema.nullable().optional(),
+                }),
+              },
+            },
+          },
+        },
+        responses: {
+          200: jsonResponse(
+            z.object({ birthday: utcDateTimeSchema.nullable().optional() }),
+            "Success",
+          ),
+          ...errorResponses(400),
+        },
+      }),
+      async (c) => {
+        const value = c.req.valid("json");
+        return c.json(value, 200);
+      },
+      validationHook("Invalid input", "issues"),
+    );
     const response = await app.request("/", {
       method: "POST",
       body: JSON.stringify({ birthday }),
@@ -251,7 +390,7 @@ it.each(["2030-01-01T10:00Z", "2030-01-01T10:00:00.123Z"])(
 );
 
 it("keeps query defaults, coercion and stripped unknown keys at the HTTP boundary", async () => {
-  const app = new Hono();
+  const app = createApiApp();
   const schema = z.object({
     limit: z.coerce.number().int().min(1).max(100).default(12),
     enabled: z
@@ -259,8 +398,21 @@ it("keeps query defaults, coercion and stripped unknown keys at the HTTP boundar
       .transform((value) => value === "true")
       .prefault("true"),
   });
-  app.get("/", apiValidator("query", schema, "Invalid query"), (c) =>
-    c.json(c.req.valid("query")),
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/",
+      request: { query: schema },
+      responses: {
+        200: jsonResponse(
+          z.object({ limit: z.number(), enabled: z.boolean() }),
+          "Success",
+        ),
+        ...errorResponses(400),
+      },
+    }),
+    (c) => c.json(c.req.valid("query"), 200),
+    validationHook("Invalid query", "issues"),
   );
   const defaults = await app.request("/?unknown=ignored");
   expect(await defaults.json()).toEqual({ limit: 12, enabled: true });

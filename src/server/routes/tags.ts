@@ -11,6 +11,7 @@ import { logger } from "../lib/logger";
 import {
   adminMiddleware,
   apiErrorSchema,
+  cookieSecurity,
   createApiApp,
   createRoute,
   errorResponses,
@@ -222,7 +223,7 @@ tagsRoute.openapi(
     tags: ["tags"],
     summary: "Create or reuse a tag",
     "x-audience": "admin",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [adminMiddleware(), legacyJsonBody("Invalid tag")],
     request: {
       body: {
@@ -305,7 +306,7 @@ tagsRoute.openapi(
     tags: ["tags"],
     summary: "Rename a tag",
     "x-audience": "admin",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [adminMiddleware(), legacyJsonBody("Invalid tag")],
     request: {
       params: z.object({ id: z.string() }),
@@ -357,7 +358,7 @@ tagsRoute.openapi(
     tags: ["tags"],
     summary: "Delete a tag and optionally detach references",
     "x-audience": "admin",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [adminMiddleware()],
     request: {
       params: z.object({ id: z.string() }),

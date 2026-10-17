@@ -1,15 +1,14 @@
-import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { z } from "zod";
 
 const englishError = z.locales.en().localeError;
 
 /** Preserve the established HTTP details contract without exposing Zod input. */
 export function normalizeValidationIssues(
-  issues: readonly StandardSchemaV1.Issue[],
+  issues: readonly z.core.$ZodIssue[],
   value: unknown,
-): StandardSchemaV1.Issue[] {
+): Array<{ message: string; path: PropertyKey[] }> {
   return issues.map((entry) => {
-    const issue = entry as z.core.$ZodIssue;
+    const issue = entry;
     const path = issue.path ?? [];
     let input = value;
     for (const key of path) {

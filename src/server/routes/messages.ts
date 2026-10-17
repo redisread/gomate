@@ -33,6 +33,7 @@ import {
   encodeMessageCursor,
 } from "../lib/message-cursor";
 import {
+  cookieSecurity,
   createApiApp,
   createRoute,
   errorResponses,
@@ -318,7 +319,7 @@ messagesRoute.openapi(
     tags: ["messages"],
     summary: "List my conversations",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware()],
     request: { query: conversationQuerySchema },
     responses: {
@@ -469,7 +470,7 @@ messagesRoute.openapi(
     tags: ["messages"],
     summary: "Create or reuse a team conversation",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware(), legacyJsonBody("Invalid input")],
     request: {
       body: {
@@ -578,7 +579,7 @@ messagesRoute.openapi(
     tags: ["messages"],
     summary: "Count unread messages",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware()],
     request: {},
     responses: {
@@ -638,7 +639,7 @@ messagesRoute.openapi(
     tags: ["messages"],
     summary: "List conversation messages",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware()],
     request: {
       params: z.object({ conversationId: z.string() }),
@@ -778,7 +779,7 @@ messagesRoute.openapi(
     tags: ["messages"],
     summary: "Send a conversation message",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware(), legacyJsonBody("Invalid input")],
     request: {
       params: z.object({ conversationId: z.string() }),
@@ -861,7 +862,7 @@ messagesRoute.openapi(
     tags: ["messages"],
     summary: "Mark conversation as read",
     "x-audience": "public",
-    security: [{ sessionCookie: [] }],
+    security: cookieSecurity,
     middleware: [sessionMiddleware()],
     request: { params: z.object({ conversationId: z.string() }) },
     responses: {

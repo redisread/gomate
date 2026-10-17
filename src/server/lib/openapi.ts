@@ -28,6 +28,12 @@ export type ApiEnv = {
     session: NonNullable<Awaited<ReturnType<typeof getActiveSession>>>;
   };
 };
+/** HTTP and HTTPS deployments use the existing Better Auth cookie names. */
+export const cookieSecurity: Record<string, string[]>[] = [
+  { cookieAuth: [] },
+  { secureCookieAuth: [] },
+];
+
 export type ValidationDetails = "issues" | "flatten" | "none";
 export type ValidationErrorFactory = (
   message: string,
@@ -89,7 +95,7 @@ export function validationHook(
         const first = issue.path?.[0];
         if (first === undefined) formErrors.push(issue.message);
         else {
-          const key = String(typeof first === "object" ? first.key : first);
+          const key = String(first);
           (fieldErrors[key] ??= []).push(issue.message);
         }
       }
