@@ -8,7 +8,7 @@ import {
   errorResponses,
   z,
 } from "../../lib/openapi";
-import { and, eq, gt, inArray, isNull } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { offsetDateTimeSchema } from "@/contracts/input-formats";
 import { ACTIVITY_TYPES } from "@/contracts";
 import { createDb } from "../../db";
@@ -506,6 +506,81 @@ mutations.openapi(
       }
       logger.error("team_update_failed", error);
       return c.json(APIErrors.internalError("更新队伍失败"), 500);
+    }
+  },
+  validationHook("输入无效", "flatten"),
+);
+
+mutations.openapi(
+  createRoute({
+    method: "put",
+    path: "/{id}/recruitment",
+    operationId: "teamsSetRecruitment",
+    tags: ["队伍"],
+    summary: "设置队伍招募状态",
+    description:
+      "仅有效队长可在活动开始前开关招募，队伍须未取消。已成团的队伍可继续招募，保留原成团时间；重复设置同一状态成功，不修改其他队伍信息。",
+    "x-audience": "public",
+    security: teamCookieSecurity,
+    middleware: [
+      teamSessionMiddleware((error) => {
+        logger.error("team_recruitment_failed", error);
+        return APIErrors.internalError("更新招募状态失败");
+      }),
+      legacyJsonBody("输入无效"),
+    ] as const,
+    request: {
+      params: z.object({ id: z.string() }),
+      body: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: z
+              .object({ recruitmentStatus: z.enum(["open", "closed"]) })
+              .strict(),
+          },
+        },
+      },
+    },
+    responses: {
+      200: jsonResponse(TeamResponseSchema, "更新后的队伍详情。"),
+      ...errorResponses(400, 401, 403, 404, 409, 500),
+    },
+  }),
+  async (c) => {
+    try {
+      const session = c.get("session");
+      const teamId = c.req.valid("param").id;
+      const { recruitmentStatus } = c.req.valid("json");
+      const db = createDb(c.env.DB);
+      const existing = await db.query.teams.findFirst({
+        where: eq(schema.teams.id, teamId),
+      });
+      if (!existing) return c.json(APIErrors.notFound("队伍不存在"), 404);
+      if (existing.leaderId !== session.user.id)
+        return c.json(APIErrors.forbidden("只有队长可以修改招募状态"), 403);
+      const now = new Date();
+      const updated = await db
+        .update(schema.teams)
+        .set({ recruitmentStatus, updatedAt: now })
+        .where(
+          and(
+            eq(schema.teams.id, teamId),
+            eq(schema.teams.leaderId, session.user.id),
+            isNull(schema.teams.cancelledAt),
+            gt(schema.teams.startAt, now),
+            sql`EXISTS (SELECT 1 FROM users WHERE id = ${session.user.id} AND status = 'active' AND deleted_at IS NULL)`,
+          ),
+        )
+        .returning({ id: schema.teams.id });
+      if (updated.length !== 1)
+        return c.json(APIErrors.conflict("队伍已出发、已取消或身份失效"), 409);
+      const team = await readTeamResponse(db, teamId, true);
+      if (!team) throw new Error("Recruitment team unavailable");
+      return c.json({ success: true as const, team }, 200);
+    } catch (error) {
+      logger.error("team_recruitment_failed", error);
+      return c.json(APIErrors.internalError("更新招募状态失败"), 500);
     }
   },
   validationHook("输入无效", "flatten"),

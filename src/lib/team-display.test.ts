@@ -78,3 +78,12 @@ describe("team-display", () => {
     ).toBe(false);
   });
 });
+
+it("allows formed teams to recruit before departure while preserving their display status", () => {
+  const team = { ...BASE_TEAM, lifecycle: "formed" as const };
+  expect(getTeamDisplayStatus(team)).toBe("formed");
+  expect(isTeamJoinable(team)).toBe(true);
+  expect(isTeamJoinable({ ...team, isFull: true })).toBe(false);
+  expect(isTeamJoinable({ ...team, recruitmentStatus: "closed" })).toBe(false);
+  expect(isTeamJoinable({ ...team, lifecycle: "in_progress" })).toBe(false);
+});

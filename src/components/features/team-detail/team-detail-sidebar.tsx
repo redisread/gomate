@@ -64,6 +64,15 @@ function TeamCapacity({
         showLabel={true}
         size="md"
       />
+      {(team.lifecycle === "pending" || team.lifecycle === "formed") && (
+        <p className="text-sm text-center text-muted-foreground">
+          {t(
+            team.recruitmentStatus === "open"
+              ? "teams.recruitmentOpen"
+              : "teams.recruitmentClosed",
+          )}
+        </p>
+      )}
       {canJoin && remaining > 0 && (
         <p className="mt-2 text-center text-xs font-medium text-amber-800">
           {remaining === 1
@@ -160,6 +169,20 @@ function LeaderActions({
   const { t } = useI18n(["teams"]);
   return (
     <div className="bg-amber-50 rounded-xl p-3 space-y-1.5">
+      {(team.lifecycle === "pending" || team.lifecycle === "formed") && (
+        <button
+          type="button"
+          onClick={ctx.handleRecruitment}
+          disabled={ctx.updatingRecruitment}
+          className="w-full min-h-11 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        >
+          {t(
+            team.recruitmentStatus === "open"
+              ? "teams.closeRecruitment"
+              : "teams.openRecruitment",
+          )}
+        </button>
+      )}
       {team.lifecycle === "pending" && (
         <a
           href={`/teams/${team.id}/edit`}

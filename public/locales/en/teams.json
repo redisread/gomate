@@ -364,5 +364,11 @@
   "linkCopied": "Link copied",
   "close": "Close",
   "meetingPoint": "Meeting information",
-  "removeMemberAria": "Remove {name}"
+  "removeMemberAria": "Remove {name}",
+  "openRecruitment": "Open recruitment",
+  "closeRecruitment": "Close recruitment",
+  "recruitmentOpen": "Recruiting",
+  "recruitmentClosed": "Recruitment closed",
+  "recruitmentUpdated": "Recruitment updated",
+  "recruitmentFailed": "Unable to update recruitment. Please retry."
 }

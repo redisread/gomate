@@ -37,6 +37,7 @@ export function useTeamDetail(teamId: string) {
   const [joining, setJoining] = React.useState(false);
   const [showLeave, setShowLeave] = React.useState(false);
   const [showFormConfirm, setShowFormConfirm] = React.useState(false);
+  const [updatingRecruitment, setUpdatingRecruitment] = React.useState(false);
   const [isForming, setIsForming] = React.useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -190,6 +191,35 @@ export function useTeamDetail(teamId: string) {
     }
   }, [teamId, showToast, t]);
 
+  const handleRecruitment = React.useCallback(async () => {
+    if (!team || updatingRecruitment) return;
+    setUpdatingRecruitment(true);
+    try {
+      const response = await fetchAPI(`/teams/${teamId}/recruitment`, {
+        method: "PUT",
+        body: JSON.stringify({
+          recruitmentStatus:
+            team.recruitmentStatus === "open" ? "closed" : "open",
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        showToast({
+          type: "error",
+          message: getApiErrorMessage(data, t("teams.recruitmentFailed")),
+        });
+      } else {
+        setTeam(data.team as Team);
+        showToast({ type: "success", message: t("teams.recruitmentUpdated") });
+      }
+    } catch {
+      showToast({ type: "error", message: t("teams.recruitmentFailed") });
+      await loadTeam();
+    } finally {
+      setUpdatingRecruitment(false);
+    }
+  }, [team, teamId, updatingRecruitment, showToast, t, loadTeam]);
+
   const handleDelete = React.useCallback(async () => {
     setIsDeleting(true);
     try {
@@ -256,6 +286,8 @@ export function useTeamDetail(teamId: string) {
     handleJoin,
     handleLeave,
     handleFormTeam,
+    handleRecruitment,
+    updatingRecruitment,
     handleDelete,
     loadTeam,
     retryStatus: () => loadMembershipStatus(userId),

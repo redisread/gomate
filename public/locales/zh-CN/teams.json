@@ -364,5 +364,11 @@
   "linkCopied": "链接已复制",
   "close": "关闭",
   "meetingPoint": "集合信息",
-  "removeMemberAria": "移除 {name}"
+  "removeMemberAria": "移除 {name}",
+  "openRecruitment": "开放招募",
+  "closeRecruitment": "关闭招募",
+  "recruitmentOpen": "招募中",
+  "recruitmentClosed": "招募已关闭",
+  "recruitmentUpdated": "招募状态已更新",
+  "recruitmentFailed": "更新招募状态失败，请重试"
 }

@@ -88,6 +88,61 @@ test.describe("Team Flow", () => {
       "content",
       new URL(team.location.coverImageUrl, page.url()).href,
     );
+    await page
+      .getByRole("button", { name: /不满人数组建|Form.*underfilled/iu })
+      .click();
+    await page
+      .getByRole("button", { name: /确认组建|Confirm/iu, exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "开放招募", exact: true }),
+    ).toBeVisible();
+    const formed = (
+      await (await page.request.get("/api/teams/" + teamId)).json()
+    ).team;
+    expect(formed.lifecycle).toBe("formed");
+    await page.getByRole("button", { name: "开放招募", exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("button", { name: "关闭招募", exact: true }),
+    ).toBeVisible();
+    const reopened = (
+      await (await page.request.get("/api/teams/" + teamId)).json()
+    ).team;
+    expect(reopened).toMatchObject({
+      lifecycle: "formed",
+      formedAt: formed.formedAt,
+      recruitmentStatus: "open",
+    });
+    await page.getByRole("button", { name: "关闭招募", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "开放招募", exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "开放招募", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "关闭招募", exact: true }),
+    ).toBeVisible();
+    await page.context().clearCookies();
+    await page.reload();
+    await expect(
+      page.getByRole("link", { name: "去登录", exact: true }),
+    ).toBeVisible();
+    const member = await signUpUser(
+      `formed-member-${RUN_ID}@e2e.gomate.test`,
+      PASSWORD,
+      "New member",
+    );
+    await loginAs(page, member.email, member.password);
+    await page.goto(`/teams/${teamId}`);
+    await page.getByTestId("team-join-button").click();
+    await expect(page.getByTestId("team-member-status")).toBeVisible();
+    expect(
+      (await (await page.request.get("/api/teams/" + teamId)).json()).team,
+    ).toMatchObject({
+      lifecycle: "formed",
+      formedAt: formed.formedAt,
+      activeParticipantCount: 2,
+    });
     expect(browserErrors).toEqual([]);
   });
 });

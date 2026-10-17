@@ -15,7 +15,9 @@ function validDate(value: string): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-export function getTeamDurationMinutes(team: Pick<Team, "startAt" | "endAt">): number {
+export function getTeamDurationMinutes(
+  team: Pick<Team, "startAt" | "endAt">,
+): number {
   const start = validDate(team.startAt)?.getTime();
   const end = validDate(team.endAt)?.getTime();
   if (start === undefined || end === undefined || end < start) return 0;
@@ -70,9 +72,17 @@ export function getTeamDisplayStatus(
 export function isTeamJoinable(
   team: Pick<Team, "lifecycle" | "recruitmentStatus" | "isFull">,
 ): boolean {
-  return team.lifecycle === "pending" && team.recruitmentStatus === "open" && !team.isFull;
+  return (
+    (team.lifecycle === "pending" || team.lifecycle === "formed") &&
+    team.recruitmentStatus === "open" &&
+    !team.isFull
+  );
 }
 
 export function isTeamActive(team: Pick<Team, "lifecycle">): boolean {
-  return team.lifecycle === "pending" || team.lifecycle === "formed" || team.lifecycle === "in_progress";
+  return (
+    team.lifecycle === "pending" ||
+    team.lifecycle === "formed" ||
+    team.lifecycle === "in_progress"
+  );
 }

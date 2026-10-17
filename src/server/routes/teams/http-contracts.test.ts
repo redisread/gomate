@@ -103,11 +103,108 @@ describe("team API wire compatibility", () => {
     vi.restoreAllMocks();
   });
 
+  it("reopens recruitment without undoing formation and permits joining", async () => {
+    signIn("leader");
+    expect((await request("/t/form", "POST")).status).toBe(200);
+    const formedAt = (await (await request("/t")).json()).team.formedAt;
+    for (let i = 0; i < 2; i++) {
+      const response = await request(
+        "/t/recruitment",
+        "PUT",
+        JSON.stringify({ recruitmentStatus: "open" }),
+        "application/json",
+      );
+      expect(response.status).toBe(200);
+      expect((await response.json()).team).toMatchObject({
+        lifecycle: "formed",
+        formedAt,
+        recruitmentStatus: "open",
+      });
+    }
+    signIn("outsider");
+    expect((await request("/t/join", "POST")).status).toBe(201);
+    expect((await request("/t/join", "POST")).status).toBe(200);
+    expect(
+      (
+        await request(
+          "/t/recruitment",
+          "PUT",
+          JSON.stringify({ recruitmentStatus: "closed" }),
+          "application/json",
+        )
+      ).status,
+    ).toBe(403);
+    signIn("leader");
+    expect(
+      (
+        await request(
+          "/t/recruitment",
+          "PUT",
+          JSON.stringify({ recruitmentStatus: "closed" }),
+          "application/json",
+        )
+      ).status,
+    ).toBe(200);
+    expect((await (await request("/t")).json()).team).toMatchObject({
+      formedAt,
+      recruitmentStatus: "closed",
+    });
+  });
+
+  it("rejects invalid or unrelated recruitment updates", async () => {
+    signIn("leader");
+    for (const body of [
+      {},
+      { recruitmentStatus: "invalid" },
+      { recruitmentStatus: "open", title: "overwrite" },
+    ]) {
+      expect(
+        (
+          await request(
+            "/t/recruitment",
+            "PUT",
+            JSON.stringify(body),
+            "application/json",
+          )
+        ).status,
+      ).toBe(400);
+    }
+    expect(
+      (
+        await request(
+          "/missing/recruitment",
+          "PUT",
+          JSON.stringify({ recruitmentStatus: "open" }),
+          "application/json",
+        )
+      ).status,
+    ).toBe(404);
+  });
+
+  it.each(["cancelled_at = 1", "start_at = 1"])(
+    "blocks recruitment changes when %s",
+    async (condition) => {
+      signIn("leader");
+      sqlite.exec(`UPDATE teams SET ${condition} WHERE id = 't'`);
+      expect(
+        (
+          await request(
+            "/t/recruitment",
+            "PUT",
+            JSON.stringify({ recruitmentStatus: "open" }),
+            "application/json",
+          )
+        ).status,
+      ).toBe(409);
+    },
+  );
+
   it("keeps unauthorized malformed writes at 401", async () => {
     for (const [method, path] of [
       ["POST", "/"],
       ["PUT", "/t"],
       ["POST", "/t/join"],
+      ["PUT", "/t/recruitment"],
     ]) {
       const response = await request(path, method, "{", "application/json");
       expect(response.status).toBe(401);
