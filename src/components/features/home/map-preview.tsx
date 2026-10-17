@@ -4,6 +4,7 @@ import { ArrowRight, MapPin, RotateCcw } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 import type { MapPoint } from "./use-map-data";
+import { MapPreviewCover } from "./map-preview-cover";
 
 interface Props {
   point: MapPoint | null;
@@ -36,7 +37,7 @@ export function MapPreview({
       data-testid="map-preview"
       role="region"
       aria-label={t("home.discoveryMap.previewLabel")}
-      className="min-h-36 border-t border-border bg-card p-4 sm:min-h-28 sm:p-5"
+      className="min-h-40 border-t border-border bg-card p-4 sm:min-h-32 sm:p-5"
       aria-busy={loading}
     >
       {failed ? (
@@ -79,35 +80,41 @@ export function MapPreview({
         </div>
       ) : (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
-          <PreviewText
-            animate={animate}
-            selected={Boolean(point)}
-            title={
-              point
-                ? point.name
-                : loading
-                  ? t("common.loading")
-                  : unavailable
-                    ? t("home.discoveryMap.locationUnavailable")
-                    : emptyProvince
-                      ? t("home.mapFocusedEmptyTitle", {
-                          province: emptyProvince,
-                        })
-                      : t("home.discoveryMap.previewHint")
-            }
-            subtitle={
-              point
-                ? `${point.provinceName ? `${point.provinceName} · ` : ""}${getRegionDisplayName(point.region)}`
-                : emptyProvince
-                  ? t("home.mapFocusedEmptyDesc")
-                  : t("home.discoveryMap.previewDescription")
-            }
-          />
+          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+            <MapPreviewCover
+              key={`${point?.id ?? "empty"}:${point?.coverImageUrl ?? ""}`}
+              src={point?.coverImageUrl}
+            />
+            <PreviewText
+              animate={animate}
+              selected={Boolean(point)}
+              title={
+                point
+                  ? point.name
+                  : loading
+                    ? t("common.loading")
+                    : unavailable
+                      ? t("home.discoveryMap.locationUnavailable")
+                      : emptyProvince
+                        ? t("home.mapFocusedEmptyTitle", {
+                            province: emptyProvince,
+                          })
+                        : t("home.discoveryMap.previewHint")
+              }
+              subtitle={
+                point
+                  ? `${point.provinceName ? `${point.provinceName} · ` : ""}${getRegionDisplayName(point.region)}`
+                  : emptyProvince
+                    ? t("home.mapFocusedEmptyDesc")
+                    : t("home.discoveryMap.previewDescription")
+              }
+            />
+          </div>
           {point && (
             <a
               href={`/locations/${encodeURIComponent(point.id)}`}
               onClick={onNavigate}
-              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-transform duration-150 motion-safe:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transform-none sm:self-auto"
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-transform duration-150 motion-safe:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transform-none sm:self-auto"
             >
               {t("home.discoveryMap.viewLocation")}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />

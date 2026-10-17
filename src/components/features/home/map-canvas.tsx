@@ -11,6 +11,8 @@ import {
   type MapTransform,
 } from "@/lib/china-map";
 import type { MapPoint, ProvincePath } from "./use-map-data";
+import { MapProvinceOutline } from "./map-province-outline";
+import "./map-atlas.css";
 
 const layoutEffect =
   typeof window === "undefined" ? React.useEffect : React.useLayoutEffect;
@@ -53,6 +55,7 @@ export function MapCanvas({
   const moving = animate && lastWidth.current === width && !reduced;
   const liveCamera = React.useRef(camera);
   const maxCount = Math.max(1, ...counts.values());
+  const selectedPath = paths.find((path) => path.name === selection.province);
 
   layoutEffect(() => {
     const element = host.current;
@@ -160,7 +163,7 @@ export function MapCanvas({
   };
 
   return (
-    <div className="bg-muted/20">
+    <div className="map-atlas-surface">
       <div
         ref={host}
         className="relative mx-auto w-full max-w-4xl overflow-hidden sm:max-w-[min(56rem,calc(60svh*800/620))]"
@@ -200,18 +203,18 @@ export function MapCanvas({
                   d={path.d}
                   fill={
                     count
-                      ? `color-mix(in oklab, var(--primary) ${30 + (count / maxCount) * 65}%, var(--muted))`
-                      : "var(--muted)"
+                      ? `color-mix(in oklab, var(--primary) ${18 + (count / maxCount) * 38}%, var(--card))`
+                      : "color-mix(in oklab, var(--foreground) 8%, var(--card))"
                   }
-                  stroke="var(--background)"
-                  strokeWidth={selection.province === path.name ? 1.4 : 0.6}
+                  stroke="color-mix(in oklab, var(--foreground) 24%, var(--card))"
+                  strokeWidth={0.8}
                   vectorEffect="non-scaling-stroke"
                   role="button"
                   aria-hidden={!visible}
                   aria-label={path.name}
                   aria-pressed={selection.province === path.name}
                   tabIndex={selection.province ? -1 : 0}
-                  className={`cursor-pointer transition-opacity duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:stroke-foreground focus-visible:[stroke-width:3] ${visible ? "opacity-100 hover:opacity-80" : "pointer-events-none opacity-10"}`}
+                  className={`map-atlas-province cursor-pointer transition-[fill,opacity] duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:stroke-foreground focus-visible:[stroke-width:3] ${visible ? "opacity-100" : "pointer-events-none opacity-10"}`}
                   onClick={() => onProvince(path.name)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -226,6 +229,14 @@ export function MapCanvas({
                 </path>
               );
             })}
+            {selectedPath && (
+              <MapProvinceOutline
+                key={selectedPath.name}
+                d={selectedPath.d}
+                animate={animate}
+                reduced={reduced}
+              />
+            )}
           </g>
         </svg>
         {points.map((point) => {
@@ -242,11 +253,12 @@ export function MapCanvas({
             <div
               key={point.id}
               aria-hidden={!visible}
-              className="absolute left-0 top-0"
+              className="absolute left-0 top-0 transition-none"
               style={{
                 transform: `translate(${(position.x * width) / 800}px,${(position.y * width) / 800}px)`,
                 opacity: visible && width > 0 ? 1 : 0,
                 pointerEvents: visible ? "auto" : "none",
+                zIndex: selected || hovered === point.id ? 2 : 1,
               }}
             >
               <button
@@ -267,22 +279,37 @@ export function MapCanvas({
                 onFocus={() => setHovered(point.id)}
                 onBlur={() => setHovered(null)}
               >
+                {selected && animate && !reduced && (
+                  <motion.span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute h-7 w-7 rounded-full border border-primary"
+                    initial={{ scale: 0.5, opacity: 0.65 }}
+                    animate={{ scale: 2, opacity: 0 }}
+                    transition={{ duration: 0.65, ease: "easeOut" }}
+                  />
+                )}
                 <motion.span
-                  animate={{ scale: !reduced && selected ? 1.15 : 1 }}
+                  initial={false}
+                  animate={{
+                    scale: !reduced && selected ? 1.25 : 1,
+                  }}
                   transition={{ duration: reduced ? 0 : 0.15 }}
                   aria-hidden="true"
-                  className={`h-2.5 w-2.5 rounded-full border-2 border-background bg-primary shadow-warm-sm transition-[box-shadow,background-color] duration-150 motion-reduce:transition-none ${selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
+                  className={`h-3 w-3 rounded-full border-2 border-background bg-primary shadow-warm-sm transition-[box-shadow,background-color] duration-150 motion-reduce:transition-none ${selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
                 />
               </button>
+              {(hovered === point.id || selected) && visible && (
+                <span
+                  aria-hidden="true"
+                  style={{ maxWidth: Math.max(0, width / 2 - 12) }}
+                  className={`pointer-events-none absolute block w-max truncate rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground shadow-warm-sm ${position.x > 400 ? "right-0" : "left-0"} ${(position.y * width) / 800 < 56 ? "top-5" : "bottom-5"}`}
+                >
+                  {point.name}
+                </span>
+              )}
             </div>
           );
         })}
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-x-3 bottom-3 hidden rounded-xl bg-card/95 px-3 py-2 text-xs text-foreground shadow-warm-sm transition-opacity duration-150 motion-reduce:transition-none sm:block ${hovered ? "opacity-100" : "opacity-0"}`}
-        >
-          {points.find((point) => point.id === hovered)?.name || "\u00a0"}
-        </div>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import type { LocationStatsResponse, Region } from "@/contracts";
 
 export type MapPoint = Pick<
   LocationStatsResponse["points"][number],
-  "id" | "name" | "latitude" | "longitude" | "region"
+  "id" | "name" | "latitude" | "longitude" | "region" | "coverImageUrl"
 > & {
   provinceName: string | null;
 };
