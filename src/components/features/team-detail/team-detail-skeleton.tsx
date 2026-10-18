@@ -1,3 +1,4 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
 import { Navbar } from "@/components/layout/navbar";
 
 export function TeamDetailSkeleton() {
@@ -17,12 +18,12 @@ export function TeamDetailSkeleton() {
           aria-hidden="true"
         >
           <div className="order-2 aspect-[16/9] rounded-2xl bg-secondary lg:order-1 lg:aspect-[4/3]" />
-          <div className="order-1 space-y-5 rounded-2xl bg-card p-6 lg:order-2">
+          <SwCard className="block gap-0 py-0 ring-0 order-1 space-y-5 rounded-2xl bg-card p-6 lg:order-2">
             <div className="h-6 w-32 rounded-lg bg-secondary" />
             <div className="h-24 rounded-lg bg-secondary" />
             <div className="h-12 rounded-lg bg-secondary" />
             <div className="h-20 rounded-lg bg-secondary" />
-          </div>
+          </SwCard>
         </div>
       </div>
     </main>

@@ -27,7 +27,7 @@ export async function fetchWithTimeout(
     return response;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Request timeout after ${timeoutMs}ms: ${url}`);
+      throw new Error(`Request timeout after ${timeoutMs}ms: ${url}`, { cause: error });
     }
     throw error;
   } finally {

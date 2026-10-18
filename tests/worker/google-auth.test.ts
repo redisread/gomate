@@ -116,11 +116,12 @@ describe("Google OAuth with real Better Auth and D1", () => {
       role: "user",
     });
     const account = await env.DB.prepare(
-      "SELECT access_token, provider_id FROM accounts WHERE user_id = ?",
+      "SELECT access_token, provider_id, issuer FROM accounts WHERE user_id = ?",
     )
       .bind(user!.id)
-      .first<{ access_token: string; provider_id: string }>();
+      .first<{ access_token: string; provider_id: string; issuer: string }>();
     expect(account?.provider_id).toBe("google");
+    expect(account?.issuer).toBe("https://accounts.google.com");
     expect(account?.access_token).not.toBe("test-access-token");
     const session = await auth().handler(
       new Request(`${origin}/api/auth/get-session`, {

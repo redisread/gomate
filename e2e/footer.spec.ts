@@ -120,7 +120,7 @@ test("contact dialog keeps controls reachable in a short landscape viewport", as
     .getByRole("button", { name: "WeChat", exact: true })
     .click();
   const dialog = page.getByRole("dialog", { name: "WeChat", exact: true });
-  const bounds = await dialog.boundingBox();
+  const bounds = await dialog.locator("[data-gomate-modal-panel]").boundingBox();
   expect(bounds!.y).toBeGreaterThanOrEqual(0);
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(390);
   const download = dialog.locator("a[download]");

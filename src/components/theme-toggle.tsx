@@ -1,5 +1,8 @@
 "use client";
 
+import { Dropdown, DropdownTrigger, DropdownContent, DropdownRadioGroup, DropdownRadioItem } from "@/components/starwind-react/dropdown";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import * as React from "react";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -19,27 +22,14 @@ export function ThemeToggle() {
     return cleanup;
   }, []);
 
-  // 点击外部关闭菜单
-  React.useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("[data-theme-toggle]")) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, [isOpen]);
-
   if (!mounted) {
     return (
-      <button
+      <SwButton variant="plain" size="inherit" type="button"
         className="h-9 w-9 flex items-center justify-center rounded-lg text-stone-600 dark:text-stone-400 hover:bg-accent hover:text-foreground transition-colors duration-150"
         aria-label={t('common.toggleLabel')}
       >
         <Sun className="h-4 w-4" />
-      </button>
+      </SwButton>
     );
   }
 
@@ -61,60 +51,25 @@ export function ThemeToggle() {
   };
 
   return (
-    <div className="relative" data-theme-toggle>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="h-9 w-9 flex items-center justify-center rounded-lg text-stone-600 dark:text-stone-400 hover:bg-accent hover:text-foreground transition-colors duration-150"
-        aria-label={t('common.toggleLabel')}
+    <Dropdown open={isOpen} onOpenChange={setIsOpen} className="relative" data-theme-toggle>
+      <DropdownTrigger type="button"
+        className="min-h-11 min-w-11 flex items-center justify-center rounded-lg text-stone-600 dark:text-stone-400 hover:bg-accent hover:text-foreground transition-colors duration-150"
+        aria-label={t("common.toggleLabel")}
       >
         {getCurrentIcon()}
-      </button>
-
-      {isOpen && (
-        <div
-          className="absolute right-0 top-full mt-1.5 w-36 rounded-xl overflow-hidden z-50 bg-popover border border-border shadow-lg"
-          style={{
-            animation: "fade-up 0.15s cubic-bezier(0.16,1,0.3,1) both",
-          }}
-        >
-          <button
-            onClick={() => handleSelect("light")}
-            className={cn(
-              "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors",
-              theme === "light"
-                ? "text-primary bg-accent"
-                : "text-foreground hover:bg-accent"
-            )}
-          >
-            <Sun className="h-4 w-4" />
-            <span>{t('common.light')}</span>
-          </button>
-          <button
-            onClick={() => handleSelect("dark")}
-            className={cn(
-              "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors",
-              theme === "dark"
-                ? "text-primary bg-accent"
-                : "text-foreground hover:bg-accent"
-            )}
-          >
-            <Moon className="h-4 w-4" />
-            <span>{t('common.dark')}</span>
-          </button>
-          <button
-            onClick={() => handleSelect("system")}
-            className={cn(
-              "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors",
-              theme === "system"
-                ? "text-primary bg-accent"
-                : "text-foreground hover:bg-accent"
-            )}
-          >
-            <Monitor className="h-4 w-4" />
-            <span>{t('common.system')}</span>
-          </button>
-        </div>
-      )}
-    </div>
+      </DropdownTrigger>
+      <DropdownContent disablePortal align="end" className="w-36 rounded-xl bg-popover border border-border shadow-lg">
+        <DropdownRadioGroup value={theme} onValueChange={(value) => handleSelect(value as Theme)}>
+          {([{ value: "light", Icon: Sun }, { value: "dark", Icon: Moon }, { value: "system", Icon: Monitor }] as const).map(({ value, Icon }) => (
+            <DropdownRadioItem key={value} value={value} closeOnClick showIndicator={false}
+              className={cn("min-h-11 w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors", theme === value ? "text-primary bg-accent" : "text-foreground hover:bg-accent")}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{t(`common.${value}`)}</span>
+            </DropdownRadioItem>
+          ))}
+        </DropdownRadioGroup>
+      </DropdownContent>
+    </Dropdown>
   );
 }

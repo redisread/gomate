@@ -1,3 +1,5 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -84,29 +86,29 @@ function ConfirmDialogs({ ctx }: { ctx: ReturnType<typeof useTeamDetail> }) {
       )}
       {ctx.showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-card rounded-2xl max-w-sm w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
+          <SwCard className="block gap-0 py-0 ring-0 bg-card rounded-2xl max-w-sm w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
             <h3 className="text-lg font-bold text-foreground mb-2">
               {t("teams.deleteTeamConfirm")}
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
               {t("teams.deleteTeamWarning")}
             </p>
-            <button
+            <SwButton variant="plain" size="inherit" type="button"
               onClick={ctx.handleDelete}
               disabled={ctx.isDeleting}
               className="w-full py-3 bg-red-600 text-white rounded-xl mb-2 hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {ctx.isDeleting && <Loader2 className="w-4 h-4 animate-spin" />}
               {t("teams.deleteTeam")}
-            </button>
-            <button
+            </SwButton>
+            <SwButton variant="plain" size="inherit" type="button"
               onClick={() => ctx.setShowDeleteConfirm(false)}
               disabled={ctx.isDeleting}
               className="w-full py-3 text-muted-foreground hover:bg-accent rounded-xl transition-colors"
             >
               {t("common.cancel")}
-            </button>
-          </div>
+            </SwButton>
+          </SwCard>
         </div>
       )}
     </>

@@ -1,5 +1,10 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
+import { Card as SwCard } from "@/components/starwind-react/card";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/starwind-react/collapsible";
+
 import * as React from "react";
 import { ChevronDown, ChevronUp, Home, ChevronRight, Mail } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -23,10 +28,9 @@ function FaqAccordionItem({
   onToggle: () => void;
 }) {
   return (
-    <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-      <button
+    <Collapsible open={isOpen} onOpenChange={(next) => { if (next !== isOpen) onToggle(); }} className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+      <CollapsibleTrigger type="button"
         className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-accent transition-colors"
-        onClick={onToggle}
         aria-expanded={isOpen}
       >
         <span className="font-medium text-foreground">{item.question}</span>
@@ -35,18 +39,17 @@ function FaqAccordionItem({
         ) : (
           <ChevronDown className="w-5 h-5 text-muted-foreground flex-shrink-0" />
         )}
-      </button>
+      </CollapsibleTrigger>
 
-      {/* 展开区域，使用 max-height 过渡实现动画 */}
-      <div
+      {/* Starwind manages expanded state, visibility and keyboard semantics. */}
+      <CollapsibleContent
         className="overflow-hidden transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300 ease-in-out"
-        style={{ maxHeight: isOpen ? "300px" : "0px" }}
       >
         <p className="px-6 pb-5 pt-1 text-muted-foreground leading-relaxed border-t border-border">
           {item.answer}
         </p>
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
@@ -108,19 +111,19 @@ export function HelpClient() {
           </div>
 
           {/* 底部 CTA */}
-          <div className="mt-12 text-center bg-card rounded-2xl border border-border shadow-sm px-8 py-10">
+          <SwCard className="block gap-0 py-0 ring-0 mt-12 text-center bg-card rounded-2xl border border-border shadow-sm px-8 py-10">
             <h2 className="text-xl font-semibold text-foreground">{t("content.help.contactTitle")}</h2>
             <p className="mt-2 text-muted-foreground">
               {t("content.help.contactDesc")}
             </p>
-            <a
+            <SwButton as="a" variant="plain" size="inherit"
               href="mailto:hello@gomate.live"
               className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-lg transition-colors"
             >
               <Mail className="w-4 h-4" />
               {t("content.help.contactBtn")}
-            </a>
-          </div>
+            </SwButton>
+          </SwCard>
         </div>
       </main>
 

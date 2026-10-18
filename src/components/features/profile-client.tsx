@@ -1,5 +1,9 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
+import { Card as SwCard } from "@/components/starwind-react/card";
+
 import { RequestFailure } from "@/components/ui/request-failure";
 
 import * as React from "react";
@@ -66,7 +70,7 @@ function ProfileSkeleton({ label }: { label: string }) {
         aria-label={label}
         className="mx-auto max-w-5xl px-4 pb-16 pt-24 sm:px-6 lg:px-8"
       >
-        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <SwCard className="block gap-0 py-0 ring-0 rounded-2xl border border-border bg-card p-5 sm:p-6">
           <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
             <div className="h-24 w-24 shrink-0 animate-pulse rounded-2xl bg-muted motion-reduce:animate-none" />
             <div className="w-full flex-1 space-y-3">
@@ -76,7 +80,7 @@ function ProfileSkeleton({ label }: { label: string }) {
             </div>
             <div className="h-11 w-full animate-pulse rounded-xl bg-muted motion-reduce:animate-none sm:w-28" />
           </div>
-        </div>
+        </SwCard>
         <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
           {[1, 2, 3].map((item) => (
             <div key={item} className="h-24 animate-pulse rounded-xl bg-muted motion-reduce:animate-none" />
@@ -109,15 +113,15 @@ function TeamSection({
         <h2 id={sectionId} className="text-sm font-semibold text-foreground">
           {title}
         </h2>
-        <a
+        <SwButton as="a" variant="plain" size="inherit"
           href={viewAllHref}
           className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {viewAllLabel}
-        </a>
+        </SwButton>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <SwCard className="block gap-0 py-0 ring-0 overflow-hidden rounded-xl border border-border bg-card">
         {teams.map((team, index) => {
           const start = formatTeamStart(team);
           return (
@@ -154,7 +158,7 @@ function TeamSection({
             </a>
           );
         })}
-      </div>
+      </SwCard>
     </section>
   );
 }
@@ -313,13 +317,13 @@ export function ProfileClient() {
               )}
             </div>
 
-            <a
+            <SwButton as="a" variant="plain" size="inherit"
               href="/profile/edit"
               className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-[transform,background-color] duration-150 hover:bg-primary/90 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:w-auto"
             >
               <Edit3 className="h-4 w-4" />
               {t("profile.editProfileBtn")}
-            </a>
+            </SwButton>
           </div>
         </section>
 
@@ -361,12 +365,12 @@ export function ProfileClient() {
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
                 {t("profile.noTeamsDesc")}
               </p>
-              <a
+              <SwButton as="a" variant="plain" size="inherit"
                 href="/teams/create"
                 className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground transition-[transform,background-color] duration-150 hover:bg-primary/90 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 {t("profile.createTeamBtn")}
-              </a>
+              </SwButton>
             </section>
           )}
         </div>

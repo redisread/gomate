@@ -1,5 +1,9 @@
 "use client";
 
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Input as SwInput } from "@/components/starwind-react/input";
+
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { ChevronDown, Check, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -152,7 +156,7 @@ export function RegionSelect({
     >
       {/* 触发区：输入框样式（clearable 时右侧挂清空按钮，button 不嵌套） */}
       <div className="flex items-center gap-1">
-      <button
+      <SwButton variant="plain" size="inherit"
         type="button"
         onClick={handleOpen}
         disabled={disabled}
@@ -185,9 +189,9 @@ export function RegionSelect({
             open && "rotate-180"
           )}
         />
-      </button>
+      </SwButton>
       {clearable && selectedRegion && !disabled && (
-        <button
+        <SwButton variant="plain" size="inherit"
           type="button"
           aria-label={t("common.clear")}
           onClick={(e) => {
@@ -197,15 +201,15 @@ export function RegionSelect({
           className="h-10 w-8 flex-shrink-0 flex items-center justify-center rounded-md text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
         >
           <X className="h-4 w-4" />
-        </button>
+        </SwButton>
       )}
       </div>
 
       {/* 错误提示 */}
       {error && (
-        <p className="mt-1 text-xs text-red-500" role="alert">
+        <SwAlert as="p" variant="plain" className="mt-1 text-xs text-red-500" role="alert">
           {error}
-        </p>
+        </SwAlert>
       )}
 
       {/* 下拉面板 */}
@@ -220,7 +224,7 @@ export function RegionSelect({
           {/* 搜索框 */}
           <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100">
             <Search className="h-4 w-4 flex-shrink-0 text-zinc-400" />
-            <input
+            <SwInput
               ref={searchRef}
               type="text"
               value={query}
@@ -229,7 +233,7 @@ export function RegionSelect({
                 setHighlightIndex(-1);
               }}
               placeholder={t("common.search")}
-              className="flex-1 text-sm outline-none placeholder:text-zinc-400"
+              className="flex-1 border-0 shadow-none text-sm outline-none placeholder:text-zinc-400"
             />
           </div>
 
@@ -239,7 +243,7 @@ export function RegionSelect({
               <p className="mb-1.5 text-xs font-medium text-zinc-400">{t("common.hotRegions")}</p>
               <div className="flex flex-wrap gap-1.5">
                 {hotRegions.map((region) => (
-                  <button
+                  <SwButton variant="plain" size="inherit"
                     key={region.id}
                     type="button"
                     onClick={() => handleSelect(region.id)}
@@ -251,7 +255,7 @@ export function RegionSelect({
                     )}
                   >
                     {getRegionDisplayName(region)}
-                  </button>
+                  </SwButton>
                 ))}
               </div>
               <div className="mt-2 border-t border-zinc-100" />

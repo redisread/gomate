@@ -1,5 +1,11 @@
 "use client";
 
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { NativeSelect as SwNativeSelect } from "@/components/starwind-react/native-select";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import * as React from "react";
 
 import { useI18n } from "@/hooks/useI18n";
@@ -82,23 +88,23 @@ export function AdminLocationsManager() {
   return (
     <div className="space-y-6">
       <form onSubmit={(event) => { event.preventDefault(); const filters = { search, status }; setActiveFilters(filters); void load(filters); }} role="search" className="grid gap-3 rounded-xl bg-card p-4 shadow-sm sm:grid-cols-[1fr_12rem_auto] sm:items-end sm:p-5">
-        <label className="grid gap-1.5 text-sm font-medium">
+        <SwLabel className="grid gap-1.5 text-sm font-medium">
           {t("admin.locationsManagement.search")}
-          <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
-        </label>
-        <label className="grid gap-1.5 text-sm font-medium">
+          <SwInput type="search" value={search} onChange={(event) => setSearch(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
+        </SwLabel>
+        <SwLabel className="grid gap-1.5 text-sm font-medium">
           {t("admin.locationsManagement.status")}
-          <select value={status} onChange={(event) => setStatus(event.target.value as LocationStatus | "")} className="min-h-11 rounded-lg border border-border bg-background px-3">
+          <SwNativeSelect value={status} onChange={(event) => setStatus(event.target.value as LocationStatus | "")} className="min-h-11 rounded-lg border border-border bg-background px-3">
             <option value="">{t("admin.locationsManagement.allStatuses")}</option>
             <option value="draft">{t(locationStatusKey("draft"))}</option>
             <option value="published">{t(locationStatusKey("published"))}</option>
             <option value="archived">{t(locationStatusKey("archived"))}</option>
-          </select>
-        </label>
-        <button className="min-h-11 rounded-lg bg-primary px-4 font-semibold text-primary-foreground">{t("admin.management.search")}</button>
+          </SwNativeSelect>
+        </SwLabel>
+        <SwButton variant="plain" size="inherit" type="submit" className="min-h-11 rounded-lg bg-primary px-4 font-semibold text-primary-foreground">{t("admin.management.search")}</SwButton>
       </form>
 
-      {error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+      {error && <SwAlert as="p" variant="plain" role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</SwAlert>}
       {loading ? <p role="status">{t("admin.management.loading")}</p> : locations.length === 0 ? (
         <p role="status" className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">{t("admin.noLocations")}</p>
       ) : (
@@ -114,16 +120,16 @@ export function AdminLocationsManager() {
                 <p className="mt-1 text-xs text-muted-foreground">{location.region?.name}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <a href={`/admin/locations/${location.id}/edit`} className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-semibold">{t("admin.editLocation")}</a>
-                {location.status !== "archived" && <button type="button" onClick={() => void archive(location)} className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold">{t("admin.locationsManagement.archive")}</button>}
-                {location.status === "archived" && <button type="button" onClick={() => void permanentlyDelete(location)} className="min-h-11 rounded-lg border border-destructive/30 px-3 text-sm font-semibold text-destructive">{t("admin.locationsManagement.permanentDelete")}</button>}
+                <SwButton as="a" variant="plain" size="inherit" href={`/admin/locations/${location.id}/edit`} className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-semibold">{t("admin.editLocation")}</SwButton>
+                {location.status !== "archived" && <SwButton variant="plain" size="inherit" type="button" onClick={() => void archive(location)} className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold">{t("admin.locationsManagement.archive")}</SwButton>}
+                {location.status === "archived" && <SwButton variant="plain" size="inherit" type="button" onClick={() => void permanentlyDelete(location)} className="min-h-11 rounded-lg border border-destructive/30 px-3 text-sm font-semibold text-destructive">{t("admin.locationsManagement.permanentDelete")}</SwButton>}
               </div>
             </article>
           ))}
           {nextCursor && (
-            <button type="button" disabled={loadingMore} onClick={() => void load(activeFilters, nextCursor, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
+            <SwButton variant="plain" size="inherit" type="button" disabled={loadingMore} onClick={() => void load(activeFilters, nextCursor, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
               {loadingMore ? t("admin.management.loading") : t("admin.management.loadMore")}
-            </button>
+            </SwButton>
           )}
         </div>
       )}

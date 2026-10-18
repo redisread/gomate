@@ -1,3 +1,5 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Card as SwCard } from "@/components/starwind-react/card";
 import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { LocationCoverImage } from "@/components/ui/lazy-image";
@@ -64,13 +66,13 @@ export function HomeDepartureBoard({ teams }: { teams: Team[] }) {
             })}
           </div>
         ) : (
-          <div className="mt-7 flex items-center justify-between gap-6 rounded-2xl bg-card p-6 ring-1 ring-border/70">
+          <SwCard className="block gap-0 py-0 ring-0 mt-7 flex flex-row items-center justify-between gap-6 rounded-2xl bg-card p-6 ring-1 ring-border/70">
             <div>
               <h3 className="font-bold text-card-foreground">{t("home.departures.emptyTitle")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("home.departures.emptyDescription")}</p>
             </div>
-            <a href="/teams/create" className="shrink-0 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-transform duration-150 active:scale-95">{t("home.departures.startTeam")}</a>
-          </div>
+            <SwButton as="a" variant="plain" size="inherit" href="/teams/create" className="shrink-0 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-transform duration-150 active:scale-95">{t("home.departures.startTeam")}</SwButton>
+          </SwCard>
         )}
       </div>
     </section>

@@ -1,5 +1,7 @@
 "use client";
 
+import { Input as SwInput } from "@/components/starwind-react/input";
+
 import { RequestFailure } from "@/components/ui/request-failure";
 
 import * as React from "react";
@@ -93,7 +95,7 @@ export function ProfileEditClient() {
             <CardSection id="profile-outdoor-title" icon={SECTION_ICONS.outdoor} title={t('profile.sectionOutdoorInfo')} />
             <OutdoorInfoFields
               level={ctx.formData.level}
-              onChange={ctx.handleChange}
+              onChange={ctx.handleLevelChange}
             />
           </Card>
           <Card id="profile-contact">
@@ -109,7 +111,7 @@ export function ProfileEditClient() {
             <CardSection id="profile-account-title" icon={SECTION_ICONS.account} title={t('profile.sectionAccount')} />
             <div className="space-y-1.5">
               <span className="text-sm font-semibold text-stone-700 dark:text-stone-300">{t('profile.emailLabel')}</span>
-              <input value={ctx.user?.email || ""} disabled className="w-full px-4 py-3 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 bg-stone-50 dark:bg-stone-800 text-stone-400 dark:text-stone-600 cursor-not-allowed focus:outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow]" />
+              <SwInput value={ctx.user?.email || ""} disabled className="w-full px-4 py-3 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 bg-stone-50 dark:bg-stone-800 text-stone-400 dark:text-stone-600 cursor-not-allowed focus:outline-none transition-[transform,background-color,border-color,color,opacity,box-shadow]" />
               <p className="text-xs text-stone-400 dark:text-stone-500">{t('profile.emailReadonly')}</p>
             </div>
           </Card>

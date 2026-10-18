@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { Loader2 } from "lucide-react";
 
@@ -25,7 +26,7 @@ export function SubmitButton({
   const isDisabled = disabled || loading;
 
   return (
-    <button
+    <SwButton variant="plain" size="inherit"
       type="submit"
       disabled={isDisabled}
       className={`py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-allowed ${className ?? ""}`}
@@ -49,6 +50,6 @@ export function SubmitButton({
     >
       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
       {loading && loadingText ? loadingText : children}
-    </button>
+    </SwButton>
   );
 }

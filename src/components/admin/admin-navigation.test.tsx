@@ -110,7 +110,7 @@ describe("AdminNavigation", () => {
       name: copy.navigationLabel,
     });
     expect(drawer).toBeInTheDocument();
-    expect(drawer).toHaveClass("motion-reduce:transition-none");
+    expect(drawer.querySelector("[data-gomate-modal-panel]")).toHaveClass("motion-reduce:transition-none");
     expect(
       screen.getByRole("button", { name: copy.closeNavigation }),
     ).toHaveFocus();

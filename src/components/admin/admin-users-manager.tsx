@@ -1,5 +1,10 @@
 "use client";
 
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import * as React from "react";
 
 import { useI18n } from "@/hooks/useI18n";
@@ -68,13 +73,13 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
   return (
     <div className="space-y-6">
       <form onSubmit={(event) => { event.preventDefault(); setActiveQuery(query); void load(query); }} role="search" className="flex gap-3 rounded-xl bg-card p-4 shadow-sm sm:p-5">
-        <label className="grid flex-1 gap-1.5 text-sm font-medium">
+        <SwLabel className="grid flex-1 gap-1.5 text-sm font-medium">
           {t("admin.management.searchUsers")}
-          <input type="search" maxLength={100} value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
-        </label>
-        <button className="min-h-11 self-end rounded-lg bg-primary px-4 font-semibold text-primary-foreground">{t("admin.management.search")}</button>
+          <SwInput type="search" maxLength={100} value={query} onChange={(event) => setQuery(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
+        </SwLabel>
+        <SwButton variant="plain" size="inherit" type="submit" className="min-h-11 self-end rounded-lg bg-primary px-4 font-semibold text-primary-foreground">{t("admin.management.search")}</SwButton>
       </form>
-      {error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+      {error && <SwAlert as="p" variant="plain" role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</SwAlert>}
       {loading ? <p role="status">{t("admin.management.loading")}</p> : users.length === 0 ? (
         <p role="status" className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">{t("admin.management.noUsers")}</p>
       ) : (
@@ -88,16 +93,16 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
                   <p className="truncate text-sm text-muted-foreground">{user.email}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{t(userStatusKey(user.status))} · {t(userRoleKey(user.role))}</p>
                 </div>
-                <button type="button" disabled={isCurrent} aria-label={isCurrent ? t("admin.management.currentUser") : undefined} onClick={() => void changeRole(user)} className="min-h-11 rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+                <SwButton variant="plain" size="inherit" type="button" disabled={isCurrent} aria-label={isCurrent ? t("admin.management.currentUser") : undefined} onClick={() => void changeRole(user)} className="min-h-11 rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                   {isCurrent ? t("admin.management.currentUser") : t(user.role === "admin" ? "admin.management.revokeAdmin" : "admin.management.makeAdmin")}
-                </button>
+                </SwButton>
               </article>
             );
           })}
           {nextCursor && (
-            <button type="button" disabled={loadingMore} onClick={() => void load(activeQuery, nextCursor, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
+            <SwButton variant="plain" size="inherit" type="button" disabled={loadingMore} onClick={() => void load(activeQuery, nextCursor, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
               {loadingMore ? t("admin.management.loading") : t("admin.management.loadMore")}
-            </button>
+            </SwButton>
           )}
         </div>
       )}

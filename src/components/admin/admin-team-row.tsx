@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import type * as React from "react";
 import type { AdminTeamSummary } from "@/contracts";
 import type { Locale } from "@/i18n";
@@ -62,7 +63,7 @@ export function AdminTeamRow({ team, t, locale, disabled, onView }: Props) {
           ))}
         </dl>
       </div>
-      <button
+      <SwButton variant="plain" size="inherit"
         type="button"
         className={`${button} self-start border border-border hover:bg-muted`}
         disabled={disabled}
@@ -73,7 +74,7 @@ export function AdminTeamRow({ team, t, locale, disabled, onView }: Props) {
         onClick={onView}
       >
         {t("admin.teamsManagement.viewDetail")}
-      </button>
+      </SwButton>
     </li>
   );
 }

@@ -1,6 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import { getCollection } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
 import { declareI18nNs } from "../../middleware";
 import { loadLocaleData } from "../../i18n/ssr-loader.server";
 import { type Locale, DEFAULT_LOCALE, SUPPORTED_LOCALES } from "../../i18n";
@@ -23,7 +23,7 @@ try {
   // Fallback to key
 }
 
-const allPosts = await getCollection("blog");
+const allPosts: CollectionEntry<"blog">[] = await getCollection("blog");
 const sortedPosts = allPosts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
 function formatDate(date: Date, locale: Locale) {

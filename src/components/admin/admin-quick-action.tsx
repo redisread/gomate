@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import { X } from "lucide-react";
 import * as React from "react";
 
@@ -11,7 +12,6 @@ export interface AdminQuickActionDialogProps {
   children: React.ReactNode;
   initialFocusRef?: React.RefObject<HTMLElement | null>;
   returnFocusRef?: React.RefObject<HTMLElement | null>;
-  lockBodyScroll?: boolean;
 }
 
 export function AdminQuickActionDialog({
@@ -22,7 +22,6 @@ export function AdminQuickActionDialog({
   children,
   initialFocusRef,
   returnFocusRef,
-  lockBodyScroll = true,
 }: AdminQuickActionDialogProps) {
   const titleId = React.useId();
   return (
@@ -32,7 +31,6 @@ export function AdminQuickActionDialog({
       labelledBy={titleId}
       initialFocusRef={initialFocusRef}
       returnFocusRef={returnFocusRef}
-      lockBodyScroll={lockBodyScroll}
       data-testid="admin-quick-action-overlay"
       overlayClassName="flex items-end justify-center sm:items-center sm:p-4"
       backdropClassName="bg-foreground/30 backdrop-blur-sm"
@@ -45,14 +43,14 @@ export function AdminQuickActionDialog({
         >
           {title}
         </h2>
-        <button
+        <SwButton variant="plain" size="inherit"
           type="button"
           aria-label={closeLabel}
           onClick={onClose}
           className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-[background-color,color,scale] duration-100 hover:bg-muted hover:text-foreground active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:active:scale-100"
         >
           <X className="size-5" strokeWidth={2} aria-hidden="true" />
-        </button>
+        </SwButton>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
         {children}

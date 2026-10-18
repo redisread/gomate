@@ -1,3 +1,8 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
 import * as React from "react";
 import {
   Users, Mountain, ChevronLeft, ChevronRight, Flame, MapPin, Calendar, Clock, Filter,
@@ -165,7 +170,7 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
 // ─── TeamSkeleton ───────────────────────────────────────────────────
 export function TeamSkeleton() {
   return (
-    <div className="bg-card rounded-3xl border border-border overflow-hidden">
+    <SwCard className="block gap-0 py-0 ring-0 bg-card rounded-3xl border border-border overflow-hidden">
       <div className="skeleton h-40 rounded-none" />
       <div className="p-4 space-y-2.5">
         <div className="skeleton h-4 rounded-full w-3/4" />
@@ -177,7 +182,7 @@ export function TeamSkeleton() {
           <div className="skeleton h-3.5 rounded-full w-12" />
         </div>
       </div>
-    </div>
+    </SwCard>
   );
 }
 
@@ -207,21 +212,21 @@ export function EmptyState({
       </p>
       <div className="flex flex-wrap items-center justify-center gap-3">
         {hasActiveCriteria && (
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={selectedRegionName ? onClearRegion : onClear}
             className="inline-flex min-h-11 items-center rounded-full border border-border px-5 text-sm font-medium text-muted-foreground transition-[background-color,border-color,color,transform] duration-150 hover:border-amber-300 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]"
           >
             {selectedRegionName ? t("teams.browseAllCities") : t("teams.clearFilters")}
-          </button>
+          </SwButton>
         )}
-        <a
+        <SwButton as="a" variant="plain" size="inherit"
           href="/teams/create"
           className="inline-flex min-h-11 items-center gap-2 rounded-full bg-amber-600 px-5 text-sm font-semibold text-white transition-[background-color,transform,box-shadow] duration-150 hover:bg-amber-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]"
         >
           <Flame className="h-4 w-4" aria-hidden="true" />
           {t("teams.createBtn")}
-        </a>
+        </SwButton>
       </div>
     </div>
   );
@@ -230,21 +235,21 @@ export function EmptyState({
 export function TeamsErrorState({ onRetry }: { onRetry: () => void }) {
   const { t } = useI18n(["teams"]);
   return (
-    <div role="alert" className="flex flex-col items-center justify-center px-4 py-20 text-center">
+    <SwAlert as="div" variant="plain" role="alert" className="flex flex-col items-center justify-center px-4 py-20 text-center">
       <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
         <RefreshCw className="h-7 w-7" aria-hidden="true" />
       </div>
       <h3 className="mb-2 text-lg font-semibold text-foreground">{t("teams.loadErrorTitle")}</h3>
       <p className="mb-6 max-w-sm text-sm leading-relaxed text-muted-foreground">{t("teams.loadErrorDesc")}</p>
-      <button
+      <SwButton variant="plain" size="inherit"
         type="button"
         onClick={onRetry}
         className="inline-flex min-h-11 items-center gap-2 rounded-full bg-amber-600 px-5 text-sm font-semibold text-white transition-[background-color,transform,box-shadow] duration-150 hover:bg-amber-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]"
       >
         <RefreshCw className="h-4 w-4" aria-hidden="true" />
         {t("teams.retry")}
-      </button>
-    </div>
+      </SwButton>
+    </SwAlert>
   );
 }
 
@@ -254,7 +259,7 @@ export function Pagination({ current, hasNext, onChange }: { current: number; ha
   if (current === 1 && !hasNext) return null;
   return (
     <nav className="mt-10 flex items-center justify-center gap-2" aria-label={t("teams.paginationLabel")}>
-      <button
+      <SwButton variant="plain" size="inherit"
         type="button"
         onClick={() => onChange(current - 1)}
         disabled={current === 1}
@@ -262,7 +267,7 @@ export function Pagination({ current, hasNext, onChange }: { current: number; ha
         className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-stone-500 transition-colors hover:border-amber-300 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-400"
       >
         <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-      </button>
+      </SwButton>
       <span
         aria-current="page"
         aria-label={t("teams.pageLabel", { page: current })}
@@ -270,7 +275,7 @@ export function Pagination({ current, hasNext, onChange }: { current: number; ha
       >
         {current}
       </span>
-      <button
+      <SwButton variant="plain" size="inherit"
         type="button"
         onClick={() => onChange(current + 1)}
         disabled={!hasNext}
@@ -278,7 +283,7 @@ export function Pagination({ current, hasNext, onChange }: { current: number; ha
         className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-stone-500 transition-colors hover:border-amber-300 hover:text-amber-700 disabled:cursor-not-allowed disabled:opacity-40 dark:text-stone-400"
       >
         <ChevronRight className="h-4 w-4" aria-hidden="true" />
-      </button>
+      </SwButton>
     </nav>
   );
 }
@@ -310,12 +315,12 @@ export function FilterPanel({
           {availableActivityTypes.map((activityType) => {
             const isSelected = selectedActivityType === activityType;
             return (
-              <button key={activityType} type="button" onClick={() => onActivityTypeSelect(isSelected ? "" : activityType)} aria-pressed={isSelected}
+              <SwButton variant="plain" size="inherit" key={activityType} type="button" onClick={() => onActivityTypeSelect(isSelected ? "" : activityType)} aria-pressed={isSelected}
                 className={cn("min-h-10 rounded-full border px-3 text-xs transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]",
                   isSelected ? "border-amber-400 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300" : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
                 )}>
                 {t(`enums.locationType.${activityType}`)}
-              </button>
+              </SwButton>
             );
           })}
         </div>
@@ -326,12 +331,12 @@ export function FilterPanel({
           {(["open", "closed"] as const).map((status) => {
             const isSelected = selectedRecruitmentStatus === status;
             return (
-              <button key={status} type="button" onClick={() => onRecruitmentStatusSelect(isSelected ? "" : status)} aria-pressed={isSelected}
+              <SwButton variant="plain" size="inherit" key={status} type="button" onClick={() => onRecruitmentStatusSelect(isSelected ? "" : status)} aria-pressed={isSelected}
                 className={cn("min-h-10 rounded-full border px-3 text-xs transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]",
                   isSelected ? "border-amber-400 bg-amber-100 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300" : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
                 )}>
                 {t(`enums.teamStatus.${status}`)}
-              </button>
+              </SwButton>
             );
           })}
         </div>
@@ -343,21 +348,21 @@ export function FilterPanel({
             {availableTags.map((tag) => {
               const isSelected = selectedTags.includes(tag.id);
               return (
-                <button key={tag.id} type="button" onClick={() => onTagToggle(tag.id)} aria-pressed={isSelected}
+                <SwButton variant="plain" size="inherit" key={tag.id} type="button" onClick={() => onTagToggle(tag.id)} aria-pressed={isSelected}
                   className={cn("min-h-10 rounded-full border px-3 text-xs transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]",
                     isSelected ? "bg-amber-100 dark:bg-amber-900/30 border-amber-400 dark:border-amber-700 text-amber-800 dark:text-amber-300" : "bg-card text-stone-600 dark:text-stone-400 border-border hover:border-stone-300 dark:hover:border-stone-600"
                   )}>
                   {tag.name}
-                </button>
+                </SwButton>
               );
             })}
           </div>
         </div>
       )}
       {activeFiltersCount > 0 && (
-        <button type="button" onClick={onClearAll} className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2 text-sm text-stone-400 transition-[background-color,color,transform] duration-150 hover:bg-muted hover:text-stone-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96] dark:text-stone-500 dark:hover:text-stone-300">
+        <SwButton variant="plain" size="inherit" type="button" onClick={onClearAll} className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2 text-sm text-stone-400 transition-[background-color,color,transform] duration-150 hover:bg-muted hover:text-stone-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96] dark:text-stone-500 dark:hover:text-stone-300">
           <X className="h-3.5 w-3.5" aria-hidden="true" />{t("filter.clearAll")}
-        </button>
+        </SwButton>
       )}
     </div>
   );
@@ -399,8 +404,8 @@ export function TeamsHeader({
         <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-            <label htmlFor="team-search" className="sr-only">{t("teams.searchAriaLabel")}</label>
-            <input
+            <SwLabel htmlFor="team-search" className="sr-only">{t("teams.searchAriaLabel")}</SwLabel>
+            <SwInput
               id="team-search"
               name="q"
               type="search"
@@ -411,17 +416,17 @@ export function TeamsHeader({
               className="min-h-12 w-full rounded-2xl border border-border bg-muted py-3 pl-12 pr-12 text-foreground placeholder-muted-foreground transition-[background-color,border-color,box-shadow] duration-150 focus:border-amber-400 focus:outline-none focus:ring-4 focus:ring-amber-400/15"
             />
             {searchQuery && (
-              <button
+              <SwButton variant="plain" size="inherit"
                 type="button"
                 onClick={() => onSearchChange("")}
                 aria-label={t("teams.clearSearchAriaLabel")}
                 className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 hover:bg-stone-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-1 active:scale-[0.96] dark:hover:bg-stone-800"
               >
                 <X className="h-4 w-4 text-stone-400 dark:text-stone-500" aria-hidden="true" />
-              </button>
+              </SwButton>
             )}
           </div>
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={onToggleFilters}
             aria-label={t("filter.title")}
@@ -435,7 +440,7 @@ export function TeamsHeader({
             {advancedFiltersCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-600 px-1 text-[10px] font-bold text-white">{advancedFiltersCount}</span>
             )}
-          </button>
+          </SwButton>
         </div>
         <TeamsQuickFilters
           regions={regions}
@@ -472,19 +477,19 @@ export function TeamsCtaSection() {
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-3">
-          <a
+          <SwButton as="a" variant="plain" size="inherit"
             href="/teams/create"
             className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-amber-600 px-5 text-sm font-semibold text-white transition-[background-color,transform,box-shadow] duration-150 hover:bg-amber-700 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]"
           >
             <Users className="h-4 w-4" aria-hidden="true" />
             {t("teams.createBtn")}
-          </a>
-          <a
+          </SwButton>
+          <SwButton as="a" variant="plain" size="inherit"
             href="/locations"
             className="inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 hover:bg-background hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96]"
           >
             {t("teams.exploreLink")}
-          </a>
+          </SwButton>
         </div>
       </div>
     </section>

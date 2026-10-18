@@ -4,7 +4,7 @@
 
 ## 快速开始
 
-使用 Node.js **22.23.3**（见 [.node-version](../.node-version)）和 pnpm **11.19.0**（见 [package.json](../package.json)）。
+使用 Node.js **24.22.0**（见 [.node-version](../.node-version)）和 pnpm **12.14.0**（见 [package.json](../package.json)）。
 
 **1 · 获取代码并安装依赖。**
 
@@ -128,3 +128,10 @@ Cloudflare adapter 的 Vite 插件要求同步使用 Wrangler 4.151；直接依�
 - [Rate Limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)：边缘限流用于防滥用，不承担人数、权限或财务精确计数。
 
 每次模块、依赖、架构变动同步复核相关文档；月度巡检记录范围、证据和未解决项。这是维护要求，目前没有因此新增自动定时任务。更多设计约束见[可靠性与性能设计](../CODING_STANDARDS.md#可靠性与性能设计)。
+
+## 依赖兼容边界
+
+- 本地与 PR CI 使用 Node 24.22.0 LTS、pnpm 12.14.0。生产构建环境变量由受保护平台配置管理，仓库修改不证明远端变量已同步；依赖保留 Node >=22.23.3 的最低支持范围。
+- TypeScript 使用 6.0.3；截至 2026-10-19，最新 TypeScript 7.0.2 超出 `@astrojs/check@0.9.10` 的 `^5 || ^6` 和 `typescript-eslint@8.71.2` 的 `<6.1` peer 范围。
+- `eslint-plugin-react-hooks` 使用最新版本，明确保留原有 `rules-of-hooks:error` / `exhaustive-deps:warn` 门禁。React Compiler 新增规则不随依赖更新隐式启用；采用 Compiler 前需要单独审查 SSR 初始化、外部状态同步和 ref 生命周期。
+- Astro 模板通过 `pnpm check` 检查；`pnpm type-check` 的 tsc 检查不能替代它。

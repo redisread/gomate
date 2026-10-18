@@ -425,7 +425,9 @@ describe("admin catalog managers", () => {
       target: { value: "region-sz" },
     });
     fireEvent.click(screen.getByText("admin.quickDraft.optionalFields"));
-    fireEvent.click(await screen.findByLabelText("亲子"));
+    const tagCheckbox = await screen.findByRole("checkbox", { name: "亲子" });
+    fireEvent.click(tagCheckbox);
+    expect(tagCheckbox).toBeChecked();
     fireEvent.click(
       screen.getByRole("button", { name: "admin.quickDraft.save" }),
     );

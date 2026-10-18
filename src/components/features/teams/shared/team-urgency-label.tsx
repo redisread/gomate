@@ -1,5 +1,7 @@
 "use client";
 
+import { Badge as SwBadge } from "@/components/starwind-react/badge";
+
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { TeamDisplayStatus } from "@/lib/team-display";
@@ -58,58 +60,58 @@ export function TeamUrgencyLabel({
   // 1. 终态（优先级最高）
   if (status === "cancelled") {
     return (
-      <span className={cn(
+      <SwBadge as="span" variant="plain" className={cn(
         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
         variant === "badge" && "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400"
       )}>
         {t("teams.statusCancelled")}
-      </span>
+      </SwBadge>
     );
   }
   if (status === "completed") {
     return (
-      <span className={cn(
+      <SwBadge as="span" variant="plain" className={cn(
         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
         variant === "badge" && "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400"
       )}>
         {t("teams.statusEnded")}
-      </span>
+      </SwBadge>
     );
   }
 
   // 2. 已满员
   if (status === "full") {
     return (
-      <span className={cn(
+      <SwBadge as="span" variant="plain" className={cn(
         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
         variant === "badge" && "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
       )}>
         {t("teams.statusFull")}
-      </span>
+      </SwBadge>
     );
   }
 
   // 3. 已组建
   if (status === "formed") {
     return (
-      <span className={cn(
+      <SwBadge as="span" variant="plain" className={cn(
         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
         variant === "badge" && "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400"
       )}>
         {t("teams.statusFormed")}
-      </span>
+      </SwBadge>
     );
   }
 
   // 防御：maxParticipants <= 0 时显示「名额不限」
   if (maxParticipants <= 0) {
     return (
-      <span className={cn(
+      <SwBadge as="span" variant="plain" className={cn(
         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
         variant === "badge" && "bg-stone-50 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
       )}>
         {t("teams.unlimitedSpots")}
-      </span>
+      </SwBadge>
     );
   }
 
@@ -119,50 +121,50 @@ export function TeamUrgencyLabel({
   const daysInfo = getDaysUntilStart(t, startAt);
   if (daysInfo.days === 0) {
     return (
-      <span className={cn(
+      <SwBadge as="span" variant="plain" className={cn(
         "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
         "bg-red-50 text-red-600 ring-1 ring-red-200",
         variant === "text" && "text-red-600"
       )}>
         <span className="animate-pulse">🔥</span>
         {t("teams.departToday")}
-      </span>
+      </SwBadge>
     );
   }
   if (daysInfo.days === 1) {
     return (
-      <span className={cn(
+      <SwBadge as="span" variant="plain" className={cn(
         "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
         "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
         variant === "text" && "text-amber-600"
       )}>
         {t("teams.departTomorrow")}
-      </span>
+      </SwBadge>
     );
   }
   if (isThisWeekendBeijing(startAt)) {
     return (
-      <span className={cn(
+      <SwBadge as="span" variant="plain" className={cn(
         "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
         "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
         variant === "text" && "text-amber-600"
       )}>
         {t("teams.thisWeekend")}
-      </span>
+      </SwBadge>
     );
   }
 
   // 5. 人数紧迫
   if (fillRatio >= 0.8) {
     return (
-      <span className={cn(
+      <SwBadge as="span" variant="plain" className={cn(
         "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
         "bg-red-50 text-red-600 ring-1 ring-red-200",
         variant === "text" && "text-red-600"
       )}>
         <span className="animate-pulse">🔥</span>
         {t("teams.almostFull")}
-      </span>
+      </SwBadge>
     );
   }
 
@@ -170,23 +172,23 @@ export function TeamUrgencyLabel({
   const remaining = Math.max(maxParticipants - activeParticipantCount, 0);
   if (remaining === 1) {
     return (
-      <span className={cn(
+      <SwBadge as="span" variant="plain" className={cn(
         "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
         "bg-amber-50/50 text-amber-700",
         variant === "text" && "text-amber-600"
       )}>
         {t("teams.spotsOneLeft")}
-      </span>
+      </SwBadge>
     );
   }
 
   return (
-    <span className={cn(
+    <SwBadge as="span" variant="plain" className={cn(
       "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold",
       "bg-amber-50/50 text-amber-700",
       variant === "text" && "text-amber-600"
     )}>
       {t("teams.spotsToForm", { count: remaining })}
-    </span>
+    </SwBadge>
   );
 }

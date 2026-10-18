@@ -1,5 +1,9 @@
 "use client";
 
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import { BrandIcon } from "@/components/brand-icon";
 
 import * as React from "react";
@@ -180,10 +184,10 @@ export function LoginClient({
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* 邮箱 */}
               <div className="space-y-1.5">
-                <label htmlFor="email" className="text-sm font-medium text-foreground">
+                <SwLabel htmlFor="email" className="text-sm font-medium text-foreground">
                   {t("auth.email")}
-                </label>
-                <input
+                </SwLabel>
+                <SwInput
                   id="email"
                   data-testid="login-email"
                   name="email"
@@ -199,9 +203,9 @@ export function LoginClient({
               {/* 密码 */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="text-sm font-medium text-foreground">
+                  <SwLabel htmlFor="password" className="text-sm font-medium text-foreground">
                     {t("auth.password")}
-                  </label>
+                  </SwLabel>
                   <a
                     href="/forgot-password"
                     className="text-xs text-primary hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-150"
@@ -210,7 +214,7 @@ export function LoginClient({
                   </a>
                 </div>
                 <div className="relative">
-                  <input
+                  <SwInput
                     id="password"
                     data-testid="login-password"
                     name="password"
@@ -219,15 +223,15 @@ export function LoginClient({
                     value={formData.password}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 pr-11 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
+                    className="w-full px-4 py-3 pr-16 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
                   />
-                  <button
+                  <SwButton variant="plain" size="inherit"
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors duration-150"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                  </SwButton>
                 </div>
               </div>
 
@@ -242,7 +246,7 @@ export function LoginClient({
               )}
 
               {/* 登录按钮 */}
-              <button
+              <SwButton variant="plain" size="inherit"
                 data-testid="login-submit"
                 type="submit"
                 disabled={isLoading || googleBusy}
@@ -275,7 +279,7 @@ export function LoginClient({
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
-              </button>
+              </SwButton>
 
               {/* 注册链接 */}
               <p className="text-center text-sm text-muted-foreground">

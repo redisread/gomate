@@ -1,3 +1,5 @@
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -43,7 +45,7 @@ export function GoogleSignIn({
   if (!enabled) return null;
   return (
     <div className="mb-6 space-y-3">
-      <button
+      <SwButton variant="plain" size="inherit"
         type="button"
         data-testid="google-sign-in"
         disabled={disabled || busy}
@@ -60,11 +62,11 @@ export function GoogleSignIn({
           <img src="/google-g.png" width="20" height="20" alt="" />
         )}
         {t(busy ? "auth.googleLoading" : "auth.googleContinue")}
-      </button>
+      </SwButton>
       {failed && (
-        <p role="alert" className="text-sm text-destructive">
+        <SwAlert as="p" variant="plain" role="alert" className="text-sm text-destructive">
           {t("auth.googleError")}
-        </p>
+        </SwAlert>
       )}
       <p className="text-xs leading-relaxed text-muted-foreground">
         {t("auth.googleNotice")}{" "}

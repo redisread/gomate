@@ -96,7 +96,7 @@ for (const [index, name] of entries.entries()) {
   try {
     snapshot = JSON.parse(readFileSync(snapshotPath, "utf8"));
   } catch (error) {
-    throw new Error(`cannot parse snapshot for ${name}: ${String(error)}`);
+    throw new Error(`cannot parse snapshot for ${name}: ${String(error)}`, { cause: error });
   }
   if (snapshot.dialect !== "sqlite" || snapshot.version !== journalEntry.version) {
     throw new Error(`snapshot for ${name} does not match the journal dialect/version`);

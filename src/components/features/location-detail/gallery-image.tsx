@@ -1,3 +1,5 @@
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { AnimatePresence, motion, useIsPresent } from "motion/react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
@@ -121,13 +123,13 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
         </span>
       )}
       {failed && (
-        <div
+        <SwAlert as="div" variant="plain"
           role="alert"
           className="absolute inset-x-2 top-2 z-20 flex flex-wrap items-center justify-center gap-2 rounded-xl bg-background/95 p-3 text-sm text-foreground"
           onClick={(event) => event.stopPropagation()}
         >
           <span>{t("locationDetail.imageLoadFailed")}</span>
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             disabled={!interactive}
             tabIndex={interactive ? 0 : -1}
@@ -135,8 +137,8 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
             onClick={retry}
           >
             {t("common.retry")}
-          </button>
-        </div>
+          </SwButton>
+        </SwAlert>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import {
   ArrowLeft, User, Mountain, Award, Calendar, Users,
@@ -58,12 +59,12 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-2">{error || t("errors.userNotFound")}</h1>
-            <button
+            <SwButton variant="plain" size="inherit" type="button"
               onClick={() => window.history.back()}
               className="text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 underline text-sm"
             >
               {t("common.back")}
-            </button>
+            </SwButton>
           </div>
         </div>
         <Footer />
@@ -86,13 +87,13 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
 
         {/* 返回按钮 */}
         <div className="mb-4">
-          <button
+          <SwButton variant="plain" size="inherit" type="button"
             onClick={() => window.history.back()}
             className="inline-flex items-center text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 transition-colors text-sm"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             {t("common.back")}
-          </button>
+          </SwButton>
         </div>
 
         {/* 用户信息卡 */}

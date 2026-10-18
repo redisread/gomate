@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import { X } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { TEAM_DATE_OPTIONS } from "./teams-filter-options";
@@ -68,7 +69,7 @@ export function TeamsSelectedFilters({
   return (
     <div className="flex flex-wrap items-center gap-2" aria-label={t("teams.selectedFiltersLabel")}>
       {filters.map((filter) => (
-        <button
+        <SwButton variant="plain" size="inherit"
           key={filter.id}
           type="button"
           aria-label={filter.ariaLabel}
@@ -77,7 +78,7 @@ export function TeamsSelectedFilters({
         >
           {filter.label}
           <X className="h-3 w-3" aria-hidden="true" />
-        </button>
+        </SwButton>
       ))}
     </div>
   );

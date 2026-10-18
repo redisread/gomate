@@ -1,5 +1,7 @@
 "use client";
 
+import { Card as SwCard } from "@/components/starwind-react/card";
+
 import * as React from "react";
 import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -84,7 +86,7 @@ export function ProfileSkeleton({ variant = "amber" }: { variant?: "amber" | "sk
   const _bgColor = variant === "amber" ? "amber" : "sky";
   
   return (
-    <div className="bg-card rounded-2xl border border-border overflow-hidden mb-6">
+    <SwCard className="block gap-0 py-0 ring-0 bg-card rounded-2xl border border-border overflow-hidden mb-6">
       <div className="h-36 bg-muted animate-pulse" />
       <div className="px-6 pb-6 pt-20">
         <div className="space-y-3">
@@ -96,6 +98,6 @@ export function ProfileSkeleton({ variant = "amber" }: { variant?: "amber" | "sk
           </div>
         </div>
       </div>
-    </div>
+    </SwCard>
   );
 }

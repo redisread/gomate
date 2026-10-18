@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import {
   ArrowRight,
   AlertCircle,
@@ -152,19 +153,19 @@ export function TeamDecisionPrimaryAction({
         <p className="text-pretty text-sm leading-6 text-muted-foreground">
           {t("teams.loginToJoinTeam")}
         </p>
-        <a
+        <SwButton as="a" variant="plain" size="inherit"
           href={`/login?redirect=/teams/${team.id}`}
           className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent-foreground px-5 text-sm font-semibold text-background transition-[transform,background-color] duration-150 active:scale-[0.96] motion-reduce:transform-none [@media(hover:hover)]:hover:bg-accent-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60"
         >
           {t("teams.loginBtn")}
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </a>
+        </SwButton>
       </div>
     );
   }
 
   return (
-    <button
+    <SwButton variant="plain" size="inherit"
       type="button"
       data-testid="team-join-button"
       onClick={onJoin}
@@ -179,7 +180,7 @@ export function TeamDecisionPrimaryAction({
         />
       )}
       {t("teams.joinTeam")}
-    </button>
+    </SwButton>
   );
 }
 
@@ -203,7 +204,7 @@ function LeaderActions({
         </a>
       )}
       {team.lifecycle === "pending" && (
-        <button
+        <SwButton variant="plain" size="inherit" type="button"
           onClick={() => ctx.setShowFormConfirm(true)}
           disabled={ctx.isForming}
           className="min-h-11 w-full flex items-center gap-2 px-3 py-2 text-sm text-background bg-accent-foreground hover:bg-accent-foreground/90 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 font-medium"
@@ -213,10 +214,10 @@ function LeaderActions({
           )}
           <Users className="w-4 h-4" />
           {ctx.isFull ? t("teams.formTeam") : t("teams.formTeamUnderfilled")}
-        </button>
+        </SwButton>
       )}
       {team.lifecycle === "pending" && team.activeParticipantCount === 1 && (
-        <button
+        <SwButton variant="plain" size="inherit" type="button"
           onClick={() => ctx.setShowDeleteConfirm(true)}
           disabled={ctx.isDeleting}
           className="min-h-11 w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-destructive/10 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
@@ -226,7 +227,7 @@ function LeaderActions({
           )}
           <Trash2 className="w-4 h-4 text-destructive" aria-hidden="true" />
           {t("teams.deleteTeam")}
-        </button>
+        </SwButton>
       )}
     </div>
   );
@@ -245,12 +246,12 @@ function MemberStatusIndicator({ onLeave }: { onLeave: () => void }) {
           {t("teams.joinedTeamStatus")}
         </span>
       </div>
-      <button
+      <SwButton variant="plain" size="inherit" type="button"
         onClick={onLeave}
         className="min-h-11 w-full rounded-lg text-sm text-muted-foreground hover:text-foreground py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {t("teams.leaveTeam")}
-      </button>
+      </SwButton>
     </div>
   );
 }
@@ -266,12 +267,12 @@ function StatusLoadError({ onRetry }: { onRetry: () => void }) {
         </span>
       </div>
       <p className="text-xs text-foreground">{t("teams.retryMessage")}</p>
-      <button
+      <SwButton variant="plain" size="inherit" type="button"
         onClick={onRetry}
         className="min-h-11 w-full py-2 text-sm text-accent-foreground bg-secondary hover:bg-accent rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring font-medium"
       >
         {t("teams.reloadBtn")}
-      </button>
+      </SwButton>
     </div>
   );
 }

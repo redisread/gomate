@@ -1,5 +1,7 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import { BrandIcon } from "@/components/brand-icon";
 
 import * as React from "react";
@@ -82,21 +84,21 @@ export function VerifyEmailClient() {
                   : t("auth.verificationInvalid")}
           </h1>
           {isReady && (
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               onClick={confirmEmail}
               className="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
             >
               {t("auth.verificationConfirm")}
-            </button>
+            </SwButton>
           )}
           {!isChecking && !isReady && (
-            <a
+            <SwButton as="a" variant="plain" size="inherit"
               href={isSuccess ? "/login" : "/register"}
               className="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
             >
               {isSuccess ? t("auth.goLogin") : t("auth.registerNow")}
-            </a>
+            </SwButton>
           )}
         </section>
       </div>

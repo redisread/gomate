@@ -1,5 +1,8 @@
 "use client";
 
+import { Dropdown, DropdownTrigger, DropdownContent, DropdownRadioGroup, DropdownRadioItem } from "@/components/starwind-react/dropdown";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import * as React from "react";
 import { Globe, Check } from "lucide-react";
 import {
@@ -68,28 +71,6 @@ export function LocaleToggle({
       );
   }, [initialLocale, presentation]);
 
-  // 点击外部关闭下拉菜单（仅桌面端需要）
-  React.useEffect(() => {
-    if (!isOpen || isMobile) return;
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("[data-locale-toggle]")) {
-        setIsOpen(false);
-      }
-    };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      setIsOpen(false);
-      triggerRef.current?.focus();
-    };
-    document.addEventListener("click", handleClick);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("click", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [isOpen, isMobile]);
-
   const handleSelect = (locale: Locale) => {
     if (locale === current) {
       setIsOpen(false);
@@ -110,7 +91,7 @@ export function LocaleToggle({
         {SUPPORTED_LOCALES.map((locale) => {
           const isActive = locale === current;
           return (
-            <button
+            <SwButton variant="plain" size="inherit"
               key={locale}
               type="button"
               onClick={() => handleSelect(locale)}
@@ -124,63 +105,35 @@ export function LocaleToggle({
               )}
             >
               {getLocaleName(locale)}
-            </button>
+            </SwButton>
           );
         })}
       </div>
     );
   }
 
-  // 桌面端：下拉菜单
+  // Starwind owns outside dismissal, roving focus and Escape restoration.
   return (
-    <div className="relative" data-locale-toggle>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 text-stone-600 dark:text-stone-400",
-          "hover:bg-accent hover:text-foreground transition-colors duration-150",
-        )}
+    <Dropdown open={isOpen} onOpenChange={setIsOpen} className="relative" data-locale-toggle>
+      <DropdownTrigger ref={triggerRef} type="button"
+        className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2 text-stone-600 dark:text-stone-400 hover:bg-accent hover:text-foreground transition-colors duration-150"
         aria-label={getLocaleName(current)}
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
       >
         <Globe className="h-4 w-4" />
         <span className="text-sm font-medium">{getLocaleName(current)}</span>
-      </button>
-
-      {isOpen && (
-        <div
-          role="menu"
-          className="absolute right-0 top-full mt-1.5 w-36 rounded-xl overflow-hidden z-50 bg-popover border border-border shadow-lg"
-          style={{
-            animation: "fade-up 0.15s cubic-bezier(0.16,1,0.3,1) both",
-          }}
-        >
-          {SUPPORTED_LOCALES.map((locale) => {
-            const isActive = locale === current;
-            return (
-              <button
-                key={locale}
-                role="menuitemradio"
-                aria-checked={isActive}
-                type="button"
-                onClick={() => handleSelect(locale)}
-                className={cn(
-                  "flex min-h-11 w-full items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors",
-                  isActive
-                    ? "text-primary bg-accent"
-                    : "text-foreground hover:bg-accent",
-                )}
-              >
-                <span>{getLocaleName(locale)}</span>
-                {isActive && <Check className="h-3.5 w-3.5" />}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+      </DropdownTrigger>
+      <DropdownContent disablePortal align="end" className="w-36 rounded-xl bg-popover border border-border shadow-lg">
+        <DropdownRadioGroup value={current} onValueChange={(value) => handleSelect(value as Locale)}>
+          {SUPPORTED_LOCALES.map((locale) => (
+            <DropdownRadioItem key={locale} value={locale} closeOnClick showIndicator={false}
+              className={cn("flex min-h-11 w-full items-center justify-between gap-2 px-4 py-2.5 text-sm transition-colors", locale === current ? "text-primary bg-accent" : "text-foreground hover:bg-accent")}
+            >
+              <span>{getLocaleName(locale)}</span>
+              {locale === current && <Check className="h-3.5 w-3.5" />}
+            </DropdownRadioItem>
+          ))}
+        </DropdownRadioGroup>
+      </DropdownContent>
+    </Dropdown>
   );
 }

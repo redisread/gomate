@@ -146,7 +146,7 @@ describe("Navbar auth state", () => {
     );
 
     await screen.findByTestId("nav-create-team");
-    expect(screen.queryByTestId("nav-admin")).not.toBeInTheDocument();
+    expect(screen.getByTestId("nav-admin")).not.toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /Admin/ }));
     const adminLink = await screen.findByTestId("nav-admin");
     expect(adminLink).toHaveAttribute("href", "/admin");
@@ -224,8 +224,7 @@ describe("Navbar auth state", () => {
           renderAdminQuickAction={(props) => (
             <AdminQuickActionDialog
               {...props}
-              lockBodyScroll={false}
-              title="Quick entry"
+                  title="Quick entry"
               closeLabel="Close"
             >
               <input aria-label="Location name" />
@@ -242,9 +241,7 @@ describe("Navbar auth state", () => {
         mobile ? "nav-admin-mobile" : "nav-admin",
       );
       const group = adminLink.parentElement!;
-      const labels = within(group)
-        .getAllByRole("link")
-        .concat(within(group).getAllByRole("button"))
+      const labels = (mobile ? within(group).getAllByRole("link").concat(within(group).getAllByRole("button")) : within(group).getAllByRole("menuitem"))
         .sort((a, b) =>
           a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING
             ? -1
@@ -258,13 +255,12 @@ describe("Navbar auth state", () => {
         "Quick action",
         "nav.logout",
       ]);
-      fireEvent.click(screen.getByRole("button", { name: "Quick action" }));
+      fireEvent.click(screen.getByRole(mobile ? "button" : "menuitem", { name: "Quick action" }));
       expect(
         screen.getByRole("dialog", { name: "Quick entry" }),
       ).toBeInTheDocument();
-      expect(
-        screen.queryByTestId(mobile ? "nav-admin-mobile" : "nav-admin"),
-      ).not.toBeInTheDocument();
+      if (mobile) expect(screen.queryByTestId("nav-admin-mobile")).not.toBeInTheDocument();
+      else expect(screen.getByTestId("nav-admin")).not.toBeVisible();
       fireEvent.keyDown(document, { key: "Escape" });
       await act(async () => {});
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

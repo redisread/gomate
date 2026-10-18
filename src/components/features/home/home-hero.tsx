@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import { ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { useHomeData } from "./use-home-data";
@@ -32,10 +33,10 @@ export function HomeHero({ data }: { data: HomeData }) {
           </p>
 
           <div className={`mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 ${animate.cta}`}>
-            <a href="#guest-departures" className="group inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-brand-glow transition-[transform,box-shadow] duration-150 active:scale-95 motion-reduce:transition-none sm:text-base">
+            <SwButton as="a" variant="plain" size="inherit" href="#guest-departures" className="group inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-brand-glow transition-[transform,box-shadow] duration-150 active:scale-95 motion-reduce:transition-none sm:text-base">
               {t("home.guestHero.primaryCta")}
               <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" aria-hidden="true" />
-            </a>
+            </SwButton>
             <a href="/login?redirect=/teams" className="inline-flex min-h-10 items-center text-sm font-semibold text-stone-700 hover:text-amber-800 dark:text-stone-300 dark:hover:text-amber-300">
               {t("home.guestHero.loginPrompt")}
             </a>

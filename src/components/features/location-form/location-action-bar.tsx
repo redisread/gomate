@@ -1,5 +1,7 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import * as React from "react";
 import { Loader2, RotateCcw, Save, Send } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -61,17 +63,17 @@ export function LocationActionBar({
 
         <div className="flex flex-wrap items-center justify-end gap-2">
           {isDirty && (
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               onClick={onDiscard}
               disabled={isSaving}
               className="min-h-11 rounded-xl px-3 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-white"
             >
               {t("admin.discardChanges")}
-            </button>
+            </SwButton>
           )}
 
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={onSave}
             disabled={isSaving || !isDirty}
@@ -79,10 +81,10 @@ export function LocationActionBar({
           >
             {savingIntent === "keep" ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Save aria-hidden="true" className="h-4 w-4" />}
             {savingIntent === "keep" ? t("admin.saving") : saveLabel}
-          </button>
+          </SwButton>
 
           {status === "draft" && (
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               onClick={onPublish}
               disabled={isSaving}
@@ -90,11 +92,11 @@ export function LocationActionBar({
             >
               {savingIntent === "publish" ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Send aria-hidden="true" className="h-4 w-4" />}
               {savingIntent === "publish" ? t("admin.publishingLocation") : t("admin.publishLocation")}
-            </button>
+            </SwButton>
           )}
 
           {status === "archived" && (
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               onClick={onRestore}
               disabled={isSaving}
@@ -102,7 +104,7 @@ export function LocationActionBar({
             >
               {savingIntent === "restore" ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <RotateCcw aria-hidden="true" className="h-4 w-4" />}
               {savingIntent === "restore" ? t("admin.restoringDraft") : t("admin.restoreToDraft")}
-            </button>
+            </SwButton>
           )}
         </div>
       </div>

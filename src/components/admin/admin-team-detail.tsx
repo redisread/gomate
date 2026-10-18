@@ -1,3 +1,5 @@
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { X } from "lucide-react";
 import type { AdminTeamResponse, Team } from "@/contracts";
@@ -56,7 +58,6 @@ export function AdminTeamDetail({ teamId, onClose, returnFocusRef }: Props) {
       labelledBy={titleId}
       initialFocusRef={closeRef}
       returnFocusRef={returnFocusRef}
-      lockBodyScroll
       overlayClassName="flex items-end justify-center sm:items-center sm:p-4"
       backdropClassName="bg-foreground/30"
       panelClassName="flex max-h-[calc(100dvh-env(safe-area-inset-top))] w-full min-w-0 flex-col overflow-hidden rounded-t-2xl bg-background pb-[env(safe-area-inset-bottom)] text-foreground shadow-xl sm:max-h-[calc(100dvh-2rem)] sm:max-w-3xl sm:rounded-2xl sm:pb-0"
@@ -65,7 +66,7 @@ export function AdminTeamDetail({ teamId, onClose, returnFocusRef }: Props) {
         <h2 id={titleId} className="text-lg font-semibold">
           {t("admin.teamsManagement.detailTitle")}
         </h2>
-        <button
+        <SwButton variant="plain" size="inherit"
           ref={closeRef}
           type="button"
           onClick={onClose}
@@ -73,23 +74,23 @@ export function AdminTeamDetail({ teamId, onClose, returnFocusRef }: Props) {
           className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <X className="size-5" strokeWidth={2} aria-hidden="true" />
-        </button>
+        </SwButton>
       </header>
       <div className="min-h-0 space-y-5 overflow-y-auto overscroll-contain break-words px-4 py-5 text-sm sm:px-6">
         {!team && !error && (
           <p role="status">{t("admin.management.loading")}</p>
         )}
         {error && (
-          <div role="alert" className="space-y-3">
+          <SwAlert as="div" variant="plain" role="alert" className="space-y-3">
             <p className="text-destructive">{error}</p>
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               onClick={() => setAttempt((value) => value + 1)}
               className="min-h-11 rounded-lg border border-border px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {t("admin.teamsManagement.retry")}
-            </button>
-          </div>
+            </SwButton>
+          </SwAlert>
         )}
         {team && <AdminTeamDetailContent team={team} t={t} locale={locale} />}
       </div>

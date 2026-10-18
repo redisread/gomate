@@ -1,5 +1,7 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 interface QuickDurationButtonProps {
   label: string;
   minutes: number;
@@ -19,7 +21,7 @@ export function QuickDurationButton({
 }: QuickDurationButtonProps) {
   const isActive = String(minutes) === currentValue;
   return (
-    <button
+    <SwButton variant="plain" size="inherit"
       type="button"
       onClick={onClick}
       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 border ${
@@ -29,6 +31,6 @@ export function QuickDurationButton({
       }`}
     >
       {label}
-    </button>
+    </SwButton>
   );
 }

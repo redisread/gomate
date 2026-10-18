@@ -1,5 +1,8 @@
 "use client";
 
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import { useEditTeamForm } from "./teams/form/use-edit-team-form";
 
 import {
@@ -209,7 +212,7 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                     <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400">
                       {i + 1}
                     </span>
-                    <input
+                    <SwInput
                       type="text"
                       value={req}
                       onChange={(e) => updateRequirement(i, e.target.value)}
@@ -217,24 +220,24 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
                       maxLength={100}
                       className="flex-1 px-3 py-2 rounded-lg border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
                     />
-                    <button
+                    <SwButton variant="plain" size="inherit"
                       type="button"
                       onClick={() => removeRequirement(i)}
                       className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-150 text-stone-400 dark:text-stone-500 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400"
                     >
                       ✕
-                    </button>
+                    </SwButton>
                   </li>
                 ))}
               </ul>
               {formData.requirements.length < 10 && (
-                <button
+                <SwButton variant="plain" size="inherit"
                   type="button"
                   onClick={addRequirement}
                   className="w-full mt-2 py-2.5 rounded-lg border text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 flex items-center justify-center gap-1.5 border-border text-muted-foreground hover:bg-muted hover:border-primary hover:text-primary"
                 >
                   <span>{t("teams.editAddRequirement")}</span>
-                </button>
+                </SwButton>
               )}
               {formData.requirements.length === 0 && (
                 <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
@@ -259,13 +262,13 @@ export function EditTeamClient({ teamId }: EditTeamClientProps) {
             )}
 
             <div className="flex gap-3 pt-2">
-              <button
+              <SwButton variant="plain" size="inherit"
                 type="button"
                 onClick={() => (window.location.href = `/teams/${teamId}`)}
                 className="flex-1 py-3 rounded-xl border text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border-border text-muted-foreground hover:bg-muted"
               >
                 {t("common.cancel")}
-              </button>
+              </SwButton>
               <SubmitButton
                 loading={isSubmitting}
                 loadingText={t("common.saving")}

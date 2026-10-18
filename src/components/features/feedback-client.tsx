@@ -1,3 +1,8 @@
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Textarea as SwTextarea } from "@/components/starwind-react/textarea";
 import * as React from "react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -58,7 +63,7 @@ export function FeedbackClient() {
               {t("feedback.successTitle")}
             </h2>
             <p>{t("feedback.successDesc")}</p>
-            <button
+            <SwButton variant="plain" size="inherit" type="button"
               className="min-h-11 underline"
               onClick={() => {
                 attempt.current = null;
@@ -67,18 +72,18 @@ export function FeedbackClient() {
               }}
             >
               {t("feedback.continueSubmitBtn")}
-            </button>
+            </SwButton>
           </div>
         ) : (
           <form onSubmit={submit} className="mt-8 space-y-6">
             <div>
-              <label
+              <SwLabel
                 htmlFor="feedback-email"
                 className="block mb-2 font-medium"
               >
                 {t("feedback.emailLabel")}
-              </label>
-              <input
+              </SwLabel>
+              <SwInput
                 id="feedback-email"
                 name="email"
                 type="email"
@@ -91,13 +96,13 @@ export function FeedbackClient() {
               />
             </div>
             <div>
-              <label
+              <SwLabel
                 htmlFor="feedback-content"
                 className="block mb-2 font-medium"
               >
                 {t("feedback.contentLabel")}
-              </label>
-              <textarea
+              </SwLabel>
+              <SwTextarea
                 id="feedback-content"
                 name="content"
                 required
@@ -110,17 +115,17 @@ export function FeedbackClient() {
               />
             </div>
             {error && (
-              <p role="alert" className="text-destructive">
+              <SwAlert as="p" variant="plain" role="alert" className="text-destructive">
                 {t("feedback.submitError")}
-              </p>
+              </SwAlert>
             )}
-            <button
+            <SwButton variant="plain" size="inherit"
               type="submit"
               disabled={submitting}
               className="min-h-11 rounded-full bg-primary px-6 py-3 text-primary-foreground disabled:opacity-60"
             >
               {t(submitting ? "feedback.submitting" : "feedback.submitBtn")}
-            </button>
+            </SwButton>
           </form>
         )}
       </main>

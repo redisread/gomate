@@ -1,5 +1,8 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Input as SwInput } from "@/components/starwind-react/input";
+
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -131,7 +134,7 @@ export function ChipInput({
           )}
         >
           {v}
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={(e) => {
               e.stopPropagation();
@@ -142,10 +145,10 @@ export function ChipInput({
             tabIndex={-1}
           >
             ✕
-          </button>
+          </SwButton>
         </span>
       ))}
-      <input
+      <SwInput
         ref={inputRef}
         type="text"
         value={draft}
@@ -156,7 +159,7 @@ export function ChipInput({
         aria-label={ariaLabel}
         disabled={disabled || values.length >= maxItems}
         className={cn(
-          "flex-1 min-w-[8ch] bg-transparent border-none outline-none text-sm",
+          "flex-1 min-w-[8ch] bg-transparent dark:bg-transparent border-none shadow-none px-0 outline-none text-sm focus-visible:ring-0",
           "placeholder:text-muted-foreground",
           inputClassName,
         )}

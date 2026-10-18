@@ -82,13 +82,14 @@ describe("AdminQuickActionDialog", () => {
     const dialog = screen.getByRole("dialog", {
       name: "Quickly record a location",
     });
-    expect(dialog).toHaveClass(
+    const panel = dialog.querySelector("[data-gomate-modal-panel]");
+    expect(panel).toHaveClass(
       "rounded-t-2xl",
       "sm:max-w-xl",
       "sm:rounded-2xl",
       "motion-reduce:transition-none",
     );
-    expect(dialog).toHaveClass("pb-[env(safe-area-inset-bottom)]");
+    expect(panel).toHaveClass("pb-[env(safe-area-inset-bottom)]");
     await waitFor(() =>
       expect(screen.getByLabelText("Location")).toHaveFocus(),
     );

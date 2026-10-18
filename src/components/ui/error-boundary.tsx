@@ -1,5 +1,7 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import * as React from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 
@@ -51,13 +53,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             <p className="text-sm text-muted-foreground mb-4">
               {this.state.error?.message || "未知错误"}
             </p>
-            <button
+            <SwButton variant="plain" size="inherit" type="button"
               onClick={this.handleReset}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
               重试
-            </button>
+            </SwButton>
             {import.meta.env.DEV && this.state.error && (
               <pre className="mt-4 p-3 bg-muted rounded text-xs text-left overflow-auto max-h-48">
                 {this.state.error.stack}

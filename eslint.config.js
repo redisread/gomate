@@ -37,7 +37,10 @@ export default tseslint.config(
       'react-hooks': reactHooks,
     },
     rules: {
-      ...reactHooks.configs.recommended.rules,
+      // Preserve the pre-upgrade Hooks gate. React Compiler adoption is separate
+      // from the UI migration; its diagnostics change the existing state model.
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': ['error', {
         argsIgnorePattern: '^_',

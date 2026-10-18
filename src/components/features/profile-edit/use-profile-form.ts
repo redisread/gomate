@@ -82,6 +82,11 @@ export function useProfileForm() {
     setMessage(null);
   };
 
+  const handleLevelChange = (level: string) => {
+    setFormData((prev) => ({ ...prev, level }));
+    setMessage(null);
+  };
+
   const handleRegionChange = (regionId: string) => {
     setFormData((prev) => ({ ...prev, regionId }));
     setMessage(null);
@@ -169,6 +174,6 @@ export function useProfileForm() {
     avatarPreview, selectedFile, fileInputRef, regions,
     formData, bioLength, bioNearLimit, bioAtLimit,
     setAvatarPreview, setMessage,
-    handleChange, handleRegionChange, handleFileChange, handleSubmit, cancelSelectedFile,
+    handleChange, handleLevelChange, handleRegionChange, handleFileChange, handleSubmit, cancelSelectedFile,
   };
 }

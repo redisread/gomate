@@ -1,5 +1,10 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Textarea as SwTextarea } from "@/components/starwind-react/textarea";
+
 import * as React from "react";
 import { MapPin, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,7 +31,7 @@ function SectionCard({ icon, title, badge, children, defaultOpen = true, collaps
   return (
     <div className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 overflow-hidden"
       style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-      <button type="button" onClick={() => collapsible && setOpen((v) => !v)}
+      <SwButton variant="plain" size="inherit" type="button" onClick={() => collapsible && setOpen((v) => !v)}
         className={cn("w-full flex items-center gap-2.5 px-5 py-4 text-left", collapsible && "hover:bg-stone-50/60 dark:hover:bg-stone-800/60 transition-colors cursor-pointer", !collapsible && "cursor-default")}>
         <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "rgba(217,119,6,0.1)" }}>
           <span className="text-amber-600 dark:text-amber-400">{icon}</span>
@@ -38,7 +43,7 @@ function SectionCard({ icon, title, badge, children, defaultOpen = true, collaps
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         )}
-      </button>
+      </SwButton>
       {open && (
         <div className="px-5 pb-5 space-y-4 border-t border-stone-50 dark:border-stone-800">
           <div className="pt-4 space-y-4">{children}</div>
@@ -55,9 +60,9 @@ interface FieldProps {
 function Field({ label, required, hint, error, fieldId, children }: FieldProps) {
   return (
     <div id={fieldId ? `location-field-${fieldId}` : undefined} className="space-y-1.5">
-      <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
+      <SwLabel className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
         {label}{required && <span className="ml-1 text-red-400">*</span>}
-      </label>
+      </SwLabel>
       {children}
       {error && (
         <p className="text-xs text-red-500 flex items-center gap-1">
@@ -100,15 +105,15 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
       {/* 基本信息 */}
       <SectionCard icon={<FileText className="h-4 w-4" />} title={t("admin.formBasicTitle")}>
         <Field label={t("admin.formNameRequired")} required error={errors.name} fieldId="name">
-          <input type="text" value={formData.name} onChange={(e) => updateField("name", e.target.value)}
+          <SwInput type="text" value={formData.name} onChange={(e) => updateField("name", e.target.value)}
             onBlur={(e) => touch("name", e.target.value)} className={cn(styledInput(!!errors.name))} />
         </Field>
         <Field label={t("admin.formSubtitle")} hint={t("admin.formSubtitleHint")}>
-          <input type="text" value={formData.subtitle} onChange={(e) => updateField("subtitle", e.target.value)}
+          <SwInput type="text" value={formData.subtitle} onChange={(e) => updateField("subtitle", e.target.value)}
             className={cn(styledInput())} />
         </Field>
         <Field label={t("admin.formSlug")}>
-          <input type="text" value={formData.slug}
+          <SwInput type="text" value={formData.slug}
             onChange={(e) => updateField("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
             placeholder={t("admin.placeholderSlug")} className={cn(styledInput())} />
         </Field>
@@ -116,7 +121,7 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
           <div className="flex flex-wrap gap-2">
             {activityTypes.map((activityType) => {
               const selected = formData.supportedActivityTypes.includes(activityType);
-              return <button key={activityType} type="button"
+              return <SwButton variant="plain" size="inherit" key={activityType} type="button"
                 onClick={() => updateField(
                   "supportedActivityTypes",
                   selected
@@ -126,7 +131,7 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
                 className={cn("px-3.5 py-1.5 rounded-full text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                   selected ? "bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900" : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-700")}>
                 {t(`enums.locationType.${activityType}`)}
-              </button>;
+              </SwButton>;
             })}
           </div>
           {errors.supportedActivityTypes && <p className="mt-1 text-xs text-red-500">{errors.supportedActivityTypes}</p>}
@@ -134,7 +139,7 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
         <Field label={t("admin.formDescriptionRequired")} required error={errors.description} fieldId="description"
           hint={t("admin.charCountHint", { count: formData.description.length })}>
           <div className="relative">
-            <textarea rows={6} value={formData.description} onChange={(e) => updateField("description", e.target.value)}
+            <SwTextarea rows={6} value={formData.description} onChange={(e) => updateField("description", e.target.value)}
               onBlur={(e) => touch("description", e.target.value)}
               className={cn(styledInput(!!errors.description), "resize-none leading-relaxed")} />
             <div className="absolute bottom-2.5 right-3 flex items-center gap-1.5">
@@ -158,21 +163,21 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
             regions={regions} error={errors.regionId} />
         </Field>
         <Field label={t("admin.formAddress")}>
-          <input type="text" value={formData.address} onChange={(e) => updateField("address", e.target.value)}
+          <SwInput type="text" value={formData.address} onChange={(e) => updateField("address", e.target.value)}
             className={cn(styledInput())} />
         </Field>
         <Field label={t("admin.formCoordinates")} hint={t("admin.coordinatesHelp")}>
           <div className="flex items-end gap-2">
             <div className="flex-1 grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-2xs text-stone-400 mb-1">{t("admin.latLabel")}</label>
-                <input id="location-field-latitude" type="number" step="any" value={formData.latitude} onChange={(e) => updateField("latitude", e.target.value)}
+                <SwLabel className="block text-2xs text-stone-400 mb-1">{t("admin.latLabel")}</SwLabel>
+                <SwInput id="location-field-latitude" type="number" step="any" value={formData.latitude} onChange={(e) => updateField("latitude", e.target.value)}
                   onBlur={(e) => touch("latitude", e.target.value)} placeholder="22.5619" className={cn(styledInput(!!errors.latitude))} />
                 {errors.latitude && <p className="text-xs text-red-500 mt-1">{errors.latitude}</p>}
               </div>
               <div>
-                <label className="block text-2xs text-stone-400 dark:text-stone-500 mb-1">{t("admin.lngLabel")}</label>
-                <input id="location-field-longitude" type="number" step="any" value={formData.longitude} onChange={(e) => updateField("longitude", e.target.value)}
+                <SwLabel className="block text-2xs text-stone-400 dark:text-stone-500 mb-1">{t("admin.lngLabel")}</SwLabel>
+                <SwInput id="location-field-longitude" type="number" step="any" value={formData.longitude} onChange={(e) => updateField("longitude", e.target.value)}
                   onBlur={(e) => touch("longitude", e.target.value)} placeholder="114.1985" className={cn(styledInput(!!errors.longitude))} />
                 {errors.longitude && <p className="text-xs text-red-500 mt-1">{errors.longitude}</p>}
               </div>

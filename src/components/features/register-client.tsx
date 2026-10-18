@@ -1,5 +1,9 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+
 import { BrandIcon } from "@/components/brand-icon";
 
 import { GoogleSignIn } from "./google-sign-in";
@@ -110,7 +114,7 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
             {t("auth.registerSuccess")}
           </h2>
           <p className="text-muted-foreground">{t("auth.registerVerifyEmail")}</p>
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={handleResendVerification}
             disabled={isResending}
@@ -118,7 +122,7 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
             style={{ background: "var(--primary)" }}
           >
             {isResending ? t("auth.verificationResending") : t("auth.verificationResend")}
-          </button>
+          </SwButton>
           {resendMessage && (
             <p className="text-sm text-muted-foreground" role="status">{resendMessage}</p>
           )}
@@ -271,11 +275,11 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
 
               {/* 密码 */}
               <div className="space-y-1.5">
-                <label htmlFor="password" className="text-sm font-medium text-foreground">
+                <SwLabel htmlFor="password" className="text-sm font-medium text-foreground">
                   {t("auth.password")}
-                </label>
+                </SwLabel>
                 <div className="relative">
-                  <input
+                  <SwInput
                     id="password"
                     data-testid="register-password"
                     name="password"
@@ -285,15 +289,15 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
                     onChange={handleInputChange}
                     required
                     minLength={8}
-                    className="w-full px-4 py-3 pr-11 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
+                    className="w-full px-4 py-3 pr-16 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
                   />
-                  <button
+                  <SwButton variant="plain" size="inherit"
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors duration-150"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
+                  </SwButton>
                 </div>
                 {/* 密码强度指示 */}
                 {formData.password && (
@@ -325,7 +329,7 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
               )}
 
               {/* 注册按钮 */}
-              <button
+              <SwButton variant="plain" size="inherit"
                 data-testid="register-submit"
                 type="submit"
                 disabled={isLoading || googleBusy}
@@ -358,7 +362,7 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
-              </button>
+              </SwButton>
 
               {/* 登录链接 */}
               <p className="text-center text-sm text-muted-foreground">
@@ -411,10 +415,10 @@ function FormField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-foreground">
+      <SwLabel htmlFor={id} className="text-sm font-medium text-foreground">
         {label}
-      </label>
-      <input
+      </SwLabel>
+      <SwInput
         id={id}
         data-testid={testId}
         name={id}

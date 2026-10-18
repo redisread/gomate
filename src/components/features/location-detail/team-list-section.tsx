@@ -1,3 +1,5 @@
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { Users, ArrowUpRight, RefreshCw } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -58,13 +60,13 @@ export function TeamListSection({ locationId }: { locationId: string }) {
             {t("locations.detailWaiting")}
           </h2>
         </div>
-        <a
+        <SwButton as="a" variant="plain" size="inherit"
           href={`/teams?locationId=${locationId}`}
           className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold text-accent-foreground hover:underline underline-offset-4"
         >
           {t("locationDetail.browseTeams")}
           <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
-        </a>
+        </SwButton>
       </div>
       {state.status === "loading" ? (
         <div
@@ -75,17 +77,17 @@ export function TeamListSection({ locationId }: { locationId: string }) {
         </div>
       ) : state.status === "error" ? (
         <div className="rounded-2xl bg-muted/50 p-6">
-          <p role="alert" className="text-sm text-foreground">
+          <SwAlert as="p" variant="plain" role="alert" className="text-sm text-foreground">
             {t("locationDetail.teamsLoadFailed")}
-          </p>
-          <button
+          </SwAlert>
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={() => setAttempt((value) => value + 1)}
             className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl bg-card px-4 text-sm font-semibold text-foreground shadow-card transition-colors hover:bg-secondary"
           >
             <RefreshCw aria-hidden="true" className="h-4 w-4" />
             {t("common.retry")}
-          </button>
+          </SwButton>
         </div>
       ) : state.data.teams.length === 0 ? (
         <div className="flex items-start gap-4 rounded-2xl bg-warm-subtle p-6 sm:p-8">

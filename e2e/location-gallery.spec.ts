@@ -43,14 +43,6 @@ test("lightbox preserves decoded image on failure and retries latest selection",
   page,
 }) => {
   await setup(page);
-  await page.goto("/locations/motion-gallery");
-  await page
-    .getByRole("button", { name: "查看大图 · 图片 1", exact: true })
-    .click();
-  const dialog = page.getByRole("dialog");
-  await expect(
-    dialog.getByRole("img", { name: "图片 1", exact: true }),
-  ).toHaveAttribute("src", "/gallery-a.svg");
   let fail = true;
   await page.route("**/gallery-b.svg", (route) =>
     fail
@@ -60,6 +52,14 @@ test("lightbox preserves decoded image on failure and retries latest selection",
           body: '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="tan"/></svg>',
         }),
   );
+  await page.goto("/locations/motion-gallery");
+  await page
+    .getByRole("button", { name: "查看大图 · 图片 1", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("img", { name: "图片 1", exact: true }),
+  ).toHaveAttribute("src", "/gallery-a.svg");
   await dialog.getByRole("button", { name: "下一张", exact: true }).click();
   await expect(dialog.getByRole("alert")).toContainText("图片加载失败");
   await expect(

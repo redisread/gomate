@@ -1,5 +1,7 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 /**
  * 地点编辑页 · 重组版
  *
@@ -171,11 +173,11 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
                 {t("admin.viewPublicLocation")}
               </a>
             )}
-            <button type="button" onClick={() => setShowPreview((v) => !v)}
+            <SwButton variant="plain" size="inherit" type="button" onClick={() => setShowPreview((v) => !v)}
               className="flex min-h-11 items-center gap-1.5 text-xs text-stone-500 transition-colors hover:text-amber-600 lg:hidden">
               {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               {showPreview ? t("admin.closePreview") : t("admin.previewEffect")}
-            </button>
+            </SwButton>
           </div>
         </div>
 
@@ -193,8 +195,8 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
           <div className="mb-6 flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
             <p className="text-sm text-amber-800 dark:text-amber-300">🗒 {t("admin.draftRestorePrompt")}</p>
             <div className="flex items-center gap-2 shrink-0">
-              <button type="button" onClick={form.handleDiscardDraft} className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors">{t("admin.draftDiscardBtn")}</button>
-              <button type="button" onClick={form.handleRestoreDraft} className="text-xs font-semibold px-3 py-1 rounded-lg text-white bg-amber-600 hover:bg-amber-700 transition-colors">{t("admin.draftRestoreBtn")}</button>
+              <SwButton variant="plain" size="inherit" type="button" onClick={form.handleDiscardDraft} className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 transition-colors">{t("admin.draftDiscardBtn")}</SwButton>
+              <SwButton variant="plain" size="inherit" type="button" onClick={form.handleRestoreDraft} className="text-xs font-semibold px-3 py-1 rounded-lg text-white bg-amber-600 hover:bg-amber-700 transition-colors">{t("admin.draftRestoreBtn")}</SwButton>
             </div>
           </div>
         )}

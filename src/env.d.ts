@@ -1,3 +1,4 @@
+/// <reference types="astro/client" />
 import "../.astro/types.d.ts";
 
 import type { Locale } from "./i18n";
@@ -12,10 +13,12 @@ declare global {
   }
 }
 
-declare module "astro" {
+declare global {
+  namespace App {
   interface Locals {
     locale?: Locale;
     __i18n_namespaces?: string[];
     admin?: AdminIdentity;
   }
+}
 }

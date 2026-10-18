@@ -1,5 +1,7 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 /**
  * MultiImageUpload — 多图上传组件
  *
@@ -261,7 +263,7 @@ export function MultiImageUpload({
                 >
                   {/* 设为封面按钮 */}
                   {!isCurrentCover && onSetCover && (
-                    <button
+                    <SwButton variant="plain" size="inherit"
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -277,10 +279,10 @@ export function MultiImageUpload({
                       )}
                     >
                       <Star className="h-3.5 w-3.5" />
-                    </button>
+                    </SwButton>
                   )}
                   {/* 删除按钮（右上） */}
-                  <button
+                  <SwButton variant="plain" size="inherit"
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -296,7 +298,7 @@ export function MultiImageUpload({
                     )}
                   >
                     <X className="h-3.5 w-3.5" />
-                  </button>
+                  </SwButton>
                 </div>
               )}
             </div>
@@ -314,13 +316,13 @@ export function MultiImageUpload({
               <div className="flex flex-col items-center gap-1 p-2 text-center">
                 <AlertCircle className="h-5 w-5 text-red-400" />
                 <span className="text-3xs text-red-500 leading-tight">{item.error}</span>
-                <button
+                <SwButton variant="plain" size="inherit"
                   type="button"
                   onClick={() => handleClearError(item.key)}
                   className="text-3xs underline underline-offset-2 text-red-400 hover:text-red-600"
                 >
                   {t("ui.upload.removeItem")}
-                </button>
+                </SwButton>
               </div>
             ) : (
               /* 上传中态 */
@@ -334,7 +336,7 @@ export function MultiImageUpload({
 
         {/* 添加按钮格 */}
         {canAddMore && (
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={() => fileInputRef.current?.click()}
             aria-label={t('ui.upload.addImage')}
@@ -350,7 +352,7 @@ export function MultiImageUpload({
           >
             <Plus className="h-5 w-5 text-stone-400" />
             <span className="text-3xs text-stone-400">{t('ui.upload.addImage')}</span>
-          </button>
+          </SwButton>
         )}
       </div>
 

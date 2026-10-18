@@ -156,3 +156,16 @@ pnpm build
 - 原创插画发布在 `public/images/footer-landscape.webp`（1920×640，约 211 KiB）及 `footer-landscape-small.webp`（960×320，约 64 KiB）；生成工具为 imagegen，主题为山野、湖泊、步道和三位同行者，未使用参考截图的图像资产。
 - 微信联系方式使用共享 Modal，支持焦点圈定、Escape 与关闭后焦点恢复；剪贴板不可用时选中微信号供手动复制。返回顶部在 reduced-motion 下使用即时滚动。
 - 图片尺寸与加载行为参考 [MDN img](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img)，滚动偏好参考 [MDN scrollTo](https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollTo)。
+
+## Starwind UI
+
+- 使用 Starwind UI CLI 3.4.0 内置 registry 2.2.0 的可编辑 Styled 源，以及 `@starwind-ui/astro` / `@starwind-ui/react` 1.3.0。各组件源版本记录于 `starwind.config.json`，上游 MIT 许可保留在 `src/components/starwind/LICENSE`。
+- Astro 页面从 `src/components/starwind/` 导入；React Islands 从 `src/components/starwind-react/` 导入，不额外创建渲染根。
+- 现有 `globals.css` 仍为唯一品牌 token 来源；Starwind 的 outline/error/info 等语义映射到 ring/destructive/primary。使用前阅读上游 [Astro + React 文档](https://starwind.dev/docs/frameworks/astro-react/)。
+- 源码允许本地适配：移除 `transition-all`，保留移动端输入 16px、reduced-motion、原生表单值和显式提交类型。Button 的 plain/inherit 变体承接现有业务布局；按钮与链接的 ref/event 类型分别约束。
+- 更新组件前检查本地源差异，不直接运行 overwrite 覆盖品牌与可访问性适配。CLI 对当前 Astro 配置的识别有限，本次从同版本官方内置 registry 手动安装，未改动 Astro 的 Worker 集成。
+
+- 公共 Modal 使用 Starwind Dialog primitive 管理原生 dialog、Escape 与滚动锁；外层保留背景 inert、初始/返回焦点和原布局。调用方不再独立控制滚动锁。
+- 图库在退出过程中切换 reduced-motion 时，退出透明度使用 0.001 秒收尾（位移与旋转归零），避免 Motion 保留未卸载节点；浏览器测试覆盖切换及失败重试。
+
+- 密码框带 44px 显隐按钮时为右侧按钮和 inset 留足输入内边距；使用 Card 表达横向行时显式指定 `flex-row`。Checkbox 在 reduced-motion 下直接呈现完整勾选图标，不能只取消父级动画。
