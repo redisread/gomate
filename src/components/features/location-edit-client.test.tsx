@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Location } from "@/lib/types";
-import { DEFAULT_LOCATION_FORM } from "./location-form/use-location-form";
+import { DEFAULT_LOCATION_FORM } from "./location-form/location-form-data";
 import {
   LocationEditClient,
   focusLocationFormField,

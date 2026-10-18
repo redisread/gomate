@@ -8,7 +8,7 @@ import { Settings, ChevronDown } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import type { Tag } from "@/lib/types";
-import type { FormData } from "./use-location-form";
+import type { FormData } from "./location-form-data";
 
 interface SectionCardProps {
   icon: React.ReactNode; title: string; badge?: React.ReactNode;

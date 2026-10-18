@@ -6,7 +6,7 @@ import { Label as SwLabel } from "@/components/starwind-react/label";
 import * as React from "react";
 import { ImageIcon } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import type { FormData } from "./use-location-form";
+import type { FormData } from "./location-form-data";
 import { CoverImageUpload } from "@/components/ui/cover-image-upload";
 import { MultiImageUpload } from "@/components/ui/multi-image-upload";
 import { SeasonPicker } from "@/components/ui/season-picker";
