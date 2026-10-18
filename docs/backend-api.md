@@ -28,6 +28,22 @@
 `page/pageSize`，默认每页 50、最大 200，优先采用 `pageSize`，其次 `limit`。
 地图统计仅包含坐标完整的公开地点，`total` 与 `points` 使用同一口径。
 
+## 用户模块的代码导航
+
+用户 API 由 [users/index.ts](../src/server/routes/users/index.ts) 统一组装，按职责加载上下文：
+
+| 修改范围                 | 实现与检查入口                                                                                                                            |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 当前账号资料读取、更新   | [profile.ts](../src/server/routes/users/profile.ts)；保留私有读取缓存头与最终写入的城市条件                                               |
+| 账号删除及失败恢复       | [account.ts](../src/server/routes/users/account.ts)、[account-erasure.ts](../src/server/lib/account-erasure.ts)；头像清理在账号匿名化之前 |
+| 我的队伍时间线 HTTP 合同 | [timeline.ts](../src/server/routes/users/timeline.ts)；先鉴权，再校验分页                                                                 |
+| 时间线 SQL 与响应转换    | [timeline-query.ts](../src/server/routes/users/timeline-query.ts)；创建与加入分别查询，共用选择字段和分页响应转换                         |
+| 公开资料与字段可见性     | [public-profile.ts](../src/server/routes/users/public-profile.ts)、[utils.ts](../src/server/routes/users/utils.ts)                        |
+
+固定的 `/me` 路由先于公开的 `/{id}` 挂载；各路由在自身契约上声明 middleware，避免子模块的鉴权或缓存策略扩散到其他路由。时间线按 `createdAt DESC, id DESC` 分页，额外读取一行判断是否还有下一页；只从实际返回的最后一行生成游标。查询结果类型直接由 Drizzle 推导，不另行维护数据库行字段副本。
+
+重构这些边界时，运行 [HTTP 路由回归](../src/server/routes/users/routing.test.ts) 与 [D1 时间线回归](../tests/worker/users-timeline.test.ts)，并核对生成的 OpenAPI。前者覆盖鉴权和分页错误顺序，后者验证实际 SQL 的归属、离队过滤、同时间戳排序和分页结束条件。
+
 ## 请求与认证边界
 
 - 浏览器请求同源 `/api/*`；Astro SSR 使用进程内 dispatcher，不向生产域名 self-fetch。
