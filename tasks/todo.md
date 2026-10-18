@@ -2,8 +2,8 @@
 
 ## Task 1：同步基线
 说明：从最新 main 建立升级分支并核对当前配置、版本与升级说明。
-- [ ] 用户审阅批准 plan.md；重新读取 main 上变动的项目约束。
-- [ ] 确认目标稳定版、peer 依赖、Node 要求及 React v7 转换链兼容。
+- [x] 用户审阅批准 plan.md；重新读取 main 上变动的项目约束。
+- [x] 确认目标稳定版、peer 依赖、Node 要求及 React v7 转换链兼容。
 验证：git status、git diff HEAD..origin/main、pnpm view；读取目标版本 changelog。
 依赖：无。文件：tasks/plan.md、tasks/todo.md。规模：小。
 
@@ -13,6 +13,13 @@
 - [ ] 类型、构建、真实 Worker 入口通过；无无关依赖升级。
 验证：pnpm install --frozen-lockfile、pnpm type-check、pnpm build、pnpm test:worker:run。
 依赖：Task 1。文件：package.json、pnpm-lock.yaml；必要时 astro.config.mjs、src/worker.ts。规模：中。
+
+## Task 2b：对齐 adapter 必需工具链
+说明：首次 astro sync 暴露 Wrangler peer 不兼容，升级配套 Vite 8.3.4、Cloudflare Vite 插件 1.64.0、Wrangler 4.151.1。
+- [x] pnpm peers check 无冲突；锁文件冻结安装通过。
+- [ ] 重新生成 Worker types，通过构建、dry-run 和 size 检查。
+验证：pnpm type-check、pnpm worker:types、pnpm worker:dry-run、pnpm worker:size。
+依赖：Task 2。文件：package.json、pnpm-lock.yaml、wrangler.jsonc、src/server/worker-configuration.d.ts。规模：中。
 
 ## 检查点：依赖兼容
 - [ ] 检查 lockfile diff、peer warnings、Worker bundle；失败时先定位再继续。

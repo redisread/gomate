@@ -58,3 +58,11 @@ Cloudflare 14.4.0 要求 Astro ^7.4.0；React integration 7.1.0 支持 React 18�
 
 用户于 2026-10-18 批准计划。已从 bd56fe5e 创建 codex/astro-7-4，正在运行升级前 pnpm test:ci 基线。官方 React v7 改用 Oxc，项目未配置 babel，也不启用可选 React Compiler。
 完成后按仓库规范把长期结论并入现行 docs；一次性计划不长期留在工作树。
+
+## 兼容性核验更新
+
+首次升级后 astro sync 确认失败：adapter 14.4.0 拉取 Cloudflare Vite 插件 1.64.0，后者要求 Wrangler ^4.151.0。同步必要工具链到 Vite 8.3.4、插件 1.64.0、Wrangler 4.151.1；生成 Worker types。显式关闭新版默认 source map 上传，保持原发布行为。基线 test:ci 通过（323/243/16）。
+
+## 执行结果
+
+本地升级前后 test:ci 通过（323 前端/243 服务端/16 Worker）。目标 audit/peers/type一致性/dry-run/size 全通过，77 Chromium 回归通过。开发启动发现既有代理自动后台与临时配置生命周期冲突；新增回归先失败后通过，传入 --ignore-lock 后真实页面/API/HMR/SIGTERM停止与配置清理通过。独立审查两轮均无阻塞。后续交付状态由 PR/CI 与对话记录；计划按仓库规约从最终树删除，历史保留。
