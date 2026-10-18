@@ -305,6 +305,36 @@ test.describe("admin platform", () => {
       await expect(discard).not.toBeVisible();
     });
   }
+  test("location editor saves even when browser draft storage is denied", async ({ page }) => {
+    await authenticate(page, admin);
+    const source = await (await page.request.get(`/api/locations/${locationId}/admin`)).json();
+    const created = await page.request.post("/api/locations", {
+      headers: { Origin: LOCAL_ORIGIN },
+      data: { name: `Storage test ${RUN_ID}`, description: "Draft storage regression", regionId: source.location.regionId, status: "draft" },
+    });
+    expect(created.ok()).toBe(true);
+    const { location: draft } = await created.json();
+    await page.addInitScript(() => {
+      for (const method of ["getItem", "setItem", "removeItem"] as const) {
+        const original = Storage.prototype[method];
+        Object.defineProperty(Storage.prototype, method, {
+          configurable: true,
+          value: function (key: string, value?: string) {
+            if (key.startsWith("location-")) throw new DOMException("Denied", "SecurityError");
+            return Reflect.apply(original, this, value === undefined ? [key] : [key, value]);
+          },
+        });
+      }
+    });
+    await page.goto(`/admin/locations/${draft.id}/edit`);
+    const name = page.locator("#location-field-name input");
+    await expect(name).toHaveValue(`Storage test ${RUN_ID}`);
+    await name.fill(`Storage saved ${RUN_ID}`);
+    await page.getByRole("region", { name: "地点保存与发布操作" }).getByRole("button", { name: "保存草稿" }).click();
+    await expect(page.getByText("保存成功", { exact: true })).toBeVisible();
+    const persisted = await (await page.request.get(`/api/locations/${draft.id}/admin`)).json();
+    expect(persisted.location.name).toBe(`Storage saved ${RUN_ID}`);
+  });
 
   test("location editor keeps draft navigation inside admin and exposes explicit publish controls", async ({
     page,

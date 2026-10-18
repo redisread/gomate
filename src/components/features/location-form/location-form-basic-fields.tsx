@@ -10,7 +10,7 @@ import { MapPin, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import type { ActivityType, Region } from "@/lib/types";
-import type { FormData } from "./use-location-form";
+import type { FormData } from "./location-form-data";
 import { RegionSelect } from "@/components/ui/region-select";
 
 /* ================================================================

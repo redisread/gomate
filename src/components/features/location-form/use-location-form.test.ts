@@ -7,7 +7,7 @@ import {
   locationSaveDestination,
   locationToFormData,
   resolveLocationSaveStatus,
-} from "./use-location-form";
+} from "./location-form-data";
 
 const location: Location = {
   id: "loc-1",

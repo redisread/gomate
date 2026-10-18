@@ -8,7 +8,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { locationStatusKey } from "@/lib/admin-i18n";
 import type { LocationStatus } from "@/lib/types";
-import type { LocationSaveIntent } from "./use-location-form";
+import type { LocationSaveIntent } from "./location-form-data";
 
 interface LocationActionBarProps {
   status: LocationStatus;
