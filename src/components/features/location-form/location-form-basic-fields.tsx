@@ -1,80 +1,18 @@
 "use client";
 
+import { SectionCard, Field } from "./location-form-layout";
+
 import { Button as SwButton } from "@/components/starwind-react/button";
 import { Label as SwLabel } from "@/components/starwind-react/label";
 import { Input as SwInput } from "@/components/starwind-react/input";
 import { Textarea as SwTextarea } from "@/components/starwind-react/textarea";
 
-import * as React from "react";
 import { MapPin, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import type { ActivityType, Region } from "@/lib/types";
 import type { FormData } from "./location-form-data";
 import { RegionSelect } from "@/components/ui/region-select";
-
-/* ================================================================
-   共享子组件（SectionCard、Field、styledInput）
-   ================================================================ */
-
-interface SectionCardProps {
-  icon: React.ReactNode;
-  title: string;
-  badge?: React.ReactNode;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-  collapsible?: boolean;
-}
-
-function SectionCard({ icon, title, badge, children, defaultOpen = true, collapsible = false }: SectionCardProps) {
-  const [open, setOpen] = React.useState(defaultOpen);
-  return (
-    <div className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 overflow-hidden"
-      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-      <SwButton variant="plain" size="inherit" type="button" onClick={() => collapsible && setOpen((v) => !v)}
-        className={cn("w-full flex items-center gap-2.5 px-5 py-4 text-left", collapsible && "hover:bg-stone-50/60 dark:hover:bg-stone-800/60 transition-colors cursor-pointer", !collapsible && "cursor-default")}>
-        <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "rgba(217,119,6,0.1)" }}>
-          <span className="text-amber-600 dark:text-amber-400">{icon}</span>
-        </span>
-        <span className="text-sm font-semibold text-stone-800 dark:text-stone-200 flex-1">{title}</span>
-        {badge && <span>{badge}</span>}
-        {collapsible && (
-          <svg className={cn("h-4 w-4 text-stone-400 dark:text-stone-500 transition-transform duration-200", open && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        )}
-      </SwButton>
-      {open && (
-        <div className="px-5 pb-5 space-y-4 border-t border-stone-50 dark:border-stone-800">
-          <div className="pt-4 space-y-4">{children}</div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface FieldProps {
-  label: string; required?: boolean; hint?: string; error?: string; fieldId?: string; children: React.ReactNode;
-}
-
-function Field({ label, required, hint, error, fieldId, children }: FieldProps) {
-  return (
-    <div id={fieldId ? `location-field-${fieldId}` : undefined} className="space-y-1.5">
-      <SwLabel className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
-        {label}{required && <span className="ml-1 text-red-400">*</span>}
-      </SwLabel>
-      {children}
-      {error && (
-        <p className="text-xs text-red-500 flex items-center gap-1">
-          <svg className="h-3 w-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" />
-          </svg>{error}
-        </p>
-      )}
-      {!error && hint && <p className="text-xs text-stone-400">{hint}</p>}
-    </div>
-  );
-}
 
 function styledInput(hasError?: boolean) {
   return cn(
@@ -85,9 +23,7 @@ function styledInput(hasError?: boolean) {
   );
 }
 
-/* ================================================================
-   LocationFormBasicFields
-   ================================================================ */
+
 
 interface LocationFormBasicFieldsProps {
   formData: FormData;
@@ -104,16 +40,16 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
     <div className="space-y-4">
       {/* 基本信息 */}
       <SectionCard icon={<FileText className="h-4 w-4" />} title={t("admin.formBasicTitle")}>
-        <Field label={t("admin.formNameRequired")} required error={errors.name} fieldId="name">
-          <SwInput type="text" value={formData.name} onChange={(e) => updateField("name", e.target.value)}
+        <Field controlId="location-input-name" label={t("admin.formNameRequired")} error={errors.name} fieldId="name">
+          <SwInput id="location-input-name" aria-invalid={!!errors.name} aria-describedby={errors.name ? "location-input-name-description" : undefined} type="text" value={formData.name} onChange={(e) => updateField("name", e.target.value)}
             onBlur={(e) => touch("name", e.target.value)} className={cn(styledInput(!!errors.name))} />
         </Field>
-        <Field label={t("admin.formSubtitle")} hint={t("admin.formSubtitleHint")}>
-          <SwInput type="text" value={formData.subtitle} onChange={(e) => updateField("subtitle", e.target.value)}
+        <Field error={errors.subtitle} controlId="location-input-subtitle" label={t("admin.formSubtitle")} hint={t("admin.formSubtitleHint")}>
+          <SwInput id="location-input-subtitle" aria-invalid={!!errors.subtitle} aria-describedby="location-input-subtitle-description" type="text" value={formData.subtitle} onChange={(e) => updateField("subtitle", e.target.value)}
             className={cn(styledInput())} />
         </Field>
-        <Field label={t("admin.formSlug")}>
-          <SwInput type="text" value={formData.slug}
+        <Field error={errors.slug} controlId="location-input-slug" label={t("admin.formSlug")}>
+          <SwInput id="location-input-slug" aria-invalid={!!errors.slug} aria-describedby={errors.slug ? "location-input-slug-description" : undefined} type="text" value={formData.slug}
             onChange={(e) => updateField("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
             placeholder={t("admin.placeholderSlug")} className={cn(styledInput())} />
         </Field>
@@ -121,7 +57,7 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
           <div className="flex flex-wrap gap-2">
             {activityTypes.map((activityType) => {
               const selected = formData.supportedActivityTypes.includes(activityType);
-              return <SwButton variant="plain" size="inherit" key={activityType} type="button"
+              return <SwButton variant="plain" size="inherit" key={activityType} type="button" aria-pressed={selected}
                 onClick={() => updateField(
                   "supportedActivityTypes",
                   selected
@@ -136,10 +72,10 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
           </div>
           {errors.supportedActivityTypes && <p className="mt-1 text-xs text-red-500">{errors.supportedActivityTypes}</p>}
         </Field>
-        <Field label={t("admin.formDescriptionRequired")} required error={errors.description} fieldId="description"
+        <Field controlId="location-input-description" label={t("admin.formDescriptionRequired")} error={errors.description} fieldId="description"
           hint={t("admin.charCountHint", { count: formData.description.length })}>
           <div className="relative">
-            <SwTextarea rows={6} value={formData.description} onChange={(e) => updateField("description", e.target.value)}
+            <SwTextarea id="location-input-description" aria-invalid={!!errors.description} aria-describedby="location-input-description-description" rows={6} value={formData.description} onChange={(e) => updateField("description", e.target.value)}
               onBlur={(e) => touch("description", e.target.value)}
               className={cn(styledInput(!!errors.description), "resize-none leading-relaxed")} />
             <div className="absolute bottom-2.5 right-3 flex items-center gap-1.5">
@@ -162,24 +98,24 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
           <RegionSelect value={formData.regionId} onChange={(id) => { updateField("regionId", id); touch("regionId", id); }}
             regions={regions} error={errors.regionId} />
         </Field>
-        <Field label={t("admin.formAddress")}>
-          <SwInput type="text" value={formData.address} onChange={(e) => updateField("address", e.target.value)}
+        <Field error={errors.address} controlId="location-input-address" label={t("admin.formAddress")}>
+          <SwInput id="location-input-address" aria-invalid={!!errors.address} aria-describedby={errors.address ? "location-input-address-description" : undefined} type="text" value={formData.address} onChange={(e) => updateField("address", e.target.value)}
             className={cn(styledInput())} />
         </Field>
         <Field label={t("admin.formCoordinates")} hint={t("admin.coordinatesHelp")}>
           <div className="flex items-end gap-2">
             <div className="flex-1 grid grid-cols-2 gap-3">
               <div>
-                <SwLabel className="block text-2xs text-stone-400 mb-1">{t("admin.latLabel")}</SwLabel>
-                <SwInput id="location-field-latitude" type="number" step="any" value={formData.latitude} onChange={(e) => updateField("latitude", e.target.value)}
+                <SwLabel htmlFor="location-field-latitude" className="block text-2xs text-stone-400 mb-1">{t("admin.latLabel")}</SwLabel>
+                <SwInput id="location-field-latitude" aria-invalid={!!errors.latitude} aria-describedby={errors.latitude ? "location-latitude-error" : undefined} type="number" step="any" value={formData.latitude} onChange={(e) => updateField("latitude", e.target.value)}
                   onBlur={(e) => touch("latitude", e.target.value)} placeholder="22.5619" className={cn(styledInput(!!errors.latitude))} />
-                {errors.latitude && <p className="text-xs text-red-500 mt-1">{errors.latitude}</p>}
+                {errors.latitude && <p id="location-latitude-error" className="text-xs text-red-500 mt-1">{errors.latitude}</p>}
               </div>
               <div>
-                <SwLabel className="block text-2xs text-stone-400 dark:text-stone-500 mb-1">{t("admin.lngLabel")}</SwLabel>
-                <SwInput id="location-field-longitude" type="number" step="any" value={formData.longitude} onChange={(e) => updateField("longitude", e.target.value)}
+                <SwLabel htmlFor="location-field-longitude" className="block text-2xs text-stone-400 dark:text-stone-500 mb-1">{t("admin.lngLabel")}</SwLabel>
+                <SwInput id="location-field-longitude" aria-invalid={!!errors.longitude} aria-describedby={errors.longitude ? "location-longitude-error" : undefined} type="number" step="any" value={formData.longitude} onChange={(e) => updateField("longitude", e.target.value)}
                   onBlur={(e) => touch("longitude", e.target.value)} placeholder="114.1985" className={cn(styledInput(!!errors.longitude))} />
-                {errors.longitude && <p className="text-xs text-red-500 mt-1">{errors.longitude}</p>}
+                {errors.longitude && <p id="location-longitude-error" className="text-xs text-red-500 mt-1">{errors.longitude}</p>}
               </div>
             </div>
 
