@@ -263,6 +263,38 @@ test.describe("admin platform", () => {
     }
   });
 
+  test("location sections expose headings, labels and keyboard disclosures across widths", async ({ page }, testInfo) => {
+    await authenticate(page, admin);
+    for (const width of [320, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ colorScheme: width === 320 ? "dark" : "light", reducedMotion: "reduce" });
+      await page.goto(`/admin/locations/${locationId}/edit`);
+      await expect(page.getByRole("heading", { name: "基本信息", level: 2 })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "封面与季节", level: 2 })).toBeVisible();
+      await expect(page.getByRole("button", { name: "基本信息", exact: true })).toHaveCount(0);
+      await expect(page.getByLabel("名称 *", { exact: true })).toBeVisible();
+      const settings = page.getByRole("button", { name: /高级设置/ });
+      await settings.focus();
+      await settings.press("Space");
+      await expect(settings).toHaveAttribute("aria-expanded", "false");
+      await expect(page.getByRole("button", { name: "配套设施", exact: true })).toHaveCount(0);
+      await expect(settings).toBeFocused();
+      await settings.press("Enter");
+      const facilities = page.getByRole("button", { name: "配套设施", exact: true });
+      await expect(facilities).toBeVisible();
+      expect((await facilities.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      expect((await page.getByRole("button", { name: "关联标签", exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await expect(facilities).toHaveAttribute("aria-expanded", "true");
+      await facilities.focus();
+      await facilities.press("Space");
+      await expect(facilities).toHaveAttribute("aria-expanded", "false");
+      await facilities.press("Enter");
+      await expect(facilities).toHaveAttribute("aria-expanded", "true");
+      await expectNoHorizontalOverflow(page);
+      await page.screenshot({ path: testInfo.outputPath(`location-form-${width}.png`), fullPage: true });
+    }
+  });
+
   test("location gallery retains concurrent uploads in the controlled form", async ({ page }) => {
     await authenticate(page, admin);
     const uploads: Route[] = [];
