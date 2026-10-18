@@ -166,7 +166,7 @@ pnpm build
 - 更新组件前检查本地源差异，不直接运行 overwrite 覆盖品牌与可访问性适配。CLI 对当前 Astro 配置的识别有限，本次从同版本官方内置 registry 手动安装，未改动 Astro 的 Worker 集成。
 
 - 公共 Modal 使用 Starwind Dialog primitive 管理原生 dialog、Escape 与滚动锁；外层保留背景 inert、初始/返回焦点和原布局。调用方不再独立控制滚动锁。
-- 图库在退出过程中切换 reduced-motion 时，退出透明度使用 0.001 秒收尾（位移与旋转归零），避免 Motion 保留未卸载节点；浏览器测试覆盖切换及失败重试。
+- 图库通过 `usePresence` 显式管理退出清理；退出中切换 reduced-motion 时直接释放旧卡片，重新进入时恢复位置和透明度。浏览器测试覆盖原生动画中断、切回及失败重试。
 
 - 密码框带 44px 显隐按钮时为右侧按钮和 inset 留足输入内边距；使用 Card 表达横向行时显式指定 `flex-row`。Checkbox 在 reduced-motion 下直接呈现完整勾选图标，不能只取消父级动画。
 
@@ -175,3 +175,7 @@ pnpm build
 - `MultiImageUpload` 保持受控图片数组；`useImageUploadQueue` 管理在途任务、容量预留、进度与错误。传输及响应解析仍由 `lib/location-image-upload` 负责，UI 不复制传输逻辑。
 - 每次完成向最新的受控值追加，连续完成在 React 重渲染前也串行推进图片数组；父级删除或替换图片后，旧回调不得恢复旧值。连续选择文件需同步预留容量，失败释放名额并保留可清除错误。
 - 卸载后忽略上传完成和进度回调，不再写回表单；这不等于撤销已经开始的远程上传，也不自动删除 R2 对象。对象生命周期策略不属于 UI 状态清理。
+
+### 相册退出生命周期
+
+封面卡片以 `usePresence` 管理退出完成：滑出、旋转和淡出由同一 effect 启停，正常淡出完成后释放卡片；切换减少动态效果时停止尚未完成的动画并直接释放退出卡片。当前卡片不因偏好变化重建，保留焦点；重新进入的卡片使旧完成回调失效。不能通过极短退出时长保证取消后的动画完成回调一定到达。验证同时覆盖真实浏览器中的原生动画取消、反向切回以及动态偏好切换。参考 [Motion 手动 presence](https://motion.dev/docs/react-animate-presence#manual-usage)。
