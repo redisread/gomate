@@ -219,7 +219,7 @@ function LocationFormClient({ locationId }: LocationFormClientProps) {
           <div className={cn("space-y-4", showPreview && "hidden lg:block")}>
             <LocationFormBasicFields formData={form.formData} errors={form.errors} regions={form.regions} activityTypes={form.activityTypes}
               updateField={form.updateField} touch={form.touch}  />
-            <LocationFormContentFields formData={form.formData} errors={form.errors} isSaving={form.isSaving} updateField={form.updateField} />
+            <LocationFormContentFields key={form.resetVersion} formData={form.formData} errors={form.errors} isSaving={form.isSaving} updateField={form.updateField} />
             <LocationFormSettingsFields formData={form.formData} allTags={form.allTags} updateField={form.updateField} />
           </div>
 

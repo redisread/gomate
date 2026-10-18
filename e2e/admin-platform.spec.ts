@@ -280,6 +280,32 @@ test.describe("admin platform", () => {
     await expect(page.locator('img[src="/upload-queue-second.jpg"]')).toHaveCount(1);
   });
 
+  for (const kind of ["cover", "gallery"]) {
+    test(`discard ignores pending ${kind} uploads even when image values are unchanged`, async ({ page }) => {
+      await authenticate(page, admin);
+      const uploads: Route[] = [];
+      await page.route("**/api/upload/location", (route) => { uploads.push(route); });
+      await page.goto(`/admin/locations/${locationId}/edit`);
+      const name = page.locator("#location-field-name input");
+      const originalName = await name.inputValue();
+      await name.fill(`${originalName} edited`);
+      await page.locator(kind === "cover" ? 'input[type="file"]:not([multiple])' : 'input[type="file"][multiple]').setInputFiles({
+        name: "pending.jpg", mimeType: "image/jpeg", buffer: Buffer.from("pending"),
+      });
+      await expect.poll(() => uploads.length).toBe(1);
+      page.once("dialog", (dialog) => dialog.accept());
+      const discard = page.getByRole("button", { name: "放弃更改", exact: true });
+      await discard.click();
+      await expect(name).toHaveValue(originalName);
+      const completed = page.waitForResponse("**/api/upload/location");
+      await uploads[0]!.fulfill({ json: { url: `/discarded-${kind}.jpg` } });
+      await (await completed).finished();
+      await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+      await expect(page.locator(`img[src="/discarded-${kind}.jpg"]`)).toHaveCount(0);
+      await expect(discard).not.toBeVisible();
+    });
+  }
+
   test("location editor keeps draft navigation inside admin and exposes explicit publish controls", async ({
     page,
   }) => {
