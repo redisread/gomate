@@ -93,7 +93,7 @@ export function LocationFilters({ regions, popularTags, selectedRegionId, select
           </div>
         )}
       </div>
-      <SwCard className="block gap-0 py-0 ring-0 flex min-h-11 items-center justify-between gap-2 rounded-b-2xl border-t border-border/60 bg-card/60 px-3 sm:px-4">
+      <SwCard className="block gap-0 py-0 ring-0 flex flex-row min-h-11 items-center justify-between gap-2 rounded-b-2xl border-t border-border/60 bg-card/60 px-3 sm:px-4">
         <p id="locations-interest-hint" className="text-xs text-muted-foreground">{t("locations.interestHint")}</p>
         <SwButton variant="plain" size="inherit" type="button" onClick={onClear} disabled={!selectedRegionId && selectedTags.length === 0}
           className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none">

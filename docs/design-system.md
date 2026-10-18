@@ -167,3 +167,5 @@ pnpm build
 
 - 公共 Modal 使用 Starwind Dialog primitive 管理原生 dialog、Escape 与滚动锁；外层保留背景 inert、初始/返回焦点和原布局。调用方不再独立控制滚动锁。
 - 图库在退出过程中切换 reduced-motion 时，退出透明度使用 0.001 秒收尾（位移与旋转归零），避免 Motion 保留未卸载节点；浏览器测试覆盖切换及失败重试。
+
+- 密码框带 44px 显隐按钮时为右侧按钮和 inset 留足输入内边距；使用 Card 表达横向行时显式指定 `flex-row`。Checkbox 在 reduced-motion 下直接呈现完整勾选图标，不能只取消父级动画。

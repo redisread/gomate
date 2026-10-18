@@ -96,3 +96,31 @@ test("profile radio cards serialize the keyboard-selected level", async ({
   expect(value).toBe("intermediate");
   await expect(radios.first()).not.toBeChecked();
 });
+
+for (const form of ["login", "register"]) {
+  test(`${form} password text stays clear of the visibility button`, async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(`/zh-CN/${form}`);
+    const input = page.getByTestId(`${form}-password`);
+    await input.fill("a-long-password-for-checking-the-text-edge");
+    const bounds = await input.evaluate((element) => {
+      const field = element.getBoundingClientRect();
+      const toggle = element.parentElement!.querySelector("button")!.getBoundingClientRect();
+      return { textRight: field.right - parseFloat(getComputedStyle(element).paddingRight), toggleLeft: toggle.left, toggleWidth: toggle.width };
+    });
+    expect(bounds.textRight).toBeLessThanOrEqual(bounds.toggleLeft);
+    expect(bounds.toggleWidth).toBeGreaterThanOrEqual(44);
+  });
+}
+
+test("location filter footer keeps hint and clear action in one row", async ({ page }) => {
+  await page.goto("/zh-CN/locations");
+  const hint = page.locator("#locations-interest-hint");
+  const positions = await hint.evaluate((element) => {
+    const hintBox = element.getBoundingClientRect();
+    const button = element.parentElement!.querySelector("button")!.getBoundingClientRect();
+    return { hintRight: hintBox.right, buttonLeft: button.left, hintCenter: hintBox.y + hintBox.height / 2, buttonCenter: button.y + button.height / 2 };
+  });
+  expect(positions.hintRight).toBeLessThanOrEqual(positions.buttonLeft);
+  expect(positions.hintCenter).toBeCloseTo(positions.buttonCenter, 0);
+});

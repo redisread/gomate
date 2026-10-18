@@ -66,7 +66,7 @@ export function HomeDepartureBoard({ teams }: { teams: Team[] }) {
             })}
           </div>
         ) : (
-          <SwCard className="block gap-0 py-0 ring-0 mt-7 flex items-center justify-between gap-6 rounded-2xl bg-card p-6 ring-1 ring-border/70">
+          <SwCard className="block gap-0 py-0 ring-0 mt-7 flex flex-row items-center justify-between gap-6 rounded-2xl bg-card p-6 ring-1 ring-border/70">
             <div>
               <h3 className="font-bold text-card-foreground">{t("home.departures.emptyTitle")}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{t("home.departures.emptyDescription")}</p>

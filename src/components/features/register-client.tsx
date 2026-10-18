@@ -289,7 +289,7 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
                     onChange={handleInputChange}
                     required
                     minLength={8}
-                    className="w-full px-4 py-3 pr-11 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
+                    className="w-full px-4 py-3 pr-16 rounded-xl border bg-card text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/10"
                   />
                   <SwButton variant="plain" size="inherit"
                     type="button"

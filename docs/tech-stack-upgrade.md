@@ -98,3 +98,5 @@ Starwind CLI 3.4.0 的 bundled registry 2.2.0 提供组件源；React / Astro ad
 2026-10-19 本地验证（Node 24.22.0）：`pnpm test:ci` 通过，前端 331、服务端 253、Worker 18 项测试全部通过；Astro check 为 0 错误、0 警告、42 条提示。`pnpm test:e2e:ci` 85/85 通过，覆盖中英文、桌面/移动、键盘、dark 与 reduced-motion。
 
 `worker:types`、`worker:dry-run`、`worker:size` 通过，统一 Worker gzip 为 1.64 MiB / 116 modules；frozen-lockfile 安装和生产依赖 audit 通过。三轮独立审查的阻塞项已修复。受保护 CI、远程 Preview 和生产发布结果以对应 PR/Build 为准，本地测试不代表生产已发布。
+
+PR 自动审查补充发现的密码按钮留白、两处横向 Card 及 checkbox reduced-motion 已修复；独立定向复核无阻塞，认证/后台/Starwind 浏览器回归 17/17 通过（新增 3 项，全套现为 88 项）。完整远程门禁以 PR 最新 head 为准。

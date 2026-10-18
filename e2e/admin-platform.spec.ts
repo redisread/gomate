@@ -440,6 +440,13 @@ test.describe("admin platform", () => {
     expect(mobileBox).not.toBeNull();
     expect(mobileBox!.width).toBeCloseTo(320, 0);
     expect(mobileBox!.y + mobileBox!.height).toBeCloseTo(720, 0);
+    await dialog.locator('[data-slot="collapsible-trigger"]').click();
+    const checkbox = dialog.getByRole("checkbox").first();
+    await checkbox.check();
+    const checkmark = checkbox.locator("[data-sw-checkbox-check-icon]");
+    await expect(checkmark).toHaveCSS("animation-name", "none");
+    await expect(checkmark).toHaveCSS("stroke-dashoffset", "0px");
+    await expect(checkmark).toHaveCSS("opacity", "1");
     const reducedDuration = await dialog.evaluate((element) =>
       Number.parseFloat(getComputedStyle(element).transitionDuration),
     );
