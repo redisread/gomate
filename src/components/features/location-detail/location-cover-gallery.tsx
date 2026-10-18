@@ -5,7 +5,7 @@ import {
   AnimatePresence,
   animate,
   motion,
-  useIsPresent,
+  usePresence,
   usePresenceData,
   useMotionValue,
   useTransform,
@@ -44,13 +44,55 @@ function CoverCard({
   onStep: (direction: number) => void;
 }) {
   const { t } = useI18n(["locationDetail"]);
-  const present = useIsPresent();
+  const [present, remove] = usePresence();
   const presence = usePresenceData() as
-    | { direction: number; reduced: boolean }
-    | undefined;
+    { direction: number; reduced: boolean } | undefined;
   const reduced = presence?.reduced ?? reducePreference;
   const x = useMotionValue(0);
   const tilt = useTransform(x, [-240, 240], [-14, 14]);
+  const exitTilt = useMotionValue(0);
+  const card = React.useRef<HTMLDivElement>(null);
+  const direction = presence?.direction ?? 1;
+  React.useEffect(() => {
+    const element = card.current;
+    if (!element) return;
+    if (present) {
+      const reveal = animate(element, { opacity: 1 }, { duration: 0 });
+      if (reduced) {
+        x.set(0);
+        return () => reveal.stop();
+      }
+      const reset = animate(x, 0, {
+        type: "spring",
+        stiffness: 340,
+        damping: 30,
+      });
+      return () => {
+        reset.stop();
+        reveal.stop();
+      };
+    }
+    // An interrupted native animation may never resolve. Reduced motion ends
+    // the exit lifecycle directly instead of waiting for that completion.
+    if (reduced || typeof element.animate !== "function") {
+      remove?.();
+      return;
+    }
+    let active = true;
+    exitTilt.set(tilt.get());
+    const slide = animate(x, -direction * 460, { duration: 0.26 });
+    const turn = animate(exitTilt, -direction * 20, { duration: 0.26 });
+    const fade = animate(element, { opacity: 0 }, { duration: 0.26 });
+    void Promise.resolve(fade).then(() => {
+      if (active) remove?.();
+    });
+    return () => {
+      active = false;
+      slide.stop();
+      turn.stop();
+      fade.stop();
+    };
+  }, [present, reduced, direction, remove, x, tilt, exitTilt]);
   const dragged = React.useRef(false);
   const button = React.useRef<HTMLButtonElement>(null);
   React.useEffect(() => {
@@ -60,35 +102,19 @@ function CoverCard({
     name + " · " + t("locationDetail.imageAlt", { index: String(index + 1) });
   return (
     <motion.div
+      ref={card}
       data-cover-card
       data-reduced={reduced}
       className="location-cover-card relative border border-border bg-card text-card-foreground shadow-card"
       style={{
         x,
-        // Keep this MotionValue stable so preference changes cannot cancel exit cleanup.
-        rotate: tilt,
+        rotate: present ? tilt : exitTilt,
         zIndex: present ? 3 : 4,
         touchAction: "pan-y",
         pointerEvents: present ? "auto" : "none",
       }}
       initial={reduced ? false : { scale: 0.94, y: -16 }}
-      animate={{ x: 0, rotate: 0, scale: 1, y: 0, opacity: 1 }}
-      exit="exit"
-      variants={{
-        exit: ({
-          direction,
-          reduced,
-        }: {
-          direction: number;
-          reduced: boolean;
-        }) => ({
-          x: reduced ? 0 : -direction * 460,
-          rotate: reduced ? 0 : -direction * 20,
-          opacity: 0,
-          // A positive frame completes an in-flight exit after the preference changes.
-          transition: { duration: reduced ? 0.001 : 0.26 },
-        }),
-      }}
+      animate={{ scale: 1, y: 0 }}
       transition={
         reduced
           ? { duration: 0 }
@@ -133,7 +159,9 @@ function CoverCard({
           <GalleryImage src={src} alt={alt} interactive={present} />
         )}
       </div>
-      <SwButton variant="plain" size="inherit"
+      <SwButton
+        variant="plain"
+        size="inherit"
         ref={button}
         type="button"
         tabIndex={present ? 0 : -1}
@@ -297,7 +325,9 @@ export function LocationCoverGallery({
       </div>
       {images.length > 1 && (
         <div className="flex items-center justify-center gap-6 pb-4">
-          <SwButton variant="plain" size="inherit"
+          <SwButton
+            variant="plain"
+            size="inherit"
             type="button"
             className="location-cover-control"
             aria-label={t("locationDetail.prevImage")}
@@ -312,7 +342,9 @@ export function LocationCoverGallery({
           >
             {current.index + 1} / {images.length}
           </span>
-          <SwButton variant="plain" size="inherit"
+          <SwButton
+            variant="plain"
+            size="inherit"
             type="button"
             className="location-cover-control"
             ref={nextButton}
@@ -329,12 +361,16 @@ export function LocationCoverGallery({
         </span>
       )}
       {failed && (
-        <SwAlert as="div" variant="plain"
+        <SwAlert
+          as="div"
+          variant="plain"
           role="alert"
           className="mx-auto flex max-w-sm flex-wrap items-center justify-center gap-2 rounded-xl border border-border bg-card p-3 text-sm text-foreground"
         >
           {t("locationDetail.imageLoadFailed")}
-          <SwButton variant="plain" size="inherit"
+          <SwButton
+            variant="plain"
+            size="inherit"
             type="button"
             className="location-cover-control px-3"
             onClick={() => {
