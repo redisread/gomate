@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Route } from "@playwright/test";
 
 import { signUpUser, getFirstLocationId, type FixtureUser } from "./fixtures";
 import { fillLoginForm } from "./helpers";
@@ -261,6 +261,23 @@ test.describe("admin platform", () => {
         /\b(?:admin|enums|ui|content|nav|common)\.[A-Za-z]/u,
       );
     }
+  });
+
+  test("location gallery retains concurrent uploads in the controlled form", async ({ page }) => {
+    await authenticate(page, admin);
+    const uploads: Route[] = [];
+    await page.route("**/api/upload/location", (route) => { uploads.push(route); });
+    await page.goto(`/admin/locations/${locationId}/edit`);
+    const input = page.locator('input[type="file"][multiple]');
+    await input.setInputFiles([
+      { name: "first.jpg", mimeType: "image/jpeg", buffer: Buffer.from("first") },
+      { name: "second.jpg", mimeType: "image/jpeg", buffer: Buffer.from("second") },
+    ]);
+    await expect.poll(() => uploads.length).toBe(2);
+    await uploads[1]!.fulfill({ json: { url: "/upload-queue-second.jpg" } });
+    await uploads[0]!.fulfill({ json: { url: "/upload-queue-first.jpg" } });
+    await expect(page.locator('img[src="/upload-queue-first.jpg"]')).toHaveCount(1);
+    await expect(page.locator('img[src="/upload-queue-second.jpg"]')).toHaveCount(1);
   });
 
   test("location editor keeps draft navigation inside admin and exposes explicit publish controls", async ({

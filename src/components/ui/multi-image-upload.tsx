@@ -21,8 +21,8 @@ import { cn } from "@/lib/utils";
 import {
   LOCATION_IMAGE_ACCEPT,
   locationImageUploadMessage,
-  uploadLocationImage,
 } from "@/lib/location-image-upload";
+import { useImageUploadQueue } from "./use-image-upload-queue";
 import { useI18n } from "@/hooks/useI18n";
 
 /* ================================================================
@@ -63,21 +63,6 @@ function CircularProgress({ progress, size = 40, strokeWidth = 3 }: {
 }
 
 /* ================================================================
-   上传单项状态
-   ================================================================ */
-
-interface UploadItem {
-  /** 已完成的图片 URL，上传中为空字符串 */
-  url: string;
-  /** 上传进度 0-100，null 表示已完成 */
-  progress: number | null;
-  /** 错误信息 */
-  error?: string;
-  /** 内部 key，用于列表渲染 */
-  key: string;
-}
-
-/* ================================================================
    Props
    ================================================================ */
 
@@ -96,14 +81,6 @@ interface MultiImageUploadProps {
 }
 
 /* ================================================================
-   工具函数
-   ================================================================ */
-
-function genKey() {
-  return `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
-/* ================================================================
    主组件
    ================================================================ */
 
@@ -115,8 +92,6 @@ export function MultiImageUpload({
   coverImage,
   onSetCover,
 }: MultiImageUploadProps) {
-  /** 正在上传中的任务列表（上传完成后移除） */
-  const [uploadingItems, setUploadingItems] = React.useState<UploadItem[]>([]);
   /** 移动端 tap 激活的图片索引（用于显示操作层） */
   const [activeIndex, setActiveIndex] = React.useState<number | null>(null);
 
@@ -126,69 +101,17 @@ export function MultiImageUpload({
   const dragCounterRef = React.useRef(0);
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
 
-  /** 当前已有图片数 + 正在上传数 */
-  const totalCount = values.length + uploadingItems.filter((u) => u.progress !== null).length;
-  const canAddMore = totalCount < max && !disabled;
-
-  /* ---- 上传核心逻辑 ---- */
-  const uploadFile = React.useCallback(
-    (file: File) => {
-      const itemKey = genKey();
-
-      // 插入上传中占位
-      setUploadingItems((prev) => [
-        ...prev,
-        { url: "", progress: 0, key: itemKey },
-      ]);
-
-      void uploadLocationImage(file, (progress) => {
-        setUploadingItems((prev) =>
-          prev.map((u) => (u.key === itemKey ? { ...u, progress } : u))
-        );
-      })
-        .then((url) => {
-          setUploadingItems((prev) => prev.filter((u) => u.key !== itemKey));
-          onChange([...values, url]);
-        })
-        .catch((error: unknown) => {
-          setUploadingItems((prev) =>
-            prev.map((u) =>
-              u.key === itemKey
-                ? {
-                    ...u,
-                    progress: null,
-                    error: locationImageUploadMessage(error, t),
-                  }
-                : u,
-            ),
-          );
-        });
-    },
-    [values, onChange, t]
-  );
-
-  /* ---- 处理多文件选择 ---- */
-  const handleFiles = React.useCallback(
-    (files: FileList | null) => {
-      if (!files || !canAddMore) return;
-      const remaining = max - totalCount;
-      const toUpload = Array.from(files).slice(0, remaining);
-      toUpload.forEach(uploadFile);
-    },
-    [canAddMore, max, totalCount, uploadFile]
-  );
-
-  /* ---- 删除已上传图片 ---- */
-  const handleDelete = (index: number) => {
-    const next = [...values];
-    next.splice(index, 1);
-    onChange(next);
-  };
-
-  /* ---- 清除上传失败项 ---- */
-  const handleClearError = (key: string) => {
-    setUploadingItems((prev) => prev.filter((u) => u.key !== key));
-  };
+  const {
+    items: uploadingItems,
+    totalCount,
+    canAddMore,
+    uploadFiles: handleFiles,
+    removeImage: handleDelete,
+    clearError: handleClearError,
+  } = useImageUploadQueue({
+    values, onChange, max, disabled,
+    errorMessage: (error) => locationImageUploadMessage(error, t),
+  });
 
   /* ---- 拖拽事件 ---- */
   const handleDragEnter = (e: React.DragEvent) => {
