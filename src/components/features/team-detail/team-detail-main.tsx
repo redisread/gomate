@@ -30,7 +30,7 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
     return (
       <main className="min-h-screen bg-background flex flex-col">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex min-h-80 flex-1 items-center justify-center px-4 pb-12 pt-24">
           <div className="text-center space-y-4">
             <p className="text-muted-foreground/70">
               {error || t("teams.notFound")}
