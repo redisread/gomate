@@ -1,3 +1,4 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
 /**
  * Skeleton 组件 - 加载骨架屏
  *
@@ -7,6 +8,7 @@
  * - 深浅色模式支持
  */
 
+import { Skeleton as StarwindSkeleton } from "@/components/starwind-react/skeleton";
 import { cn } from "@/lib/utils";
 
 interface SkeletonProps {
@@ -66,7 +68,7 @@ export function Skeleton({
     return (
       <div className={cn("flex flex-col gap-1.5", className)}>
         {Array.from({ length: lines }).map((_, i) => (
-          <div
+          <StarwindSkeleton
             key={i}
             className={cn(
               "skeleton-text",
@@ -84,7 +86,7 @@ export function Skeleton({
   }
 
   // 基础样式
-  const baseStyles = "skeleton-shimmer bg-slate-200 dark:bg-slate-700";
+  const baseStyles = "skeleton-shimmer bg-muted motion-reduce:animate-none";
 
   // 变体特定样式
   const variantStyles = {
@@ -95,7 +97,7 @@ export function Skeleton({
   };
 
   return (
-    <div
+    <StarwindSkeleton
       className={cn(baseStyles, variantStyles[variant], className)}
       style={{
         width: w,
@@ -196,7 +198,7 @@ export function LocationsGridSkeleton() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="bg-card rounded-2xl overflow-hidden border border-border">
+        <SwCard key={i} className="block gap-0 py-0 ring-0 bg-card rounded-2xl overflow-hidden border border-border">
           <Skeleton variant="rectangular" width="100%" height={200} delay={i * 50} />
           <div className="p-4 space-y-3">
             <Skeleton variant="text" width="80%" height={24} delay={i * 50 + 30} />
@@ -206,7 +208,7 @@ export function LocationsGridSkeleton() {
               <Skeleton variant="rounded" width={60} height={20} delay={i * 50 + 120} />
             </div>
           </div>
-        </div>
+        </SwCard>
       ))}
     </div>
   );

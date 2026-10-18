@@ -1,3 +1,6 @@
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Textarea as SwTextarea } from "@/components/starwind-react/textarea";
+import { NativeSelect as SwNativeSelect } from "@/components/starwind-react/native-select";
 import type { ChangeEventHandler, ReactNode } from "react";
 import { Clock, Users } from "lucide-react";
 import { FieldGroup } from "@/components/ui/field-group";
@@ -22,7 +25,7 @@ export function TeamNameField({
   const { t } = useI18n(["teams"]);
   return (
     <FieldGroup icon="✏️" label={t("teams.formLabel.name")} required>
-      <input
+      <SwInput
         id="title"
         aria-label={t("teams.formLabel.name")}
         name="title"
@@ -54,7 +57,7 @@ export function TeamTimeField({
     >
       <div className="relative">
         <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-        <input
+        <SwInput
           id="startClockInput"
           aria-label={t("teams.formLabel.startTime")}
           name="startClockInput"
@@ -89,7 +92,7 @@ export function TeamDescriptionFields({
   return (
     <>
       <FieldGroup icon="📍" label={t("teams.meetingPoint")}>
-        <textarea
+        <SwTextarea
           name="meetingPoint"
           aria-label={t("teams.meetingPoint")}
           maxLength={1000}
@@ -104,7 +107,7 @@ export function TeamDescriptionFields({
         required={required}
         hint={hint}
       >
-        <textarea
+        <SwTextarea
           id="description"
           aria-label={t("teams.formLabel.description")}
           required={required}
@@ -139,7 +142,7 @@ export function TeamCapacityField({
     >
       <div className="relative">
         <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-        <input
+        <SwInput
           id="maxParticipants"
           aria-label={t("teams.formLabel.maxSize")}
           data-testid={testId}
@@ -168,7 +171,7 @@ export function TeamActivityField({
   const { t } = useI18n(["teams"]);
   return (
     <FieldGroup icon="🧭" label={t("teams.formLabel.activityType")} required>
-      <select
+      <SwNativeSelect
         id="activityType"
         name="activityType"
         aria-label={t("teams.formLabel.activityType")}
@@ -179,7 +182,7 @@ export function TeamActivityField({
         className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
       >
         {children}
-      </select>
+      </SwNativeSelect>
     </FieldGroup>
   );
 }
@@ -203,7 +206,7 @@ export function TeamDurationField({
     >
       <div className="relative">
         <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-        <select
+        <SwNativeSelect
           id="durationMinutes"
           name="durationMinutes"
           aria-label={t("teams.formLabel.duration")}
@@ -214,7 +217,7 @@ export function TeamDurationField({
           className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
         >
           {children}
-        </select>
+        </SwNativeSelect>
       </div>
       {footer}
     </FieldGroup>

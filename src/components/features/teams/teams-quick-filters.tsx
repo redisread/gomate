@@ -1,3 +1,6 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
 import * as React from "react";
 import { CalendarDays, Check, ChevronDown, MapPin, Search } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -30,7 +33,7 @@ function QuickChip({
   onClick: () => void;
 }) {
   return (
-    <button
+    <SwButton variant="plain" size="inherit"
       type="button"
       aria-pressed={selected}
       onClick={onClick}
@@ -44,7 +47,7 @@ function QuickChip({
       )}
     >
       {children}
-    </button>
+    </SwButton>
   );
 }
 
@@ -122,7 +125,7 @@ function RegionPicker({
 
   return (
     <div ref={rootRef} className="relative shrink-0" onKeyDown={handleKeyDown}>
-      <button
+      <SwButton variant="plain" size="inherit"
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -135,17 +138,17 @@ function RegionPicker({
       >
         {t("teams.moreCities")}
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-150", open && "rotate-180")} aria-hidden="true" />
-      </button>
+      </SwButton>
 
       {open && (
         <div
           id="teams-region-picker"
           className="absolute right-0 z-30 mt-2 w-[min(20rem,calc(100vw-2rem))] origin-top-right rounded-2xl bg-popover p-2 shadow-xl shadow-stone-950/10 ring-1 ring-stone-900/10 dark:ring-white/10"
         >
-          <label className="flex min-h-11 items-center gap-2 rounded-xl bg-muted px-3">
+          <SwLabel className="flex min-h-11 items-center gap-2 rounded-xl bg-muted px-3">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             <span className="sr-only">{t("teams.citySearchPlaceholder")}</span>
-            <input
+            <SwInput
               ref={inputRef}
               type="search"
               value={query}
@@ -156,15 +159,15 @@ function RegionPicker({
               placeholder={t("teams.citySearchPlaceholder")}
               className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
             />
-          </label>
+          </SwLabel>
           {regionsLoading ? (
             <p className="px-3 py-8 text-center text-sm text-muted-foreground">{t("teams.citiesLoading")}</p>
           ) : regionsError ? (
             <div className="px-3 py-6 text-center">
               <p className="text-sm text-muted-foreground">{t("teams.citiesLoadError")}</p>
-              <button type="button" onClick={onRetryRegions} className="mt-3 min-h-10 rounded-full bg-amber-600 px-4 text-sm font-medium text-white hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
+              <SwButton variant="plain" size="inherit" type="button" onClick={onRetryRegions} className="mt-3 min-h-10 rounded-full bg-amber-600 px-4 text-sm font-medium text-white hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2">
                 {t("teams.retry")}
-              </button>
+              </SwButton>
             </div>
           ) : (
             <div ref={listRef} role="listbox" aria-label={t("common.regionList")} className="mt-2 max-h-64 overflow-y-auto overscroll-contain py-1">
@@ -173,7 +176,7 @@ function RegionPicker({
               ) : filteredRegions.map((region, index) => {
               const selected = region.id === selectedRegionId;
               return (
-                <button
+                <SwButton variant="plain" size="inherit"
                   key={region.id}
                   type="button"
                   role="option"
@@ -194,7 +197,7 @@ function RegionPicker({
                     {region.nameEn && <span className="ml-2 text-xs text-muted-foreground">{region.nameEn}</span>}
                   </span>
                   {selected && <Check className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />}
-                </button>
+                </SwButton>
               );
               })}
             </div>

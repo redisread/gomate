@@ -1,5 +1,8 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+
 import * as React from "react";
 import { Settings, ChevronDown } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -16,7 +19,7 @@ function SectionCard({ icon, title, badge, children, defaultOpen = true, collaps
   const [open, setOpen] = React.useState(defaultOpen);
   return (
     <div className="rounded-2xl bg-white dark:bg-stone-900 border border-stone-100 dark:border-stone-800 overflow-hidden" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-      <button type="button" onClick={() => collapsible && setOpen((v) => !v)}
+      <SwButton variant="plain" size="inherit" type="button" onClick={() => collapsible && setOpen((v) => !v)}
         className="w-full flex items-center gap-2.5 px-5 py-4 text-left hover:bg-stone-50/60 dark:hover:bg-stone-800/60 transition-colors cursor-pointer">
         <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "rgba(217,119,6,0.1)" }}>
           <span className="text-amber-600 dark:text-amber-400">{icon}</span>
@@ -26,7 +29,7 @@ function SectionCard({ icon, title, badge, children, defaultOpen = true, collaps
         <svg className={cn("h-4 w-4 text-stone-400 dark:text-stone-500 transition-transform duration-200", open && "rotate-180")} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
-      </button>
+      </SwButton>
       {open && (
         <div className="px-5 pb-5 space-y-4 border-t border-stone-50 dark:border-stone-800">
           <div className="pt-4 space-y-4">{children}</div>
@@ -48,11 +51,11 @@ function SubSectionCard({ title, children, defaultOpen = false }: SubSectionCard
   const [open, setOpen] = React.useState(defaultOpen);
   return (
     <div className="border border-stone-100 dark:border-stone-800 rounded-xl overflow-hidden">
-      <button type="button" onClick={() => setOpen((v) => !v)}
+      <SwButton variant="plain" size="inherit" type="button" onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-stone-50/60 dark:hover:bg-stone-800/60 transition-colors cursor-pointer">
         <ChevronDown className={cn("h-3.5 w-3.5 text-stone-400 transition-transform duration-200", open && "rotate-0", !open && "-rotate-90")} />
         <span className="text-xs font-semibold text-stone-700 dark:text-stone-300">{title}</span>
-      </button>
+      </SwButton>
       {open && (
         <div className="px-4 pb-4 pt-2 border-t border-stone-50 dark:border-stone-800">
           {children}
@@ -66,9 +69,9 @@ function Field({ label, required, hint, error, children }: FieldProps) {
   return (
     <div className="space-y-1.5">
       {label && (
-        <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
+        <SwLabel className="block text-xs font-semibold text-stone-700 dark:text-stone-300">
           {label}{required && <span className="ml-1 text-red-400">*</span>}
-        </label>
+        </SwLabel>
       )}
       {children}
       {error && <p className="text-xs text-red-500">{error}</p>}
@@ -101,12 +104,12 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
             {facilityOptions.map((f) => {
               const selected = formData.extra.facilities.includes(f.value);
               return (
-                <button key={f.value} type="button"
+                <SwButton variant="plain" size="inherit" key={f.value} type="button"
                   onClick={() => updateField("extra", { ...formData.extra, facilities: selected ? formData.extra.facilities.filter((v) => v !== f.value) : [...formData.extra.facilities, f.value] })}
                   className={cn("px-3 py-1.5 rounded-xl text-xs font-medium border transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                     selected ? "bg-amber-500 text-white border-amber-500" : "bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400 border-stone-200 dark:border-stone-700 hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-amber-300")}>
                   {f.label}
-                </button>
+                </SwButton>
               );
             })}
           </div>
@@ -123,12 +126,12 @@ export function LocationFormSettingsFields({ formData, allTags, updateField }: L
               {allTags.map((tag) => {
                 const selected = formData.tagIds.includes(tag.id);
                 return (
-                  <button key={tag.id} type="button"
+                  <SwButton variant="plain" size="inherit" key={tag.id} type="button"
                     onClick={() => updateField("tagIds", selected ? formData.tagIds.filter((id) => id !== tag.id) : [...formData.tagIds, tag.id])}
                     className={cn("px-3 py-1 rounded-full text-xs font-medium border transition-[transform,background-color,border-color,color,opacity,box-shadow]",
                       selected ? "bg-amber-500 text-white border-amber-500" : "bg-white text-stone-600 border-stone-200 hover:border-amber-300")}>
                     {tag.name}
-                  </button>
+                  </SwButton>
                 );
               })}
             </div>

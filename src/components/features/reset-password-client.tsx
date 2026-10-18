@@ -1,5 +1,9 @@
 "use client";
 
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import { BrandIcon } from "@/components/brand-icon";
 
 import * as React from "react";
@@ -256,15 +260,15 @@ export function ResetPasswordClient() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* 新密码输入 */}
                 <div className="space-y-1.5">
-                  <label htmlFor="newPassword" className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>
+                  <SwLabel htmlFor="newPassword" className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>
                     {t("auth.newPassword")}
-                  </label>
+                  </SwLabel>
                   <div className="relative">
                     <Lock
                       className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
                       style={{ color: "var(--muted-foreground)" }}
                     />
-                    <input
+                    <SwInput
                       id="newPassword"
                       type="password"
                       placeholder={t("auth.newPasswordPlaceholder")}
@@ -294,15 +298,15 @@ export function ResetPasswordClient() {
 
                 {/* 确认密码输入 */}
                 <div className="space-y-1.5">
-                  <label htmlFor="confirmPassword" className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>
+                  <SwLabel htmlFor="confirmPassword" className="text-sm font-medium" style={{ color: "var(--muted-foreground)" }}>
                     {t("auth.confirmPassword")}
-                  </label>
+                  </SwLabel>
                   <div className="relative">
                     <Lock
                       className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
                       style={{ color: "var(--muted-foreground)" }}
                     />
-                    <input
+                    <SwInput
                       id="confirmPassword"
                       type="password"
                       placeholder={t("auth.confirmPasswordPlaceholder")}
@@ -342,7 +346,7 @@ export function ResetPasswordClient() {
                 )}
 
                 {/* 重置按钮 */}
-                <button
+                <SwButton variant="plain" size="inherit"
                   type="submit"
                   disabled={isLoading}
                   className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -374,7 +378,7 @@ export function ResetPasswordClient() {
                       {t("auth.resetPasswordBtn")}
                     </>
                   )}
-                </button>
+                </SwButton>
               </form>
             </>
           )}

@@ -1,3 +1,5 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import { MapPin, TreePine, ChevronLeft, ChevronRight, ArrowRight, Search, Map, Filter } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
@@ -8,7 +10,7 @@ import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 function ShimmerCard() {
   return (
-    <div className="bg-card rounded-2xl overflow-hidden border border-border">
+    <SwCard className="block gap-0 py-0 ring-0 bg-card rounded-2xl overflow-hidden border border-border">
       <div className="h-52 skeleton" />
       <div className="p-5 space-y-3">
         <div className="h-5 skeleton rounded-full w-2/3" />
@@ -22,7 +24,7 @@ function ShimmerCard() {
           <div className="h-6 w-16 skeleton rounded-full" />
         </div>
       </div>
-    </div>
+    </SwCard>
   );
 }
 
@@ -182,32 +184,32 @@ export function EmptyState({
 
       {/* Primary button — amber rounded-full shadow-md hover:-translate-y-0.5 active:scale-[0.96] PRESERVED */}
       {primaryAction && (
-        <button
+        <SwButton variant="plain" size="inherit" type="button"
           onClick={primaryAction}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-700 hover:bg-amber-800 dark:bg-amber-500 dark:hover:bg-amber-400 text-white dark:text-stone-950 rounded-full text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 shadow-md shadow-amber-200 hover:-translate-y-0.5 active:scale-[0.96]"
         >
           <Icon className="h-4 w-4" />
           {primaryLabel}
-        </button>
+        </SwButton>
       )}
 
       {onChangeRegion && primaryConfig.action !== "onChangeRegion" && (
-        <button type="button" onClick={onChangeRegion} className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <SwButton variant="plain" size="inherit" type="button" onClick={onChangeRegion} className="mt-2 inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <MapPin className="size-4" aria-hidden="true" />{t("locations.changeCity")}
-        </button>
+        </SwButton>
       )}
       {onClearTags && query && onClearSearch && (
-        <button type="button" onClick={onClearSearch} className="mt-2 min-h-11 rounded-full px-4 text-sm text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("locations.empty.noSearch.clearBtn")}</button>
+        <SwButton variant="plain" size="inherit" type="button" onClick={onClearSearch} className="mt-2 min-h-11 rounded-full px-4 text-sm text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("locations.empty.noSearch.clearBtn")}</SwButton>
       )}
       {/* Secondary "browse" button */}
       {onClearAll && (
-        <button
+        <SwButton variant="plain" size="inherit" type="button"
           onClick={onClearAll}
           className="mt-3 inline-flex items-center gap-1.5 text-sm text-stone-500 hover:text-stone-700 dark:text-stone-400 dark:hover:text-stone-300 transition-colors"
         >
           {secondaryLabel}
           <ArrowRight className="h-3.5 w-3.5" />
-        </button>
+        </SwButton>
       )}
     </div>
   );
@@ -282,7 +284,7 @@ export function LocationsGrid({
 
       {(currentPage > 1 || pagination.nextCursor) && (
         <div className="flex justify-center items-center gap-1.5 mt-12">
-          <button
+          <SwButton variant="plain" size="inherit" type="button"
             onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
             disabled={currentPage === 1 || isLoading || isRefreshing || hasLoadError}
             aria-label={t("locations.paginationPrev")}
@@ -291,9 +293,9 @@ export function LocationsGrid({
             <span className={cn("text-stone-900 dark:text-stone-100", currentPage === 1 && "text-stone-500 dark:text-stone-500")}>
               <ChevronLeft className="h-4 w-4" />
             </span>
-          </button>
+          </SwButton>
 
-          <button
+          <SwButton variant="plain" size="inherit" type="button"
             onClick={() => pagination.nextCursor && onPageChange(currentPage + 1)}
             disabled={!pagination.nextCursor || isLoading || isRefreshing || hasLoadError}
             aria-label={t("locations.paginationNext")}
@@ -302,7 +304,7 @@ export function LocationsGrid({
             <span className={cn("text-stone-900 dark:text-stone-100", !pagination.nextCursor && "text-stone-500 dark:text-stone-500")}>
               <ChevronRight className="h-4 w-4" />
             </span>
-          </button>
+          </SwButton>
         </div>
       )}
     </div>

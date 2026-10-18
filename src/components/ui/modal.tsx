@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
-import { useModalA11y } from "@/hooks/useModalA11y";
+import DialogPrimitive from "@starwind-ui/react/dialog";
 import { cn } from "@/lib/utils";
 
 /**
@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
  * - createPortal 到 <body>：modal 脱离组件树，背景内容可被 inert
  * - 背景 inert：打开时把 <body> 下非本 portal 的直接子树设 inert，
  *   阻止 screen-reader 读取背景 + 阻止背景交互（WCAG 4.1.2 / 2.4.3）
- * - focus trap / Escape / restore：复用 useModalA11y（已验证模式）
- * - backdrop click 关闭 + 可选 body scroll lock
+ * - Starwind Dialog owns native modal, focus trapping, Escape and restoration.
+ * - backdrop click 关闭；Starwind 统一管理 body scroll lock
  *
  * 用法：传 overlayClassName 控制布局（居中 / bottom sheet / 全屏），
  * panelClassName 控制面板外观，children 是面板内容。
@@ -30,8 +30,6 @@ interface ModalProps {
   panelClassName?: string;
   /** 面板 inline style（env safe-area 等无法用 class 表达的值） */
   panelStyle?: React.CSSProperties;
-  /** 打开时锁定 body 滚动（bottom sheet / 全屏场景） */
-  lockBodyScroll?: boolean;
   /** 打开后优先聚焦的弹窗内元素；省略时聚焦首个可交互元素 */
   initialFocusRef?: React.RefObject<HTMLElement | null>;
   /** 关闭后显式恢复焦点的元素；省略时恢复打开前的活动元素 */
@@ -45,11 +43,11 @@ export function Modal({
   labelledBy,
   describedBy,
   role = "dialog",
+  "aria-label": ariaLabel,
   overlayClassName,
   backdropClassName,
   panelClassName,
   panelStyle,
-  lockBodyScroll = false,
   initialFocusRef,
   returnFocusRef,
   children,
@@ -57,7 +55,23 @@ export function Modal({
 }: ModalProps & React.HTMLAttributes<HTMLDivElement>) {
   const panelRef = React.useRef<HTMLDivElement>(null);
   const portalRef = React.useRef<HTMLDivElement | null>(null);
-  useModalA11y(open, panelRef, onClose, initialFocusRef, returnFocusRef);
+  const previousFocus = React.useRef<HTMLElement | null>(null);
+  const setPortalRef = React.useCallback((el: HTMLDivElement | null) => {
+    if (el && !portalRef.current)
+      previousFocus.current = document.activeElement as HTMLElement | null;
+    portalRef.current = el;
+  }, []);
+  React.useEffect(() => {
+    if (!open) return;
+    const returnTarget = returnFocusRef?.current ?? previousFocus.current;
+    const requested = initialFocusRef?.current;
+    if (requested && panelRef.current?.contains(requested)) requested.focus();
+    return () => {
+      queueMicrotask(() => {
+        if (returnTarget?.isConnected) returnTarget.focus();
+      });
+    };
+  }, [open, initialFocusRef, returnFocusRef]);
 
   // 背景 inert：打开时把 <body> 下非本 portal 的直接子树标记 inert
   React.useEffect(() => {
@@ -76,41 +90,48 @@ export function Modal({
     };
   }, [open]);
 
-  // body scroll lock（bottom sheet / 全屏 modal 需要）
-  React.useEffect(() => {
-    if (!open || !lockBodyScroll) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [open, lockBodyScroll]);
-
   if (!open) return null;
 
   return createPortal(
-    <div
-      ref={(el) => {
-        portalRef.current = el;
+    <DialogPrimitive.Root
+      ref={setPortalRef}
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
       }}
+      closeOnOutsideInteract={false}
       data-gomate-modal-portal=""
-      className={cn("fixed inset-0 z-50", overlayClassName)}
       {...rest}
     >
-      <div className={cn("absolute inset-0", backdropClassName ?? "bg-black/40 backdrop-blur-sm")} aria-hidden="true" onClick={onClose} />
-      <div
-        ref={panelRef}
+      <DialogPrimitive.Popup
         role={role}
-        aria-modal="true"
+        aria-label={ariaLabel}
         aria-labelledby={labelledBy}
         aria-describedby={describedBy}
-        className={cn("relative", panelClassName)}
-        style={panelStyle}
-        onClick={(e) => e.stopPropagation()}
+        className={cn(
+          "fixed inset-0 m-0 h-dvh max-h-none w-screen max-w-none border-0 bg-transparent p-0 text-inherit outline-none backdrop:bg-transparent",
+          overlayClassName,
+        )}
       >
-        {children}
-      </div>
-    </div>,
+        <div
+          className={cn(
+            "absolute inset-0",
+            backdropClassName ?? "bg-black/40 backdrop-blur-sm",
+          )}
+          aria-hidden="true"
+          onClick={onClose}
+        />
+        <div
+          ref={panelRef}
+          data-gomate-modal-panel=""
+          className={cn("relative", panelClassName)}
+          style={panelStyle}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
+      </DialogPrimitive.Popup>
+    </DialogPrimitive.Root>,
     document.body,
   );
 }

@@ -1,3 +1,6 @@
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Input as SwInput } from "@/components/starwind-react/input";
 import * as React from "react";
 import { Search, X, Sparkles, LoaderCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -71,7 +74,7 @@ export function LocationsHero({
               const Icon = cfg.icon;
               const isActive = activeRole === key;
               return (
-                <button key={key} type="button" onClick={() => onRoleSelect(key)}
+                <SwButton variant="plain" size="inherit" key={key} type="button" onClick={() => onRoleSelect(key)}
                   className="relative group flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-250 active:scale-[0.96] overflow-hidden"
                   style={isActive ? { background: cfg.activeBg, borderColor: "transparent", boxShadow: `0 6px 20px ${cfg.iconColor}35` } : { background: `linear-gradient(135deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`, borderColor: "rgba(231,229,228,0.8)" }}
                 >
@@ -87,7 +90,7 @@ export function LocationsHero({
                     </div>
                     <p title={cfg.desc} className="text-2xs leading-tight mt-0.5 truncate" style={{ color: isActive ? "rgba(255,255,255,0.75)" : "#78716c" }}>{cfg.desc}</p>
                   </div>
-                </button>
+                </SwButton>
               );
             })}
           </div>
@@ -96,16 +99,16 @@ export function LocationsHero({
         {/* 搜索框 */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-500 dark:text-stone-500 pointer-events-none" />
-          <input
+          <SwInput
             ref={searchInputRef} type="text" placeholder={t("locations.searchPlaceholder")}
             aria-label={t("locations.searchPlaceholder")} value={searchQuery} onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-11 pr-12 py-3.5 bg-stone-50 dark:bg-stone-900 text-foreground placeholder-stone-500 border border-stone-200 dark:border-stone-700 rounded-2xl focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/15 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 text-base sm:text-sm shadow-sm"
           />
           {searchQuery && (
-            <button type="button" aria-label={t("locations.empty.noSearch.clearBtn")} onClick={() => onSearchChange("")}
+            <SwButton variant="plain" size="inherit" type="button" aria-label={t("locations.empty.noSearch.clearBtn")} onClick={() => onSearchChange("")}
               className="absolute right-1 top-1/2 flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center hover:bg-stone-100 dark:bg-stone-800 rounded-full transition-colors">
               <X className="h-3.5 w-3.5 text-stone-500 dark:text-stone-500" />
-            </button>
+            </SwButton>
           )}
         </div>
 
@@ -130,10 +133,10 @@ export function LocationsResultBar({ isLoading, isRefreshing, pagination, hasLoa
   return (
     <div role="status" aria-live="polite" aria-atomic="true" className="mb-5 flex min-h-11 items-center gap-3 text-sm text-muted-foreground">
       {hasLoadError ? (
-        <div role="alert" className="flex min-h-11 items-center gap-3 text-foreground">
+        <SwAlert as="div" variant="plain" role="alert" className="flex min-h-11 items-center gap-3 text-foreground">
           <span>{t("locations.loadFailed")}</span>
-          <button type="button" onClick={onRetry} className="min-h-11 shrink-0 rounded-full px-3 font-medium underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("locations.retry")}</button>
-        </div>
+          <SwButton variant="plain" size="inherit" type="button" onClick={onRetry} className="min-h-11 shrink-0 rounded-full px-3 font-medium underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t("locations.retry")}</SwButton>
+        </SwAlert>
       ) : isLoading ? <span className="h-4 w-28 rounded-full bg-muted" /> : <span>{t("locations.totalResultPrefix", { count: pagination.total })}</span>}
       <span className={cn("inline-flex items-center gap-1.5 text-xs", hasLoadError ? "hidden" : !pending && "invisible")}>
         <LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />{t("locations.updating")}

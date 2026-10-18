@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import { BrandIcon } from "@/components/brand-icon";
 import {
   ExternalLink,
@@ -78,7 +79,7 @@ function NavigationLinks({
               ? currentPath === path
               : currentPath === path || currentPath.startsWith(`${path}/`);
             return (
-              <a
+              <SwButton as="a" variant="plain" size="inherit"
                 key={href}
                 href={href}
                 aria-current={current ? "page" : undefined}
@@ -86,7 +87,7 @@ function NavigationLinks({
               >
                 <Icon className="size-5 shrink-0" strokeWidth={2} />
                 <span className="min-w-0 break-words">{label}</span>
-              </a>
+              </SwButton>
             );
           },
         )}
@@ -160,7 +161,7 @@ export function AdminNavigation({
         <Brand copy={copy} locale={locale} />
         <div className="flex shrink-0 items-center gap-1">
           <LocaleToggle initialLocale={locale} presentation="dropdown" />
-          <button
+          <SwButton variant="plain" size="inherit"
             ref={triggerRef}
             type="button"
             aria-label={copy.openNavigation}
@@ -171,7 +172,7 @@ export function AdminNavigation({
             className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-foreground transition-[background-color,scale] duration-100 hover:bg-muted active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             <Menu className="size-5" strokeWidth={2} aria-hidden="true" />
-          </button>
+          </SwButton>
         </div>
       </header>
 
@@ -181,8 +182,7 @@ export function AdminNavigation({
         labelledBy={titleId}
         initialFocusRef={closeRef}
         returnFocusRef={triggerRef}
-        lockBodyScroll
-        backdropClassName="bg-foreground/25"
+          backdropClassName="bg-foreground/25"
         panelClassName="ms-auto flex h-full w-[min(20rem,calc(100%-2rem))] flex-col bg-card px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(1rem+env(safe-area-inset-top))] shadow-xl transition-transform duration-150 ease-out motion-reduce:transition-none"
       >
         <h2 id={titleId} className="sr-only">
@@ -190,7 +190,7 @@ export function AdminNavigation({
         </h2>
         <div className="flex items-center justify-between gap-3">
           <Brand copy={copy} locale={locale} />
-          <button
+          <SwButton variant="plain" size="inherit"
             ref={closeRef}
             type="button"
             aria-label={copy.closeNavigation}
@@ -198,7 +198,7 @@ export function AdminNavigation({
             className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-foreground transition-[background-color,scale] duration-100 hover:bg-muted active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             <X className="size-5" strokeWidth={2} aria-hidden="true" />
-          </button>
+          </SwButton>
         </div>
         <nav
           aria-label={copy.navigationLabel}

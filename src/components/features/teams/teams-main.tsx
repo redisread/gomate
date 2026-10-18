@@ -1,5 +1,7 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import { X } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -82,14 +84,14 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
               )}
             </div>
             {(ctx.activeFiltersCount > 0 || ctx.searchQuery) && !ctx.isLoading && (
-              <button
+              <SwButton variant="plain" size="inherit"
                 type="button"
                 onClick={ctx.clearFilters}
                 className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-full px-3 text-sm font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 active:scale-[0.96] sm:self-auto"
               >
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
                 {t("teams.clearFilters")}
-              </button>
+              </SwButton>
             )}
           </div>
           {ctx.isLoading ? (

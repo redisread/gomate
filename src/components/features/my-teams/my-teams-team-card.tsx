@@ -1,3 +1,5 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { Crown, MapPin, Users, Calendar, Clock, ChevronRight, ChevronDown, XCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -34,7 +36,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
 
   return (
     <a href={`/teams/${team.id}`} className="block group">
-      <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200">
+      <SwCard className="block gap-0 py-0 ring-0 bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-100/40 hover:border-amber-200/50 transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200">
         <div className="flex items-start gap-4">
           <div className="w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden bg-stone-100 dark:bg-stone-800 flex items-center justify-center">
             {team.location?.coverImageUrl ? (
@@ -86,20 +88,20 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
         {(canCancel || canForm) && (
           <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-end gap-2">
             {canForm && (
-              <button onClick={(e) => { e.preventDefault(); onForm!(team.id); }}
+              <SwButton variant="plain" size="inherit" type="button" onClick={(e) => { e.preventDefault(); onForm!(team.id); }}
                 className="text-xs text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-amber-50">
                 {team.isFull ? t("teams.formTeam") : t("teams.formTeamUnderfilled")}
-              </button>
+              </SwButton>
             )}
             {canCancel && (
-              <button onClick={(e) => { e.preventDefault(); onCancel!(team.id); }}
+              <SwButton variant="plain" size="inherit" type="button" onClick={(e) => { e.preventDefault(); onCancel!(team.id); }}
                 className="text-xs text-red-500 hover:text-red-600 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-red-50">
                 <XCircle className="h-3.5 w-3.5" />{t("teams.cancelTeam")}
-              </button>
+              </SwButton>
             )}
           </div>
         )}
-      </div>
+      </SwCard>
     </a>
   );
 }
@@ -109,17 +111,17 @@ export function CollapsibleSection({ title, count, children, defaultExpanded = t
 }) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
   return (
-    <div className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 overflow-hidden">
-      <button onClick={() => setIsExpanded(!isExpanded)}
+    <SwCard className="block gap-0 py-0 ring-0 bg-card rounded-2xl border border-stone-100 dark:border-stone-800 overflow-hidden">
+      <SwButton variant="plain" size="inherit" type="button" onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between px-5 py-4 hover:bg-stone-50 dark:bg-stone-900/80 transition-colors">
         <div className="flex items-center gap-2.5">
           <h3 className="font-semibold text-stone-800">{title}</h3>
           <span className="text-xs px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-500 rounded-full">{count}</span>
         </div>
         <ChevronDown className={cn("h-4 w-4 text-stone-400 dark:text-stone-500 transition-transform duration-200", isExpanded ? "" : "-rotate-90")} />
-      </button>
+      </SwButton>
       {isExpanded && <div className="px-4 pb-4 space-y-3">{children}</div>}
-    </div>
+    </SwCard>
   );
 }
 

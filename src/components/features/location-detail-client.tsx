@@ -1,5 +1,7 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import * as React from "react";
 import { AnimatePresence, usePresence } from "motion/react";
 import { animate } from "motion/mini";
@@ -111,7 +113,6 @@ function Lightbox({
       open
       onClose={onClose}
       labelledBy="location-lightbox-title"
-      lockBodyScroll
       overlayClassName="z-[100] flex items-center justify-center"
       backdropClassName="bg-black/92 backdrop-blur-md"
       panelClassName="pointer-events-none flex h-full w-full items-center justify-center [&_button]:pointer-events-auto [&_img]:pointer-events-auto"
@@ -120,13 +121,13 @@ function Lightbox({
         {t("locationDetail.photoGallery")}
       </h2>
       {/* 关闭按钮 */}
-      <button
+      <SwButton variant="plain" size="inherit" type="button"
         onClick={onClose}
         className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors z-10"
         aria-label={t("locationDetail.closeImage")}
       >
         <X className="h-5 w-5 text-white" />
-      </button>
+      </SwButton>
 
       {/* 计数器 */}
       <div className="absolute top-5 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm text-white/70 text-xs font-medium">
@@ -135,7 +136,7 @@ function Lightbox({
 
       {/* 上一张 */}
       {images.length > 1 && (
-        <button
+        <SwButton variant="plain" size="inherit" type="button"
           onClick={(e) => {
             e.stopPropagation();
             onPrev();
@@ -144,7 +145,7 @@ function Lightbox({
           aria-label={t("locationDetail.prevImage")}
         >
           <ChevronLeft className="h-6 w-6 text-white" />
-        </button>
+        </SwButton>
       )}
 
       {/* 图片 */}
@@ -158,7 +159,7 @@ function Lightbox({
 
       {/* 下一张 */}
       {images.length > 1 && (
-        <button
+        <SwButton variant="plain" size="inherit" type="button"
           onClick={(e) => {
             e.stopPropagation();
             onNext();
@@ -167,7 +168,7 @@ function Lightbox({
           aria-label={t("locationDetail.nextImage")}
         >
           <ChevronRight className="h-6 w-6 text-white" />
-        </button>
+        </SwButton>
       )}
 
       {/* 底部缩略图条 */}
@@ -177,7 +178,7 @@ function Lightbox({
           onClick={(e) => e.stopPropagation()}
         >
           {images.map((img, i) => (
-            <button
+            <SwButton variant="plain" size="inherit" type="button"
               key={i}
               onClick={() => {
                 if (present) onSelect(i);
@@ -194,7 +195,7 @@ function Lightbox({
               )}
             >
               <img src={img} alt="" className="w-full h-full object-cover" />
-            </button>
+            </SwButton>
           ))}
         </div>
       )}
@@ -221,20 +222,20 @@ function ActionCard({ location }: { location: Location }) {
       <p className="mb-6 mt-3 text-sm leading-7 text-muted-foreground">
         {t("locationDetail.actionDescription")}
       </p>
-      <a
+      <SwButton as="a" variant="plain" size="inherit"
         href={`/teams/create?locationId=${location.id}`}
         className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-center text-sm font-semibold text-foreground dark:text-primary-foreground shadow-card transition-[transform,background-color] hover:bg-primary/90 active:scale-[0.96] motion-reduce:transform-none"
       >
         <Users aria-hidden="true" className="h-4 w-4 shrink-0" />
         {t("locations.detailCreateTeam")}
-      </a>
-      <a
+      </SwButton>
+      <SwButton as="a" variant="plain" size="inherit"
         href="#location-teams"
         className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-foreground hover:bg-card/60"
       >
         {t("locationDetail.browseTeams")}
         <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
-      </a>
+      </SwButton>
     </section>
   );
 }
@@ -324,19 +325,19 @@ function MobileFloatingCTA({ location }: { location: Location }) {
       data-testid="location-mobile-actions"
       className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-xl items-stretch gap-3 rounded-3xl bg-card/95 p-3 shadow-card-hover backdrop-blur-md lg:hidden"
     >
-      <a
+      <SwButton as="a" variant="plain" size="inherit"
         href="#location-teams"
         className="flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-2xl bg-muted px-3 py-2 text-center text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
       >
         {t("locationDetail.browseTeams")}
-      </a>
-      <a
+      </SwButton>
+      <SwButton as="a" variant="plain" size="inherit"
         href={`/teams/create?locationId=${location.id}`}
         className="flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl bg-primary px-3 py-2 text-center text-sm font-semibold text-foreground dark:text-primary-foreground transition-[transform,background-color] hover:bg-primary/90 active:scale-[0.96] motion-reduce:transform-none"
       >
         <Users aria-hidden="true" className="h-4 w-4 shrink-0" />
         {t("locationDetail.gatherPartners")}
-      </a>
+      </SwButton>
     </nav>
   );
 }
@@ -442,20 +443,20 @@ export function LocationDetailClient({
             )}
           </h1>
           {error !== "missing" && (
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               onClick={() => setAttempt((value) => value + 1)}
               className="mt-6 min-h-11 rounded-xl bg-primary px-5 text-foreground dark:text-primary-foreground"
             >
               {t("common.retry")}
-            </button>
+            </SwButton>
           )}
-          <a
+          <SwButton as="a" variant="plain" size="inherit"
             href="/locations"
             className="mt-4 inline-flex min-h-11 items-center rounded-lg text-accent-foreground underline underline-offset-4"
           >
             {t("common.back")}
-          </a>
+          </SwButton>
         </div>
         <Footer />
       </main>
@@ -475,21 +476,21 @@ export function LocationDetailClient({
       <Navbar />
       <header className="mx-auto max-w-6xl px-4 pt-24 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4">
-          <a
+          <SwButton as="a" variant="plain" size="inherit"
             href="/locations"
             className="inline-flex min-h-11 items-center gap-2 rounded-lg text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ChevronLeft aria-hidden="true" className="h-4 w-4" />
             {t("nav.locations")}
-          </a>
+          </SwButton>
           {isAdmin && (
-            <a
+            <SwButton as="a" variant="plain" size="inherit"
               href={`/admin/locations/${location.id}/edit`}
               aria-label={t("admin.editLocation")}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-card text-foreground shadow-card hover:bg-muted"
             >
               <Pencil aria-hidden="true" className="h-4 w-4" />
-            </a>
+            </SwButton>
           )}
         </div>
         <div className="grid min-w-0 items-center gap-6 pb-10 pt-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-12 lg:pb-14">

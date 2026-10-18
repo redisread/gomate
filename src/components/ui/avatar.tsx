@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Avatar as StarwindAvatar, AvatarImage, AvatarFallback } from "@/components/starwind-react/avatar";
 import { cn } from "@/lib/utils";
 
 /* ============================================================
@@ -28,34 +29,17 @@ export function Avatar({ src, name, size = "sm", className, style }: AvatarProps
   // 同样 L/C 值在不同 hue 看起来同样鲜艳；hue 域 155–215 用于身份识别（与品牌色解耦）。
   const hue = (name.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) % 60) + 155;
 
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={name}
-        loading="lazy"
-        className={cn(
-          "rounded-full object-cover shrink-0 ring-2 ring-white",
-          sizeClass,
-          className
-        )}
-        style={style}
-      />
-    );
-  }
-
   return (
-    <div
-      className={cn(
-        "rounded-full flex items-center justify-center shrink-0",
-        "font-semibold text-white select-none ring-2 ring-white",
-        sizeClass,
-        className
-      )}
-      style={{ background: `oklch(0.55 0.11 ${hue})`, ...style }}
+    <StarwindAvatar
+      role="img"
       aria-label={name}
+      className={cn("rounded-full shrink-0 ring-2 ring-white", sizeClass, className)}
+      style={style}
     >
-      {initials}
-    </div>
+      {src && <AvatarImage src={src} alt="" loading="lazy" className="object-cover" />}
+      <AvatarFallback className="font-semibold text-white select-none" style={{ background: `oklch(0.55 0.11 ${hue})` }}>
+        {initials}
+      </AvatarFallback>
+    </StarwindAvatar>
   );
 }

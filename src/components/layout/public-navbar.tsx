@@ -18,7 +18,6 @@ export function PublicNavbar() {
       renderAdminQuickAction={(dialogProps) => (
         <AdminQuickActionDialog
           {...dialogProps}
-          lockBodyScroll={false}
           title={t("admin.platform.quickActionTitle")}
           closeLabel={t("admin.platform.closeQuickAction")}
           initialFocusRef={actionRef}

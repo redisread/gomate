@@ -1,5 +1,9 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Textarea as SwTextarea } from "@/components/starwind-react/textarea";
+
 import { useCreateTeamForm } from "./teams/form/use-create-team-form";
 
 import {
@@ -105,9 +109,9 @@ export function CreateTeamClient() {
                   {t("teams.wechatRequiredDesc")}
                 </p>
                 <a href="/profile/edit">
-                  <button className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 bg-card border border-amber-300/50 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 hover:bg-accent">
+                  <SwButton variant="plain" size="inherit" type="button" className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 bg-card border border-amber-300/50 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 hover:bg-accent">
                     {t("teams.fillWechatBtn")}
-                  </button>
+                  </SwButton>
                 </a>
               </div>
             </div>
@@ -183,7 +187,7 @@ export function CreateTeamClient() {
               <FieldGroup icon="📅" label={t("teams.formLabel.date")} required>
                 <div className="relative">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-                  <input
+                  <SwInput
                     id="startDateInput"
                     data-testid="create-team-date"
                     name="startDateInput"
@@ -242,7 +246,7 @@ export function CreateTeamClient() {
                         currentValue={formData.durationMinutes}
                         onClick={() => handleDurationQuickSelect(1200)}
                       />
-                      <button
+                      <SwButton variant="plain" size="inherit"
                         type="button"
                         onClick={() => {
                           const select = document.getElementById(
@@ -256,7 +260,7 @@ export function CreateTeamClient() {
                         className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 border border-dashed border-muted-foreground/30 text-muted-foreground hover:border-primary hover:text-primary"
                       >
                         {t("teams.durationCustom")}
-                      </button>
+                      </SwButton>
                     </div>{" "}
                   </>
                 }
@@ -287,7 +291,7 @@ export function CreateTeamClient() {
             />
 
             <FieldGroup icon="📋" label={t("teams.formLabel.requirements")}>
-              <textarea
+              <SwTextarea
                 id="requirementsInput"
                 data-testid="create-team-requirements"
                 name="requirementsInput"
@@ -325,13 +329,13 @@ export function CreateTeamClient() {
 
             {/* 操作按钮 */}
             <div className="flex gap-3 pt-2">
-              <button
+              <SwButton variant="plain" size="inherit"
                 type="button"
                 onClick={() => window.history.back()}
                 className="flex-1 py-3 rounded-xl border text-sm font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-150 border-border text-muted-foreground hover:bg-muted"
               >
                 {t("common.cancel")}
-              </button>
+              </SwButton>
               <SubmitButton
                 data-testid="create-team-submit"
                 loading={isSubmitting || !hasWechat}

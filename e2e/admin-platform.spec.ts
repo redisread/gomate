@@ -390,7 +390,7 @@ test.describe("admin platform", () => {
       await expect(onboarding).toHaveCount(0);
     }
 
-    await expect(page.getByTestId("nav-admin")).toHaveCount(0);
+    await expect(page.getByTestId("nav-admin")).not.toBeVisible();
     const userMenu = page.locator("[data-user-menu] > button");
     await userMenu.focus();
     await page.keyboard.press("Enter");
@@ -403,13 +403,13 @@ test.describe("admin platform", () => {
       [...scriptUrls].some((url) => /location-edit|lazy-location/u.test(url)),
     ).toBe(false);
 
-    const trigger = page.getByRole("button", { name: "快速添加地点" });
+    const trigger = page.getByRole("menuitem", { name: "快速添加地点" });
     await trigger.click();
     const dialog = page.getByRole("dialog", { name: "快速记录地点" });
     await expect(dialog).toBeVisible();
     const nameInput = dialog.getByLabel("地点名称");
     await expect(nameInput).toBeFocused();
-    const desktopBox = await dialog.boundingBox();
+    const desktopBox = await dialog.locator("[data-gomate-modal-panel]").boundingBox();
     expect(desktopBox).not.toBeNull();
     expect(desktopBox!.width).toBeLessThan(700);
     expect(desktopBox!.y).toBeGreaterThan(0);
@@ -436,7 +436,7 @@ test.describe("admin platform", () => {
     const mobileTrigger = page.getByRole("button", { name: "快速添加地点" });
     await mobileTrigger.click();
     await expect(dialog).toBeVisible();
-    const mobileBox = await dialog.boundingBox();
+    const mobileBox = await dialog.locator("[data-gomate-modal-panel]").boundingBox();
     expect(mobileBox).not.toBeNull();
     expect(mobileBox!.width).toBeCloseTo(320, 0);
     expect(mobileBox!.y + mobileBox!.height).toBeCloseTo(720, 0);
@@ -476,10 +476,16 @@ test.describe("admin platform", () => {
       const trigger = width === 320 ? page.getByTestId("nav-mobile-menu-toggle") : page.locator("[data-user-menu] > button");
       await trigger.focus();
       await page.keyboard.press("Enter");
-      const action = page.getByRole("button", { name: "Quick add location" });
+      const action = page.getByRole(width === 320 ? "button" : "menuitem", { name: "Quick add location" });
       await expect(action).toBeVisible();
-      await expect(page.getByRole("link", { name: "Admin", exact: true })).toBeVisible();
-      await action.focus();
+      await expect(page.getByRole(width === 320 ? "link" : "menuitem", { name: "Admin", exact: true })).toBeVisible();
+      if (width === 320) {
+        await action.focus();
+      } else {
+        await expect(page.getByRole("menuitem", { name: "Profile", exact: true })).toBeFocused();
+        for (let step = 0; step < 3; step++) await page.keyboard.press("ArrowDown");
+      }
+      await expect(action).toBeFocused();
       await page.keyboard.press("Enter");
       await expect(page.getByRole("dialog")).toBeVisible();
       await page.keyboard.press("Escape");

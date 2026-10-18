@@ -61,11 +61,11 @@ Preview 只上传不可提升的 Worker version，不执行 D1 migration。所�
 dry-run 和 size gate 都在 PR 完成；Workers Build 只安装锁定依赖、生成 locale 并构建当前分支的
 `dist/`，随后按分支执行对应 deploy command。
 
-Workers Builds 的推荐配置为：
+Workers Builds 的推荐配置为（仓库升级不代表远程 Build variables 已同步，发布前需核对；运行时最低兼容版本仍为 Node 22.23.3）：
 
 1. Build command：`pnpm install --frozen-lockfile && pnpm i18n:build && pnpm build`；该阶段只生成
    当前分支的 artifact，不重复执行 PR 已通过的 `pnpm test:ci`、E2E 或 dry-run；
-2. Build variables：`NODE_VERSION=22.23.3`、`PNPM_VERSION=11.19.0`、
+2. Build variables：`NODE_VERSION=24.22.0`、`PNPM_VERSION=12.14.0`、
    `SKIP_DEPENDENCY_INSTALL=1`；启用 build cache。仓库同时通过 `.node-version` 和
    `packageManager` 固定本地与 CI 工具链；生产依赖审计由 PR CI 执行，high/critical 漏洞阻止合并；
 3. Deploy command：`pnpm deploy:production`。脚本先按 `migrations/production-phases.json`

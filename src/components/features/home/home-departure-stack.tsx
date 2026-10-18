@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import {
   useId,
   useRef,
@@ -147,10 +148,10 @@ export function HomeDepartureStack({ teams }: { teams: Team[] }) {
           <Users className="mx-auto h-12 w-12 text-primary" strokeWidth={1.5} aria-hidden="true" />
           <h2 className="mt-5 text-xl font-bold text-foreground">{t("home.departures.emptyTitle")}</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{t("home.departures.emptyDescription")}</p>
-          <a href="/teams" className="mt-6 inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-transform duration-150 active:scale-95">
+          <SwButton as="a" variant="plain" size="inherit" href="/teams" className="mt-6 inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-transform duration-150 active:scale-95">
             {t("home.departures.viewAll")}
             <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-          </a>
+          </SwButton>
         </div>
       </div>
     );
@@ -284,14 +285,14 @@ export function HomeDepartureStack({ teams }: { teams: Team[] }) {
 
       {featuredTeams.length > 1 && (
         <div className="mt-1 flex items-center justify-center gap-3">
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={showPrevious}
             aria-label={t("home.departures.previous")}
             className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm transition-[transform,border-color,color] duration-150 hover:border-primary/50 hover:text-primary active:scale-95 motion-reduce:transition-none"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-          </button>
+          </SwButton>
 
           <div className="flex items-center gap-2" aria-hidden="true">
             {featuredTeams.map((team, index) => (
@@ -302,14 +303,14 @@ export function HomeDepartureStack({ teams }: { teams: Team[] }) {
             ))}
           </div>
 
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={showNext}
             aria-label={t("home.departures.next")}
             className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm transition-[transform,border-color,color] duration-150 hover:border-primary/50 hover:text-primary active:scale-95 motion-reduce:transition-none"
           >
             <ChevronRight className="h-5 w-5" aria-hidden="true" />
-          </button>
+          </SwButton>
         </div>
       )}
 

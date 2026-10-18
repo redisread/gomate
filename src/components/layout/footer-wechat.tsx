@@ -1,3 +1,5 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Input as SwInput } from "@/components/starwind-react/input";
 import * as React from "react";
 import { Check, Copy, Download, X } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
@@ -31,7 +33,6 @@ export function FooterWechat({ onClose }: { onClose: () => void }) {
       open
       onClose={onClose}
       labelledBy={titleId}
-      lockBodyScroll
       overlayClassName="flex items-center justify-center p-4"
       panelStyle={{
         maxHeight:
@@ -43,14 +44,14 @@ export function FooterWechat({ onClose }: { onClose: () => void }) {
         <h2 id={titleId} className="text-lg font-semibold">
           {t("common.socials.wechat")}
         </h2>
-        <button
+        <SwButton variant="plain" size="inherit"
           type="button"
           onClick={onClose}
           aria-label={t("common.wechat.close")}
           className="flex size-11 items-center justify-center rounded-full hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           <X aria-hidden="true" className="size-5" />
-        </button>
+        </SwButton>
       </div>
       <img
         src="/wechat-qr.png"
@@ -59,7 +60,7 @@ export function FooterWechat({ onClose }: { onClose: () => void }) {
         height="280"
         className="w-full rounded-lg"
       />
-      <input
+      <SwInput
         ref={account}
         readOnly
         value="VictorHong111"
@@ -67,7 +68,7 @@ export function FooterWechat({ onClose }: { onClose: () => void }) {
         className="my-4 w-full rounded-lg bg-secondary p-3 text-center text-base text-secondary-foreground"
       />
       <div className="grid grid-cols-2 gap-3 text-sm">
-        <button
+        <SwButton variant="plain" size="inherit"
           type="button"
           onClick={copyAccount}
           className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-primary-foreground"
@@ -84,15 +85,15 @@ export function FooterWechat({ onClose }: { onClose: () => void }) {
                 : "common.wechat.wechatCopy",
             )}
           </span>
-        </button>
-        <a
+        </SwButton>
+        <SwButton as="a" variant="plain" size="inherit"
           href="/wechat-qr.png"
           download="gomate-wechat-qr.png"
           className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border px-3 py-2"
         >
           <Download aria-hidden="true" className="size-4" />
           {t("common.wechat.wechatSaveQR")}
-        </a>
+        </SwButton>
       </div>
     </Modal>
   );

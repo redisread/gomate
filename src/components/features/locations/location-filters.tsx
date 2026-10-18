@@ -1,3 +1,5 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { Check, RotateCcw } from "lucide-react";
 import type { Region } from "@/lib/types";
@@ -65,13 +67,13 @@ export function LocationFilters({ regions, popularTags, selectedRegionId, select
         <div role="group" aria-label={t("locations.cityLabel")} className="flex min-w-0 items-start gap-2">
           <span className="flex min-h-13 w-14 shrink-0 items-center text-xs font-semibold text-foreground/70">{t("locations.cityLabel")}</span>
           <FilterRail selectedKey={selectedRegionId} testId="locations-city-options">
-            <button type="button" aria-pressed={!selectedRegionId} data-selected={!selectedRegionId} onClick={() => onRegionSelect("")} className={cn(chipClass, chipState(!selectedRegionId))}>
+            <SwButton variant="plain" size="inherit" type="button" aria-pressed={!selectedRegionId} data-selected={!selectedRegionId} onClick={() => onRegionSelect("")} className={cn(chipClass, chipState(!selectedRegionId))}>
               <Check className={cn(checkClass, selectedRegionId && "invisible")} aria-hidden="true" />{t("locations.anyCity")}
-            </button>
+            </SwButton>
             {quickRegions.map((region) => (
-              <button key={region.id} type="button" aria-pressed={selectedRegionId === region.id} data-selected={selectedRegionId === region.id} onClick={() => onRegionSelect(region.id)} className={cn(chipClass, chipState(selectedRegionId === region.id))}>
+              <SwButton variant="plain" size="inherit" key={region.id} type="button" aria-pressed={selectedRegionId === region.id} data-selected={selectedRegionId === region.id} onClick={() => onRegionSelect(region.id)} className={cn(chipClass, chipState(selectedRegionId === region.id))}>
                 <Check className={cn(checkClass, selectedRegionId !== region.id && "invisible")} aria-hidden="true" /><span className="min-w-0 truncate" title={getRegionDisplayName(region)}>{getRegionDisplayName(region)}</span>
-              </button>
+              </SwButton>
             ))}
           </FilterRail>
           <div className="shrink-0 pt-1">
@@ -83,21 +85,21 @@ export function LocationFilters({ regions, popularTags, selectedRegionId, select
             <span className="flex min-h-13 w-14 shrink-0 items-center text-xs font-semibold text-foreground/70">{t("locations.tagsLabel")}</span>
             <FilterRail selectedKey={selectedTags.join(",")} testId="locations-tag-options">
               {tags.map((tag) => (
-                <button key={tag.id} type="button" aria-pressed={selectedTags.includes(tag.id)} onClick={() => onTagToggle(tag.id)} className={cn(chipClass, chipState(selectedTags.includes(tag.id)))}>
+                <SwButton variant="plain" size="inherit" key={tag.id} type="button" aria-pressed={selectedTags.includes(tag.id)} onClick={() => onTagToggle(tag.id)} className={cn(chipClass, chipState(selectedTags.includes(tag.id)))}>
                   <Check className={cn(checkClass, !selectedTags.includes(tag.id) && "invisible")} aria-hidden="true" /><span className="min-w-0 truncate" title={tag.name}>{tag.name}</span>
-                </button>
+                </SwButton>
               ))}
             </FilterRail>
           </div>
         )}
       </div>
-      <div className="flex min-h-11 items-center justify-between gap-2 rounded-b-2xl border-t border-border/60 bg-card/60 px-3 sm:px-4">
+      <SwCard className="block gap-0 py-0 ring-0 flex min-h-11 items-center justify-between gap-2 rounded-b-2xl border-t border-border/60 bg-card/60 px-3 sm:px-4">
         <p id="locations-interest-hint" className="text-xs text-muted-foreground">{t("locations.interestHint")}</p>
-        <button type="button" onClick={onClear} disabled={!selectedRegionId && selectedTags.length === 0}
+        <SwButton variant="plain" size="inherit" type="button" onClick={onClear} disabled={!selectedRegionId && selectedTags.length === 0}
           className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none">
           <RotateCcw className="size-3.5 shrink-0" aria-hidden="true" />{t("locations.clearFilter")}
-        </button>
-      </div>
+        </SwButton>
+      </SwCard>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Card as SwCard } from "@/components/starwind-react/card";
 import type { ReactNode } from "react";
 import {
   ArrowLeft,
@@ -42,13 +44,13 @@ export function TeamDepartureBrief({
       data-testid="team-departure-brief"
       className="space-y-5 sm:space-y-7"
     >
-      <a
+      <SwButton as="a" variant="plain" size="inherit"
         href="/teams"
         className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         {t("common.backTeams")}
-      </a>
+      </SwButton>
       <header className="relative max-w-4xl space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <span
@@ -72,7 +74,7 @@ export function TeamDepartureBrief({
         </h1>
       </header>
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start lg:gap-8">
-        <div className="min-w-0 rounded-2xl bg-card p-5 shadow-warm-md sm:p-6 lg:col-start-2 lg:row-start-1 lg:p-7">
+        <SwCard className="block gap-0 py-0 ring-0 min-w-0 rounded-2xl bg-card p-5 shadow-warm-md sm:p-6 lg:col-start-2 lg:row-start-1 lg:p-7">
           <div className="flex items-center justify-between gap-3 text-sm font-medium text-accent-foreground">
             <span>{t("teams.departureCardTitle")}</span>
             <Footprints
@@ -150,7 +152,7 @@ export function TeamDepartureBrief({
               {desktopAction}
             </div>
           )}
-        </div>
+        </SwCard>
         <div className="space-y-4 lg:col-start-1 lg:row-start-1">
           <LocationMedia location={location} />
           {team.leader && (

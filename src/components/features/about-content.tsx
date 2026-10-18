@@ -1,3 +1,5 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Card as SwCard } from "@/components/starwind-react/card";
 import {
   ArrowRight,
   CheckCircle2,
@@ -62,13 +64,13 @@ export function AboutContent({ copy }: { copy: AboutCopy }) {
               aria-label={copy.breadcrumbCurrent}
               className="mb-10 flex items-center gap-2 text-sm text-muted-foreground"
             >
-              <a
+              <SwButton as="a" variant="plain" size="inherit"
                 href="/"
                 className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Home className="h-4 w-4" aria-hidden="true" />
                 {copy.breadcrumbHome}
-              </a>
+              </SwButton>
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
               <span aria-current="page" className="font-medium text-foreground">
                 {copy.breadcrumbCurrent}
@@ -86,24 +88,24 @@ export function AboutContent({ copy }: { copy: AboutCopy }) {
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
+              <SwButton as="a" variant="plain" size="inherit"
                 href="/locations"
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-[background-color,transform] hover:bg-primary/90 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none motion-reduce:active:scale-100"
               >
                 <Compass className="h-4 w-4" aria-hidden="true" />
                 {copy.primaryAction}
-              </a>
-              <a
+              </SwButton>
+              <SwButton as="a" variant="plain" size="inherit"
                 href="/teams"
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 {copy.secondaryAction}
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </a>
+              </SwButton>
             </div>
           </div>
 
-          <div className="rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
+          <SwCard className="block gap-0 py-0 ring-0 rounded-3xl border border-border bg-card p-6 shadow-card sm:p-8">
             <div className="flex items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-subtle text-primary">
                 <Mountain className="h-5 w-5" aria-hidden="true" />
@@ -133,7 +135,7 @@ export function AboutContent({ copy }: { copy: AboutCopy }) {
                 </li>
               ))}
             </ol>
-          </div>
+          </SwCard>
         </div>
       </section>
 
@@ -237,14 +239,14 @@ export function AboutContent({ copy }: { copy: AboutCopy }) {
               {copy.contactDescription}
             </p>
           </div>
-          <a
+          <SwButton as="a" variant="plain" size="inherit"
             href="mailto:hi@gomate.live"
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-[background-color,transform] hover:bg-primary/90 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-foreground motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             <Mail className="h-4 w-4" aria-hidden="true" />
             {copy.contactAction}
             <span className="text-primary-foreground/75">hi@gomate.live</span>
-          </a>
+          </SwButton>
         </div>
       </section>
     </main>

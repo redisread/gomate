@@ -1,3 +1,8 @@
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { NativeSelect as SwNativeSelect } from "@/components/starwind-react/native-select";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import type {
   AdminTeamFilters,
@@ -44,10 +49,10 @@ export function AdminTeamsManager({
         }}
       >
         <div className="min-w-0 sm:col-span-2 xl:col-span-1">
-          <label htmlFor={searchId} className="mb-2 block text-sm font-medium">
+          <SwLabel htmlFor={searchId} className="mb-2 block text-sm font-medium">
             {t("admin.teamsManagement.search")}
-          </label>
-          <input
+          </SwLabel>
+          <SwInput
             id={searchId}
             type="search"
             maxLength={100}
@@ -58,13 +63,13 @@ export function AdminTeamsManager({
           />
         </div>
         <div className="min-w-0">
-          <label
+          <SwLabel
             htmlFor={lifecycleId}
             className="mb-2 block text-sm font-medium"
           >
             {t("admin.teamsManagement.lifecycle")}
-          </label>
-          <select
+          </SwLabel>
+          <SwNativeSelect
             id={lifecycleId}
             value={list.filters.lifecycle ?? ""}
             className={control}
@@ -81,16 +86,16 @@ export function AdminTeamsManager({
                 {t(key)}
               </option>
             ))}
-          </select>
+          </SwNativeSelect>
         </div>
         <div className="min-w-0">
-          <label
+          <SwLabel
             htmlFor={recruitmentId}
             className="mb-2 block text-sm font-medium"
           >
             {t("admin.teamsManagement.recruitmentStatus")}
-          </label>
-          <select
+          </SwLabel>
+          <SwNativeSelect
             id={recruitmentId}
             value={list.filters.recruitmentStatus ?? ""}
             className={control}
@@ -110,14 +115,14 @@ export function AdminTeamsManager({
                 {t(key)}
               </option>
             ))}
-          </select>
+          </SwNativeSelect>
         </div>
-        <button
+        <SwButton variant="plain" size="inherit"
           type="submit"
           className={`${button} self-end bg-primary text-primary-foreground hover:bg-primary/90`}
         >
           {t("admin.management.search")}
-        </button>
+        </SwButton>
       </form>
       <p className="text-sm text-muted-foreground">
         {t("admin.teamsManagement.readOnly")}
@@ -134,19 +139,19 @@ export function AdminTeamsManager({
             })}
       </div>
       {list.error && (
-        <div
+        <SwAlert as="div" variant="plain"
           role="alert"
           className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 p-3"
         >
           <p className="text-sm text-destructive">{list.error}</p>
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={list.retry}
             className={`${button} bg-muted`}
           >
             {t("admin.teamsManagement.retry")}
-          </button>
-        </div>
+          </SwButton>
+        </SwAlert>
       )}
       <ul
         aria-label={t("admin.teamsManagement.listLabel")}
@@ -173,14 +178,14 @@ export function AdminTeamsManager({
         </p>
       )}
       {list.nextCursor && (
-        <button
+        <SwButton variant="plain" size="inherit"
           type="button"
           onClick={list.loadMore}
           disabled={list.loading || list.loadingMore || Boolean(list.error)}
           className={`${button} border border-border hover:bg-muted`}
         >
           {t("admin.management.loadMore")}
-        </button>
+        </SwButton>
       )}
       <AdminTeamDetail
         teamId={selectedId}

@@ -1,3 +1,4 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
 import { ArrowRight, Image as ImageIcon, MapPin } from "lucide-react";
 import type { Location } from "@/lib/types";
 import { getRegionDisplayName } from "@/components/shared/quick-city-options";
@@ -18,7 +19,7 @@ export function TeamLocationPreview({
   detailLabel,
 }: TeamLocationPreviewProps) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
+    <SwCard className="block gap-0 py-0 ring-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
       <a
         href={detailHref}
         className="group grid grid-cols-[7rem_1fr] items-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset sm:grid-cols-[9rem_1fr]"
@@ -57,6 +58,6 @@ export function TeamLocationPreview({
           </span>
         </div>
       </a>
-    </div>
+    </SwCard>
   );
 }

@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { animate as animateValue, motion } from "motion/react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
@@ -261,7 +262,7 @@ export function MapCanvas({
                 zIndex: selected || hovered === point.id ? 2 : 1,
               }}
             >
-              <button
+              <SwButton variant="plain" size="inherit"
                 ref={(element) => {
                   if (element) markerRefs.current.set(point.id, element);
                   else markerRefs.current.delete(point.id);
@@ -297,7 +298,7 @@ export function MapCanvas({
                   aria-hidden="true"
                   className={`h-3 w-3 rounded-full border-2 border-background bg-primary shadow-warm-sm transition-[box-shadow,background-color] duration-150 motion-reduce:transition-none ${selected ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
                 />
-              </button>
+              </SwButton>
               {(hovered === point.id || selected) && visible && (
                 <span
                   aria-hidden="true"

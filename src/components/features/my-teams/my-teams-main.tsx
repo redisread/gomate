@@ -1,5 +1,8 @@
 "use client";
 
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import { RequestFailure } from "@/components/ui/request-failure";
 import { Plus } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -26,7 +29,7 @@ export function MyTeamsClient() {
       <main className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh]">
-          {ctx.actionMessage && <p role="alert">{ctx.actionMessage}</p>}
+          {ctx.actionMessage && <SwAlert as="p" variant="plain" role="alert">{ctx.actionMessage}</SwAlert>}
           <div className="animate-spin h-8 w-8 text-stone-400 dark:text-stone-500 rounded-full border-4 border-stone-200 dark:border-stone-700 border-t-stone-400 dark:border-t-stone-500" />
         </div>
       </main>
@@ -61,10 +64,10 @@ export function MyTeamsClient() {
             </div>
           </div>
           <a href="/teams/create" className="flex-shrink-0">
-            <button className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 text-sm active:scale-[0.96]">
+            <SwButton variant="plain" size="inherit" type="button" className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl font-medium transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 text-sm active:scale-[0.96]">
               <Plus className="h-4 w-4" />
               {t("myTeams.createTeamBtn")}
-            </button>
+            </SwButton>
           </a>
         </div>
       </div>
@@ -85,7 +88,7 @@ export function MyTeamsClient() {
               </svg>
               {ctx.actionMessage}
             </span>
-            <button
+            <SwButton variant="plain" size="inherit" type="button"
               onClick={() => ctx.setActionMessage("")}
               className="text-amber-400 hover:text-amber-600 transition-colors ml-4"
             >
@@ -100,7 +103,7 @@ export function MyTeamsClient() {
                 <path d="m15 9-6 6" />
                 <path d="m9 9 6 6" />
               </svg>
-            </button>
+            </SwButton>
           </div>
         )}
 
@@ -124,7 +127,7 @@ export function MyTeamsClient() {
                   count: ctx.joinedTeams.length,
                 },
               ].map(({ id, label, count }) => (
-                <button
+                <SwButton variant="plain" size="inherit" type="button"
                   key={id}
                   onClick={() =>
                     ctx.handleRoleFilterChange(
@@ -149,7 +152,7 @@ export function MyTeamsClient() {
                   >
                     {count}
                   </span>
-                </button>
+                </SwButton>
               ))}
             </div>
 

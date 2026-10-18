@@ -1,3 +1,4 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
 import { Compass } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { ChinaMap } from "./china-map";
@@ -17,9 +18,9 @@ export function HomeMapSection() {
           <p className="mt-4 text-base leading-7 text-stone-700 dark:text-stone-300">{t("home.discoveryMap.description")}</p>
         </div>
 
-        <div className="home-map-frame rounded-[1.5rem] bg-card p-2 shadow-warm-xl ring-1 ring-black/5 dark:ring-white/10">
+        <SwCard className="block gap-0 py-0 ring-0 home-map-frame rounded-[1.5rem] bg-card p-2 shadow-warm-xl ring-1 ring-black/5 dark:ring-white/10">
           <ChinaMap />
-        </div>
+        </SwCard>
       </div>
     </section>
   );

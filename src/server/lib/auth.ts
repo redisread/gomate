@@ -97,6 +97,11 @@ export function createAuth(
     } : {},
     account: {
       encryptOAuthTokens: true,
+      // Keep the 1.7.0–1.7.2 column populated until a separate schema
+      // contraction. This also preserves rollback and custom credential reads.
+      additionalFields: {
+        issuer: { type: "string", required: true, input: false, returned: false },
+      },
       accountLinking: {
         enabled: true,
         requireLocalEmailVerified: true,
@@ -193,6 +198,19 @@ export function createAuth(
         : {}),
     },
     databaseHooks: {
+      account: {
+        create: {
+          before: async (account) => {
+            const issuer = account.providerId === "credential"
+              ? "local:credential"
+              : account.providerId === "google"
+                ? "https://accounts.google.com"
+                : null;
+            if (!issuer) throw new Error("Unsupported account provider");
+            return { data: { ...account, issuer } };
+          },
+        },
+      },
       session: {
         create: {
           before: async (session) => isUserActive(env, session.userId),

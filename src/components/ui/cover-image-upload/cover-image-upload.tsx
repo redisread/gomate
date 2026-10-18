@@ -1,5 +1,8 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Input as SwInput } from "@/components/starwind-react/input";
+
 /**
  * CoverImageUpload — 封面图拖拽上传组件
  *
@@ -254,7 +257,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
         {!isUploading && (
           <div className="absolute top-2 right-2 flex gap-1.5">
             {/* 更换按钮 */}
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               disabled={disabled}
               onClick={() => fileInputRef.current?.click()}
@@ -268,10 +271,10 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
             >
               <Upload className="h-3.5 w-3.5" />
               {t("ui.upload.replaceBtn")}
-            </button>
+            </SwButton>
 
             {/* 删除按钮 */}
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               disabled={disabled}
               onClick={handleDelete}
@@ -285,7 +288,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               )}
             >
               <X className="h-3.5 w-3.5" />
-            </button>
+            </SwButton>
           </div>
         )}
 
@@ -383,7 +386,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
             <AlertCircle className="h-8 w-8 text-red-500" />
             <p className="text-sm font-medium text-red-600 dark:text-red-400">{t("ui.upload.uploadFailed")}</p>
             <p className="text-xs text-destructive/80">{uploadState.message}</p>
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
@@ -392,7 +395,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               className="mt-1 text-xs underline underline-offset-2 text-destructive hover:text-destructive/80"
             >
               {t("ui.upload.uploadRetry")}
-            </button>
+            </SwButton>
           </div>
         ) : (
           /* 默认空状态 */
@@ -433,7 +436,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
       {!isUploading && (
         <div>
           {!showUrlInput ? (
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               disabled={disabled}
               onClick={() => setShowUrlInput(true)}
@@ -447,10 +450,10 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
             >
               <Link className="h-3.5 w-3.5" />
               {t("ui.upload.pasteUrlBtn")}
-            </button>
+            </SwButton>
           ) : (
             <div className="flex items-center gap-2">
-              <input
+              <SwInput
                 autoFocus
                 type="url"
                 value={urlInputValue}
@@ -466,7 +469,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 )}
               />
               {/* 确认按钮 */}
-              <button
+              <SwButton variant="plain" size="inherit"
                 type="button"
                 disabled={disabled || !urlInputValue.trim()}
                 onClick={handleUrlConfirm}
@@ -479,9 +482,9 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 )}
               >
                 <Check className="h-4 w-4" />
-              </button>
+              </SwButton>
               {/* 取消按钮 */}
-              <button
+              <SwButton variant="plain" size="inherit"
                 type="button"
                 disabled={disabled}
                 onClick={() => {
@@ -497,7 +500,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                 )}
               >
                 <X className="h-4 w-4" />
-              </button>
+              </SwButton>
             </div>
           )}
         </div>

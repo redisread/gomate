@@ -1,3 +1,5 @@
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import {
   AnimatePresence,
@@ -83,7 +85,8 @@ function CoverCard({
           x: reduced ? 0 : -direction * 460,
           rotate: reduced ? 0 : -direction * 20,
           opacity: 0,
-          transition: { duration: reduced ? 0 : 0.26 },
+          // A positive frame completes an in-flight exit after the preference changes.
+          transition: { duration: reduced ? 0.001 : 0.26 },
         }),
       }}
       transition={
@@ -130,7 +133,7 @@ function CoverCard({
           <GalleryImage src={src} alt={alt} interactive={present} />
         )}
       </div>
-      <button
+      <SwButton variant="plain" size="inherit"
         ref={button}
         type="button"
         tabIndex={present ? 0 : -1}
@@ -294,14 +297,14 @@ export function LocationCoverGallery({
       </div>
       {images.length > 1 && (
         <div className="flex items-center justify-center gap-6 pb-4">
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             className="location-cover-control"
             aria-label={t("locationDetail.prevImage")}
             onClick={() => step(-1)}
           >
             <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-          </button>
+          </SwButton>
           <span
             role="status"
             aria-live="polite"
@@ -309,7 +312,7 @@ export function LocationCoverGallery({
           >
             {current.index + 1} / {images.length}
           </span>
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             className="location-cover-control"
             ref={nextButton}
@@ -317,7 +320,7 @@ export function LocationCoverGallery({
             onClick={() => step(1)}
           >
             <ChevronRight className="h-5 w-5" aria-hidden="true" />
-          </button>
+          </SwButton>
         </div>
       )}
       {request && !failed && (
@@ -326,12 +329,12 @@ export function LocationCoverGallery({
         </span>
       )}
       {failed && (
-        <div
+        <SwAlert as="div" variant="plain"
           role="alert"
           className="mx-auto flex max-w-sm flex-wrap items-center justify-center gap-2 rounded-xl border border-border bg-card p-3 text-sm text-foreground"
         >
           {t("locationDetail.imageLoadFailed")}
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             className="location-cover-control px-3"
             onClick={() => {
@@ -340,8 +343,8 @@ export function LocationCoverGallery({
             }}
           >
             {t("common.retry")}
-          </button>
-        </div>
+          </SwButton>
+        </SwAlert>
       )}
     </div>
   );

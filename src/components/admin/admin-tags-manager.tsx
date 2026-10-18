@@ -1,5 +1,10 @@
 "use client";
 
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import * as React from "react";
 
 import { useI18n } from "@/hooks/useI18n";
@@ -98,35 +103,35 @@ export function AdminTagsManager() {
   return (
     <div className="space-y-6">
       <form onSubmit={create} className="flex flex-col gap-3 rounded-xl bg-card p-4 shadow-sm sm:flex-row sm:items-end sm:p-5">
-        <label className="grid flex-1 gap-1.5 text-sm font-medium">
+        <SwLabel className="grid flex-1 gap-1.5 text-sm font-medium">
           {t("admin.management.name")}
-          <input required maxLength={50} value={name} onChange={(event) => setName(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
-        </label>
-        <button className="min-h-11 rounded-lg bg-primary px-4 font-semibold text-primary-foreground">{t("admin.management.add")}</button>
+          <SwInput required maxLength={50} value={name} onChange={(event) => setName(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
+        </SwLabel>
+        <SwButton variant="plain" size="inherit" type="submit" className="min-h-11 rounded-lg bg-primary px-4 font-semibold text-primary-foreground">{t("admin.management.add")}</SwButton>
       </form>
-      {error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
+      {error && <SwAlert as="p" variant="plain" role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</SwAlert>}
       {loading ? <p role="status">{t("admin.management.loading")}</p> : (
         <div className="space-y-3">
           {items.map((tag) => (
             <article key={tag.id} className="grid gap-3 rounded-xl border border-border bg-card p-4 md:grid-cols-[minmax(0,1fr)_9rem_auto] md:items-end">
-              <label className="grid gap-1 text-sm font-medium">
+              <SwLabel className="grid gap-1 text-sm font-medium">
                 {t("admin.management.name")}
-                <input value={tag.name} onChange={(event) => setItems((current) => current.map((item) => item.id === tag.id ? { ...item, name: event.target.value } : item))} className="min-h-11 rounded-lg border border-border bg-background px-3" />
-              </label>
+                <SwInput value={tag.name} onChange={(event) => setItems((current) => current.map((item) => item.id === tag.id ? { ...item, name: event.target.value } : item))} className="min-h-11 rounded-lg border border-border bg-background px-3" />
+              </SwLabel>
               <div className="text-sm">
                 <span className="block text-muted-foreground">{t("admin.management.locationTeamRefs")}</span>
                 <span className="font-medium">{tag.references.locations} / {tag.references.teams}</span>
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={() => void rename(tag)} className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold">{t("admin.management.save")}</button>
-                <button type="button" onClick={() => void remove(tag)} className="min-h-11 rounded-lg border border-destructive/30 px-3 text-sm font-semibold text-destructive">{t("admin.management.delete")}</button>
+                <SwButton variant="plain" size="inherit" type="button" onClick={() => void rename(tag)} className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold">{t("admin.management.save")}</SwButton>
+                <SwButton variant="plain" size="inherit" type="button" onClick={() => void remove(tag)} className="min-h-11 rounded-lg border border-destructive/30 px-3 text-sm font-semibold text-destructive">{t("admin.management.delete")}</SwButton>
               </div>
             </article>
           ))}
           {hasMore && (
-            <button type="button" disabled={loadingMore} onClick={() => void load(page + 1, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
+            <SwButton variant="plain" size="inherit" type="button" disabled={loadingMore} onClick={() => void load(page + 1, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
               {loadingMore ? t("admin.management.loading") : t("admin.management.loadMore")}
-            </button>
+            </SwButton>
           )}
         </div>
       )}

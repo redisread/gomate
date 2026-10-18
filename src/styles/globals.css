@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 @import "./icon-sizes.css";
 
@@ -44,6 +45,14 @@
    @theme inline — CSS 变量 → Tailwind 工具类映射
    ============================================================ */
 @theme inline {
+  /* Starwind aliases share GoMate semantic colors. */
+  --color-outline: var(--ring);
+  --color-error: var(--destructive);
+  --color-error-foreground: var(--destructive-foreground);
+  --color-info: var(--primary);
+  --color-info-foreground: var(--primary-foreground);
+  --color-primary-accent: var(--primary);
+  --color-secondary-accent: var(--secondary);
   /* ---- shadcn/ui 兼容语义变量 ---- */
   --color-background:           var(--background);
   --color-foreground:           var(--foreground);
@@ -940,3 +949,18 @@
   mask-image: linear-gradient(to bottom, transparent, black 20%);
 }
 .dark .postcard-landscape img { opacity: 0.7; filter: brightness(0.75) saturate(0.75); }
+
+/* Starwind controls retain mobile input sizing and reduced-motion behavior. */
+@layer base {
+  [data-slot="input"], [data-slot="textarea"], [data-slot="native-select"] { font-size: max(1rem, 16px); }
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot], [data-slot]::before, [data-slot]::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  [data-slot="input"], [data-slot="textarea"], [data-slot="native-select"] { font-size: max(1rem, 16px); }
+}

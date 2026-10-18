@@ -1,5 +1,10 @@
 "use client";
 
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+
 import * as React from "react";
 import { Check, ChevronDown, Loader2, MapPin, Search } from "lucide-react";
 
@@ -97,7 +102,7 @@ export function TeamLocationPicker({
   return (
     <div ref={rootRef} className="relative">
       <input type="hidden" name="locationId" value={value} />
-      <button
+      <SwButton variant="plain" size="inherit"
         ref={triggerRef}
         type="button"
         data-testid="create-team-location"
@@ -129,7 +134,7 @@ export function TeamLocationPicker({
           className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none", open && "rotate-180")}
           aria-hidden="true"
         />
-      </button>
+      </SwButton>
 
       {open && (
         <div
@@ -138,10 +143,10 @@ export function TeamLocationPicker({
           aria-label={t("teams.formLabel.location")}
           className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-popover p-2 shadow-xl shadow-stone-950/10"
         >
-          <label className="flex min-h-11 items-center gap-2 rounded-xl bg-muted px-3">
+          <SwLabel className="flex min-h-11 items-center gap-2 rounded-xl bg-muted px-3">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
             <span className="sr-only">{t("teams.locationSearchLabel")}</span>
-            <input
+            <SwInput
               ref={searchRef}
               type="search"
               role="combobox"
@@ -169,7 +174,7 @@ export function TeamLocationPicker({
               className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-muted-foreground sm:text-sm"
             />
             {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />}
-          </label>
+          </SwLabel>
 
           <div
             ref={listRef}
@@ -184,16 +189,16 @@ export function TeamLocationPicker({
               </p>
             ) : error ? (
               <div className="px-3 py-6 text-center">
-                <p className="text-sm text-muted-foreground" role="alert">
+                <SwAlert as="p" variant="plain" className="text-sm text-muted-foreground" role="alert">
                   {t("teams.locationsLoadError")}
-                </p>
-                <button
+                </SwAlert>
+                <SwButton variant="plain" size="inherit"
                   type="button"
                   onClick={onRetry}
                   className="mt-3 min-h-10 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                   {t("teams.retry")}
-                </button>
+                </SwButton>
               </div>
             ) : locations.length === 0 ? (
               <p className="px-3 py-8 text-center text-sm text-muted-foreground" role="status">
@@ -203,7 +208,7 @@ export function TeamLocationPicker({
               locations.map((location, index) => {
                 const selected = location.id === value;
                 return (
-                  <button
+                  <SwButton variant="plain" size="inherit"
                     key={location.id}
                     id={`create-team-location-option-${location.id}`}
                     type="button"
@@ -228,7 +233,7 @@ export function TeamLocationPicker({
                       )}
                     </span>
                     {selected && <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
-                  </button>
+                  </SwButton>
                 );
               })
             )}

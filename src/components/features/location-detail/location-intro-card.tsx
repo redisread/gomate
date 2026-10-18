@@ -1,3 +1,5 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import {
   ChevronDown,
@@ -89,7 +91,7 @@ export function LocationIntroCard({
           {location.description}
         </p>
         {isOverflow && (
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             aria-expanded={expanded}
             aria-controls={descriptionId}
@@ -104,11 +106,11 @@ export function LocationIntroCard({
                 expanded && "rotate-180",
               )}
             />
-          </button>
+          </SwButton>
         )}
       </div>
       {(address || bestSeasons.length > 0) && (
-        <div className="space-y-6 rounded-3xl bg-card p-5 shadow-card sm:p-6">
+        <SwCard className="block gap-0 py-0 ring-0 space-y-6 rounded-3xl bg-card p-5 shadow-card sm:p-6">
           {address && (
             <div className="flex items-start gap-3">
               <MapPin
@@ -124,7 +126,7 @@ export function LocationIntroCard({
                 </p>
                 <div className="mt-3 flex flex-wrap gap-3">
                   {hasValidCoordinates && (
-                    <button
+                    <SwButton variant="plain" size="inherit"
                       type="button"
                       onClick={() =>
                         openExternalLink(
@@ -135,9 +137,9 @@ export function LocationIntroCard({
                     >
                       <Navigation aria-hidden="true" className="h-4 w-4" />
                       {t("locations.navigateTooltip")}
-                    </button>
+                    </SwButton>
                   )}
-                  <button
+                  <SwButton variant="plain" size="inherit"
                     type="button"
                     onClick={handleCopy}
                     className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-muted px-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
@@ -164,7 +166,7 @@ export function LocationIntroCard({
                       />
                     </span>
                     {t("common.copyAddress")}
-                  </button>
+                  </SwButton>
                 </div>
                 <p
                   role="status"
@@ -205,7 +207,7 @@ export function LocationIntroCard({
               </div>
             </div>
           )}
-        </div>
+        </SwCard>
       )}
     </section>
   );

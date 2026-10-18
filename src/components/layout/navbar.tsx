@@ -1,5 +1,11 @@
 "use client";
 
+import MenuPrimitive from "@starwind-ui/react/menu";
+import { Dropdown, DropdownTrigger, DropdownContent } from "@/components/starwind-react/dropdown";
+import { Skeleton as SwSkeleton } from "@/components/starwind-react/skeleton";
+import { Modal } from "@/components/ui/modal";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import { BrandIcon } from "@/components/brand-icon";
 
 import * as React from "react";
@@ -79,7 +85,7 @@ export function Navbar({
     setIsMobileMenuOpen(false);
     setQuickActionOpen(true);
   };
-  const userMenuId = React.useId();
+
   const [currentPath, setCurrentPath] = React.useState("");
   const [session, setSession] = React.useState<
     | {
@@ -148,43 +154,6 @@ export function Navbar({
     };
   }, [updateSession]);
 
-  // 统一管理抽屉到快速添加弹窗的滚动锁，避免两者交接时互相恢复。
-  React.useEffect(() => {
-    document.body.style.overflow =
-      isMobileMenuOpen || quickActionOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isMobileMenuOpen, quickActionOpen]);
-
-  // 点击外部关闭用户菜单
-  React.useEffect(() => {
-    if (!showUserMenu) return;
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("[data-user-menu]")) {
-        setShowUserMenu(false);
-      }
-    };
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
-  }, [showUserMenu]);
-
-  React.useEffect(() => {
-    if (!showUserMenu && !isMobileMenuOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setShowUserMenu(false);
-      setIsMobileMenuOpen(false);
-      (isMobileMenuOpen
-        ? mobileMenuButtonRef
-        : userMenuButtonRef
-      ).current?.focus();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [showUserMenu, isMobileMenuOpen]);
-
   const handleLogout = async () => {
     await authClient.signOut();
     setSession(null);
@@ -198,11 +167,13 @@ export function Navbar({
     if (href === "/") return currentPath === "/";
     return currentPath.startsWith(href);
   };
-  const adminItems = (mobile: boolean) =>
-    session?.isAdmin ? (
+  const adminItems = (mobile: boolean) => {
+    const AdminLink = mobile ? "a" : MenuPrimitive.LinkItem;
+    const QuickAction = mobile ? "button" : MenuPrimitive.Item;
+    return session?.isAdmin ? (
       <>
         <div role="separator" className="my-1 border-t border-border" />
-        <a
+        <AdminLink
           href="/admin"
           data-testid={mobile ? "nav-admin-mobile" : "nav-admin"}
           className="flex min-h-11 items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
@@ -216,10 +187,9 @@ export function Navbar({
             aria-hidden="true"
           />
           {t("nav.admin")}
-        </a>
+        </AdminLink>
         {renderAdminQuickAction && (
-          <button
-            type="button"
+          <QuickAction
             onClick={() => openQuickAction(mobile)}
             aria-haspopup="dialog"
             className="flex min-h-11 w-full items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
@@ -229,10 +199,11 @@ export function Navbar({
               aria-hidden="true"
             />
             {adminQuickActionLabel}
-          </button>
+          </QuickAction>
         )}
       </>
     ) : null;
+  };
 
   return (
     <>
@@ -302,32 +273,30 @@ export function Navbar({
               <ThemeToggle />
 
               {sessionFailed ? (
-                <button
+                <SwButton variant="plain" size="inherit"
                   type="button"
                   className="min-h-11 underline"
                   onClick={() => updateSession(true)}
                 >
                   {t("common.retry")}
-                </button>
+                </SwButton>
               ) : session === undefined ? (
                 <div
                   className="flex items-center gap-2"
                   data-testid="nav-auth-loading"
                   aria-hidden="true"
                 >
-                  <div className="h-9 w-16 animate-pulse rounded-lg bg-muted motion-reduce:animate-none" />
-                  <div className="h-9 w-24 animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
+                  <SwSkeleton className="h-9 w-16 animate-pulse rounded-lg bg-muted motion-reduce:animate-none" />
+                  <SwSkeleton className="h-9 w-24 animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
                 </div>
               ) : session?.user ? (
                 <>
                   {/* 用户菜单 */}
-                  <div className="relative" data-user-menu>
-                    <button
+                  <Dropdown className="relative" data-user-menu open={showUserMenu} onOpenChange={setShowUserMenu}>
+                    <DropdownTrigger
                       type="button"
                       ref={userMenuButtonRef}
                       aria-expanded={showUserMenu}
-                      aria-controls={userMenuId}
-                      onClick={() => setShowUserMenu(!showUserMenu)}
                       className="flex min-h-11 items-center gap-1.5 text-sm text-stone-600 dark:text-stone-400 px-3 py-1.5 rounded-lg hover:bg-accent hover:text-foreground transition-colors duration-150"
                     >
                       {/* 用户头像 */}
@@ -348,46 +317,42 @@ export function Navbar({
                           showUserMenu && "rotate-180",
                         )}
                       />
-                    </button>
+                    </DropdownTrigger>
 
                     {/* 下拉菜单 */}
-                    {showUserMenu && (
-                      <div
-                        id={userMenuId}
-                        className="absolute right-0 top-full mt-1.5 w-52 rounded-xl overflow-hidden bg-popover border border-border shadow-lg z-50"
+                    <DropdownContent disablePortal align="end"
+                        className="w-52 p-0 rounded-xl overflow-hidden bg-popover border border-border shadow-lg z-50"
                       >
-                        <a
+                        <MenuPrimitive.LinkItem
                           href="/profile"
                           className="flex min-h-11 items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
                           onClick={() => setShowUserMenu(false)}
                         >
                           <User className="h-3.5 w-3.5 text-muted-foreground" />
                           {t("nav.profile")}
-                        </a>
-                        <a
+                        </MenuPrimitive.LinkItem>
+                        <MenuPrimitive.LinkItem
                           href="/my-teams"
                           className="flex min-h-11 items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-accent transition-colors"
                           onClick={() => setShowUserMenu(false)}
                         >
                           <Mountain className="h-3.5 w-3.5 text-muted-foreground" />
                           {t("nav.myTeams")}
-                        </a>
+                        </MenuPrimitive.LinkItem>
                         {adminItems(false)}
                         <div
                           role="separator"
                           className="border-t border-border my-1"
                         />
-                        <button
-                          type="button"
+                        <MenuPrimitive.Item
                           onClick={handleLogout}
                           className="w-full min-h-11 flex items-center gap-2.5 px-4 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
                         >
                           <LogOut className="h-3.5 w-3.5" />
                           {t("nav.logout")}
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                        </MenuPrimitive.Item>
+                      </DropdownContent>
+                  </Dropdown>
 
                   {/* 主 CTA：发布队伍 */}
                   <CtaButton
@@ -417,7 +382,7 @@ export function Navbar({
             </div>
 
             {/* ---- 移动端汉堡按钮 ---- */}
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               ref={mobileMenuButtonRef}
               data-testid="nav-mobile-menu-toggle"
@@ -433,7 +398,7 @@ export function Navbar({
               ) : (
                 <Menu className="h-5 w-5" />
               )}
-            </button>
+            </SwButton>
           </div>
         </div>
       </header>
@@ -442,22 +407,13 @@ export function Navbar({
           移动端抽屉菜单
           ============================================================ */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[60] md:hidden">
-          {/* 遮罩 */}
-          <div
-            className="absolute inset-0 bg-[#1e1812]/20 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]"
-            onClick={() => setIsMobileMenuOpen(false)}
-            aria-hidden="true"
-          />
-
-          {/* 抽屉面板：右侧滑入 */}
-          <div
-            className="absolute right-0 top-0 bottom-0 w-72 overflow-y-auto flex flex-col bg-popover border-l border-border shadow-2xl"
-            style={{
-              animation:
-                "slide-in-right 0.35s cubic-bezier(0.16,1,0.3,1) forwards",
-            }}
-          >
+        <Modal open={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}
+          aria-label={t("common.mobileNav")}
+          returnFocusRef={mobileMenuButtonRef}
+          overlayClassName="flex justify-end md:hidden"
+          backdropClassName="bg-[#1e1812]/20 backdrop-blur-sm"
+          panelClassName="h-dvh w-72 overflow-y-auto flex flex-col bg-popover border-l border-border shadow-2xl motion-reduce:animate-none"
+        >
             {/* 顶部：Logo + 关闭 */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border">
               <a
@@ -468,14 +424,14 @@ export function Navbar({
                 <BrandIcon size={28} />
                 <span className="font-bold text-foreground">GoMate</span>
               </a>
-              <button
+              <SwButton variant="plain" size="inherit"
                 type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="min-h-11 min-w-11 p-1.5 rounded-lg text-muted-foreground hover:bg-accent transition-colors"
                 aria-label={t("common.closeMenu")}
               >
                 <X className="h-5 w-5" />
-              </button>
+              </SwButton>
             </div>
 
             {/* 用户信息（已登录时显示） */}
@@ -531,28 +487,28 @@ export function Navbar({
                 <LocaleToggle />
               </div>
               {sessionFailed ? (
-                <button
+                <SwButton variant="plain" size="inherit"
                   type="button"
                   className="min-h-11 underline"
                   onClick={() => updateSession(true)}
                 >
                   {t("common.retry")}
-                </button>
+                </SwButton>
               ) : session === undefined ? (
-                <div
+                <SwSkeleton
                   className="h-24 animate-pulse rounded-xl bg-muted motion-reduce:animate-none"
                   aria-hidden="true"
                 />
               ) : session?.user ? (
                 <>
-                  <a
+                  <SwButton as="a" variant="plain" size="inherit"
                     href="/teams/create"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
                   >
                     <Plus className="h-4 w-4" />
                     {t("nav.createTeam")}
-                  </a>
+                  </SwButton>
                   <div>
                     <a
                       href="/profile"
@@ -572,38 +528,37 @@ export function Navbar({
                     </a>
                     {adminItems(true)}
                     <div role="separator" className="border-t border-border" />
-                    <button
+                    <SwButton variant="plain" size="inherit"
                       type="button"
                       onClick={handleLogout}
                       className="w-full min-h-11 flex items-center px-4 gap-2.5 text-sm text-muted-foreground hover:text-foreground py-2 transition-colors"
                     >
                       <LogOut className="h-3.5 w-3.5" />
                       {t("nav.logout")}
-                    </button>
+                    </SwButton>
                   </div>
                 </>
               ) : (
                 <>
-                  <a
+                  <SwButton as="a" variant="plain" size="inherit"
                     href="/login"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="w-full flex items-center justify-center gap-2 border border-border text-foreground px-4 py-2.5 rounded-xl hover:bg-accent transition-colors font-medium text-sm"
                   >
                     <User className="h-4 w-4" />
                     {t("nav.login")}
-                  </a>
-                  <a
+                  </SwButton>
+                  <SwButton as="a" variant="plain" size="inherit"
                     href="/register"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl font-medium text-sm bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-shadow"
                   >
                     {t("nav.register")}
-                  </a>
+                  </SwButton>
                 </>
               )}
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
       {session?.isAdmin &&
         renderAdminQuickAction?.({
@@ -628,7 +583,7 @@ function CtaButton({
   "data-testid"?: string;
 }) {
   return (
-    <a
+    <SwButton as="a" variant="plain" size="inherit"
       href={href}
       data-testid={dataTestId}
       // task #180 a11y：`bg-primary` (#D97706 amber-600) on cream `#FFFBEB` primary-foreground = ~3.3:1 挂 WCAG AA 4.5:1
@@ -637,7 +592,7 @@ function CtaButton({
     >
       {icon}
       {label}
-    </a>
+    </SwButton>
   );
 }
 

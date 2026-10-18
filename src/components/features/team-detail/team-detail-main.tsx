@@ -1,5 +1,7 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useTeamDetail } from "./use-team-detail";
@@ -35,13 +37,13 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
             <p className="text-muted-foreground/70">
               {error || t("teams.notFound")}
             </p>
-            <button
+            <SwButton variant="plain" size="inherit"
               type="button"
               onClick={() => window.location.reload()}
               className="min-h-11 underline"
             >
               {t("common.retry")}
-            </button>
+            </SwButton>
             <a
               href="/teams"
               className="text-accent-foreground hover:text-foreground underline underline-offset-2"

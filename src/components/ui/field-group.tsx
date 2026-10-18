@@ -1,3 +1,4 @@
+import { Label as SwLabel } from "@/components/starwind-react/label";
 import * as React from "react";
 
 /**
@@ -18,10 +19,10 @@ export function FieldGroup({ icon, label, required, hint, children }: FieldGroup
     <div className="space-y-1.5">
       <div className="flex items-center gap-1.5">
         <span className="text-base">{icon}</span>
-        <label className="text-sm font-medium text-foreground">
+        <SwLabel className="text-sm font-medium text-foreground">
           {label}
           {required && <span className="ml-0.5 text-destructive">*</span>}
-        </label>
+        </SwLabel>
         {hint && (
           <span className="text-xs ml-auto text-muted-foreground">{hint}</span>
         )}

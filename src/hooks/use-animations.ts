@@ -9,7 +9,7 @@ import { useState, useEffect, useRef, type RefObject } from "react";
    useInView — 视口进入检测
    用于 Section 滚动进入时触发动画
    ============================================================ */
-export function useInView(threshold = 0.1): [RefObject<HTMLDivElement>, boolean] {
+export function useInView(threshold = 0.1): [RefObject<HTMLDivElement | null>, boolean] {
   const ref = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(true); // 默认可见，渐进增强
 

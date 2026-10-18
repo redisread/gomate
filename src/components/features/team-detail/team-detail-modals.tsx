@@ -1,3 +1,4 @@
+import { Button as SwButton } from "@/components/starwind-react/button";
 import { Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { Modal } from "@/components/ui/modal";
@@ -30,18 +31,18 @@ export function LeaveConfirmDialog({
       <p className="text-sm text-muted-foreground leading-relaxed mb-6">
         {t("teams.leaveTeamWarning")}
       </p>
-      <button
+      <SwButton variant="plain" size="inherit" type="button"
         onClick={onConfirm}
         className="w-full py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors mb-2"
       >
         {t("teams.leaveTeam")}
-      </button>
-      <button
+      </SwButton>
+      <SwButton variant="plain" size="inherit" type="button"
         onClick={onCancel}
         className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accent transition-colors"
       >
         {t("common.cancel")}
-      </button>
+      </SwButton>
     </Modal>
   );
 }
@@ -83,21 +84,21 @@ export function FormTeamConfirmDialog({
       <p className="text-sm text-muted-foreground leading-relaxed mb-6">
         {t("teams.formTeamWarning")}
       </p>
-      <button
+      <SwButton variant="plain" size="inherit" type="button"
         onClick={onConfirm}
         disabled={isLoading}
         className="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white text-sm font-semibold transition-colors mb-2 flex items-center justify-center gap-2"
       >
         {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
         {t("teams.confirmFormTeam")}
-      </button>
-      <button
+      </SwButton>
+      <SwButton variant="plain" size="inherit" type="button"
         onClick={onCancel}
         disabled={isLoading}
         className="w-full py-3 rounded-2xl text-muted-foreground text-sm font-medium hover:bg-accent transition-colors"
       >
         {t("common.cancel")}
-      </button>
+      </SwButton>
     </Modal>
   );
 }

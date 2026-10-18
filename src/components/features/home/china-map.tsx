@@ -1,5 +1,8 @@
 "use client";
 
+import { Card as SwCard } from "@/components/starwind-react/card";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import * as React from "react";
 import { ArrowLeft, MapPinned } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -55,7 +58,7 @@ export function ChinaMap({ className }: { className?: string }) {
 
   return (
     <div className={className ?? ""}>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <SwCard className="block gap-0 py-0 ring-0 overflow-hidden rounded-2xl border border-border bg-card">
         <div className="flex min-h-20 items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -71,7 +74,7 @@ export function ChinaMap({ className }: { className?: string }) {
                 : t("home.mapHint")}
             </p>
           </div>
-          <button
+          <SwButton variant="plain" size="inherit"
             ref={backButton}
             type="button"
             onClick={leaveProvince}
@@ -81,7 +84,7 @@ export function ChinaMap({ className }: { className?: string }) {
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             {t("home.mapBackToChina")}
-          </button>
+          </SwButton>
         </div>
         <MapCanvas
           paths={paths}
@@ -114,7 +117,7 @@ export function ChinaMap({ className }: { className?: string }) {
           onRetry={resources.retry}
           onNavigate={exploration.saveReturnPosition}
         />
-      </div>
+      </SwCard>
     </div>
   );
 }

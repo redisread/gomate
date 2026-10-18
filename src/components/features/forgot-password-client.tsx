@@ -1,5 +1,9 @@
 "use client";
 
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import { BrandIcon } from "@/components/brand-icon";
 
 import * as React from "react";
@@ -136,14 +140,14 @@ export function ForgotPasswordClient() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* 邮箱输入 */}
                 <div className="space-y-1.5">
-                  <label htmlFor="email" className="text-sm font-medium text-foreground">
+                  <SwLabel htmlFor="email" className="text-sm font-medium text-foreground">
                     {t("auth.email")}
-                  </label>
+                  </SwLabel>
                   <div className="relative">
                     <Mail
                       className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground"
                     />
-                    <input
+                    <SwInput
                       id="email"
                       type="email"
                       placeholder={t("auth.emailPlaceholder")}
@@ -169,7 +173,7 @@ export function ForgotPasswordClient() {
                 )}
 
                 {/* 发送按钮 */}
-                <button
+                <SwButton variant="plain" size="inherit"
                   type="submit"
                   disabled={isLoading}
                   className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -201,7 +205,7 @@ export function ForgotPasswordClient() {
                       {t("auth.sendResetLink")}
                     </>
                   )}
-                </button>
+                </SwButton>
 
                 {/* 提示文案 */}
                 <p className="text-center text-xs text-muted-foreground">

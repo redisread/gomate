@@ -1,5 +1,14 @@
 "use client";
 
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/starwind-react/collapsible";
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Checkbox } from "@/components/starwind-react/checkbox";
+import { Label as SwLabel } from "@/components/starwind-react/label";
+import { Input as SwInput } from "@/components/starwind-react/input";
+import { Textarea as SwTextarea } from "@/components/starwind-react/textarea";
+import { NativeSelect as SwNativeSelect } from "@/components/starwind-react/native-select";
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import * as React from "react";
 
 import { useI18n } from "@/hooks/useI18n";
@@ -11,7 +20,7 @@ import type { Location, Region, Tag } from "@/lib/types";
 import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 interface AdminQuickLocationFormProps {
-  initialFocusRef: React.RefObject<HTMLInputElement>;
+  initialFocusRef: React.RefObject<HTMLInputElement | null>;
 }
 
 export function AdminQuickLocationForm({
@@ -103,50 +112,49 @@ export function AdminQuickLocationForm({
           {t("admin.quickDraft.saved")}
         </p>
         {optionalSaveFailed && (
-          <p role="alert" className="rounded-lg bg-amber-500/10 p-3 text-sm text-foreground">
+          <SwAlert as="p" variant="plain" role="alert" className="rounded-lg bg-amber-500/10 p-3 text-sm text-foreground">
             {t("admin.quickDraft.optionalSaveFailed")}
-          </p>
+          </SwAlert>
         )}
-        <a href={`/admin/locations/${created.id}/edit`} className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
+        <SwButton as="a" variant="plain" size="inherit" href={`/admin/locations/${created.id}/edit`} className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
           {t("admin.quickDraft.continueEditing")}
-        </a>
+        </SwButton>
       </div>
     );
   }
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <label className="grid gap-1.5 text-sm font-medium">
+      <SwLabel className="grid gap-1.5 text-sm font-medium">
         {t("admin.quickDraft.name")}
-        <input ref={initialFocusRef} required maxLength={200} value={name} onChange={(event) => setName(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
-      </label>
-      <label className="grid gap-1.5 text-sm font-medium">
+        <SwInput ref={initialFocusRef} required maxLength={200} value={name} onChange={(event) => setName(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
+      </SwLabel>
+      <SwLabel className="grid gap-1.5 text-sm font-medium">
         {t("admin.quickDraft.description")}
-        <textarea required maxLength={10_000} rows={4} value={description} onChange={(event) => setDescription(event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2" />
-      </label>
-      <label className="grid gap-1.5 text-sm font-medium">
+        <SwTextarea required maxLength={10_000} rows={4} value={description} onChange={(event) => setDescription(event.target.value)} className="rounded-lg border border-border bg-background px-3 py-2" />
+      </SwLabel>
+      <SwLabel className="grid gap-1.5 text-sm font-medium">
         {t("admin.quickDraft.region")}
-        <select required value={regionId} onChange={(event) => setRegionId(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3">
+        <SwNativeSelect required value={regionId} onChange={(event) => setRegionId(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3">
           <option value="">{t("admin.quickDraft.chooseRegion")}</option>
           {regions.map((region) => <option key={region.id} value={region.id}>{getRegionDisplayName(region)}</option>)}
-        </select>
-      </label>
+        </SwNativeSelect>
+      </SwLabel>
 
-      <details className="rounded-lg border border-border p-3">
-        <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold">{t("admin.quickDraft.optionalFields")}</summary>
-        <div className="mt-3 space-y-4">
-          <label className="grid gap-1.5 text-sm font-medium">
+      <Collapsible className="rounded-lg border border-border p-3">
+        <CollapsibleTrigger type="button" className="min-h-11 cursor-pointer py-2 text-sm font-semibold">{t("admin.quickDraft.optionalFields")}</CollapsibleTrigger>
+        <CollapsibleContent className="mt-3 space-y-4">
+          <SwLabel className="grid gap-1.5 text-sm font-medium">
             {t("admin.quickDraft.cover")}
-            <input type="url" inputMode="url" placeholder="https://" value={coverImageUrl} onChange={(event) => setCoverImageUrl(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
-          </label>
+            <SwInput type="url" inputMode="url" placeholder="https://" value={coverImageUrl} onChange={(event) => setCoverImageUrl(event.target.value)} className="min-h-11 rounded-lg border border-border bg-background px-3" />
+          </SwLabel>
           <fieldset className="space-y-2">
             <legend className="text-sm font-medium">{t("admin.quickDraft.activityTypes")}</legend>
             <div className="flex flex-wrap gap-2">
               {ACTIVITY_TYPES.map((activityType) => (
-                <label key={activityType} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
-                  <input type="checkbox" checked={activityTypeIds.includes(activityType)} onChange={() => toggle(activityType, activityTypeIds, setActivityTypeIds)} />
-                  {t(`enums.locationType.${activityType}`)}
-                </label>
+                <div key={activityType} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
+                  <Checkbox id={`quick-activity-${activityType}`} label={t(`enums.locationType.${activityType}`)} checked={activityTypeIds.includes(activityType)} onCheckedChange={() => toggle(activityType, activityTypeIds, setActivityTypeIds)} />
+                </div>
               ))}
             </div>
           </fieldset>
@@ -155,21 +163,20 @@ export function AdminQuickLocationForm({
               <legend className="text-sm font-medium">{t("admin.quickDraft.tags")}</legend>
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => (
-                  <label key={tag.id} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
-                    <input type="checkbox" checked={tagIds.includes(tag.id)} onChange={() => toggle(tag.id, tagIds, setTagIds)} />
-                    {tag.name}
-                  </label>
+                  <div key={tag.id} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm">
+                    <Checkbox id={`quick-tag-${tag.id}`} label={tag.name} checked={tagIds.includes(tag.id)} onCheckedChange={() => toggle(tag.id, tagIds, setTagIds)} />
+                  </div>
                 ))}
               </div>
             </fieldset>
           )}
-        </div>
-      </details>
+        </CollapsibleContent>
+      </Collapsible>
 
-      {error && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</p>}
-      <button disabled={saving} className="min-h-11 w-full rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+      {error && <SwAlert as="p" variant="plain" role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</SwAlert>}
+      <SwButton variant="plain" size="inherit" type="submit" disabled={saving} className="min-h-11 w-full rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50">
         {t(saving ? "admin.quickDraft.saving" : "admin.quickDraft.save")}
-      </button>
+      </SwButton>
     </form>
   );
 }

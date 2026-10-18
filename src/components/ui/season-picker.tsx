@@ -1,5 +1,7 @@
 "use client";
 
+import { Button as SwButton } from "@/components/starwind-react/button";
+
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
@@ -51,7 +53,7 @@ export function SeasonPicker({ value, onChange, disabled = false }: SeasonPicker
         const months = t(`locations.seasons.${season.key}.months`);
 
         return (
-          <button
+          <SwButton variant="plain" size="inherit"
             key={season.key}
             type="button"
             aria-pressed={isSelected}
@@ -94,7 +96,7 @@ export function SeasonPicker({ value, onChange, disabled = false }: SeasonPicker
 
             {/* 月份 */}
             <span className="text-xs text-muted-foreground">{months}</span>
-          </button>
+          </SwButton>
         );
       })}
     </div>

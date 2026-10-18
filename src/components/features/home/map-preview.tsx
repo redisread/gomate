@@ -1,3 +1,5 @@
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { animate as animateElement } from "motion/mini";
 import { ArrowRight, MapPin, RotateCcw } from "lucide-react";
@@ -41,22 +43,22 @@ export function MapPreview({
       aria-busy={loading}
     >
       {failed ? (
-        <div
+        <SwAlert as="div" variant="plain"
           className="flex flex-wrap items-center justify-between gap-3"
           role="alert"
         >
           <p className="text-sm text-foreground">
             {t("home.discoveryMap.loadFailed")}
           </p>
-          <button
+          <SwButton variant="plain" size="inherit"
             type="button"
             onClick={onRetry}
             className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-secondary px-4 text-sm font-semibold text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <RotateCcw className="h-4 w-4" aria-hidden="true" />
             {t("home.discoveryMap.retry")}
-          </button>
-        </div>
+          </SwButton>
+        </SwAlert>
       ) : candidates.length > 1 ? (
         <div>
           <p className="mb-2 text-sm text-muted-foreground">
@@ -64,7 +66,7 @@ export function MapPreview({
           </p>
           <div className="flex max-h-20 flex-wrap gap-2 overflow-y-auto sm:max-h-11">
             {candidates.map((candidate) => (
-              <button
+              <SwButton variant="plain" size="inherit"
                 key={candidate.id}
                 type="button"
                 onClick={() => onSelect(candidate)}
@@ -74,7 +76,7 @@ export function MapPreview({
                 <span className="font-normal text-muted-foreground">
                   · {getRegionDisplayName(candidate.region)}
                 </span>
-              </button>
+              </SwButton>
             ))}
           </div>
         </div>
@@ -111,14 +113,14 @@ export function MapPreview({
             />
           </div>
           {point && (
-            <a
+            <SwButton as="a" variant="plain" size="inherit"
               href={`/locations/${encodeURIComponent(point.id)}`}
               onClick={onNavigate}
               className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition-transform duration-150 motion-safe:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transform-none sm:self-auto"
             >
               {t("home.discoveryMap.viewLocation")}
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </a>
+            </SwButton>
           )}
         </div>
       )}

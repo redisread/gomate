@@ -1,3 +1,5 @@
+import { Alert as SwAlert } from "@/components/starwind-react/alert";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { ChevronDown, Loader2, UserMinus } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -110,7 +112,7 @@ export function MemberAvatarGrid({
                 )}
               </a>
               {canRemoveMember && (
-                <button
+                <SwButton variant="plain" size="inherit"
                   type="button"
                   onClick={() => handleRemoveMember(m)}
                   disabled={removingUserId === m.userId}
@@ -123,14 +125,14 @@ export function MemberAvatarGrid({
                     <UserMinus className="h-3 w-3" />
                   )}
                   {t("teams.removeMember")}
-                </button>
+                </SwButton>
               )}
             </div>
           );
         })}
       </div>
       {members.length > GRID_THRESHOLD && (
-        <button
+        <SwButton variant="plain" size="inherit"
           type="button"
           onClick={() => setExpanded(!expanded)}
           aria-expanded={expanded}
@@ -150,12 +152,12 @@ export function MemberAvatarGrid({
               expanded && "rotate-180",
             )}
           />
-        </button>
+        </SwButton>
       )}
       {messageError && (
-        <p role="alert" className="mt-3 text-sm text-foreground">
+        <SwAlert as="p" variant="plain" role="alert" className="mt-3 text-sm text-foreground">
           {messageError}
-        </p>
+        </SwAlert>
       )}
     </div>
   );

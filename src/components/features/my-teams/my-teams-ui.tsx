@@ -1,3 +1,5 @@
+import { Card as SwCard } from "@/components/starwind-react/card";
+import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { Users, Mountain, Crown, Hourglass, ClipboardCheck, Loader2 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -24,7 +26,7 @@ export function LoadingState() {
   return (
     <div className="space-y-3 mt-2">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 animate-pulse">
+        <SwCard key={i} className="block gap-0 py-0 ring-0 bg-card rounded-2xl border border-stone-100 dark:border-stone-800 p-4 animate-pulse">
           <div className="flex items-start gap-4">
             <div className="w-20 h-20 rounded-xl bg-stone-100 dark:bg-stone-800 flex-shrink-0" />
             <div className="flex-1 space-y-2.5 py-1">
@@ -36,7 +38,7 @@ export function LoadingState() {
               </div>
             </div>
           </div>
-        </div>
+        </SwCard>
       ))}
     </div>
   );
@@ -72,9 +74,9 @@ export function EmptyState({
       <h3 className="text-lg font-semibold text-stone-800 mb-2">{title}</h3>
       <p className="text-sm text-stone-500 dark:text-stone-500 mb-6 max-w-xs leading-relaxed">{desc}</p>
       <a href={href}>
-        <button className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors text-sm shadow-md shadow-amber-100">
+        <SwButton variant="plain" size="inherit" type="button" className="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors text-sm shadow-md shadow-amber-100">
           {btnLabel}
-        </button>
+        </SwButton>
       </a>
     </div>
   );
@@ -84,12 +86,12 @@ export function LoadMoreButton({ hasMore, loading, onClick }: { hasMore: boolean
   const { t } = useI18n(["myTeams", "teams", "common"]);
   if (!hasMore) return null;
   return (
-    <button
+    <SwButton variant="plain" size="inherit" type="button"
       onClick={onClick}
       disabled={loading}
       className="w-full py-3 mt-2 text-amber-600 hover:text-amber-700 font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("myTeams.loadMore")}
-    </button>
+    </SwButton>
   );
 }

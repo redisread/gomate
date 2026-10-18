@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/hooks/useI18n";
+import { Progress } from "@/components/starwind-react/progress";
 import { cn } from "@/lib/utils";
 import type { TeamDisplayStatus } from "@/lib/team-display";
 
@@ -46,7 +47,6 @@ export function TeamProgress({
 
   // 普通名额：计算 fillRatio
   const fillRatio = Math.min(Math.max(current / max, 0), 1);
-  const percentage = Math.round(fillRatio * 100);
   const remaining = Math.max(max - current, 0);
 
   // 判断颜色等级
@@ -97,23 +97,14 @@ export function TeamProgress({
           )}
         </div>
       )}
-      <div
-        className={cn(
-          "rounded-full overflow-hidden transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-300",
-          colors.track,
-          size === "md" ? "h-2" : "h-1.5",
-          isUrgent && "h-2.5"
-        )}
-      >
-        <div
-          className={cn(
-            "h-full rounded-full transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-700 ease-out",
-            colors.bar,
-            isUrgent && "animate-pulse"
-          )}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
+      <Progress
+        value={current}
+        max={max}
+        aria-label={getLabel()}
+        className={cn("rounded-full overflow-hidden", size === "md" ? "h-2" : "h-1.5", isUrgent && "h-2.5")}
+        trackClassName={cn("h-full rounded-full", colors.track)}
+        indicatorClassName={cn("rounded-full", colors.bar, isUrgent && "motion-safe:animate-pulse")}
+      />
     </div>
   );
 }

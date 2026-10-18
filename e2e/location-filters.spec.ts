@@ -66,7 +66,7 @@ test("手机横滑保持页面宽度，面板及 reduced-motion 可用", async (
   await expect(trigger).toBeInViewport();
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "选择城市", exact: true });
-  const bounds = (await dialog.boundingBox())!;
+  const bounds = (await dialog.locator("[data-gomate-modal-panel]").boundingBox())!;
   expect(bounds.x).toBe(0);
   expect(Math.round(bounds.y + bounds.height)).toBe(800);
   expect(await dialog.getByRole("combobox").evaluate((node) => getComputedStyle(node).fontSize)).toBe("16px");

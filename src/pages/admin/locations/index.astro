@@ -1,4 +1,5 @@
 ---
+import SwButton from "@/components/starwind/button/Button.astro";
 import { AdminLocationsManager } from "../../../components/admin/admin-locations-manager";
 import { getSSRT, resolveLocale } from "../../../i18n";
 import { loadLocaleData } from "../../../i18n/ssr-loader.server";
@@ -20,7 +21,7 @@ const title = t("admin.locationsManagement.title");
       <h1 class="text-3xl font-bold tracking-tight">{title}</h1>
       <p class="max-w-2xl text-muted-foreground">{t("admin.locationsManagement.description")}</p>
     </div>
-    <a href="/admin/locations/new" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">{t("admin.createLocation")}</a>
+    <SwButton as="a" variant="plain" size="inherit" href="/admin/locations/new" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">{t("admin.createLocation")}</SwButton>
   </header>
   <AdminLocationsManager client:load />
 </AdminLayout>

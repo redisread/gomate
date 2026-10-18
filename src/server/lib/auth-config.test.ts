@@ -232,6 +232,19 @@ describe("createAuth security configuration", () => {
 });
 
 describe("Google identity trust", () => {
+  it("keeps legacy account keys server-controlled and rejects unsupported providers", async () => {
+    createAuth({ DB: {}, BETTER_AUTH_SECRET: "test-secret-key-for-testing-32chars", APP_URL: "https://gomate.live" } as never);
+    const options = mocks.betterAuth.mock.calls.at(-1)?.[0] as {
+      account: { additionalFields: { issuer: { input: boolean; returned: boolean } } };
+      databaseHooks: { account: { create: { before: (account: { providerId: string; issuer?: string }) => Promise<{ data: { issuer: string } }> } } };
+    };
+    expect(options.account.additionalFields.issuer).toMatchObject({ input: false, returned: false });
+    const create = options.databaseHooks.account.create.before;
+    expect((await create({ providerId: "credential", issuer: "attacker" })).data.issuer).toBe("local:credential");
+    expect((await create({ providerId: "google", issuer: "attacker" })).data.issuer).toBe("https://accounts.google.com");
+    await expect(create({ providerId: "unknown" })).rejects.toThrow("Unsupported account provider");
+  });
+
   it("uses verified matching emails without bypassing local verification", async () => {
     createAuth({
       DB: {},
