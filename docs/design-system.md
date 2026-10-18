@@ -147,3 +147,12 @@ pnpm build
 - 完整介绍放在正文，随后为集合信息、参与要求；同行伙伴在宽屏并排、小屏顺序阅读，显示头像与昵称，
   超过八人使用有展开状态的按钮。图片本身不暗示点击，地点详情使用明确链接。
 - 页面不做分段延迟入场；交互沿用 CSS 过渡，进度变化在 reduced-motion 下直接更新。
+
+## 公共页脚
+
+- 公共页脚采用旅行明信片构图：品牌与三组真实导航在上，版权和返回顶部衔接，山湖步道与同行者插画在下。文字不嵌入图片，原有联系和社交入口在手机与桌面均可用。
+- 使用一套响应式 DOM：窄屏品牌在前、导航两列，`sm` 起导航三列，`md` 起品牌与导航并排；不根据客户端窗口宽度替换组件。
+- `--footer-paper`、`--footer-ink`、`--footer-muted` 是页脚专用语义色，浅色为暖纸与深蓝，深色为暗蓝与暖白。插画保持装饰语义、预留高度、懒加载，不添加视差或循环动画。
+- 原创插画发布在 `public/images/footer-landscape.webp`（1920×640，约 211 KiB）及 `footer-landscape-small.webp`（960×320，约 64 KiB）；生成工具为 imagegen，主题为山野、湖泊、步道和三位同行者，未使用参考截图的图像资产。
+- 微信联系方式使用共享 Modal，支持焦点圈定、Escape 与关闭后焦点恢复；剪贴板不可用时选中微信号供手动复制。返回顶部在 reduced-motion 下使用即时滚动。
+- 图片尺寸与加载行为参考 [MDN img](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img)，滚动偏好参考 [MDN scrollTo](https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollTo)。
