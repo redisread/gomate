@@ -44,6 +44,7 @@ interface UseLocationFormReturn {
   isLoading: boolean;
   isSaving: boolean;
   isDirty: boolean;
+  resetVersion: number;
   saveMessage: { type: "success" | "error"; text: string } | null;
   showDraftBanner: boolean;
   pendingDraft: LocationFormData | null;
@@ -74,6 +75,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isDirty, setIsDirty] = React.useState(false);
+  const [resetVersion, setResetVersion] = React.useState(0);
   const [saveMessage, setSaveMessage] = React.useState<{
     type: "success" | "error";
     text: string;
@@ -297,6 +299,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
 
   const handleDiscard = React.useCallback(() => {
     if (!window.confirm(t("admin.discardConfirm"))) return;
+    setResetVersion((version) => version + 1);
     setFormData(
       location ? locationToFormData(location) : DEFAULT_LOCATION_FORM,
     );
@@ -308,6 +311,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
 
   const handleRestoreDraft = React.useCallback(() => {
     if (pendingDraft) {
+      setResetVersion((version) => version + 1);
       setFormData(pendingDraft);
       setIsDirty(true);
     }
@@ -332,6 +336,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
     isLoading,
     isSaving,
     isDirty,
+    resetVersion,
     saveMessage,
     showDraftBanner,
     pendingDraft,

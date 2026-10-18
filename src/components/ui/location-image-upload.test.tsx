@@ -63,6 +63,109 @@ describe("location image uploads", () => {
     );
   });
 
+  it("accepts only one cover upload while a request is in flight", async () => {
+    const onChange = vi.fn();
+    render(<CoverImageUpload value="" onChange={onChange} />);
+    const dropZone = screen.getByRole("button", {
+      name: "ui.upload.uploadCoverHint",
+    });
+    const drop = () =>
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [new File(["jpeg"], "photo.jpg", { type: "image/jpeg" })],
+        },
+      });
+    act(() => {
+      drop();
+      drop();
+    });
+    expect(MockXMLHttpRequest.instances).toHaveLength(1);
+    expect(dropZone).toHaveAttribute("aria-disabled", "true");
+    await act(async () => {
+      MockXMLHttpRequest.instances[0]!.respond(
+        200,
+        JSON.stringify({ url: "/cover.jpg" }),
+      );
+    });
+    expect(onChange).toHaveBeenCalledExactlyOnceWith("/cover.jpg");
+  });
+
+  it("does not publish a cover upload after its form unmounts", async () => {
+    const onChange = vi.fn();
+    const { container, unmount } = render(
+      <CoverImageUpload value="" onChange={onChange} />,
+    );
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: {
+        files: [new File(["jpeg"], "photo.jpg", { type: "image/jpeg" })],
+      },
+    });
+    unmount();
+    await act(async () => {
+      MockXMLHttpRequest.instances[0]!.respond(
+        200,
+        JSON.stringify({ url: "/late.jpg" }),
+      );
+    });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("allows another cover upload after a failed request", async () => {
+    const onChange = vi.fn();
+    render(<CoverImageUpload value="" onChange={onChange} />);
+    const dropZone = screen.getByRole("button", {
+      name: "ui.upload.uploadCoverHint",
+    });
+    const drop = () =>
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [new File(["jpeg"], "photo.jpg", { type: "image/jpeg" })],
+        },
+      });
+    drop();
+    await act(async () => {
+      MockXMLHttpRequest.instances[0]!.respond(500, "");
+    });
+    drop();
+    expect(MockXMLHttpRequest.instances).toHaveLength(2);
+    await act(async () => {
+      MockXMLHttpRequest.instances[1]!.respond(
+        200,
+        JSON.stringify({ url: "/retry.jpg" }),
+      );
+    });
+    expect(onChange).toHaveBeenCalledExactlyOnceWith("/retry.jpg");
+  });
+
+  it("preserves a cover selected elsewhere in the form during upload", async () => {
+    const onChange = vi.fn();
+    const { container, rerender } = render(
+      <CoverImageUpload value="/original.jpg" onChange={onChange} />,
+    );
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: {
+        files: [new File(["jpeg"], "photo.jpg", { type: "image/jpeg" })],
+      },
+    });
+    rerender(
+      <CoverImageUpload value="/gallery-choice.jpg" onChange={onChange} />,
+    );
+    await act(async () => {
+      MockXMLHttpRequest.instances[0]!.respond(
+        200,
+        JSON.stringify({ url: "/late.jpg" }),
+      );
+    });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(container.querySelector("img")).toHaveAttribute(
+      "src",
+      "/gallery-choice.jpg",
+    );
+    expect(
+      screen.getByRole("button", { name: "ui.upload.replaceBtn" }),
+    ).toBeEnabled();
+  });
+
   it("rejects unsupported image formats before starting a cover upload", async () => {
     const { container } = render(
       <CoverImageUpload value="" onChange={vi.fn()} />,
