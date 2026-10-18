@@ -39,6 +39,8 @@ pnpm dev:wt
 为该进程生成 ignored 的临时 Wrangler 配置，同时把 `dev.port` 与 `APP_URL` 写成
 实际端口；进程退出时精确删除该临时文件。
 
+启动器传入 Astro 的 `--ignore-lock`，让服务保持在前台，避免代理环境自动后台启动后提前删除临时配置。该实例由启动器管理，使用原终端的 Ctrl+C 停止；不使用 `astro dev stop/status/logs` 管理。普通 `pnpm dev` 仍遵循 Astro 自身的后台与锁文件规则，见[CLI 文档](https://docs.astro.build/en/reference/cli-reference/#--ignore-lock)。
+
 ## 环境变量
 
 | 变量                     | 默认值                     | 说明                                   |
