@@ -86,7 +86,11 @@ async function main() {
 
   const pnpmPath = process.env.npm_execpath;
   const executable = pnpmPath ? process.execPath : "pnpm";
-  const args = pnpmPath ? [pnpmPath, "dev"] : ["dev"];
+  // This wrapper owns the server lifetime and its temporary config. Prevent
+  // Astro's agent auto-backgrounding from exiting the child prematurely.
+  const args = pnpmPath
+    ? [pnpmPath, "dev", "--ignore-lock"]
+    : ["dev", "--ignore-lock"];
   const child = spawn(executable, args, {
     cwd: ROOT,
     env,

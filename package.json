@@ -41,12 +41,12 @@
     "deploy:preview": "node scripts/deploy-preview.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.3.4",
-    "@astrojs/react": "^6.0.4",
+    "@astrojs/cloudflare": "^14.4.0",
+    "@astrojs/react": "^7.1.0",
     "@hono/zod-openapi": "1.6.3",
     "@scalar/hono-api-reference": "0.12.13",
     "@tailwindcss/vite": "^4.3.3",
-    "astro": "~7.3.7",
+    "astro": "~7.4.0",
     "better-auth": "^1.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "@cloudflare/vite-plugin": "1.53.1",
+    "@cloudflare/vite-plugin": "1.64.0",
     "@cloudflare/vitest-plugin": "^1.0.0",
     "@eslint/js": "^9.0.0",
     "@playwright/test": "^1.61.1",
@@ -86,8 +86,8 @@
     "tsx": "^4.22.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.58.1",
-    "vite": "^8.2.2",
+    "vite": "^8.3.4",
     "vitest": "^4.1.11",
-    "wrangler": "^4.125.0"
+    "wrangler": "^4.151.1"
   }
 }

@@ -102,7 +102,11 @@ pnpm db:promote-admin --email admin@test.com
 
 ## Cloudflare 运行结构与依据
 
-以下是当前代码配置，不是账号侧资源已经核验的声明。精确依赖版本以 lockfile 为准；当前使用 Astro 7、Hono 4、Zod 4、Drizzle、Better Auth 与 Wrangler 4。
+以下是当前代码配置，不是账号侧资源已经核验的声明。精确依赖版本以 lockfile 为准；当前使用 Astro 7.4、Cloudflare adapter 14.4、React integration 7.1、Hono 4、Zod 4、Drizzle、Better Auth 与 Wrangler 4。
+
+React integration 7 使用 Oxc 处理 JSX 和 Fast Refresh；项目保留 React 18，使用默认 `react()` 配置，未启用可选的 React Compiler，也没有自定义 Babel 转换。升级依据见[官方 React 集成升级说明](https://docs.astro.build/en/guides/integrations-guide/react/#upgrading-the-react-integration-to-v700)（核对于 2026-10-18）。Astro 页面仍使用现有图片 passthrough 服务和手动语言路由；依赖升级不改变同源 API、会话或生产发布边界。
+
+Cloudflare adapter 的 Vite 插件要求同步使用 Wrangler 4.151；直接依赖与 adapter 使用 Vite 8.3 和 Cloudflare Vite 插件 1.64。Wrangler 4.150 起默认上传 source map，项目通过 `upload_source_maps: false` 保留此前行为；兼容日期与资源 bindings 不因工具链升级而变更。
 
 | 能力        | 当前实现与限制                                                           |
 | ----------- | ------------------------------------------------------------------------ |
