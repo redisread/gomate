@@ -80,3 +80,11 @@
 主要验证边界是 Hono HTTP；Worker 测试确认真实入口、绑定、SSR 和写保护，少量浏览器测试验证核心组队流程与中英文。不要用纯 schema 快照替代真实响应、授权、并发及失败测试。
 
 当前没有运行时 KV 或 Queues binding，不存在自动 outbox、跨存储事务或全局反馈配额。后续选型须依据 [可靠性与性能设计](../CODING_STANDARDS.md#可靠性与性能设计) 记录事实、适用条件和验证，不把建议写成已实现能力。
+
+## 认证实现的职责划分
+
+`server/routes/auth/index.ts` 仅负责入口装配与拒绝未开放能力；受控入口的直接注册和规范化 fallback 共用同一份方法/路径白名单。忘记密码与 provider 查询保持已有 Hono 路由匹配，不加入该 fallback。
+
+- `request.ts` 集中 16 KiB 有界 JSON 读取、私有散列限流键、请求规范化和无缓存响应；所有认证操作复用同一 HTTP 约束。
+- `credentials.ts`、`recovery.ts`、`session.ts`、`google.ts` 分别管理邮箱凭证、找回/验证、浏览器会话和 Google 登录；注册持久化后置检查、会话脱敏、Preview 和同源约束保持在相应操作中。
+- `schemas.ts` 是运行时与文档共用的认证输入定义；`contracts.ts` 集中 OpenAPI 元数据。文档注册不安装提前消费 body 的校验器，有界读取仍先于 JSON 解析。
