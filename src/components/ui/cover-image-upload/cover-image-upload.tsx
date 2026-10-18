@@ -23,10 +23,10 @@ import { cn } from "@/lib/utils";
 import {
   LOCATION_IMAGE_ACCEPT,
   locationImageUploadMessage,
-  uploadLocationImage,
 } from "@/lib/location-image-upload";
 import { useI18n } from "@/hooks/useI18n";
 import { CircularProgress } from "./circular-progress";
+import { useCoverUpload } from "./use-cover-upload";
 
 /* ================================================================
    类型定义
@@ -41,26 +41,6 @@ interface CoverImageUploadProps {
   disabled?: boolean;
 }
 
-/** 上传状态机 */
-type UploadState =
-  | { phase: "idle" }
-  | { phase: "uploading"; progress: number }
-  | { phase: "success"; fileName: string; fileSize: string }
-  | { phase: "error"; message: string };
-
-/* ================================================================
-   常量
-   ================================================================ */
-
-/** 将字节数格式化为可读字符串 */
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-}
-
 /* ================================================================
    主组件
    ================================================================ */
@@ -69,7 +49,12 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
   const { t } = useI18n(["ui", "common"]);
   /* ---- 状态 ---- */
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
-  const [uploadState, setUploadState] = React.useState<UploadState>({ phase: "idle" });
+  const { state: uploadState, uploadFile, reset: resetUpload } = useCoverUpload({
+    value,
+    disabled,
+    onChange,
+    errorMessage: (error) => locationImageUploadMessage(error, t),
+  });
   const [showUrlInput, setShowUrlInput] = React.useState(false);
   const [urlInputValue, setUrlInputValue] = React.useState("");
 
@@ -77,38 +62,6 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const dropZoneRef = React.useRef<HTMLDivElement>(null);
   const dragCounterRef = React.useRef(0); // 防止子元素 drag leave 触发闪烁
-
-  /* ----------------------------------------------------------------
-     上传核心逻辑
-  ---------------------------------------------------------------- */
-
-  /**
-   * 校验文件后触发上传，通过 XMLHttpRequest 模拟进度
-   */
-  const uploadFile = React.useCallback(
-    async (file: File) => {
-      setUploadState({ phase: "uploading", progress: 0 });
-
-      try {
-        const url = await uploadLocationImage(file, (progress) => {
-          setUploadState({ phase: "uploading", progress });
-        });
-
-        onChange(url);
-        setUploadState({
-          phase: "success",
-          fileName: file.name,
-          fileSize: formatBytes(file.size),
-        });
-      } catch (err) {
-        setUploadState({
-          phase: "error",
-          message: locationImageUploadMessage(err, t),
-        });
-      }
-    },
-    [onChange, t]
-  );
 
   /* ----------------------------------------------------------------
      拖拽事件处理
@@ -175,10 +128,10 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
 
   const handleDelete = React.useCallback(() => {
     onChange("");
-    setUploadState({ phase: "idle" });
+    resetUpload();
     setShowUrlInput(false);
     setUrlInputValue("");
-  }, [onChange]);
+  }, [onChange, resetUpload]);
 
   /* ----------------------------------------------------------------
      URL 粘贴方式
@@ -188,10 +141,10 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
     const trimmed = urlInputValue.trim();
     if (!trimmed) return;
     onChange(trimmed);
-    setUploadState({ phase: "idle" });
+    resetUpload();
     setShowUrlInput(false);
     setUrlInputValue("");
-  }, [urlInputValue, onChange]);
+  }, [urlInputValue, onChange, resetUpload]);
 
   const handleUrlKeyDown = React.useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -317,9 +270,9 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
       <div
         ref={dropZoneRef}
         role="button"
-        tabIndex={disabled ? -1 : 0}
+        tabIndex={disabled || isUploading ? -1 : 0}
         aria-label={t("ui.upload.uploadCoverHint") || "点击或拖拽上传封面图"}
-        aria-disabled={disabled}
+        aria-disabled={disabled || isUploading}
         onClick={handleClickDropZone}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -390,7 +343,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                setUploadState({ phase: "idle" });
+                resetUpload();
               }}
               className="mt-1 text-xs underline underline-offset-2 text-destructive hover:text-destructive/80"
             >
