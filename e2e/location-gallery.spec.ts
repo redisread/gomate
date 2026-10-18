@@ -179,6 +179,82 @@ test("cover cycles and retains image on failure", async ({ page }) => {
     gallery.getByRole("button", { name: "查看大图 · 图片 3", exact: true }),
   ).toBeVisible();
 });
+test("reduced motion removes cards whose native exit animation was interrupted", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (keyframes, options) {
+      const animation = animate.call(this, keyframes, options);
+      if (this.matches('[data-cover-card][aria-hidden="true"]')) {
+        queueMicrotask(() => {
+          animation.cancel();
+          document.documentElement.dataset.interruptedCoverExit = "true";
+        });
+      }
+      return animation;
+    };
+  });
+  await setup(page);
+  await page.goto("/locations/motion-gallery");
+  const gallery = page.locator(".location-cover-gallery");
+  const next = gallery.getByRole("button", { name: "下一张", exact: true });
+  await next.click();
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 2", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-interrupted-cover-exit",
+    "true",
+  );
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(gallery.locator("[data-cover-card]")).toHaveCount(1);
+  await expect(next).toBeFocused();
+});
+
+test("reversing an exit keeps the returning card and focused controls", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.goto("/locations/motion-gallery");
+  const gallery = page.locator(".location-cover-gallery");
+  const next = gallery.getByRole("button", { name: "下一张", exact: true });
+  const previous = gallery.getByRole("button", { name: "上一张", exact: true });
+  await next.click();
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 2", exact: true }),
+  ).toBeVisible();
+  await previous.click();
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 1", exact: true }),
+  ).toBeVisible();
+  await expect(gallery.locator("[data-cover-card]")).toHaveCount(1);
+  await expect(previous).toBeFocused();
+  await expect(gallery.locator("[data-cover-card]")).toHaveCSS(
+    "transform",
+    "none",
+  );
+  await expect(gallery.locator("[data-cover-card]")).toHaveCSS("opacity", "1");
+  const currentImage = gallery.getByRole("button", {
+    name: "查看大图 · 图片 1",
+    exact: true,
+  });
+  await currentImage.focus();
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(currentImage).toBeFocused();
+  await next.click();
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 2", exact: true }),
+  ).toBeVisible();
+  await expect(gallery.locator("[data-cover-card]")).toHaveCount(1);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await next.click();
+  await expect(
+    gallery.getByRole("button", { name: "查看大图 · 图片 3", exact: true }),
+  ).toBeVisible();
+  await expect(gallery.locator("[data-cover-card]")).toHaveCount(1);
+});
+
 test("drag switches cards without opening lightbox", async ({ page }) => {
   await setup(page);
   await page.goto("/locations/motion-gallery");
