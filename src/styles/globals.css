@@ -914,13 +914,11 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  background: var(--footer-paper);
+  background: linear-gradient(to bottom, var(--background), var(--footer-paper) 5rem);
   color: var(--footer-ink);
-  border-top: 1px solid color-mix(in oklab, var(--footer-ink) 15%, transparent);
   padding-bottom: env(safe-area-inset-bottom);
 }
 .postcard-muted, .postcard-colophon { color: var(--footer-muted); }
-.postcard-colophon { border-color: color-mix(in oklab, var(--footer-ink) 20%, transparent); }
 .postcard-link { min-height: 44px; min-width: 44px; border-radius: 4px; }
 .postcard-link:hover { text-decoration: underline; text-underline-offset: 5px; }
 .postcard-social {

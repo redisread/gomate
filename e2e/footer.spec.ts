@@ -1,5 +1,49 @@
 import { test, expect } from "@playwright/test";
 
+test("footer follows the home content edge and keeps mobile legal links together", async ({ page }) => {
+  await page.goto("/en");
+  const footer = page.getByRole("contentinfo");
+  for (const width of [390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await footer.scrollIntoViewIfNeeded();
+    const content = await page.getByTestId("home-map-section").locator(":scope > div").boundingBox();
+    const padding = await page.getByTestId("home-map-section").locator(":scope > div").evaluate(el => parseFloat(getComputedStyle(el).paddingInlineStart));
+    const email = await footer.locator('a[href^="mailto:"]').boundingBox();
+    expect(Math.abs(email!.x - (content!.x + padding))).toBeLessThanOrEqual(1);
+    if (width === 390) {
+      const privacy = await footer.locator('a[href="/privacy"]').boundingBox();
+      const terms = await footer.locator('a[href="/terms"]').boundingBox();
+      expect(Math.abs(privacy!.y - terms!.y)).toBeLessThanOrEqual(1);
+    }
+  }
+});
+
+test("footer joins public pages without covering content and supports enlarged text", async ({ page }, testInfo) => {
+  for (const path of ["/en", "/en/about", "/en/blog"]) {
+    await page.goto(path);
+    const footer = page.getByRole("contentinfo");
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.emulateMedia({ colorScheme: width === 390 ? "dark" : "light", reducedMotion: "reduce" });
+      await footer.scrollIntoViewIfNeeded();
+      const content = await page.locator("#main-content").boundingBox();
+      const bounds = await footer.boundingBox();
+      expect(Math.abs(content!.y + content!.height - bounds!.y)).toBeLessThanOrEqual(1);
+      await footer.evaluate(el => window.scrollTo(0, el.getBoundingClientRect().top + scrollY - 180));
+      await page.screenshot({ path: testInfo.outputPath(`join-${path.replaceAll("/", "-")}-${width}.png`), animations: "disabled" });
+    }
+  }
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.evaluate(() => document.documentElement.style.fontSize = "200%");
+  const footer = page.getByRole("contentinfo");
+  await footer.scrollIntoViewIfNeeded();
+  expect(await footer.locator("a, button").evaluateAll(elements => elements.every(el => {
+    const bounds = el.getBoundingClientRect();
+    return bounds.x >= 0 && bounds.right <= innerWidth;
+  }))).toBe(true);
+  await footer.screenshot({ path: testInfo.outputPath("footer-enlarged.png"), animations: "disabled" });
+});
+
 for (const locale of ["zh-CN", "en"]) {
   test(`${locale} postcard footer stays usable across sizes and themes`, async ({
     page,
