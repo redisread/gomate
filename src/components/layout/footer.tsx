@@ -43,7 +43,7 @@ export function Footer() {
   return (
     <footer className="postcard-footer">
       <div className="relative z-10 mx-auto max-w-7xl px-4 pt-12 sm:px-6 sm:pt-16 lg:px-8">
-        <div className="grid gap-8 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-12 lg:gap-24">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))] gap-8 sm:gap-12 lg:gap-24">
           <div>
             <div className="flex items-center gap-3">
               <BrandIcon size={44} />
@@ -62,7 +62,7 @@ export function Footer() {
             {/* 社交媒体按钮 */}
             <FooterSocials onWechat={() => setShowWechatQR(true)} />
           </div>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:gap-x-8">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))] gap-x-6 gap-y-6 sm:gap-x-8">
             {groups.map((group) => (
               <nav key={group.title} aria-label={t(group.title)}>
                 <p className="mb-2 text-sm font-semibold tracking-wide">

@@ -33,15 +33,17 @@ test("footer joins public pages without covering content and supports enlarged t
       await page.screenshot({ path: testInfo.outputPath(`join-${path.replaceAll("/", "-")}-${width}.png`), animations: "disabled" });
     }
   }
-  await page.setViewportSize({ width: 320, height: 900 });
   await page.evaluate(() => document.documentElement.style.fontSize = "200%");
   const footer = page.getByRole("contentinfo");
-  await footer.scrollIntoViewIfNeeded();
-  expect(await footer.locator("a, button").evaluateAll(elements => elements.every(el => {
-    const bounds = el.getBoundingClientRect();
-    return bounds.x >= 0 && bounds.right <= innerWidth;
-  }))).toBe(true);
-  await footer.screenshot({ path: testInfo.outputPath("footer-enlarged.png"), animations: "disabled" });
+  for (const width of [320, 640]) {
+    await page.setViewportSize({ width, height: 900 });
+    await footer.scrollIntoViewIfNeeded();
+    expect(await footer.locator("a, button").evaluateAll(elements => elements.every(el => {
+      const bounds = el.getBoundingClientRect();
+      return bounds.x >= 0 && bounds.right <= innerWidth && el.scrollWidth <= el.clientWidth + 1;
+    }))).toBe(true);
+    await footer.screenshot({ path: testInfo.outputPath(`footer-enlarged-${width}.png`), animations: "disabled" });
+  }
 });
 
 for (const locale of ["zh-CN", "en"]) {
@@ -57,7 +59,7 @@ for (const locale of ["zh-CN", "en"]) {
       name: locale === "en" ? "WeChat" : "微信",
       exact: true,
     });
-    for (const width of [320, 390, 768, 1440]) {
+    for (const width of [320, 390, 640, 768, 1440]) {
       await page.setViewportSize({ width, height: 1200 });
       await footer.scrollIntoViewIfNeeded();
       await expect(wechat).toBeVisible();
@@ -104,7 +106,7 @@ for (const locale of ["zh-CN", "en"]) {
               ),
           )
           .toBe(true);
-        if (width === 390 || width === 1440) {
+        if (width === 390 || width === 640 || width === 1440) {
           await footer
             .locator(".postcard-landscape img")
             .evaluate((image: HTMLImageElement) => image.decode());
