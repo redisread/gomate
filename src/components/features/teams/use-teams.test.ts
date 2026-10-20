@@ -200,7 +200,7 @@ describe("useTeams", () => {
     await waitFor(() => expect(result.current.availableTags).toEqual([
       { id: "sunrise", name: "日出" },
     ]));
-    expect(fetchPublicAPI).toHaveBeenCalledWith("/tags?limit=200");
+    expect(fetchPublicAPI).toHaveBeenCalledWith("/tags?limit=200", expect.objectContaining({ signal: expect.any(AbortSignal) }));
   });
 
   it("uses the code activity enum without fetching a catalog", () => {
@@ -325,4 +325,40 @@ describe("useTeams", () => {
     expect(result.current.loadError).toBe(true);
     expect(result.current.isLoading).toBe(false);
   });
+});
+
+it("exposes a tag request failure and retries without losing selected tags", async () => {
+  vi.mocked(fetchPublicAPI).mockRejectedValueOnce(new Error("offline"));
+  const { result } = renderHook(() => useTeams({ teams: [], pagination: { limit: 12, total: 0, nextCursor: null }, availableTags: [], tagsComplete: false, availableRegions: [selectableRegion()], filters: { ...EMPTY_FILTERS, selectedTags: ["tag"] } }));
+  await waitFor(() => expect(result.current.tagsError).toBe(true));
+  vi.mocked(fetchPublicAPI).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, tags: [{ id: "tag", name: "Tag" }] })));
+  await act(async () => { await result.current.retryTags(); });
+  expect(result.current.tagsError).toBe(false);
+  expect(result.current.availableTags).toEqual([{ id: "tag", name: "Tag" }]);
+  expect(result.current.selectedTags).toEqual(["tag"]);
+});
+
+it("ignores an older tag response after retry and cancels on unmount", async () => {
+  let resolveOld!: (value: Response) => void;
+  let oldSignal: AbortSignal | undefined;
+  vi.mocked(fetchPublicAPI).mockImplementationOnce((_path, init) => {
+    oldSignal = init?.signal as AbortSignal;
+    return new Promise<Response>((resolve) => { resolveOld = resolve; });
+  });
+  const { result, unmount } = renderHook(() => useTeams({ teams: [], pagination: { limit: 12, total: 0, nextCursor: null }, availableTags: [], tagsComplete: false, availableRegions: [selectableRegion()] }));
+  vi.mocked(fetchPublicAPI).mockResolvedValueOnce(new Response(JSON.stringify({ success: true, tags: [{ id: "new", name: "New" }] })));
+  await act(async () => { await result.current.retryTags(); });
+  expect(oldSignal?.aborted).toBe(true);
+  await act(async () => { resolveOld(new Response(JSON.stringify({ success: true, tags: [{ id: "old", name: "Old" }] }))); });
+  expect(result.current.availableTags[0]?.id).toBe("new");
+  const signal = vi.mocked(fetchPublicAPI).mock.calls.at(-1)?.[1]?.signal;
+  unmount();
+  expect(signal?.aborted).toBe(true);
+});
+
+it("treats a failed tag response envelope as a retryable error", async () => {
+  vi.mocked(fetchPublicAPI).mockResolvedValueOnce(new Response(JSON.stringify({ success: false, error: { code: "UNAVAILABLE", message: "Unavailable" } })));
+  const { result } = renderHook(() => useTeams({ teams: [], pagination: { limit: 12, total: 0, nextCursor: null }, availableTags: [], tagsComplete: false, availableRegions: [selectableRegion()] }));
+  await waitFor(() => expect(result.current.tagsError).toBe(true));
+  expect(result.current.tagsLoading).toBe(false);
 });

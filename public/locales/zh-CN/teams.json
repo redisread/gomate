@@ -366,5 +366,7 @@
   "meetingPoint": "集合信息",
   "removeMemberAria": "移除 {name}",
   "departureCardTitle": "这次，一起出发",
-  "aboutTrip": "关于这次出发"
+  "aboutTrip": "关于这次出发",
+  "tagsLoadFailed": "标签加载失败",
+  "locationDetailLoadFailed": "地点详情加载失败"
 }

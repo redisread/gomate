@@ -224,7 +224,7 @@ describe("CreateTeamClient contract", () => {
       expect(screen.getByTestId("create-team-location")).toHaveTextContent(
         locationB.name,
       );
-      expect(fetchAPI).toHaveBeenCalledWith(`/locations/${locationB.id}`);
+      expect(fetchAPI).toHaveBeenCalledWith(`/locations/${locationB.id}`, expect.objectContaining({ signal: expect.any(AbortSignal) }));
     });
   });
 
@@ -246,4 +246,45 @@ describe("CreateTeamClient contract", () => {
       expect(picker).toHaveFocus();
     });
   });
+});
+
+it("shows a selected location detail failure and allows retry", async () => {
+  arrangeRequests();
+  const normalFetch = fetchAPI.getMockImplementation()!;
+  let fail = true;
+  fetchAPI.mockImplementation((path: string, init?: RequestInit) => {
+    if (path === `/locations/${locationA.id}` && fail) return Promise.reject(new Error("offline"));
+    return normalFetch(path, init);
+  });
+  render(<CreateTeamClient />);
+  await selectLocation(locationA.name);
+  expect(await screen.findByText("teams.locationDetailLoadFailed")).toBeTruthy();
+  fail = false;
+  fireEvent.click(screen.getByRole("button", { name: "common.retry" }));
+  await waitFor(() => expect(screen.queryByText("teams.locationDetailLoadFailed")).toBeNull());
+  expect(await screen.findByTestId("create-team-activity-type")).toBeTruthy();
+});
+
+it("cancels an old location detail request and ignores its late failure", async () => {
+  arrangeRequests();
+  const normalFetch = fetchAPI.getMockImplementation()!;
+  let rejectOld!: (reason: Error) => void;
+  let oldSignal: AbortSignal | undefined;
+  fetchAPI.mockImplementation((path: string, init?: RequestInit) => {
+    if (path === `/locations/${locationA.id}`) {
+      oldSignal = init?.signal as AbortSignal;
+      return new Promise((_resolve, reject) => { rejectOld = reject; });
+    }
+    return normalFetch(path, init);
+  });
+  const { unmount } = render(<CreateTeamClient />);
+  await selectLocation(locationA.name);
+  await selectLocation(locationB.name);
+  expect(oldSignal?.aborted).toBe(true);
+  rejectOld(new Error("old failure"));
+  await waitFor(() => expect(screen.getByTestId("create-team-activity-type")).toBeTruthy());
+  expect(screen.queryByText("teams.locationDetailLoadFailed")).toBeNull();
+  const detailCall = fetchAPI.mock.calls.find(([path]) => path === `/locations/${locationB.id}`);
+  unmount();
+  expect(detailCall?.[1]?.signal.aborted).toBe(true);
 });

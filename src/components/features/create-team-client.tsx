@@ -45,6 +45,9 @@ export function CreateTeamClient() {
     locationsLoading,
     locationsError,
     selectedLocation,
+    locationDetailLoading,
+    locationDetailError,
+    retryLocationDetail,
     setLocationSearch,
     setLocationSearchVersion,
     isAuthenticated,
@@ -148,6 +151,13 @@ export function CreateTeamClient() {
                 }
                 onSelect={handleLocationChange}
               />
+              {locationDetailLoading && <p role="status" className="text-sm text-muted-foreground">{t("common.loading")}</p>}
+              {locationDetailError && (
+                <div role="alert" className="space-y-2 text-sm text-destructive">
+                  <p>{t("teams.locationDetailLoadFailed")}</p>
+                  <SwButton type="button" variant="outline" onClick={retryLocationDetail}>{t("common.retry")}</SwButton>
+                </div>
+              )}
               {selectedLocation && (
                 <TeamLocationPreview
                   location={selectedLocation}
