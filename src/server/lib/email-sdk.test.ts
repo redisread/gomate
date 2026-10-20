@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { sendFeedbackEmail } from "./email";
+import {
+  sendEmailVerificationEmail,
+  sendPasswordResetEmail,
+  sendWelcomeEmail,
+  sendFeedbackEmail,
+} from "./email";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -31,12 +36,52 @@ describe("Resend SDK transport contract", () => {
     expect(JSON.parse(init.body).html).toContain("&lt;hello&gt;");
   });
 
-  it("returns a safe failure for a provider rejection", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
+  it.each([
+    [
+      "verification",
+      () =>
+        sendEmailVerificationEmail(
+          "member@example.test",
+          "https://gomate.test/verify#secret",
+          "Member",
+          { RESEND_API_KEY: "test-only" },
+        ),
+    ],
+    [
+      "password reset",
+      () =>
+        sendPasswordResetEmail(
+          "member@example.test",
+          "https://gomate.test/reset#secret",
+          "Member",
+          { RESEND_API_KEY: "test-only" },
+        ),
+    ],
+    [
+      "welcome",
+      () =>
+        sendWelcomeEmail("member@example.test", "Member", {
+          RESEND_API_KEY: "test-only",
+        }),
+    ],
+    [
+      "feedback",
+      () =>
+        sendFeedbackEmail(
+          {
+            email: "member@example.test",
+            content: "hello",
+            requestId: "00000000-0000-4000-8000-000000000001",
+          },
+          { RESEND_API_KEY: "test-only" },
+        ),
+    ],
+  ])(
+    "returns a safe failure for a provider rejection: %s",
+    async (_name, send) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
           new Response(
             JSON.stringify({
               name: "validation_error",
@@ -46,16 +91,11 @@ describe("Resend SDK transport contract", () => {
             { status: 422 },
           ),
         ),
-    );
-    expect(
-      await sendFeedbackEmail(
-        {
-          email: "member@example.test",
-          content: "hello",
-          requestId: "00000000-0000-4000-8000-000000000001",
-        },
-        { RESEND_API_KEY: "test-only" },
-      ),
-    ).toEqual({ success: false, error: "Email provider rejected feedback" });
-  });
+      );
+      expect(await send()).toEqual({
+        success: false,
+        error: "Email provider rejected message",
+      });
+    },
+  );
 });
