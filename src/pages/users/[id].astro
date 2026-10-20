@@ -11,6 +11,6 @@ declareI18nNs(Astro.locals, ["userDetail", "profile", "errors", "enums", "conten
 const { id } = Astro.params;
 ---
 
-<Layout title="用户资料 - GoMate" showNavbar={false} showFooter={false}>
+<Layout titleKey="content.seo_pages.userDetail" showNavbar={false} showFooter={false}>
   <UserDetailClient userId={id!} client:load />
 </Layout>

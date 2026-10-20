@@ -1,0 +1,63 @@
+---
+// Preserve idle and hover prefetch policy separately from page metadata.
+---
+<script is:inline>
+      (function() {
+        // 关键路由预加载（延迟执行，避免阻塞首屏）
+        var criticalRoutes = ["/locations", "/teams"];
+
+        // 使用 requestIdleCallback 在空闲时预加载
+        function prefetchWhenIdle(routes) {
+          var prefetch = function(route) {
+            var link = document.createElement("link");
+            link.rel = "prefetch";
+            link.href = route;
+            link.as = "document";
+            document.head.appendChild(link);
+          };
+
+          if (typeof requestIdleCallback !== "undefined") {
+            requestIdleCallback(function() {
+              routes.forEach(function(route, i) {
+                setTimeout(function() { prefetch(route); }, i * 200);
+              });
+            }, { timeout: 2000 });
+          } else {
+            // 降级：setTimeout
+            setTimeout(function() {
+              routes.forEach(function(route, i) {
+                setTimeout(function() { prefetch(route); }, i * 200);
+              });
+            }, 2000);
+          }
+        }
+
+        // 启动预加载
+        if (document.readyState === "complete") {
+          prefetchWhenIdle(criticalRoutes);
+        } else {
+          window.addEventListener("load", function() {
+            prefetchWhenIdle(criticalRoutes);
+          });
+        }
+
+        // Hover 预加载（鼠标悬停在链接上时）
+        document.addEventListener("mouseover", function(e) {
+          var target = e.target instanceof Element ? e.target.closest("a[href^=\"/\"]") : null;
+          if (!target) return;
+          var href = target.getAttribute("href");
+          // 过滤外部链接和当前页面
+          if (!href || href.startsWith("//") || href === "/" || href === window.location.pathname) return;
+
+          // 检查是否已经预加载
+          var existing = document.querySelector('link[rel="prefetch"][href="' + href + '"]');
+          if (existing) return;
+
+          var link = document.createElement("link");
+          link.rel = "prefetch";
+          link.href = href;
+          link.as = "document";
+          document.head.appendChild(link);
+        }, { passive: true });
+      })();
+    </script>
