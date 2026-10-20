@@ -1,3 +1,4 @@
+import { UploadResponseSchema } from "@/contracts/http-responses";
 import { cookieSecurity } from "../lib/openapi";
 import { and, eq, isNull } from "drizzle-orm";
 import type { Context } from "hono";
@@ -592,13 +593,6 @@ const uploadFormSchema = z.object({
       "图片文件，上限 5 MiB；multipart 请求体总上限为 5 MiB + 64 KiB，服务端根据实际字节识别和校验格式。",
   }),
 });
-const uploadedImageSchema = z.object({
-  success: z.literal(true),
-  key: z.string(),
-  url: z.string(),
-  size: z.number().int(),
-  type: z.string(),
-});
 for (const kind of ["avatar", "location"] as const) {
   upload.openAPIRegistry.registerPath(
     createRoute({
@@ -620,7 +614,7 @@ for (const kind of ["avatar", "location"] as const) {
       },
       responses: {
         200: jsonResponse(
-          uploadedImageSchema,
+          UploadResponseSchema,
           "上传结果：对象 key、访问 URL、字节数及实际媒体类型。",
         ),
         ...errorResponses(400, 401, 403, 413, 500, 503),

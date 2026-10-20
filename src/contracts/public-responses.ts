@@ -51,3 +51,8 @@ export const PublicUserResponseSchema = SuccessSchema.extend({
     }),
   ),
 });
+
+export type SelfUserResponse = z.infer<typeof SelfUserResponseSchema>;
+export type TimelineTeam = z.infer<typeof TimelineTeamSchema>;
+export type TimelineTeamsResponse = z.infer<typeof TimelineTeamsResponseSchema>;
+export type PublicUserResponse = z.infer<typeof PublicUserResponseSchema>;

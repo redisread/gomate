@@ -1,15 +1,11 @@
 "use client";
+import type { ApiResult, LocationsResponse, TagsResponse } from "@/contracts/http-responses";
+export type { LocationsResponse } from "@/contracts/http-responses";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { fetchPublicAPI } from "@/lib/api";
-import type { Location, Tag } from "@/lib/types";
+import { fetchPublicAPI, getApiErrorMessage } from "@/lib/api";
+import type { Tag } from "@/lib/types";
 
-export interface LocationsResponse {
-  success: boolean;
-  locations: Location[];
-  total: number;
-  nextCursor: string | null;
-}
 
 /**
  * 获取地点列表首页，支持 Region 筛选。
@@ -26,9 +22,9 @@ export function useLocations(limit = 6, initialData?: LocationsResponse | null, 
     try {
       const regionParam = regionId ? `&regionId=${encodeURIComponent(regionId)}` : "";
       const res = await fetchPublicAPI(`/locations?limit=${limit}${regionParam}`);
-      const json = await res.json();
+      const json = await res.json<ApiResult<LocationsResponse>>();
       if (!json.success) {
-        throw new Error(json.error || "获取地点列表失败");
+        throw new Error(getApiErrorMessage(json, "获取地点列表失败"));
       }
       setData(json);
     } catch (err) {
@@ -79,9 +75,9 @@ export function useLocationTags() {
       setError(null);
       try {
         const res = await fetchPublicAPI("/tags?limit=200");
-        const json = await res.json();
+        const json = await res.json<ApiResult<TagsResponse>>();
         if (!json.success) {
-          throw new Error(json.error || "获取标签失败");
+          throw new Error(getApiErrorMessage(json, "获取标签失败"));
         }
         if (mounted) {
           setTags(json.tags ?? []);

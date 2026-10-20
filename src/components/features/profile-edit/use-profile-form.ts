@@ -1,5 +1,6 @@
+import type { UploadResponse } from "@/contracts/http-responses";
 import * as React from "react";
-import { fetchAPI, fetchCurrentUser, API_BASE } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser, API_BASE, getApiErrorMessage } from "@/lib/api";
 import { formatBirthday, birthdayToIso } from "@/lib/user-utils";
 import { fetchSelectableRegions } from "@/lib/regions";
 import type { SessionUser, Region } from "@/lib/types";
@@ -55,7 +56,7 @@ export function useProfileForm() {
       try {
         const u = await fetchCurrentUser("/login?redirect=/profile/edit");
         if (!u) return;
-        const user = u as unknown as SessionUser;
+        const user = u;
         setUser(user);
         setAvatarPreview(user.image || null);
         const birthdayStr = formatBirthday(user.birthday);
@@ -112,8 +113,8 @@ export function useProfileForm() {
       const fd = new FormData();
       fd.append("file", selectedFile);
       const res = await fetch(`${API_BASE}/upload/avatar`, { method: "POST", body: fd, credentials: "include" });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || t('errors.failed'));
+      const result = await res.json<UploadResponse>();
+      if (!res.ok) throw new Error(getApiErrorMessage(result, t('errors.failed')));
       return result.url;
     } catch {
       setMessage({ type: "error", text: t('profile.avatarUploadFailed') });
@@ -148,7 +149,7 @@ export function useProfileForm() {
         }),
       });
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || t('common.save'));
+      if (!res.ok) throw new Error(getApiErrorMessage(result, t('common.save')));
       setSavedDone(true);
       setMessage({ type: "success", text: t('profile.saveSuccess') });
       setTimeout(() => { window.location.replace("/profile"); }, 1000);

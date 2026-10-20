@@ -1,4 +1,6 @@
 "use client";
+import type { BrowserSession } from "@/contracts/auth-api";
+import type { ApiResult, LocationResponse, LocationsResponse } from "@/contracts/http-responses";
 
 import { Button as SwButton } from "@/components/starwind-react/button";
 
@@ -373,7 +375,7 @@ export function LocationDetailClient({
   React.useEffect(() => {
     const controller = new AbortController();
     void fetchAPI("/auth/get-session", { signal: controller.signal })
-      .then((res) => res.json())
+      .then((res) => res.json<BrowserSession>())
       .then((data) => {
         if (!controller.signal.aborted)
           setIsAdmin(data?.user?.role === "admin");
@@ -401,7 +403,7 @@ export function LocationDetailClient({
           return;
         }
         if (!res.ok) throw new Error("location_unavailable");
-        const data = await res.json();
+        const data = await res.json<ApiResult<LocationResponse>>();
         if (!data.success || !data.location)
           throw new Error("location_unavailable");
         if (!signal.aborted) setLocation(data.location);
@@ -412,11 +414,11 @@ export function LocationDetailClient({
       }
     })();
     void fetchAPI("/locations?limit=4", { signal })
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => (res.ok ? res.json<ApiResult<LocationsResponse>>() : null))
       .then((data) => {
         if (!signal.aborted && data?.success)
           setRelatedLocations(
-            (data.locations as Location[])
+            data.locations
               .filter((item) => item.id !== locationId)
               .slice(0, 3),
           );

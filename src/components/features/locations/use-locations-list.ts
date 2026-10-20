@@ -1,3 +1,4 @@
+import type { ApiResult, LocationsResponse, TagsResponse } from "@/contracts/http-responses";
 import * as React from "react";
 import type { Location, Region } from "@/lib/types";
 import { fetchPublicAPI, fetchCurrentUser } from "@/lib/api";
@@ -124,7 +125,7 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
       if (params.regionId) query.set("regionId", params.regionId);
       if (params.activityType) query.set("activityType", params.activityType);
       const res = await fetchPublicAPI(`/locations?${query}`, { signal: controller.signal });
-      const data = await res.json();
+      const data = await res.json<ApiResult<LocationsResponse>>();
       if (requestId !== requestIdRef.current) return;
       if (!data.success) throw new Error("locations_load_failed");
       hasLoadedRef.current = true;
@@ -197,7 +198,7 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
 
   React.useEffect(() => {
     if (initialData?.popularTags) return;
-    fetchPublicAPI("/tags?limit=200").then((r) => r.json()).then((data) => { if (data.success && data.tags) setPopularTags(data.tags); }).catch(() => {});
+    fetchPublicAPI("/tags?limit=200").then((r) => r.json<ApiResult<TagsResponse>>()).then((data) => { if (data.success && data.tags) setPopularTags(data.tags); }).catch(() => {});
   }, [initialData?.popularTags]);
 
   React.useEffect(() => {

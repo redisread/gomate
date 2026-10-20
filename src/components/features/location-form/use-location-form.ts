@@ -1,4 +1,5 @@
 "use client";
+import type { BrowserSession } from "@/contracts/auth-api";
 
 import * as React from "react";
 import { fetchAPI } from "@/lib/api";
@@ -26,7 +27,6 @@ import {
   saveLocationDraft,
   removeLocationDraft,
 } from "./location-form-draft";
-
 
 interface LocationResponse {
   success: boolean;
@@ -59,7 +59,6 @@ interface UseLocationFormReturn {
   handleDiscardDraft: () => void;
 }
 
-
 export function useLocationForm(locationId?: string): UseLocationFormReturn {
   const { t } = useI18n(["admin"]);
   const mode = locationId ? "edit" : "create";
@@ -86,7 +85,7 @@ export function useLocationForm(locationId?: string): UseLocationFormReturn {
 
   React.useEffect(() => {
     fetchAPI("/auth/get-session")
-      .then((response) => response.json())
+      .then((response) => response.json<BrowserSession>())
       .then((data) => {
         if (data?.user?.role !== "admin") window.location.href = "/";
       })

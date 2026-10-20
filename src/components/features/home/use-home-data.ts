@@ -1,4 +1,6 @@
 "use client";
+import type { ApiResult } from "@/contracts/http-responses";
+import type { TeamListResponse } from "@/contracts/team-api";
 
 import * as React from "react";
 import { fetchPublicAPI } from "@/lib/api";
@@ -26,7 +28,7 @@ export function useHomeData(initialData?: HomeInitialData, userRegionId?: string
   const fetchTeams = React.useCallback(async () => {
     try {
       const res = await fetchPublicAPI(homeTeamQuery(userRegionId));
-      const data = await res.json();
+      const data = await res.json<ApiResult<TeamListResponse>>();
       if (data.success) setTeams(data.teams || []);
     } catch (error) {
       console.error("[HomeClient] 获取队伍列表失败:", error);

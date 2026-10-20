@@ -12,14 +12,25 @@ describe("team HTTP contracts", () => {
     const response = await app.request("/openapi.json");
     expect(response.status).toBe(200);
     const document = await response.json();
-    expect(document.paths["/api/teams/{id}/join"].post.operationId).toBe(
-      "teamsJoin",
-    );
-    expect(document.paths["/api/teams/{id}/checklist"]).toBeUndefined();
-    expect(document.paths["/api/teams/{id}/join-requests"]).toBeUndefined();
-    const params = document.paths["/api/teams"].get.parameters;
-    expect(
-      params.find((p: { name: string }) => p.name === "tagIds").schema.type,
-    ).toBe("string");
+    expect(document).toMatchObject({
+      paths: {
+        "/api/teams/{id}/join": { post: { operationId: "teamsJoin" } },
+        "/api/teams": {
+          get: {
+            parameters: expect.arrayContaining([
+              expect.objectContaining({
+                name: "tagIds",
+                schema: expect.objectContaining({ type: "string" }),
+              }),
+            ]),
+          },
+        },
+      },
+    });
+    expect(document).not.toHaveProperty(["paths", "/api/teams/{id}/checklist"]);
+    expect(document).not.toHaveProperty([
+      "paths",
+      "/api/teams/{id}/join-requests",
+    ]);
   });
 });

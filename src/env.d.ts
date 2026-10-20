@@ -5,20 +5,11 @@ import type { Locale } from "./i18n";
 import type { AdminIdentity } from "./server/lib/admin-access";
 
 declare global {
-  interface Body {
-    // Cloudflare's generated runtime declarations expose json<T>() without a
-    // default, which otherwise makes unannotated browser fetches `unknown`.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    json(): Promise<any>;
-  }
-}
-
-declare global {
   namespace App {
-  interface Locals {
-    locale?: Locale;
-    __i18n_namespaces?: string[];
-    admin?: AdminIdentity;
+    interface Locals {
+      locale?: Locale;
+      __i18n_namespaces?: string[];
+      admin?: AdminIdentity;
+    }
   }
-}
 }

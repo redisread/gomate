@@ -1,3 +1,4 @@
+import { TagsResponseSchema } from "@/contracts/http-responses";
 import { TagSchema } from "@/contracts";
 import type { AdminErrorReason } from "@/contracts/admin-i18n";
 import { asc, eq, sql } from "drizzle-orm";
@@ -103,29 +104,7 @@ tagsRoute.openapi(
     "x-audience": "public",
     request: { query: tagsQuerySchema },
     responses: {
-      200: jsonResponse(
-        z.object({
-          success: z.literal(true),
-          tags: z.array(
-            TagSchema.extend({
-              references: z
-                .object({
-                  locations: z.number(),
-                  teams: z.number(),
-                })
-                .optional(),
-            }),
-          ),
-          pagination: z.object({
-            page: z.number(),
-            pageSize: z.number(),
-            total: z.number(),
-            totalPages: z.number(),
-            hasMore: z.boolean(),
-          }),
-        }),
-        "请求成功，响应字段见下方结构。",
-      ),
+      200: jsonResponse(TagsResponseSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 401, 403, 500),
     },
   }),
