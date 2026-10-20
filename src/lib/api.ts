@@ -1,3 +1,4 @@
+import type { SelfUserResponse } from "@/contracts/public-responses";
 /**
  * Same-origin browser API client. Callers pass resource paths without `/api`.
  */
@@ -179,7 +180,7 @@ async function loadCurrentUser(): Promise<
   const userRes = await fetchAPI("/users/me", { cache: "no-store" });
   if (userRes.status === 401) return null;
   if (!userRes.ok) throw new Error("Current user unavailable");
-  const userData = await userRes.json();
+  const userData = await userRes.json<Partial<SelfUserResponse>>();
   if (!userData?.user || typeof userData.user.id !== "string")
     throw new Error("Invalid current user response");
   return userData.user;

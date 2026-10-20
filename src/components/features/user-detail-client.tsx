@@ -1,3 +1,5 @@
+import type { ApiResult } from "@/contracts/http-responses";
+import type { PublicUserResponse } from "@/contracts/public-responses";
 import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import {
@@ -29,7 +31,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
   React.useEffect(() => {
     setIsLoading(true);
     fetchAPI(`/users/${userId}`)
-      .then((r) => r.json())
+      .then((r) => r.json<ApiResult<PublicUserResponse>>())
       .then((data) => {
         if (data.success && data.user) {
           setUser(data.user);

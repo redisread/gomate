@@ -8,6 +8,7 @@
 ## 视觉基础
 
 - 采用温暖琥珀主色、沙米中性色和珊瑚强调色；颜色统一使用 OKLCH token。
+- 主题变量仅在 `src/styles/globals.css` 维护，布局不手写第二份关键 CSS；构建器负责样式输出。
 - light/dark 主题通过 `:root`、`.dark` 与语义 token 映射，不在组件中维护第二套色值。
 - 字体使用系统字体栈；网页 UI 不加载远程字体。
 - 当前面向支持 OKLCH、`color-mix()` 和现代 CSS 的 evergreen 浏览器。

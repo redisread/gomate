@@ -1,3 +1,5 @@
+import type { ApiResult, LocationResponse, LocationsResponse } from "@/contracts/http-responses";
+import type { TeamResponse } from "@/contracts/team-api";
 import * as React from "react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
@@ -17,6 +19,9 @@ export function useCreateTeamForm() {
   const [locationSearchVersion, setLocationSearchVersion] = React.useState(0);
   const [locationsLoading, setLocationsLoading] = React.useState(true);
   const [locationsError, setLocationsError] = React.useState(false);
+  const [locationDetailLoading, setLocationDetailLoading] = React.useState(false);
+  const [locationDetailError, setLocationDetailError] = React.useState(false);
+  const [locationDetailVersion, setLocationDetailVersion] = React.useState(0);
   const [selectedLocation, setSelectedLocation] =
     React.useState<Location | null>(null);
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean | null>(
@@ -72,7 +77,7 @@ export function useCreateTeamForm() {
           ? `/locations?search=${encodeURIComponent(query)}&limit=20`
           : "/locations?limit=20";
         fetchAPI(path)
-          .then((response) => response.json())
+          .then((response) => response.json<ApiResult<LocationsResponse>>())
           .then((data) => {
             if (cancelled) return;
             if (!data.success) throw new Error("Location search failed");
@@ -99,6 +104,8 @@ export function useCreateTeamForm() {
 
   // 当地点变化时，获取地点详情
   React.useEffect(() => {
+    setLocationDetailError(false);
+    setLocationDetailLoading(Boolean(formData.locationId));
     if (!formData.locationId) {
       setSelectedLocation(null);
       setFormData((prev) =>
@@ -107,18 +114,19 @@ export function useCreateTeamForm() {
       return;
     }
 
-    let cancelled = false;
+    const controller = new AbortController();
     setSelectedLocation(null);
     setFormData((prev) =>
       prev.activityType ? { ...prev, activityType: "" } : prev,
     );
 
     // 获取地点详情
-    fetchAPI(`/locations/${formData.locationId}`)
-      .then((r) => r.json())
+    fetchAPI(`/locations/${formData.locationId}`, { signal: controller.signal })
+      .then((r) => r.json<ApiResult<LocationResponse>>())
       .then((data) => {
-        if (!cancelled && data.success && data.location) {
-          const loc = data.location as Location;
+        if (!data.success || !data.location) throw new Error("Location detail request failed");
+        if (!controller.signal.aborted) {
+          const loc = data.location;
           setSelectedLocation(loc);
 
           setFormData((prev) => ({
@@ -128,12 +136,11 @@ export function useCreateTeamForm() {
           }));
         }
       })
-      .catch(() => {});
+      .catch(() => { if (!controller.signal.aborted) setLocationDetailError(true); })
+      .finally(() => { if (!controller.signal.aborted) setLocationDetailLoading(false); });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [formData.locationId]);
+    return () => controller.abort();
+  }, [formData.locationId, locationDetailVersion]);
 
   const orderedActivityTypes = React.useMemo(
     () =>
@@ -182,7 +189,7 @@ export function useCreateTeamForm() {
         method: "POST",
         body: JSON.stringify(createTeamPayload(formData, activityType)),
       });
-      const data = await res.json();
+      const data = await res.json<ApiResult<TeamResponse>>();
       if (data.success && data.team?.id) {
         window.location.href = `/teams/${data.team.id}`;
       } else {
@@ -203,6 +210,9 @@ export function useCreateTeamForm() {
     locationsLoading,
     locationsError,
     selectedLocation,
+    locationDetailLoading,
+    locationDetailError,
+    retryLocationDetail: () => setLocationDetailVersion((version) => version + 1),
     setLocationSearch,
     setLocationSearchVersion,
     isAuthenticated,

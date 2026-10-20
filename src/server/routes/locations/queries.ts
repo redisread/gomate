@@ -1,4 +1,9 @@
 import {
+  LocationResponseSchema,
+  LocationPageSchema,
+  LocationsResponseSchema,
+} from "@/contracts/http-responses";
+import {
   and,
   asc,
   desc,
@@ -20,11 +25,7 @@ import {
   validationHook,
   adminMiddleware,
 } from "../../lib/openapi";
-import {
-  LocationSchema,
-  LocationStatsResponseSchema,
-  TagSchema,
-} from "@/contracts";
+import { LocationStatsResponseSchema, TagSchema } from "@/contracts";
 import { ACTIVITY_TYPES, type LocationStatsResponse } from "@/contracts";
 
 import { createDb } from "../../db";
@@ -44,18 +45,9 @@ import {
 } from "./utils";
 
 const queries = createApiApp();
-const locationResultSchema = z.object({
-  success: z.literal(true),
-  location: LocationSchema,
-});
 const locationTagsResultSchema = z.object({
   success: z.literal(true),
   tags: z.array(TagSchema),
-});
-const locationPageSchema = z.object({
-  success: z.literal(true),
-  locations: z.array(LocationSchema),
-  nextCursor: z.string().nullable(),
 });
 const idParams = z.object({ id: z.string() });
 const rejectLegacyPagination: import("hono").MiddlewareHandler = async (
@@ -187,7 +179,7 @@ queries.openapi(
     middleware: [adminMiddleware()],
     security: adminSecurity,
     responses: {
-      200: jsonResponse(locationPageSchema, "请求成功，响应字段见下方结构。"),
+      200: jsonResponse(LocationPageSchema, "请求成功，响应字段见下方结构。"),
       ...errorResponses(400, 401, 403, 500),
     },
   }),
@@ -272,7 +264,7 @@ queries.openapi(
     middleware: [rejectLegacyPagination],
     responses: {
       200: jsonResponse(
-        locationPageSchema.extend({ total: z.number() }),
+        LocationsResponseSchema,
         "请求成功，响应字段见下方结构。",
       ),
       ...errorResponses(400, 500),
@@ -565,7 +557,10 @@ queries.openapi(
     middleware: [adminMiddleware()],
     security: adminSecurity,
     responses: {
-      200: jsonResponse(locationResultSchema, "请求成功，响应字段见下方结构。"),
+      200: jsonResponse(
+        LocationResponseSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(400, 401, 403, 404, 500),
     },
   }),
@@ -618,7 +613,10 @@ queries.openapi(
     "x-audience": "public",
     request: { params: idParams },
     responses: {
-      200: jsonResponse(locationResultSchema, "请求成功，响应字段见下方结构。"),
+      200: jsonResponse(
+        LocationResponseSchema,
+        "请求成功，响应字段见下方结构。",
+      ),
       ...errorResponses(400, 404, 500),
     },
   }),

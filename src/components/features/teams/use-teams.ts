@@ -1,11 +1,12 @@
+import type { ApiResult, TagsResponse } from "@/contracts/http-responses";
+import type { TeamListResponse } from "@/contracts/team-api";
 import * as React from "react";
 import { ACTIVITY_TYPES } from "@/contracts";
-import { isActivityType } from "@/lib/activity-types";
 import type { ActivityType, RecruitmentStatus, Region, Team } from "@/lib/types";
 import { fetchPublicAPI } from "@/lib/api";
 import { fetchSelectableRegions } from "@/lib/regions";
 import { getRegionDisplayName } from "@/components/shared/quick-city-options";
-import { parseTeamTagFilters } from "@/lib/team-filter-params";
+import { parseTeamFilters, buildTeamListQuery, type TeamFilters } from "@/lib/team-filter-params";
 import {
   getDateRangeByQuickType,
   getActiveDateQuickType,
@@ -24,15 +25,7 @@ export interface TeamsInitialData {
   tagsComplete?: boolean;
   availableRegions: Region[];
   regionsComplete?: boolean;
-  filters?: {
-    searchQuery: string;
-    selectedActivityType: ActivityType | "";
-    selectedRecruitmentStatus: RecruitmentStatus | "";
-    selectedRegionId: string;
-    startDate: string;
-    endDate: string;
-    selectedTags: string[];
-  };
+  filters?: TeamFilters;
 }
 
 export function useTeams(initialData?: TeamsInitialData) {
@@ -57,6 +50,9 @@ export function useTeams(initialData?: TeamsInitialData) {
   const [selectedTags, setSelectedTags] = React.useState<string[]>(initialFilters?.selectedTags ?? []);
   const [availableRegions, setAvailableRegions] = React.useState<Region[]>(initialData?.availableRegions ?? []);
   const [regionsLoading, setRegionsLoading] = React.useState(shouldLoadFullRegions);
+  const [tagsLoading, setTagsLoading] = React.useState(shouldLoadTags);
+  const [tagsError, setTagsError] = React.useState(false);
+  const tagsAbortRef = React.useRef<AbortController | null>(null);
   const [regionsError, setRegionsError] = React.useState(false);
   const [selectedRegionId, setSelectedRegionId] = React.useState(initialFilters?.selectedRegionId ?? "");
   const [urlInitialized, setUrlInitialized] = React.useState(hasInitialData);
@@ -83,19 +79,18 @@ export function useTeams(initialData?: TeamsInitialData) {
       setIsLoading(true);
       setLoadError(false);
       try {
-        const query = new URLSearchParams();
-        query.set("limit", "12");
-        if (params.cursor) query.set("cursor", params.cursor);
-        if (params.search) query.set("search", params.search);
-        if (params.activityType) query.set("activityType", params.activityType);
-        if (params.recruitmentStatus) query.set("recruitmentStatus", params.recruitmentStatus);
-        if (params.regionId) query.set("regionId", params.regionId);
-        if (params.startDateFrom) query.set("startDateFrom", params.startDateFrom);
-        if (params.startDateTo) query.set("startDateTo", params.startDateTo);
-        if (params.tagIds?.length) query.set("tagIds", params.tagIds.join(","));
+        const query = buildTeamListQuery({
+          searchQuery: params.search ?? "",
+          selectedActivityType: params.activityType ?? "",
+          selectedRecruitmentStatus: params.recruitmentStatus ?? "",
+          selectedRegionId: params.regionId ?? "",
+          startDate: params.startDateFrom ?? "",
+          endDate: params.startDateTo ?? "",
+          selectedTags: params.tagIds ?? [],
+        }, params.cursor);
 
         const res = await fetchPublicAPI(`/teams?${query}`, { signal: controller.signal });
-        const data = await res.json();
+        const data = await res.json<ApiResult<TeamListResponse>>();
         if (data.success && requestId === latestRequestIdRef.current) {
           setTeams(data.teams || []);
           const targetPage = params.targetPage ?? 1;
@@ -126,45 +121,15 @@ export function useTeams(initialData?: TeamsInitialData) {
   // URL 参数初始化
   React.useEffect(() => {
     if (hasInitialData) return;
-    const params = new URLSearchParams(window.location.search);
-    const q = (params.get("q") || "").slice(0, 120);
-    const activityTypeParam = params.get("activityType");
-    const activityType = isActivityType(activityTypeParam)
-      ? activityTypeParam
-      : "";
-    const recruitmentStatusParam = params.get("recruitmentStatus");
-    const recruitmentStatus = recruitmentStatusParam === "all"
-      ? ""
-      : recruitmentStatusParam === "closed"
-        ? "closed"
-        : "open";
-    const regionId = (params.get("regionId") || "").slice(0, 64);
-    const timeFilter = params.get("timeFilter") || "";
-    const tags = parseTeamTagFilters(params.get("tags"));
-
-    setSearchQuery(q);
+    const filters = parseTeamFilters(new URLSearchParams(window.location.search));
+    setSearchQuery(filters.searchQuery);
     setCurrentPage(1);
-    setSelectedActivityType(activityType);
-    setSelectedRecruitmentStatus(recruitmentStatus);
-    setSelectedRegionId(regionId);
-    setSelectedTags(tags);
-
-    // 处理时间筛选：优先使用 timeFilter，回退到 startDate/endDate
-    let start = "";
-    let end = "";
-    if (timeFilter) {
-      const range = getDateRangeByQuickType(timeFilter);
-      if (range) {
-        start = range.start;
-        end = range.end;
-      }
-    }
-    if (!start && !end) {
-      start = params.get("startDate") || "";
-      end = params.get("endDate") || "";
-    }
-    setStartDate(start);
-    setEndDate(end);
+    setSelectedActivityType(filters.selectedActivityType);
+    setSelectedRecruitmentStatus(filters.selectedRecruitmentStatus);
+    setSelectedRegionId(filters.selectedRegionId);
+    setSelectedTags(filters.selectedTags);
+    setStartDate(filters.startDate);
+    setEndDate(filters.endDate);
     setUrlInitialized(true);
   }, [hasInitialData]);
 
@@ -174,14 +139,28 @@ export function useTeams(initialData?: TeamsInitialData) {
     if (filterRequestTimerRef.current) clearTimeout(filterRequestTimerRef.current);
   }, []);
 
-  // 加载可用标签
+  const loadTags = React.useCallback(async () => {
+    tagsAbortRef.current?.abort();
+    const controller = new AbortController();
+    tagsAbortRef.current = controller;
+    setTagsLoading(true);
+    setTagsError(false);
+    try {
+      const response = await fetchPublicAPI("/tags?limit=200", { signal: controller.signal });
+      const data = await response.json<ApiResult<TagsResponse>>();
+      if (!data.success || !data.tags) throw new Error("Tag request failed");
+      if (!controller.signal.aborted) setAvailableTags(data.tags);
+    } catch {
+      if (!controller.signal.aborted) setTagsError(true);
+    } finally {
+      if (!controller.signal.aborted) setTagsLoading(false);
+    }
+  }, []);
+
   React.useEffect(() => {
-    if (!shouldLoadTags) return;
-    fetchPublicAPI("/tags?limit=200")
-      .then((r) => r.json())
-      .then((data) => { if (data.success && data.tags) setAvailableTags(data.tags); })
-      .catch(() => {});
-  }, [shouldLoadTags]);
+    if (shouldLoadTags) void loadTags();
+    return () => tagsAbortRef.current?.abort();
+  }, [shouldLoadTags, loadTags]);
 
   const loadAllRegions = React.useCallback(async () => {
     regionsAbortRef.current?.abort();
@@ -348,6 +327,9 @@ export function useTeams(initialData?: TeamsInitialData) {
     startDate,
     endDate,
     availableTags,
+    tagsLoading,
+    tagsError,
+    retryTags: loadTags,
     availableActivityTypes: ACTIVITY_TYPES,
     availableRegions,
     regionsLoading,

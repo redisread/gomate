@@ -19,9 +19,7 @@ const teamData = data?.success && data.team ? data.team : null;
 
 const ogImage = teamData?.location?.coverImageUrl ?? undefined;
 
-const title = teamData?.title
-  ? teamData.title
-  : "队伍详情 - GoMate";
+const title = teamData?.title || undefined;
 
 const description = teamData?.description
   ? teamData.description.slice(0, 160)
@@ -30,6 +28,7 @@ const description = teamData?.description
 
 <Layout
   title={title}
+  titleKey={title ? undefined : "content.seo_pages.teamDetail"}
   description={description}
   ogImage={ogImage}
   showNavbar={false}

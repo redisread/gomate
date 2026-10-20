@@ -1,3 +1,4 @@
+import type { TeamResponse, TeamListResponse } from "@/contracts/team-api";
 import { readFileSync, readdirSync } from "node:fs";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { drizzle } from "drizzle-orm/sqlite-proxy";
@@ -149,7 +150,7 @@ describe("team API wire compatibility", () => {
       "/?limit=1&limit=invalid&tagIds=,,&activityType=%20hiking%20",
     );
     expect(response.status).toBe(200);
-    const body = await response.json();
+    const body = await response.json<TeamListResponse>();
     expect(body).toMatchObject({
       total: 1,
       nextCursor: null,
@@ -160,9 +161,13 @@ describe("team API wire compatibility", () => {
     expect(TeamSchema.safeParse(body.teams[0]).success).toBe(true);
     const detail = await request("/t");
     expect(detail.status).toBe(200);
-    expect(TeamSchema.safeParse((await detail.json()).team).success).toBe(true);
+    expect(
+      TeamSchema.safeParse((await detail.json<TeamResponse>()).team).success,
+    ).toBe(true);
     signIn("leader");
-    expect((await (await request("/t")).json()).team).toMatchObject({
+    expect(
+      (await (await request("/t")).json<TeamResponse>()).team,
+    ).toMatchObject({
       meetingPoint: "private",
       leader: { extra: { wechat: "private" } },
     });
@@ -199,7 +204,8 @@ describe("team API wire compatibility", () => {
       status: "already_member",
     });
     expect(
-      (await (await request("/t")).json()).team.activeParticipantCount,
+      (await (await request("/t")).json<TeamResponse>()).team
+        .activeParticipantCount,
     ).toBe(2);
   });
 
@@ -225,7 +231,9 @@ describe("team API wire compatibility", () => {
       { headers: { "x-user": "leader" } },
       env,
     );
-    expect((await detail.json()).team.activeParticipantCount).toBe(2);
+    expect(
+      (await detail.json<TeamResponse>()).team.activeParticipantCount,
+    ).toBe(2);
   });
 
   it("releases a place on exit and permits a single rejoin", async () => {
@@ -234,13 +242,15 @@ describe("team API wire compatibility", () => {
     expect((await request("/t/leave", "POST")).status).toBe(200);
     expect((await request("/t/join", "POST")).status).toBe(201);
     expect(
-      (await (await request("/t")).json()).team.activeParticipantCount,
+      (await (await request("/t")).json<TeamResponse>()).team
+        .activeParticipantCount,
     ).toBe(2);
     signIn("leader");
     expect((await request("/t/leave", "POST")).status).toBe(409);
     expect((await request("/t/join", "POST")).status).toBe(200);
     expect(
-      (await (await request("/t")).json()).team.activeParticipantCount,
+      (await (await request("/t")).json<TeamResponse>()).team
+        .activeParticipantCount,
     ).toBe(2);
   });
 
@@ -298,17 +308,21 @@ describe("team API wire compatibility", () => {
       "application/json",
     );
     expect(response.status).toBe(200);
-    expect((await response.json()).team.meetingPoint).toBe(
+    expect((await response.json<TeamResponse>()).team.meetingPoint).toBe(
       "Station exit A\n09:00",
     );
     signIn("outsider");
-    expect((await (await request("/t")).json()).team.meetingPoint).toBeNull();
+    expect(
+      (await (await request("/t")).json<TeamResponse>()).team.meetingPoint,
+    ).toBeNull();
     await request("/t/join", "POST");
-    expect((await (await request("/t")).json()).team.meetingPoint).toBe(
-      "Station exit A\n09:00",
-    );
+    expect(
+      (await (await request("/t")).json<TeamResponse>()).team.meetingPoint,
+    ).toBe("Station exit A\n09:00");
     await request("/t/leave", "POST");
-    expect((await (await request("/t")).json()).team.meetingPoint).toBeNull();
+    expect(
+      (await (await request("/t")).json<TeamResponse>()).team.meetingPoint,
+    ).toBeNull();
   });
 
   it("preserves the route-specific error when authentication lookup fails", async () => {

@@ -24,9 +24,7 @@ const locationData = locationResponse?.success
 
 const ogImage = locationData?.coverImageUrl ?? undefined;
 
-const title = locationData?.name
-  ? locationData.name
-  : "地点详情 - GoMate";
+const title = locationData?.name || undefined;
 
 const description = locationData?.description
   ? locationData.description.slice(0, 160)
@@ -35,6 +33,7 @@ const description = locationData?.description
 
 <Layout
   title={title}
+  titleKey={title ? undefined : "content.seo_pages.locationDetail"}
   description={description}
   ogImage={ogImage}
   showNavbar={false}

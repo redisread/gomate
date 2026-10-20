@@ -9,6 +9,6 @@ import { declareI18nNs } from "../middleware";
 declareI18nNs(Astro.locals, ["feedback", "content"]);
 ---
 
-<Layout title="反馈建议 - GoMate">
+<Layout titleKey="content.seo_pages.feedback">
   <FeedbackClient client:visible />
 </Layout>

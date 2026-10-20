@@ -43,6 +43,9 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
             selectedActivityType={ctx.selectedActivityType}
             selectedRecruitmentStatus={ctx.selectedRecruitmentStatus}
             availableActivityTypes={ctx.availableActivityTypes}
+            tagsLoading={ctx.tagsLoading}
+            tagsError={ctx.tagsError}
+            onRetryTags={ctx.retryTags}
             availableTags={ctx.availableTags}
             selectedTags={ctx.selectedTags}
             activeFiltersCount={ctx.advancedFiltersCount}

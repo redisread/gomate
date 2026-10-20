@@ -9,6 +9,6 @@ import { declareI18nNs } from "../../middleware";
 declareI18nNs(Astro.locals, ["teams", "errors", "enums", "content"]);
 ---
 
-<Layout title="创建队伍 - GoMate" showNavbar={false} showFooter={false}>
+<Layout titleKey="content.seo_pages.createTeam" showNavbar={false} showFooter={false}>
   <CreateTeamClient client:load />
 </Layout>

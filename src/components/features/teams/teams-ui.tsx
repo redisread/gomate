@@ -294,6 +294,9 @@ interface FilterPanelProps {
   selectedRecruitmentStatus: RecruitmentStatus | "";
   availableActivityTypes: readonly ActivityType[];
   availableTags: { id: string; name: string }[];
+  tagsLoading?: boolean;
+  tagsError?: boolean;
+  onRetryTags?: () => void;
   selectedTags: string[];
   activeFiltersCount: number;
   onActivityTypeSelect: (activityType: ActivityType | "") => void;
@@ -304,7 +307,7 @@ interface FilterPanelProps {
 
 export function FilterPanel({
   selectedActivityType, selectedRecruitmentStatus, availableActivityTypes, availableTags, selectedTags, activeFiltersCount,
-  onActivityTypeSelect, onRecruitmentStatusSelect, onTagToggle, onClearAll,
+  onActivityTypeSelect, onRecruitmentStatusSelect, onTagToggle, onClearAll, tagsLoading, tagsError, onRetryTags,
 }: FilterPanelProps) {
   const { t } = useI18n(["teams", "filter", "common", "enums"]);
   return (
@@ -341,6 +344,8 @@ export function FilterPanel({
           })}
         </div>
       </div>
+      {tagsLoading && <p role="status" className="text-sm text-muted-foreground">{t("common.loading")}</p>}
+      {tagsError && <div role="alert" className="space-y-2 text-sm text-destructive"><p>{t("teams.tagsLoadFailed")}</p><SwButton type="button" variant="outline" onClick={onRetryTags}>{t("common.retry")}</SwButton></div>}
       {availableTags.length > 0 && (
         <div>
           <span className="mb-2 flex items-center gap-2 text-sm font-semibold text-stone-600 dark:text-stone-300"><Tag className="h-4 w-4" aria-hidden="true" />{t("filter.tags")}</span>

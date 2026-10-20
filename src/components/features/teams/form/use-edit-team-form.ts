@@ -1,3 +1,5 @@
+import type { ApiResult } from "@/contracts/http-responses";
+import type { TeamResponse } from "@/contracts/team-api";
 import * as React from "react";
 import { useI18n } from "@/hooks/useI18n";
 import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
@@ -43,9 +45,9 @@ export function useEditTeamForm(teamId: string) {
           setIsLoading(false);
           return;
         }
-        const data = await res.json();
+        const data = await res.json<ApiResult<TeamResponse>>();
         if (data.success && data.team) {
-          const loadedTeam = data.team as Team;
+          const loadedTeam = data.team;
           if (loadedTeam.leaderId !== u.id) {
             setError(t("errors.noPermission"));
             setIsLoading(false);
@@ -132,7 +134,7 @@ export function useEditTeamForm(teamId: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editTeamPayload(formData, team.activityType)),
       });
-      const data = await res.json();
+      const data = await res.json<ApiResult<TeamResponse>>();
       if (data.success) {
         window.location.href = `/teams/${teamId}`;
       } else {

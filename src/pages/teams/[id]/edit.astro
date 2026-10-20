@@ -11,6 +11,6 @@ declareI18nNs(Astro.locals, ["teams", "errors", "content", "enums"]);
 const { id } = Astro.params;
 ---
 
-<Layout title="编辑队伍 - GoMate" showNavbar={false} showFooter={false}>
+<Layout titleKey="content.seo_pages.editTeam" showNavbar={false} showFooter={false}>
   <EditTeamClient teamId={id!} client:load />
 </Layout>

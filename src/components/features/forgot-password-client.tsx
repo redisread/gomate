@@ -1,5 +1,6 @@
 "use client";
 
+
 import { Label as SwLabel } from "@/components/starwind-react/label";
 import { Input as SwInput } from "@/components/starwind-react/input";
 import { Button as SwButton } from "@/components/starwind-react/button";
@@ -9,7 +10,7 @@ import { BrandIcon } from "@/components/brand-icon";
 import * as React from "react";
 import { Loader2, Mail, CheckCircle2, ArrowLeft } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI } from "@/lib/api";
+import { fetchAPI, getApiErrorMessage } from "@/lib/api";
 
 /**
  * 忘记密码页 — 温暖品牌风格（居中卡片，品牌色调）
@@ -36,7 +37,7 @@ export function ForgotPasswordClient() {
       const result = await res.json();
 
       if (!res.ok) {
-        throw new Error(result.error || result.message || t("auth.sendFailed"));
+        throw new Error(getApiErrorMessage(result, t("auth.sendFailed")));
       }
 
       setSuccess(true);

@@ -1,4 +1,7 @@
 "use client";
+import type { ApiResult } from "@/contracts/http-responses";
+import type { TimelineTeamsResponse } from "@/contracts/public-responses";
+import type { TeamResponse } from "@/contracts/team-api";
 
 import * as React from "react";
 import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
@@ -77,7 +80,7 @@ export function useMyTeams() {
         const r = await fetchAPI(
           buildTimelinePath("/users/me/created-teams", cursor),
         );
-        const data = await r.json();
+        const data = await r.json<ApiResult<TimelineTeamsResponse>>();
         if (!r.ok || !data.success) throw new Error("team list failed");
         if (data.success) {
           if (append)
@@ -104,7 +107,7 @@ export function useMyTeams() {
         const r = await fetchAPI(
           buildTimelinePath("/users/me/joined-teams", cursor),
         );
-        const data = await r.json();
+        const data = await r.json<ApiResult<TimelineTeamsResponse>>();
         if (!r.ok || !data.success) throw new Error("team list failed");
         if (data.success) {
           if (append)
@@ -152,7 +155,7 @@ export function useMyTeams() {
       const r = await fetchAPI(`/teams/${cancelTarget}/cancel`, {
         method: "POST",
       });
-      const data = await r.json();
+      const data = await r.json<ApiResult<TeamResponse>>();
       if (data.success) {
         setCreatedTeams((prev) =>
           prev.map((team) => (team.id === cancelTarget ? data.team : team)),
@@ -177,7 +180,7 @@ export function useMyTeams() {
     setIsForming(true);
     try {
       const r = await fetchAPI(`/teams/${formTarget}/form`, { method: "POST" });
-      const data = await r.json();
+      const data = await r.json<ApiResult<TeamResponse>>();
       if (data.success) {
         setCreatedTeams((prev) =>
           prev.map((team) => (team.id === formTarget ? data.team : team)),

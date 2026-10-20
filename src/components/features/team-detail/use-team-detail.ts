@@ -1,4 +1,10 @@
 "use client";
+import type { ApiResult } from "@/contracts/http-responses";
+import type {
+  TeamResponse,
+  MyTeamStatus,
+  TeamSuccess,
+} from "@/contracts/team-api";
 
 import * as React from "react";
 import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
@@ -50,10 +56,10 @@ export function useTeamDetail(teamId: string) {
         setError(t("teams.notFound"));
         return;
       }
-      const data = await response.json();
+      const data = await response.json<ApiResult<TeamResponse>>();
       if (!response.ok) throw new Error("team unavailable");
       if (data.success && data.team) {
-        setTeam(data.team as Team);
+        setTeam(data.team);
         setError(null);
       } else {
         setError(t("teams.notFound"));
@@ -72,9 +78,9 @@ export function useTeamDetail(teamId: string) {
       }
       try {
         const response = await fetchAPI(`/teams/${teamId}/my-status`);
-        const data = await response.json();
+        const data = await response.json<ApiResult<MyTeamStatus>>();
         if (!data.success) throw new Error("membership status failed");
-        setMemberStatus(data.status as MemberStatus);
+        setMemberStatus(data.status);
         setStatusLoadFailed(false);
       } catch {
         setStatusLoadFailed(true);
@@ -94,12 +100,12 @@ export function useTeamDetail(teamId: string) {
           return;
         }
         if (!teamResponse.ok) throw new Error("team unavailable");
-        const data = await teamResponse.json();
+        const data = await teamResponse.json<ApiResult<TeamResponse>>();
         if (!data.success || !data.team) {
           setError(t("teams.notFound"));
           return;
         }
-        setTeam(data.team as Team);
+        setTeam(data.team);
         const authenticatedUserId = user?.id ?? null;
         setUserId(authenticatedUserId);
         await loadMembershipStatus(authenticatedUserId);
@@ -128,7 +134,7 @@ export function useTeamDetail(teamId: string) {
       const response = await fetchAPI(`/teams/${teamId}/join`, {
         method: "POST",
       });
-      const data = await response.json();
+      const data = await response.json<ApiResult<TeamSuccess>>();
       if (data.success) {
         setMemberStatus("member");
         showToast({ type: "success", message: t("teams.joinedTeamStatus") });
@@ -150,7 +156,7 @@ export function useTeamDetail(teamId: string) {
       const response = await fetchAPI(`/teams/${teamId}/leave`, {
         method: "POST",
       });
-      const data = await response.json();
+      const data = await response.json<ApiResult<TeamSuccess>>();
       if (data.success) {
         setMemberStatus(null);
         showToast({ type: "success", message: t("teams.leftTeam") });
@@ -172,9 +178,9 @@ export function useTeamDetail(teamId: string) {
       const response = await fetchAPI(`/teams/${teamId}/form`, {
         method: "POST",
       });
-      const data = await response.json();
+      const data = await response.json<ApiResult<TeamResponse>>();
       if (data.success) {
-        setTeam(data.team as Team);
+        setTeam(data.team);
         showToast({ type: "success", message: t("teams.formTeamSuccess") });
       } else {
         showToast({
@@ -194,7 +200,7 @@ export function useTeamDetail(teamId: string) {
     setIsDeleting(true);
     try {
       const response = await fetchAPI(`/teams/${teamId}`, { method: "DELETE" });
-      const data = await response.json();
+      const data = await response.json<ApiResult<TeamSuccess>>();
       if (data.success) {
         showToast({ type: "success", message: t("teams.deleteTeamSuccess") });
         window.setTimeout(() => {

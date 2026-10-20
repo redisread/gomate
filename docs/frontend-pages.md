@@ -68,3 +68,10 @@ SSR 声明 namespace，客户端通过页面注入缓存消费同一文案；hyd
 ## 验证
 
 使用实际 Worker/浏览器验证首页、地点、创建/直接加入/退出、活动状态和中英文；同时覆盖匿名保护、过期请求、窄屏、键盘焦点及 reduced-motion。不存在用户使用数据时，不将“删除了复杂功能”表述为已经证明转化率提升。
+
+## 页面和请求边界
+
+- `Layout.astro` 负责文档骨架；静态 SEO 使用显式 `titleKey`/`descriptionKey`，动态用户文本使用 `title`/`description`。`page-metadata.ts` 统一默认文案和动态标题后缀，不按中文展示字符串反向查翻译。
+- 主题首屏初始化与路由预加载分别由 `ThemeInit.astro`、`RoutePrefetch.astro` 承载；主题 class 只放在根 html，避免 body 保留旧暗色状态。预加载保留空闲与 hover 策略，不承诺未经测量的性能收益。
+- 队伍列表 SSR 与客户端共用 URL 筛选解析及 API 参数转换；请求取消、加载与分页状态由各运行时管理。建队地点详情和队伍标签加载失败提供独立重试入口，过期响应不能覆盖新选择。
+- 外部 JSON 响应在消费边界显式声明共享 DTO 或解析为 unknown；不通过全局 `Body.json()` 的 any 重载放宽全部请求。类型声明不替代运行时校验。

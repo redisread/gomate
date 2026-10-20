@@ -1,4 +1,6 @@
 "use client";
+import type { ApiResult } from "@/contracts/http-responses";
+import type { TimelineTeam, TimelineTeamsResponse } from "@/contracts/public-responses";
 
 import { Button as SwButton } from "@/components/starwind-react/button";
 
@@ -24,7 +26,7 @@ import { StatusBadge } from "@/components/features/teams/teams-ui";
 import { LEVEL_CONFIG } from "@/components/shared/profile-shared";
 import { cn } from "@/lib/utils";
 import { formatBirthday, getAgeNumber } from "@/lib/user-utils";
-import type { SessionUser, Team } from "@/lib/types";
+import type { SessionUser } from "@/lib/types";
 import { formatTeamStart, getTeamDisplayStatus } from "@/lib/team-display";
 import { fetchSelectableRegions } from "@/lib/regions";
 
@@ -100,7 +102,7 @@ function TeamSection({
   viewAllLabel,
 }: {
   id: string;
-  teams: Team[];
+  teams: TimelineTeam[];
   title: string;
   viewAllHref: string;
   viewAllLabel: string;
@@ -167,8 +169,8 @@ export function ProfileClient() {
   const { t } = useI18n(["profile", "common"]);
   const [user, setUser] = React.useState<SessionUser | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [createdTeams, setCreatedTeams] = React.useState<Team[]>([]);
-  const [joinedTeams, setJoinedTeams] = React.useState<Team[]>([]);
+  const [createdTeams, setCreatedTeams] = React.useState<TimelineTeam[]>([]);
+  const [joinedTeams, setJoinedTeams] = React.useState<TimelineTeam[]>([]);
   const [createdTotal, setCreatedTotal] = React.useState(0);
   const [joinedTotal, setJoinedTotal] = React.useState(0);
   const [completedTotal, setCompletedTotal] = React.useState(0);
@@ -181,12 +183,12 @@ export function ProfileClient() {
         fetchAPI("/users/me/joined-teams"),
       ]);
       const [createdData, joinedData] = await Promise.all([
-        createdRes.json(),
-        joinedRes.json(),
+        createdRes.json<ApiResult<TimelineTeamsResponse>>(),
+        joinedRes.json<ApiResult<TimelineTeamsResponse>>(),
       ]);
 
-      const createdList: Team[] = createdData.success ? createdData.teams || [] : [];
-      const joinedList: Team[] = joinedData.success ? joinedData.teams || [] : [];
+      const createdList: TimelineTeam[] = createdData.success ? createdData.teams || [] : [];
+      const joinedList: TimelineTeam[] = joinedData.success ? joinedData.teams || [] : [];
 
       setCreatedTotal(createdList.length);
       setJoinedTotal(joinedList.length);

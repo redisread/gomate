@@ -366,5 +366,7 @@
   "meetingPoint": "Meeting information",
   "removeMemberAria": "Remove {name}",
   "departureCardTitle": "Your next outing",
-  "aboutTrip": "About this outing"
+  "aboutTrip": "About this outing",
+  "tagsLoadFailed": "Could not load tags",
+  "locationDetailLoadFailed": "Could not load location details"
 }
