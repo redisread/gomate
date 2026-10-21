@@ -104,7 +104,7 @@ pnpm db:promote-admin --email admin@test.com
 
 以下是当前代码配置，不是账号侧资源已经核验的声明。精确依赖版本以 lockfile 为准；当前使用 Astro 7.4、Cloudflare adapter 14.4、React integration 7.1、Hono 4、Zod 4、Drizzle、Better Auth 与 Wrangler 4。
 
-React integration 7 使用 Oxc 处理 JSX 和 Fast Refresh；项目保留 React 18，使用默认 `react()` 配置，未启用可选的 React Compiler，也没有自定义 Babel 转换。升级依据见[官方 React 集成升级说明](https://docs.astro.build/en/guides/integrations-guide/react/#upgrading-the-react-integration-to-v700)（核对于 2026-10-18）。Astro 页面仍使用现有图片 passthrough 服务和手动语言路由；依赖升级不改变同源 API、会话或生产发布边界。
+React integration 7 使用 Oxc 处理 JSX 和 Fast Refresh；项目使用 React 19，使用默认 `react()` 配置，未启用可选的 React Compiler，也没有自定义 Babel 转换。升级依据见[官方 React 集成升级说明](https://docs.astro.build/en/guides/integrations-guide/react/#upgrading-the-react-integration-to-v700)（核对于 2026-10-18）。Astro 页面仍使用现有图片 passthrough 服务和手动语言路由；依赖升级不改变同源 API、会话或生产发布边界。
 
 Cloudflare adapter 的 Vite 插件要求同步使用 Wrangler 4.151；直接依赖与 adapter 使用 Vite 8.3 和 Cloudflare Vite 插件 1.64。Wrangler 4.150 起默认上传 source map，项目通过 `upload_source_maps: false` 保留此前行为；兼容日期与资源 bindings 不因工具链升级而变更。
 
@@ -135,3 +135,17 @@ Cloudflare adapter 的 Vite 插件要求同步使用 Wrangler 4.151；直接依�
 - TypeScript 使用 6.0.3；截至 2026-10-19，最新 TypeScript 7.0.2 超出 `@astrojs/check@0.9.10` 的 `^5 || ^6` 和 `typescript-eslint@8.71.2` 的 `<6.1` peer 范围。
 - `eslint-plugin-react-hooks` 使用最新版本，明确保留原有 `rules-of-hooks:error` / `exhaustive-deps:warn` 门禁。React Compiler 新增规则不随依赖更新隐式启用；采用 Compiler 前需要单独审查 SSR 初始化、外部状态同步和 ref 生命周期。
 - Astro 模板通过 `pnpm check` 检查；`pnpm type-check` 的 tsc 检查不能替代它。
+
+## 性能与异步方案选型
+
+这些方案按瓶颈与一致性需求选择，不要求默认引入。当前能力以本文件的[运行结构](#cloudflare-运行结构与依据)及 `wrangler.jsonc` 为准。
+
+| 候选方案          | 适用条件                                       | 设计与验收要点                                                                                                                                                                 |
+| ----------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| KV 路由元数据副本 | 读多写少、非敏感、允许延迟生效且可重建的数据   | 定义权威来源、键与版本、更新失效、陈旧窗口及缺失/损坏时的有界回源。即时授权和会话撤销不能依赖最终一致副本；用命中率、D1 回源率及尾延迟证明收益。静态代码路由无需额外远程查询。 |
+| 数据库聚合预计算  | 查询计划与扫描行数证明聚合昂贵，且业务允许延迟 | 定义统计口径、水位、刷新频率、索引和过期展示；采用幂等分批更新，覆盖任务重叠、漏跑、删除与修正，提供重算、对账和失败告警。                                                     |
+| 队列与最终一致性  | 可延迟的通知或派生处理，需要削峰或故障隔离     | 定义用户可见的处理中状态；按投递保证设计去重、版本检查、重试预算、死信和重放。数据库提交与投递需要可靠衔接时，评估同事务 outbox；补齐生产/Preview 隔离、写保护及保留策略。     |
+
+负载测试记录数据规模与分布、读写比例、热点、并发、突发和冷/热缓存；测试前确定吞吐、p95/p99、错误率和资源预算，按场景采集 D1 扫描行数、Worker CPU、缓存命中率或队列延迟。保留版本、环境和数据规模，用同一负载对比优化前后结果。默认使用隔离环境，生产压测必须按生产规约明确授权范围、限流、停止阈值和恢复方案。
+
+采用具体平台能力前，重新核对官方的 [KV 一致性与缓存](https://developers.cloudflare.com/kv/concepts/how-kv-works/)、[Queues 投递保证](https://developers.cloudflare.com/queues/reference/delivery-guarantees/)及[队列顺序](https://developers.cloudflare.com/queues/reference/how-queues-works/)，并验证项目场景。
