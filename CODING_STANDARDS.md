@@ -1,6 +1,6 @@
 # GoMate 编码规范
 
-本文件维护编码约束与验证要求；任务入口由 [AGENTS.md](AGENTS.md) 按修改范围指向对应章节。架构决策与接口合同保留在现行 `docs/` 文档，代码、配置、迁移与测试是可执行事实来源。
+本文件维护编码约束与验证要求；任务入口由 [AGENTS.md](AGENTS.md) 按修改范围指向对应章节。架构决策与接口合同保留在现行 `docs/` 文档。
 
 ## 编码原则
 
@@ -30,14 +30,13 @@
 
 - 分支默认使用 `codex/` 前缀；合并前检查 staged diff 中的秘密、生成物和无关文件。
 - 创建或更新 PR 前读取并遵循 [PR 模板](.github/PULL_REQUEST_TEMPLATE.md)。标题与正文默认中文（可保留 `feat:`、`fix:` 等类型前缀），用户指定其他语言时遵从用户。
-- 正文保留模板结构，不以通用 `Summary` / `Verification` 替换；验证项只勾选实际通过的检查。
+- 正文保留模板结构；验证项只勾选实际通过的检查。
 
 ## 架构与共享合同
 
 - 页面与 API 运行于同一 Worker，开发与生产复用同一 API 实现；入口配置见[本地开发文档](docs/local-dev-worktrees.md)。
 - 页面、SSR、认证 Cookie 和 API 同源；浏览器 API 固定使用 `/api/*`，不引入独立 API origin、CORS 或前后端双进程。
-- 跨端公开类型统一放在 `src/contracts/`；不要维护前后端 DTO 的兼容副本。
-- 使用共享 DTO 和当前 schema 字段，不增加旧字段、旧响应 envelope 或旧分页参数别名。
+- 跨端公开类型统一放在 `src/contracts/`，使用当前 DTO 与 schema；不新增旧字段、旧响应 envelope、旧分页参数别名或前后端 DTO 兼容副本。
 
 ## 可靠性与性能设计
 
@@ -63,16 +62,14 @@
 - 所有 DDL 只通过 migration；不得手工对生产 D1 执行 DDL。
 - 多语句原子写使用 D1 `batch()` 与条件 DML；不要使用 `db.transaction()` 或裸 `BEGIN`/`COMMIT`。
 - JSON 列在 Drizzle 使用 `mode: "json"`，业务层只传对象/数组，不增加字符串兼容层。
-- 稳定参考数据通过 migration 管理；测试用户和可变 demo 数据不得进入生产迁移。具体迁移职责见[数据库文档](docs/database.md#迁移与发布阶段)。
+- 稳定参考数据通过 migration 管理；测试用户和可变 demo 数据不得进入生产迁移。数据库关系、存储决策与迁移职责见[数据库文档](docs/database.md)。
 - 不得复用已退役资源；新增资源必须经过架构与生产变更评审。
-
-数据库关系与存储决策见[数据库文档](docs/database.md)。
 
 ## 前端与国际化
 
 - 用户可见文案全部走 i18n；namespace 必须保持完整。locale 改动按[验证门禁](#验证门禁)执行。
 - Astro 负责 SSR/页面边界，React island 只承载需要客户端状态的交互；不要把纯展示无理由改成 client component。
-- SSR 调用 API 使用进程内 dispatcher，浏览器调用使用同源 `/api`；不得从 Worker 内 self-fetch 生产域名。
+- SSR 调用 API 使用进程内 dispatcher；不得从 Worker 内 self-fetch 生产域名。
 - UI 改动遵循 [设计系统](docs/design-system.md)，并验证键盘、可访问名称、移动端和 reduced-motion。
 
 ## API 与认证
