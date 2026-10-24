@@ -65,9 +65,15 @@ Workers Builds 的推荐配置为（仓库升级不代表远程 Build variables 
 
 1. Build command：`pnpm install --frozen-lockfile && pnpm i18n:build && pnpm build`；该阶段只生成
    当前分支的 artifact，不重复执行 PR 已通过的 `pnpm test:ci`、E2E 或 dry-run；
-2. Build variables：`NODE_VERSION=24.22.0`、`PNPM_VERSION=12.14.0`、
-   `SKIP_DEPENDENCY_INSTALL=1`；启用 build cache。仓库同时通过 `.node-version` 和
-   `packageManager` 固定本地与 CI 工具链；生产依赖审计由 PR CI 执行，high/critical 漏洞阻止合并；
+2. Build variables：`SKIP_DEPENDENCY_INSTALL=1`；启用 build cache。Node 版本由根目录
+   `.node-version` 固定，pnpm 版本由 `package.json` 的 `packageManager` 固定；不要新增重复的
+   `NODE_VERSION` / `PNPM_VERSION` 覆盖。既有远程变量须先核对是否与仓库一致，删除或调整仍须
+   走受保护的平台配置流程；本次仓库变更不代表远端变量已修改。CI 从相同文件读取版本，安装
+   依赖前校验实际工具链；Workers Builds 在 `pnpm build` 启动 Astro 前校验，版本不符即停止，
+   不进入部署。该检查不保证安装依赖阶段已经使用正确版本。生产依赖审计由 PR CI 执行，
+   high/critical 漏洞阻止合并。
+   版本选择依据见 [Cloudflare 构建镜像文档](https://developers.cloudflare.com/workers/ci-cd/builds/build-image/#package-manager-versions)：
+   `packageManager` 使用精确版本，lockfile 决定依赖安装使用的包管理器。
 3. Deploy command：`pnpm deploy:production`。脚本先按 `migrations/production-phases.json`
    校验 migration 名称、顺序、SQL 摘要及启用阶段，再用临时 Wrangler 配置只提供获准的连续前缀。
    migration 成功后才执行 `wrangler deploy --env production`；不能直接对完整目录执行远程 apply；

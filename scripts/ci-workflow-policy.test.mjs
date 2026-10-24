@@ -47,3 +47,16 @@ test("labels pull requests from trusted path rules", async () => {
     assert.ok(workflow.includes(`name: "${label}"`));
   }
 });
+
+test("CI reads toolchain declarations and checks actual versions before install", async () => {
+  const workflow = await readFile(
+    new URL("../.github/workflows/ci.yml", import.meta.url),
+    "utf8",
+  );
+  assert.match(workflow, /node-version-file: \.node-version/u);
+  assert.doesNotMatch(workflow, /node-version:|version: 12\.14\.0/u);
+  const checkIndex = workflow.indexOf("run: node scripts/check-toolchain.mjs");
+  assert.ok(
+    checkIndex >= 0 && checkIndex < workflow.indexOf("run: pnpm install"),
+  );
+});

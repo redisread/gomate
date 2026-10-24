@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { checkToolchain } from "./toolchain.mjs";
 import { cp } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import path from "node:path";
@@ -55,6 +56,7 @@ function runAstroBuild() {
 
 async function main() {
   assertProductionBuildEnvironment();
+  checkToolchain();
   await runAstroBuild();
   await cp(
     path.join(ROOT, ".assetsignore"),

@@ -4,6 +4,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import net from "node:net";
+import { checkToolchain } from "./toolchain.mjs";
 import path from "node:path";
 
 const ROOT = process.cwd();
@@ -48,29 +49,20 @@ function parseDotenv(filePath) {
 }
 
 function checkRuntime() {
-  const pkg = JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8"));
-  let pnpmVersion;
   try {
-    const pnpmPath = process.env.npm_execpath;
-    const isJavaScriptLauncher = Boolean(
-      pnpmPath && /\.[cm]?js$/u.test(pnpmPath),
+    ok(
+      checkToolchain({
+        strict:
+          IS_CI ||
+          process.env.WORKERS_CI === "1" ||
+          ["1", "true"].includes(process.env.CI),
+        warn,
+      }),
     );
-    pnpmVersion = execFileSync(
-      isJavaScriptLauncher ? process.execPath : (pnpmPath ?? "pnpm"),
-      isJavaScriptLauncher ? [pnpmPath, "--version"] : ["--version"],
-      { encoding: "utf8" },
-    ).trim();
-  } catch {
-    return fail("pnpm 不可用");
+    return true;
+  } catch (error) {
+    return fail(error.message);
   }
-  const nodeMajor = Number(process.versions.node.split(".")[0]);
-  if (nodeMajor < 22) {
-    return fail(
-      `Node 版本不满足 ${pkg.engines.node}：当前为 ${process.version}`,
-    );
-  }
-  ok(`Node ${process.version} / pnpm ${pnpmVersion}`);
-  return true;
 }
 
 function checkSecrets() {
