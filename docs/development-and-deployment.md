@@ -133,6 +133,8 @@ Cloudflare adapter 的 Vite 插件要求同步使用 Wrangler 4.151；直接依�
 
 ## 依赖兼容边界
 
+- `pnpm-workspace.yaml` 对已知漏洞使用同主版本的最小覆盖：Undici 7 固定至少 7.30.1、Undici 8 至少 8.12.2，修复 [GHSA-xjj6-f33q-929c](https://github.com/nodejs/undici/security/advisories/GHSA-xjj6-f33q-929c)；受影响的 Zod 4 传递依赖统一到应用已使用的 4.6.7，满足审计要求的 >=4.6.6。覆盖范围仅命中旧版本，上游锁定安全版本后可移除；每次调整必须运行生产依赖审计及应用/Worker 回归。
+
 - 本地推荐与 PR CI 工具链版本统一读取 `.node-version` 和 `package.json#packageManager`。生产构建环境变量由受保护平台配置管理，仓库修改不证明远端变量已同步；依赖保留 Node >=22.23.3 的最低支持范围。
 - TypeScript 使用 6.0.3；截至 2026-10-19，最新 TypeScript 7.0.2 超出 `@astrojs/check@0.9.10` 的 `^5 || ^6` 和 `typescript-eslint@8.71.2` 的 `<6.1` peer 范围。
 - `eslint-plugin-react-hooks` 使用最新版本，明确保留原有 `rules-of-hooks:error` / `exhaustive-deps:warn` 门禁。React Compiler 新增规则不随依赖更新隐式启用；采用 Compiler 前需要单独审查 SSR 初始化、外部状态同步和 ref 生命周期。
