@@ -21,7 +21,7 @@
     "test:server": "vitest run --config vitest.server.config.ts",
     "test:worker": "pnpm build && pnpm test:worker:run",
     "test:worker:run": "vitest run --config vitest.worker.config.ts",
-    "test:build-guard": "node --test scripts/preview-alias.test.mjs scripts/start-worktree.test.mjs scripts/ci-workflow-policy.test.mjs scripts/production-build-guard.test.mjs scripts/smoke-production-write-boundary.test.mjs scripts/validate-admin-i18n.test.mjs scripts/production-migrations.test.mjs",
+    "test:build-guard": "node --test scripts/toolchain.test.mjs scripts/preview-alias.test.mjs scripts/start-worktree.test.mjs scripts/ci-workflow-policy.test.mjs scripts/production-build-guard.test.mjs scripts/smoke-production-write-boundary.test.mjs scripts/validate-admin-i18n.test.mjs scripts/production-migrations.test.mjs",
     "test:db-reset": "node --test scripts/reset-local-db.test.mjs scripts/minimal-product-d1.test.mjs",
     "test:ci": "pnpm i18n:validate && pnpm test:build-guard && pnpm test:db-reset && pnpm db:check && pnpm lint && pnpm type-check && pnpm check && pnpm test && pnpm test:server && pnpm build && pnpm test:worker:run",
     "test:e2e": "playwright test --project=chromium",

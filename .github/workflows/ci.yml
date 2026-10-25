@@ -24,14 +24,15 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
-        with:
-          version: 12.14.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24.22.0
+          node-version-file: .node-version
           cache: pnpm
+
+      - name: Check toolchain
+        run: node scripts/check-toolchain.mjs
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
