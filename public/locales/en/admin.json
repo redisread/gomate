@@ -69,7 +69,7 @@
   "formNameRequired": "Name *",
   "formSettingsTitle": "Advanced Settings",
   "formSettingsTitleRecommended": "Advanced Settings (Recommended)",
-  "formSlug": "Slug (auto-generated if left blank)",
+  "formSlug": "English alias",
   "formSubtitle": "Subtitle",
   "formSubtitleHint": "Briefly describe the location's unique features, shown on the location card",
   "formTags": "Location Tags",
@@ -191,7 +191,8 @@
     "makeAdmin": "Make admin",
     "revokeAdmin": "Revoke admin",
     "roleConfirm": "Confirm this administrator role change?",
-    "locationTeamRefs": "Locations / teams"
+    "locationTeamRefs": "Usage count",
+    "locationTeamRefsHint": "Locations / teams"
   },
   "errors": {
     "adminSelfRoleChange": "You cannot change administrator access for your current account.",
@@ -216,7 +217,8 @@
     "saving": "Saving…",
     "saved": "Your idea is saved as a draft.",
     "optionalSaveFailed": "The draft was saved, but its tags could not be attached. Retry in the full editor.",
-    "continueEditing": "Continue with all fields"
+    "continueEditing": "Continue with all fields",
+    "optionalFieldsHint": "Optional: cover, suitable activities and tags."
   },
   "locationsManagement": {
     "title": "Locations",
@@ -240,13 +242,13 @@
     "allLifecycles": "All activity statuses",
     "allRecruitmentStatuses": "All recruitment statuses",
     "readOnly": "Team information is currently read-only.",
-    "loadedCount": "{count} teams loaded · Newest created first",
+    "loadedCount": "{count} teams loaded",
     "retry": "Retry",
     "listLabel": "Team list",
     "teamId": "Team ID",
     "leader": "Leader",
     "location": "Location",
-    "participants": "Members / capacity",
+    "participants": "Capacity",
     "viewDetail": "View details",
     "viewDetailNamed": "View details: {title}",
     "noTeams": "No matching teams",
@@ -260,7 +262,15 @@
     "cancelledAt": "Cancelled at",
     "descriptionLabel": "Description",
     "requirements": "Requirements",
-    "members": "Current members (including leader)",
-    "joinedAt": "Joined at"
-  }
+    "members": "Current members",
+    "joinedAt": "Joined at",
+    "sortHint": "Newest first by creation time.",
+    "participantsHint": "Current members / maximum members",
+    "membersHint": "Includes the leader",
+    "expiredUnformed": "Expired without forming",
+    "recruitmentOpen": "Recruiting",
+    "recruitmentClosed": "Recruitment closed",
+    "tags": "Team tags"
+  },
+  "formSlugHint": "Optional; generated automatically if left blank."
 }

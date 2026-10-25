@@ -120,6 +120,7 @@ export function AdminTagsManager() {
               </SwLabel>
               <div className="text-sm">
                 <span className="block text-muted-foreground">{t("admin.management.locationTeamRefs")}</span>
+                <span className="block text-xs text-muted-foreground">{t("admin.management.locationTeamRefsHint")}</span>
                 <span className="font-medium">{tag.references.locations} / {tag.references.teams}</span>
               </div>
               <div className="flex gap-2">

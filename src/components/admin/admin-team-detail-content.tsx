@@ -57,6 +57,7 @@ export function AdminTeamDetailContent({
           [
             t("admin.teamsManagement.participants"),
             `${team.activeParticipantCount} / ${team.maxParticipants}`,
+            t("admin.teamsManagement.participantsHint"),
           ],
           [t("admin.teamsManagement.startAt"), date(team.startAt)],
           [t("admin.teamsManagement.endAt"), date(team.endAt)],
@@ -64,10 +65,13 @@ export function AdminTeamDetailContent({
           [t("admin.teamsManagement.cancelledAt"), date(team.cancelledAt)],
           [t("admin.colCreatedAt"), date(team.createdAt)],
           [t("admin.colUpdatedAt"), date(team.updatedAt)],
-        ].map(([label, value]) => (
+        ].map(([label, value, hint]) => (
           <div key={label} className="min-w-0">
             <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="mt-1 break-words tabular-nums">{value}</dd>
+            <dd className="mt-1 break-words tabular-nums">
+              {value}
+              {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
+            </dd>
           </div>
         ))}
       </dl>
@@ -93,13 +97,14 @@ export function AdminTeamDetailContent({
       )}
       {Boolean(team.tags?.length) && (
         <section>
-          <h3 className="mb-2 font-semibold">{t("admin.formTags")}</h3>
+          <h3 className="mb-2 font-semibold">{t("admin.teamsManagement.tags")}</h3>
           <p>{tagNames}</p>
         </section>
       )}
       <section className="border-t border-border pt-5">
         <h3 className="mb-3 font-semibold">
           {t("admin.teamsManagement.members")}
+          <span className="ml-2 text-sm font-normal text-muted-foreground">{t("admin.teamsManagement.membersHint")}</span>
         </h3>
         <ul className="divide-y divide-border">
           <li className="space-y-1 py-3">

@@ -138,6 +138,7 @@ export function AdminTeamsManager({
               count: list.teams.length,
             })}
       </div>
+      <p className="text-sm text-muted-foreground">{t("admin.teamsManagement.sortHint")}</p>
       {list.error && (
         <SwAlert as="div" variant="plain"
           role="alert"

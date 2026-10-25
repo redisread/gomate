@@ -47,6 +47,7 @@ export function AdminTeamRow({ team, t, locale, disabled, onView }: Props) {
             [
               t("admin.teamsManagement.participants"),
               `${team.activeParticipantCount} / ${team.maxParticipants}`,
+              t("admin.teamsManagement.participantsHint"),
             ],
             [
               t("admin.colCreatedAt"),
@@ -55,10 +56,13 @@ export function AdminTeamRow({ team, t, locale, disabled, onView }: Props) {
                 timeStyle: "short",
               }).format(new Date(team.createdAt)),
             ],
-          ].map(([label, value]) => (
+          ].map(([label, value, hint]) => (
             <div key={label} className="min-w-0">
               <dt className="text-xs text-muted-foreground">{label}</dt>
-              <dd className="mt-1 break-words tabular-nums">{value}</dd>
+              <dd className="mt-1 break-words tabular-nums">
+                {value}
+                {hint && <span className="block text-xs text-muted-foreground">{hint}</span>}
+              </dd>
             </div>
           ))}
         </dl>

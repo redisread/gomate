@@ -113,7 +113,7 @@ export function AdminQuickLocationForm({
         </p>
         {optionalSaveFailed && (
           <SwAlert as="p" variant="plain" role="alert" className="rounded-lg bg-amber-500/10 p-3 text-sm text-foreground">
-            {t("admin.quickDraft.optionalSaveFailed")}
+            <span className="whitespace-pre-line">{t("admin.quickDraft.optionalSaveFailed")}</span>
           </SwAlert>
         )}
         <SwButton as="a" variant="plain" size="inherit" href={`/admin/locations/${created.id}/edit`} className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
@@ -142,7 +142,8 @@ export function AdminQuickLocationForm({
       </SwLabel>
 
       <Collapsible className="rounded-lg border border-border p-3">
-        <CollapsibleTrigger type="button" className="min-h-11 cursor-pointer py-2 text-sm font-semibold">{t("admin.quickDraft.optionalFields")}</CollapsibleTrigger>
+        <CollapsibleTrigger aria-describedby="quick-optional-hint" type="button" className="min-h-11 cursor-pointer py-2 text-sm font-semibold">{t("admin.quickDraft.optionalFields")}</CollapsibleTrigger>
+        <p id="quick-optional-hint" className="text-sm text-muted-foreground">{t("admin.quickDraft.optionalFieldsHint")}</p>
         <CollapsibleContent className="mt-3 space-y-4">
           <SwLabel className="grid gap-1.5 text-sm font-medium">
             {t("admin.quickDraft.cover")}

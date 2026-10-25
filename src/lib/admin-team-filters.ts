@@ -11,12 +11,12 @@ export const TEAM_LIFECYCLE_KEYS = {
   in_progress: "enums.teamLifecycle.in_progress",
   completed: "enums.teamLifecycle.completed",
   cancelled: "enums.teamLifecycle.cancelled",
-  expired_unformed: "enums.teamLifecycle.expired_unformed",
+  expired_unformed: "admin.teamsManagement.expiredUnformed",
 } satisfies Record<TeamLifecycle, TranslationKey>;
 
 export const RECRUITMENT_STATUS_KEYS = {
-  open: "enums.recruitmentStatus.open",
-  closed: "enums.recruitmentStatus.closed",
+  open: "admin.teamsManagement.recruitmentOpen",
+  closed: "admin.teamsManagement.recruitmentClosed",
 } satisfies Record<RecruitmentStatus, TranslationKey>;
 
 export function readAdminTeamFilters(

@@ -159,7 +159,7 @@ export function Field({
         <p
           id={controlId ? `${controlId}-description` : undefined}
           className={
-            error ? "text-xs text-destructive" : "text-xs text-muted-foreground"
+            error ? "whitespace-pre-line text-xs text-destructive" : "whitespace-pre-line text-xs text-muted-foreground"
           }
         >
           {error || hint}

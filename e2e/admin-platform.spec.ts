@@ -128,7 +128,7 @@ test.describe("admin platform", () => {
     await expect(page.locator("h1")).toHaveCount(1);
     await expect(page.locator("aside")).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "新增地点" }).first(),
+      page.getByRole("link", { name: "添加地点" }).first(),
     ).toHaveAttribute("href", "/admin/locations/new");
     await expectNoHorizontalOverflow(page);
 
@@ -165,7 +165,7 @@ test.describe("admin platform", () => {
         navigation: "后台导航",
         language: "中文",
         locationsHref: "/admin/locations",
-        activityLabel: "适合的活动类型",
+        activityLabel: "适合活动",
       },
       {
         pathPrefix: "/en",
@@ -187,7 +187,7 @@ test.describe("admin platform", () => {
         .first();
       await expect(navigation).toBeVisible();
       await expect(
-        navigation.getByRole("link", { name: /地点管理|Locations/u }),
+        navigation.getByRole("link", { name: /^(地点|Locations)$/u }),
       ).toHaveAttribute("href", locale.locationsHref);
       await expect(
         page.getByRole("button", { name: locale.language }).first(),
@@ -210,7 +210,7 @@ test.describe("admin platform", () => {
     const pages = [
       {
         path: "/admin/locations",
-        heading: "地点管理",
+        heading: "地点",
         locale: "zh-CN",
       },
       {
@@ -220,7 +220,7 @@ test.describe("admin platform", () => {
       },
       {
         path: "/admin/tags",
-        heading: "标签管理",
+        heading: "标签",
         locale: "zh-CN",
       },
       {
@@ -230,7 +230,7 @@ test.describe("admin platform", () => {
       },
       {
         path: "/admin/users",
-        heading: "用户与管理员",
+        heading: "用户",
         locale: "zh-CN",
       },
       {
@@ -270,10 +270,13 @@ test.describe("admin platform", () => {
       await page.emulateMedia({ colorScheme: width === 320 ? "dark" : "light", reducedMotion: "reduce" });
       await page.goto(`/admin/locations/${locationId}/edit`);
       await expect(page.getByRole("heading", { name: "基本信息", level: 2 })).toBeVisible();
-      await expect(page.getByRole("heading", { name: "封面与季节", level: 2 })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "图片季节", level: 2 })).toBeVisible();
       await expect(page.getByRole("button", { name: "基本信息", exact: true })).toHaveCount(0);
-      await expect(page.getByLabel("名称 *", { exact: true })).toBeVisible();
-      const settings = page.getByRole("button", { name: /高级设置/ });
+      await expect(page.getByLabel("地点名称 *", { exact: true })).toBeVisible();
+      await expect(page.getByLabel("英文别名", { exact: true })).toHaveAccessibleDescription("可不填，系统会自动生成");
+      await expect(page.getByText("适合季节", { exact: true })).toBeVisible();
+      await expect(page.getByText("逗号分隔", { exact: false })).toHaveCount(0);
+      const settings = page.getByRole("button", { name: /更多信息/ });
       await settings.focus();
       await settings.press("Space");
       await expect(settings).toHaveAttribute("aria-expanded", "false");
@@ -283,7 +286,7 @@ test.describe("admin platform", () => {
       const facilities = page.getByRole("button", { name: "配套设施", exact: true });
       await expect(facilities).toBeVisible();
       expect((await facilities.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-      expect((await page.getByRole("button", { name: "关联标签", exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      expect((await page.getByRole("button", { name: "地点标签", exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
       await expect(facilities).toHaveAttribute("aria-expanded", "true");
       await facilities.focus();
       await facilities.press("Space");
@@ -326,7 +329,7 @@ test.describe("admin platform", () => {
       });
       await expect.poll(() => uploads.length).toBe(1);
       page.once("dialog", (dialog) => dialog.accept());
-      const discard = page.getByRole("button", { name: "放弃更改", exact: true });
+      const discard = page.getByRole("button", { name: "放弃修改", exact: true });
       await discard.click();
       await expect(name).toHaveValue(originalName);
       const completed = page.waitForResponse("**/api/upload/location");
@@ -363,7 +366,7 @@ test.describe("admin platform", () => {
     await expect(name).toHaveValue(`Storage test ${RUN_ID}`);
     await name.fill(`Storage saved ${RUN_ID}`);
     await page.getByRole("region", { name: "地点保存与发布操作" }).getByRole("button", { name: "保存草稿" }).click();
-    await expect(page.getByText("保存成功", { exact: true })).toBeVisible();
+    await expect(page.getByText("已保存", { exact: true })).toBeVisible();
     const persisted = await (await page.request.get(`/api/locations/${draft.id}/admin`)).json();
     expect(persisted.location.name).toBe(`Storage saved ${RUN_ID}`);
   });
@@ -398,7 +401,7 @@ test.describe("admin platform", () => {
       "href",
       "/admin/locations",
     );
-    await expect(page.getByRole("link", { name: "查看公开页" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "查看页面" })).toHaveCount(0);
 
     const actions = page.getByRole("region", { name: "地点保存与发布操作" });
     await expect(actions.getByRole("status")).toHaveText("草稿");
@@ -406,19 +409,19 @@ test.describe("admin platform", () => {
     await actions.getByRole("button", { name: "发布地点" }).click();
 
     const coverField = page.locator("#location-field-coverImageUrl");
-    await expect(coverField.getByText("请上传封面图片")).toBeVisible();
-    await expect(page.getByText("坐标可选；如填写，请同时填写纬度和经度。可在高德地图/百度地图右键复制坐标")).toBeVisible();
-    await expect(page.getByText("纬度和经度需要同时填写")).toHaveCount(0);
+    await expect(coverField.getByText("请添加封面图片")).toBeVisible();
+    await expect(page.getByText("可以不填；填写时需同时提供经纬度")).toBeVisible();
+    await expect(page.getByText("请同时填写经度和纬度")).toHaveCount(0);
     await expect.poll(() => coverField.evaluate((element) =>
       element.contains(document.activeElement),
     )).toBe(true);
 
     await page.locator("#location-field-latitude").fill("22.5");
     await actions.getByRole("button", { name: "发布地点" }).click();
-    await expect(page.getByText("纬度和经度需要同时填写")).toBeVisible();
+    await expect(page.getByText("请同时填写经度和纬度")).toBeVisible();
 
     await page.goto(`/admin/locations/${locationId}/edit`);
-    await expect(page.getByRole("link", { name: "查看公开页" })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: "查看页面" })).toHaveAttribute(
       "href",
       `/locations/${locationId}`,
     );
@@ -508,9 +511,9 @@ test.describe("admin platform", () => {
       [...scriptUrls].some((url) => /location-edit|lazy-location/u.test(url)),
     ).toBe(false);
 
-    const trigger = page.getByRole("menuitem", { name: "快速添加地点" });
+    const trigger = page.getByRole("menuitem", { name: "快速添加" });
     await trigger.click();
-    const dialog = page.getByRole("dialog", { name: "快速记录地点" });
+    const dialog = page.getByRole("dialog", { name: "快速添加" });
     await expect(dialog).toBeVisible();
     const nameInput = dialog.getByLabel("地点名称");
     await expect(nameInput).toBeFocused();
@@ -523,10 +526,10 @@ test.describe("admin platform", () => {
     const region = dialog.getByLabel("地区");
     await expect(region.locator("option")).not.toHaveCount(1);
     await region.selectOption({ index: 1 });
-    await dialog.getByRole("button", { name: "保存为草稿" }).click();
-    await expect(dialog.getByText("灵感已保存为草稿。")).toBeVisible();
+    await dialog.getByRole("button", { name: "保存草稿" }).click();
+    await expect(dialog.getByText("地点已保存为草稿")).toBeVisible();
     await expect(
-      dialog.getByRole("link", { name: "继续完善全部字段" }),
+      dialog.getByRole("link", { name: "继续编辑" }),
     ).toHaveAttribute("href", /\/admin\/locations\/[^/]+\/edit/u);
     await page.keyboard.press("Escape");
     await expect(userMenu).toBeFocused();
@@ -538,7 +541,7 @@ test.describe("admin platform", () => {
     await expect(page.getByTestId("nav-admin-mobile")).toBeVisible();
     await expect(page.getByRole("navigation", { name: "移动端导航" }).getByRole("link").first()).toBeVisible();
     await page.screenshot({ path: "test-results/personal-menu-mobile.png" });
-    const mobileTrigger = page.getByRole("button", { name: "快速添加地点" });
+    const mobileTrigger = page.getByRole("button", { name: "快速添加" });
     await mobileTrigger.click();
     await expect(dialog).toBeVisible();
     const mobileBox = await dialog.locator("[data-gomate-modal-panel]").boundingBox();
@@ -573,7 +576,7 @@ test.describe("admin platform", () => {
         else if (user) await page.locator("[data-user-menu] > button").click();
         else await expect(page.getByTestId("nav-login")).toBeVisible();
         await expect(page.getByRole("link", { name: "管理后台", exact: true })).toHaveCount(0);
-        await expect(page.getByRole("button", { name: "快速添加地点" })).toHaveCount(0);
+        await expect(page.getByRole("button", { name: "快速添加" })).toHaveCount(0);
       }
     }
   });

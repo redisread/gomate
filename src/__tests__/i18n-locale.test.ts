@@ -25,7 +25,7 @@ describe("locale support", () => {
       [locale]: { admin: localesData[locale].admin },
     });
 
-    expect(ssr.t("admin.locationsManagement.title")).toBe("地点管理");
+    expect(ssr.t("admin.locationsManagement.title")).toBe("地点");
   });
 
   it("supports only Chinese and English", () => {
