@@ -15,6 +15,7 @@ for (const locale of ["zh-CN", "en"]) {
     await page.goto(locale === "en" ? "/en" : "/");
     const section = page.getByTestId("home-random-discovery");
     const button = section.getByRole("button");
+    await expect(button).toBeEnabled();
     await button.focus();
     const firstResponse = page.waitForResponse((r) =>
       r.url().includes("/api/locations/random"),
@@ -68,8 +69,13 @@ test("mobile reveal handles interruptions, failed photos, retry and empty catalo
     reducedMotion: "no-preference",
   });
   let calls = 0;
+  let releaseResponse!: () => void;
+  const firstResponse = new Promise<void>((resolve) => {
+    releaseResponse = resolve;
+  });
   await page.route("**/api/locations/random?*", async (route) => {
     calls++;
+    if (calls === 1) await firstResponse;
     if (calls === 2)
       return route.fulfill({ status: 503, json: { success: false } });
     return route.fulfill({
@@ -94,6 +100,7 @@ test("mobile reveal handles interruptions, failed photos, retry and empty catalo
   await button.click();
   await expect(button).toBeDisabled();
   await page.emulateMedia({ reducedMotion: "reduce" });
+  releaseResponse();
   await expect(section.getByTestId("random-location-result")).toBeVisible();
   await expect(section.getByRole("status")).toContainText("目前只有");
   expect(calls).toBe(1);
@@ -148,5 +155,33 @@ test("photo wall fits tablet and desktop in both themes", async ({
         ),
       });
     }
+  }
+});
+
+test("random action stays disabled until hydration attaches its handler", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const scripts = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/_astro/*.js", async (route) => {
+    await scripts;
+    await route.continue();
+  });
+  try {
+    await page.goto("/", { waitUntil: "commit" });
+    const button = page
+      .getByTestId("home-random-discovery")
+      .getByRole("button");
+    await expect(button).toBeVisible();
+    await expect(button).toBeDisabled();
+    release();
+    await expect(button).toBeEnabled();
+    await button.focus();
+    await button.press("Enter");
+    await expect(page.getByTestId("random-location-result")).toBeVisible();
+  } finally {
+    release();
   }
 });

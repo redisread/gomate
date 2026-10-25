@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useReducedMotion } from "@/hooks/use-reduced-motion";
 import { ArrowUpRight, Compass, MapPin, Shuffle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import type { Location } from "@/lib/types";
 import { useRandomLocation } from "./use-random-location";
 import "./random-discovery.css";
+
+const subscribeHydration = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
 
 function Photo({ src }: { src: string | null }) {
   const [failed, setFailed] = useState(false);
@@ -32,6 +36,11 @@ export function HomeRandomDiscovery({ locations }: { locations: Location[] }) {
   const { t } = useI18n(["home"]);
   const { result, busy, failed, draw } = useRandomLocation();
   const place = result?.location;
+  const hydrated = useSyncExternalStore(
+    subscribeHydration,
+    clientReady,
+    serverReady,
+  );
   const reduced = useReducedMotion();
   const [frame, setFrame] = useState(0);
   useEffect(() => {
@@ -130,7 +139,8 @@ export function HomeRandomDiscovery({ locations }: { locations: Location[] }) {
         <button
           type="button"
           onClick={draw}
-          aria-disabled={busy}
+          disabled={!hydrated}
+          aria-disabled={!hydrated || busy}
           className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground aria-disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
         >
           <Shuffle aria-hidden="true" className="h-4 w-4" />
