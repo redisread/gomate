@@ -1,6 +1,7 @@
 import { createApiApp } from "../../lib/openapi";
 
 import queries from "./queries";
+import random from "./random";
 import mutations from "./mutations";
 
 const locations = createApiApp();
@@ -9,6 +10,7 @@ const locations = createApiApp();
 // GET /locations
 // GET /locations/:id
 // GET /locations/:id/tags
+locations.route("/", random);
 locations.route("/", queries);
 
 // Mount mutation routes (POST, PUT, DELETE)

@@ -53,5 +53,20 @@
     "swipeHint": "Drag a card, or use the buttons and arrow keys to switch teams",
     "emptyTitle": "The next team can start with you",
     "emptyDescription": "Choose a place, set a departure time, and invite others to join."
+  },
+  "randomDiscovery": {
+    "title": "Leave your next stop to chance",
+    "scope": "Nationwide · Random discovery",
+    "invitation": "What will you discover?",
+    "hint": "From mountain trails to city corners, let chance take you somewhere new.",
+    "draw": "Pick a place for me",
+    "again": "Pick another",
+    "selecting": "Finding your next stop…",
+    "retry": "Try again",
+    "view": "View place",
+    "empty": "No places to explore yet",
+    "error": "Could not pick a place. Please try again.",
+    "onlyOne": "There is only one public place for now. Come back for more.",
+    "fair": "Every place has a chance, regardless of popularity."
   }
 }

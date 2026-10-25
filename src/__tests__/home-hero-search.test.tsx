@@ -11,12 +11,8 @@ vi.mock("@/hooks/useI18n", () => ({
   }),
 }));
 
-vi.mock("../components/features/home/home-location-stack", () => ({
-  HomeLocationStack: () => <div data-testid="home-location-stack" />,
-}));
-
-vi.mock("../components/features/home/home-departure-stack", () => ({
-  HomeDepartureStack: () => <div data-testid="home-departure-stack" />,
+vi.mock("../components/features/home/home-random-discovery", () => ({
+  HomeRandomDiscovery: () => <div data-testid="home-random-discovery" />,
 }));
 
 describe("HomeHero", () => {
@@ -43,11 +39,11 @@ describe("HomeHero", () => {
 
     expect(screen.queryByRole("search")).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText("common.searchPlaceholder")).not.toBeInTheDocument();
-    expect(screen.getByTestId("home-departure-stack")).toBeInTheDocument();
+    expect(screen.getByTestId("home-random-discovery")).toBeInTheDocument();
     expect(screen.queryByTestId("home-location-stack")).not.toBeInTheDocument();
   });
 
-  it("falls back to real locations when no team is recruiting", () => {
+  it("keeps random discovery visible without recruiting teams", () => {
     render(
       <HomeHero
         data={
@@ -61,7 +57,7 @@ describe("HomeHero", () => {
       />,
     );
 
-    expect(screen.getByTestId("home-location-stack")).toBeInTheDocument();
+    expect(screen.getByTestId("home-random-discovery")).toBeInTheDocument();
     expect(screen.queryByTestId("home-departure-stack")).not.toBeInTheDocument();
   });
 });
