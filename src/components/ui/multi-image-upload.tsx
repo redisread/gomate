@@ -238,7 +238,7 @@ export function MultiImageUpload({
               /* 错误态 */
               <div className="flex flex-col items-center gap-1 p-2 text-center">
                 <AlertCircle className="h-5 w-5 text-red-400" />
-                <span className="text-3xs text-red-500 leading-tight">{item.error}</span>
+                <span className="whitespace-pre-line text-3xs text-red-500 leading-tight">{item.error}</span>
                 <SwButton variant="plain" size="inherit"
                   type="button"
                   onClick={() => handleClearError(item.key)}
@@ -281,7 +281,7 @@ export function MultiImageUpload({
 
       {/* 底部计数 + 提示 */}
       <div className="flex items-center justify-between px-1">
-        <p className="text-xs text-stone-400">
+        <p className="whitespace-pre-line text-xs text-stone-400">
           {onSetCover
             ? t('ui.upload.coverHint')
             : t('ui.upload.dragToSort').replace("{size}", "5")}

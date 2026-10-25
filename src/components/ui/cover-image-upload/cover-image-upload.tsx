@@ -338,7 +338,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
           <div className="flex flex-col items-center gap-2 px-6 text-center">
             <AlertCircle className="h-8 w-8 text-red-500" />
             <p className="text-sm font-medium text-red-600 dark:text-red-400">{t("ui.upload.uploadFailed")}</p>
-            <p className="text-xs text-destructive/80">{uploadState.message}</p>
+            <p className="whitespace-pre-line text-xs text-destructive/80">{uploadState.message}</p>
             <SwButton variant="plain" size="inherit"
               type="button"
               onClick={(e) => {
@@ -366,7 +366,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
                   {t("ui.upload.dropZoneHighlight")}
                 </span>
               </p>
-              <p className="mt-0.5 text-xs text-muted-foreground/60">
+              <p className="mt-0.5 whitespace-pre-line text-xs text-muted-foreground/60">
                 {t("ui.upload.formatHint").replace("{size}", "5")}
               </p>
               <p className="mt-1 text-xs text-gray-400">
@@ -381,7 +381,7 @@ export function CoverImageUpload({ value, onChange, disabled = false }: CoverIma
       {uploadState.phase === "error" && (
         <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30 px-3 py-2.5">
           <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-red-600 dark:text-red-400">{uploadState.message}</p>
+          <p className="whitespace-pre-line text-xs text-red-600 dark:text-red-400">{uploadState.message}</p>
         </div>
       )}
 

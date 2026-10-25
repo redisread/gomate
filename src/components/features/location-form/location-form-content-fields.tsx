@@ -18,13 +18,13 @@ interface LocationFormContentFieldsProps {
 }
 
 export function LocationFormContentFields({ formData, errors, isSaving, updateField }: LocationFormContentFieldsProps) {
-  const { t } = useI18n(["admin", "ui"]);
+  const { t } = useI18n(["admin"]);
   return (
     <SectionCard icon={<ImageIcon className="h-4 w-4" />} title={t("admin.formContentTitle")}>
-      <Field label={t("admin.formCoverImageRequired")} hint={t("ui.selectFromAlbum")} error={errors.coverImageUrl} fieldId="coverImageUrl">
+      <Field label={t("admin.formCoverImageRequired")} error={errors.coverImageUrl} fieldId="coverImageUrl">
         <CoverImageUpload value={formData.coverImageUrl} onChange={(url) => updateField("coverImageUrl", url)} disabled={isSaving} />
       </Field>
-      <Field label={t("admin.formAlbumTitle")} hint={t("ui.coverHint")}>
+      <Field label={t("admin.formAlbumTitle")}>
         <MultiImageUpload values={formData.images} onChange={(urls) => updateField("images", urls)}
           max={9} disabled={isSaving} coverImage={formData.coverImageUrl} onSetCover={(url) => updateField("coverImageUrl", url)} />
       </Field>

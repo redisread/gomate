@@ -96,7 +96,7 @@ describe("read-only administrator team management", () => {
       screen.getAllByText("enums.teamLifecycle.completed").length,
     ).toBeGreaterThan(0);
     expect(
-      screen.getAllByText("enums.recruitmentStatus.closed").length,
+      screen.getAllByText("admin.teamsManagement.recruitmentClosed").length,
     ).toBeGreaterThan(0);
   });
 

@@ -48,8 +48,8 @@ export function LocationFormBasicFields({ formData, errors, regions, activityTyp
           <SwInput id="location-input-subtitle" aria-invalid={!!errors.subtitle} aria-describedby="location-input-subtitle-description" type="text" value={formData.subtitle} onChange={(e) => updateField("subtitle", e.target.value)}
             className={cn(styledInput())} />
         </Field>
-        <Field error={errors.slug} controlId="location-input-slug" label={t("admin.formSlug")}>
-          <SwInput id="location-input-slug" aria-invalid={!!errors.slug} aria-describedby={errors.slug ? "location-input-slug-description" : undefined} type="text" value={formData.slug}
+        <Field error={errors.slug} controlId="location-input-slug" label={t("admin.formSlug")} hint={t("admin.formSlugHint")}>
+          <SwInput id="location-input-slug" aria-invalid={!!errors.slug} aria-describedby="location-input-slug-description" type="text" value={formData.slug}
             onChange={(e) => updateField("slug", e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
             placeholder={t("admin.placeholderSlug")} className={cn(styledInput())} />
         </Field>

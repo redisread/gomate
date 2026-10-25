@@ -61,7 +61,7 @@ test.describe("read-only administrator teams", () => {
     admin = await signUpUser(
       `team-admin-${runId}@gmail.com`,
       "test1234",
-      `队伍管理员 ${runId}`,
+      `队伍员 ${runId}`,
     );
     leader = await signUpUser(
       `team-leader-${runId}@gmail.com`,
@@ -155,7 +155,7 @@ test.describe("read-only administrator teams", () => {
     await expect(list.getByRole("listitem")).toHaveCount(1);
     await expect(list).toContainText(`${prefix} 已完成`);
     await page.getByLabel("招募状态", { exact: true }).selectOption("open");
-    await expect(page.getByText("没有匹配的队伍")).toBeVisible();
+    await expect(page.getByText("没有找到队伍")).toBeVisible();
     await page
       .getByLabel("活动状态", { exact: true })
       .selectOption("in_progress");
@@ -169,10 +169,10 @@ test.describe("read-only administrator teams", () => {
     await page.getByLabel("活动状态", { exact: true }).selectOption("");
     await page.getByLabel("招募状态", { exact: true }).selectOption("closed");
     await expect(list.getByRole("listitem")).toHaveCount(2);
-    await page.getByLabel("检索队伍", { exact: true }).fill(leader.name);
+    await page.getByLabel("搜索队伍", { exact: true }).fill(leader.name);
     await page.getByRole("button", { name: "搜索", exact: true }).click();
     await expect(list.getByRole("listitem")).toHaveCount(2);
-    await page.getByLabel("检索队伍", { exact: true }).fill(completedId);
+    await page.getByLabel("搜索队伍", { exact: true }).fill(completedId);
     await page.getByRole("button", { name: "搜索", exact: true }).click();
     await expect(list.getByRole("listitem")).toHaveCount(1);
     await expect(list).toContainText(`${prefix} 已完成`);
@@ -204,7 +204,7 @@ test.describe("read-only administrator teams", () => {
       detail.getByText(leader.name, { exact: true }).first(),
     ).toBeVisible();
     await expect(detail.getByRole("button")).toHaveCount(1);
-    const close = detail.getByRole("button", { name: "关闭队伍详情" });
+    const close = detail.getByRole("button", { name: "关闭详情" });
     await expect(close).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(close).toBeFocused();
@@ -229,8 +229,8 @@ test.describe("read-only administrator teams", () => {
     for (const [locale, title, search, view, dialog] of [
       [
         "zh-CN",
-        "队伍管理",
-        "检索队伍",
+        "队伍",
+        "搜索队伍",
         `查看详情：${prefix} 已完成`,
         "队伍详情",
       ],
