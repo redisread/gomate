@@ -14,7 +14,7 @@ describe("location API contracts", () => {
       Object.values(document.paths ?? {}).flatMap((path) =>
         Object.keys(path ?? {}),
       ),
-    ).toHaveLength(10);
+    ).toHaveLength(11);
     const list = document.paths?.["/locations"]?.get;
     expect(list?.parameters).toEqual(
       expect.arrayContaining([

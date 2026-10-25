@@ -1,0 +1,124 @@
+.random-stage {
+  position: relative;
+  isolation: isolate;
+  min-height: 27rem;
+  display: grid;
+  align-items: center;
+  padding-block: 2rem;
+}
+.random-wall {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  pointer-events: none;
+}
+.random-tile {
+  position: absolute;
+  width: 32%;
+  height: 34%;
+  overflow: hidden;
+  border: 0.3rem solid var(--card);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-card);
+  transition:
+    transform 0.6s ease,
+    opacity 0.6s ease;
+}
+.random-tile-0 {
+  left: -3%;
+  top: 2%;
+  transform: rotate(-12deg);
+}
+.random-tile-1 {
+  left: 34%;
+  top: -5%;
+  transform: rotate(5deg);
+}
+.random-tile-2 {
+  right: -3%;
+  top: 8%;
+  transform: rotate(14deg);
+}
+.random-tile-3 {
+  left: -4%;
+  bottom: 5%;
+  transform: rotate(8deg);
+}
+.random-tile-4 {
+  left: 34%;
+  bottom: -6%;
+  transform: rotate(-8deg);
+}
+.random-tile-5 {
+  right: -3%;
+  bottom: 6%;
+  transform: rotate(-12deg);
+}
+.random-center {
+  position: relative;
+  z-index: 1;
+  width: min(72%, 19rem);
+  margin-inline: auto;
+}
+.random-result {
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  animation: random-reveal 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.random-stage[data-revealed="true"] .random-tile {
+  opacity: 0.65;
+}
+.random-stage[data-revealed="true"] .random-tile:nth-child(3n + 1) {
+  transform: translateX(-15%) rotate(-15deg);
+}
+.random-stage[data-revealed="true"] .random-tile:nth-child(3n) {
+  transform: translateX(15%) rotate(15deg);
+}
+.random-stage[data-busy="true"] .random-tile {
+  animation: random-shuffle 0.65s ease-in-out alternate infinite;
+}
+.random-stage[data-busy="true"] .random-tile:nth-child(even) {
+  animation-delay: -0.3s;
+  animation-direction: alternate-reverse;
+}
+@keyframes random-shuffle {
+  from {
+    translate: 0 -8px;
+    rotate: -6deg;
+  }
+  to {
+    translate: 0 12px;
+    rotate: 6deg;
+  }
+}
+@keyframes random-reveal {
+  from {
+    opacity: 0.4;
+    transform: translateY(16px) scale(0.92) rotate(-3deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 639px) {
+  .random-stage {
+    min-height: 25rem;
+  }
+  .random-tile-1,
+  .random-tile-4 {
+    display: none;
+  }
+  .random-tile {
+    width: 42%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .random-discovery *,
+  .random-stage[data-busy="true"] .random-tile {
+    animation: none;
+    transition: none;
+  }
+}
