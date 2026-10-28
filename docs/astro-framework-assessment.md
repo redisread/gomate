@@ -111,6 +111,8 @@ Astro 官方将自身定位为内容驱动、服务端优先的框架，默认�
 
 ### Cloudflare 的支持是正式集成，不是边缘兼容方案
 
+2026-01-16，Astro Technology Company 宣布加入 Cloudflare，全职员工继续投入 Astro；官方同时承诺保持 MIT 开源、开放治理和多平台部署支持。这是生态投入的正面证据，不能据此保证未来支持年限，也不能推出 Astro 比同平台其他框架更适合 GoMate 的交互需求。[Astro 官方公告](https://astro.build/blog/joining-cloudflare/)、[Cloudflare 官方公告](https://blog.cloudflare.com/astro-joins-cloudflare/)
+
 Astro Cloudflare 适配器支持按需渲染；Astro 6 起开发与本地预览使用 Cloudflare Vite plugin 和 `workerd`。因此不能套用旧判断，声称“Astro 开发必然跑 Node、生产才首次遇到 Workers”。绑定可供服务端访问；但同运行时不等于线上数据库、网络和流量特征也相同。[Astro Cloudflare 适配器](https://docs.astro.build/en/guides/integrations-guide/cloudflare/)
 
 `astro/hono` 在 Astro 7.0 加入，是把 Astro 路由处理器组合到 Hono 的正式 API。Cloudflare 适配器还提供自定义 Worker 入口的 companion handlers。GoMate 将 Hono API 和 Astro 页面放进同一 Worker，在架构方向上有官方支持；是否正确仍需核对处理器顺序和本项目的认证、错误、重写行为，不能仅凭官方支持宣布所有组合都正确。[Astro Hono API](https://docs.astro.build/en/reference/modules/astro-hono/)、[Cloudflare 高级路由集成](https://docs.astro.build/en/guides/integrations-guide/cloudflare/#using-advanced-routing)
