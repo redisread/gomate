@@ -109,9 +109,18 @@ it("keeps the first image node visible through decode and hydration", async () =
 it("reloads a failed first DOM image after a successful retry", async () => {
   render(<GalleryImage src="/first.jpg" alt="首图" />);
   const failedImage = screen.getByRole("img", { name: "首图" });
+  Object.defineProperty(failedImage, "complete", { value: true });
   act(() => { requests[0].onerror?.(new Event("error")); });
   fireEvent.click(screen.getByRole("button", { name: "common.retry" }));
   await loaded(1);
   expect(screen.getByRole("img", { name: "首图" })).not.toBe(failedImage);
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+
+it("recovers a DOM image that failed before hydration when its first preload succeeds", async () => {
+  render(<GalleryImage src="/first.jpg" alt="首图" />);
+  const failedImage = screen.getByRole("img", { name: "首图" });
+  Object.defineProperty(failedImage, "complete", { value: true });
+  await loaded(0);
+  expect(screen.getByRole("img", { name: "首图" })).not.toBe(failedImage);
 });

@@ -1,3 +1,4 @@
+import { HydratedControls } from "@/components/ui/hydrated-controls";
 import { withI18n } from "@/i18n/context";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -12,6 +13,7 @@ function LocationsClientContent({ initialData }: { initialData?: LocationsListIn
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
+      <HydratedControls>
       <LocationsHero
         activeRole={ctx.activeRole}
         searchQuery={ctx.searchQuery}
@@ -49,6 +51,7 @@ function LocationsClientContent({ initialData }: { initialData?: LocationsListIn
           />
         </div>
       </section>
+      </HydratedControls>
       <Footer />
     </main>
   );

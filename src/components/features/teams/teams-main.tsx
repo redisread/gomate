@@ -1,3 +1,4 @@
+import { HydratedControls } from "@/components/ui/hydrated-controls";
 import { withI18n } from "@/i18n/context";
 
 import { Button as SwButton } from "@/components/starwind-react/button";
@@ -23,6 +24,7 @@ function TeamsClientContent({ initialData }: { initialData?: TeamsInitialData })
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
+      <HydratedControls>
       <TeamsHeader
         searchQuery={ctx.searchQuery}
         showFilters={ctx.showFilters}
@@ -122,6 +124,7 @@ function TeamsClientContent({ initialData }: { initialData?: TeamsInitialData })
           )}
         </div>
       </section>
+      </HydratedControls>
       <Footer />
     </main>
   );

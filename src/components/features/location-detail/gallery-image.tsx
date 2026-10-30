@@ -53,8 +53,9 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
   const [displayed, setDisplayed] = React.useState<{
     src: string;
     alt: string;
-    attempt: number;
-  }>({ src, alt, attempt: 0 });
+    revision: number;
+  }>({ src, alt, revision: 0 });
+  const viewportRef = React.useRef<HTMLDivElement>(null);
   const [readySrc, setReadySrc] = React.useState<string | null>(null);
   const [failed, setFailed] = React.useState(false);
   const [attempt, retry] = React.useReducer((value: number) => value + 1, 0);
@@ -78,8 +79,11 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
         window.clearTimeout(timeout);
         setEnter(hasDisplayed.current);
         hasDisplayed.current = true;
-        // Keep normal hydration stable, but replace a failed DOM image after retry.
-        setDisplayed({ src, alt, attempt });
+        // A DOM image can fail before hydration, or before an explicit retry.
+        // A successful detached preload does not restart that failed DOM request.
+        const visible = viewportRef.current?.querySelector<HTMLImageElement>('img:not([aria-hidden="true"])');
+        const reloadVisible = visible?.getAttribute("src") === src && visible.complete && visible.naturalWidth === 0;
+        setDisplayed((previous) => ({ src, alt, revision: previous.revision + (reloadVisible ? 1 : 0) }));
         setReadySrc(src);
       } catch {
         fail();
@@ -97,13 +101,14 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
 
   return (
     <div
+      ref={viewportRef}
       className="absolute inset-0"
       aria-busy={!failed && readySrc !== src}
     >
       <AnimatePresence initial={false}>
         {displayed && (
           <Picture
-            key={`${displayed.src}:${displayed.attempt}`}
+            key={`${displayed.src}:${displayed.revision}`}
             src={displayed.src}
             alt={displayed.alt}
             contain={contain}

@@ -129,7 +129,12 @@ test("team browsing restores its cursor and scroll, and a failed filter keeps on
     });
   }
   await page.context().addCookies([{ name: "gomate_locale", value: "zh-CN", url: baseURL! }]);
-  await page.goto(`/teams?q=${title}`);
+  let releaseHydration!: () => void;
+  const hydrationGate = new Promise<void>((resolve) => { releaseHydration = resolve; });
+  await page.route("**/_astro/teams-main.*.js", async (route) => { await hydrationGate; await route.continue(); });
+  await page.goto(`/teams?q=${title}`, { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("button", { name: "第 2 页", exact: true })).toBeDisabled();
+  releaseHydration();
   const cards = page.locator('section ul > li a[href^="/teams/"]');
   await expect(cards).toHaveCount(12);
   await page.getByRole("button", { name: "第 2 页", exact: true }).click();
@@ -152,4 +157,22 @@ test("team browsing restores its cursor and scroll, and a failed filter keeps on
   await expect(page.getByRole("alert").getByRole("button")).toHaveCount(1);
   await expect(cards).toHaveCount(12);
   await expect(page.getByText("更新未成功，当前显示上次的结果。")).toBeVisible();
+});
+
+test("a cover that failed before hydration recovers when the first preload succeeds", async ({ page, request }) => {
+  const location = (await (await request.get("/api/locations?limit=1")).json()).locations[0];
+  expect(location.coverImageUrl).toBeTruthy();
+  let releaseHydration!: () => void;
+  const gate = new Promise<void>((resolve) => { releaseHydration = resolve; });
+  await page.route("**/_astro/location-detail-client.*.js", async (route) => { await gate; await route.continue(); });
+  let imageRequests = 0;
+  await page.route(location.coverImageUrl, (route) => ++imageRequests === 1
+    ? route.fulfill({ status: 503, body: "unavailable" })
+    : route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="tan"/></svg>' }));
+  await page.goto(`/locations/${location.id}`, { waitUntil: "domcontentloaded" });
+  const cover = page.locator('[data-cover-card][aria-hidden="false"] img:not([aria-hidden="true"])');
+  await expect.poll(() => cover.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth === 0)).toBe(true);
+  releaseHydration();
+  await expect.poll(() => cover.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(600);
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });
