@@ -53,7 +53,8 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
   const [displayed, setDisplayed] = React.useState<{
     src: string;
     alt: string;
-  }>({ src, alt });
+    attempt: number;
+  }>({ src, alt, attempt: 0 });
   const [readySrc, setReadySrc] = React.useState<string | null>(null);
   const [failed, setFailed] = React.useState(false);
   const [attempt, retry] = React.useReducer((value: number) => value + 1, 0);
@@ -77,7 +78,8 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
         window.clearTimeout(timeout);
         setEnter(hasDisplayed.current);
         hasDisplayed.current = true;
-        setDisplayed({ src, alt });
+        // Keep normal hydration stable, but replace a failed DOM image after retry.
+        setDisplayed({ src, alt, attempt });
         setReadySrc(src);
       } catch {
         fail();
@@ -101,7 +103,7 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
       <AnimatePresence initial={false}>
         {displayed && (
           <Picture
-            key={displayed.src}
+            key={`${displayed.src}:${displayed.attempt}`}
             src={displayed.src}
             alt={displayed.alt}
             contain={contain}

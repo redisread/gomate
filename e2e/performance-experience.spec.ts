@@ -134,7 +134,7 @@ test("team browsing restores its cursor and scroll, and a failed filter keeps on
   await expect(cards).toHaveCount(12);
   await page.getByRole("button", { name: "第 2 页", exact: true }).click();
   await expect(page.locator('section ul[aria-busy="true"]')).toHaveCount(0);
-  expect(new URL(page.url()).searchParams.get("cursor")).toBeTruthy();
+  await expect.poll(() => new URL(page.url()).searchParams.get("cursor")).toBeTruthy();
   const href = await cards.nth(6).getAttribute("href");
   const listURL = page.url();
   await cards.nth(6).scrollIntoViewIfNeeded();

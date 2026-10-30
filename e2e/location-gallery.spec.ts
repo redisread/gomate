@@ -103,6 +103,7 @@ test.describe("touch", () => {
     await expect(
       page.getByRole("img", { name: "山间营地 · 图片 1", exact: true }),
     ).toHaveAttribute("src", "/gallery-a.svg");
+    await expect.poll(() => page.getByRole("img", { name: "山间营地 · 图片 1", exact: true }).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
     const open = page.getByRole("button", {
       name: "查看大图 · 图片 1",
       exact: true,
