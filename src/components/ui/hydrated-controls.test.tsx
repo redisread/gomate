@@ -9,7 +9,7 @@ it("enables controls only after hydration attaches their handlers, keeping nativ
   const content = <HydratedControls><button onClick={click}>Next</button><input aria-label="Search" /><a href="/teams/one">Team</a></HydratedControls>;
   const container = document.createElement("div");
   container.innerHTML = renderToString(content);
-  document.body.append(container);
+  document.body.appendChild(container);
   const button = container.querySelector("button")!;
   expect(button).toBeDisabled();
   expect(container.querySelector("input")).toBeDisabled();
