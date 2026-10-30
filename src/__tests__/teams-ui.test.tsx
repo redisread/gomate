@@ -1,3 +1,4 @@
+import { renderToStaticMarkup } from "react-dom/server";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { Region, Team } from "@/lib/types";
@@ -91,6 +92,18 @@ function selectableRegion(id: string, name: string, isHot: boolean): Region {
 }
 
 describe("teams list UI", () => {
+  it.each(["en-US", "th-TH", "ar-EG"])("shows card time in the destination timezone independently of the host (%s)", (hostLocale) => {
+    const Original = Intl.DateTimeFormat;
+    const formatter = vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function(locale, options) { return new Original(locale ?? hostLocale, options); });
+    try {
+    const team = makeTeam();
+    team.location!.region = { ...selectableRegion("ny", "New York", false), timezone: "America/New_York" };
+    expect(renderToStaticMarkup(<TeamCard team={team} />)).toContain("01:00");
+    render(<TeamCard team={team} />);
+    expect(screen.getByText("01:00")).toBeInTheDocument();
+    } finally { formatter.mockRestore(); }
+  });
+
   it("uses the card itself as the detail action without a duplicate detail label", () => {
     render(<TeamCard team={makeTeam()} />);
 

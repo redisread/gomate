@@ -1,4 +1,5 @@
 ---
+import { getPageI18n } from "@/i18n/ssr-loader.server";
 /**
  * 队伍详情页 - Partiful 风格
  */
@@ -17,6 +18,8 @@ const data = id
   : null;
 const teamData = data?.success && data.team ? data.team : null;
 
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
 const ogImage = teamData?.location?.coverImageUrl ?? undefined;
 
 const title = teamData?.title || undefined;
@@ -34,5 +37,5 @@ const description = teamData?.description
   showNavbar={false}
   showFooter={false}
 >
-  <TeamDetailPartiful teamId={id!} client:visible />
+  <TeamDetailPartiful initialI18n={getPageI18n(Astro.locals)} teamId={id!} initialTeam={teamData ?? undefined} client:load />
 </Layout>

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
   cleanup,
   fireEvent,
@@ -19,6 +20,14 @@ afterEach(() => {
 });
 
 describe("Footer", () => {
+  it("does not accept contact clicks before hydration attaches the handler", () => {
+    const shell = document.createElement("div");
+    shell.innerHTML = renderToStaticMarkup(<Footer />);
+    expect(shell.querySelector('button[aria-label="common.socials.wechat"]')).toHaveAttribute("disabled");
+    render(<Footer />);
+    expect(screen.getByRole("button", { name: "common.socials.wechat" })).toBeEnabled();
+  });
+
   it("keeps all navigation and social contacts available on small screens", () => {
     vi.stubGlobal("innerWidth", 375);
     render(<Footer />);
@@ -58,7 +67,7 @@ describe("Footer", () => {
       screen.getByRole("dialog", { name: "common.socials.wechat" }),
     ).toBeVisible();
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());
   });
 
@@ -67,7 +76,14 @@ describe("Footer", () => {
     (reduced) => {
       vi.spyOn(window, "matchMedia").mockReturnValue({
         matches: reduced,
-      } as MediaQueryList);
+        media: "(prefers-reduced-motion: reduce)",
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      });
       const scroll = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
       render(<Footer />);
       fireEvent.click(screen.getByRole("button", { name: "common.backToTop" }));

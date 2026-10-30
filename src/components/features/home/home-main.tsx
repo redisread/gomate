@@ -1,4 +1,4 @@
-"use client";
+import { withI18n } from "@/i18n/context";
 import { useHomeData, type HomeInitialData } from "./use-home-data";
 import { HomeHero } from "./home-hero";
 import { HomeMapSection } from "./home-map-section";
@@ -6,7 +6,7 @@ import { HomeDepartureBoard } from "./home-departure-board";
 import { PreloadImages } from "./preload-images";
 import { HomeTimeProvider } from "./home-time";
 
-export function HomeClient({ initialData, initialTimeZone = "UTC" }: {
+function HomeClientContent({ initialData, initialTimeZone = "UTC" }: {
   initialData?: HomeInitialData;
   initialTimeZone?: string;
 }) {
@@ -22,3 +22,5 @@ export function HomeClient({ initialData, initialTimeZone = "UTC" }: {
     </HomeTimeProvider>
   );
 }
+
+export const HomeClient = withI18n(HomeClientContent);

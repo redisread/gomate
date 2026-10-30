@@ -50,6 +50,12 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "webkit",
+      testMatch: /(?:performance-experience|location-gallery|location-filters|home-map|team-membership|bilingual|footer|smoke)\.spec\.ts/,
+      use: { ...devices["Desktop Safari"] },
+    },
+    { name: "chrome", use: { ...devices["Desktop Chrome"], channel: "chrome" } },
   ],
 
   // Serve the built Astro application through Wrangler so browser tests share

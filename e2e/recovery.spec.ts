@@ -29,14 +29,17 @@ test("a failed session lookup offers retry rather than treating the member as si
   );
   await page.goto(`/zh-CN/teams/${teamId}`);
   await expect(
-    page.getByText("获取队伍详情失败", { exact: false }).first(),
+    page.getByText("无法加载您的状态", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "登录后加入" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "去登录", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Session recovery team" })).toBeVisible();
   await page.unroute("**/api/users/me");
-  await page.getByRole("button", { name: "重试", exact: true }).last().click();
+  await page.getByRole("button", { name: "重新加载", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Session recovery team" }),
   ).toBeVisible();
+  await expect(page.getByRole("link", { name: "去登录", exact: true }).first()).toBeVisible();
+  await expect(page.getByText("无法加载您的状态", { exact: true })).toHaveCount(0);
 });
 
 test("feedback retry reuses the submission identity and editing creates a new one", async ({

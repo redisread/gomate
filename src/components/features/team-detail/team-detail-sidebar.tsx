@@ -114,6 +114,8 @@ export function TeamDecisionPrimaryAction({
   isMember,
   onJoin,
   joining = false,
+  pending = false,
+  unavailable = false,
 }: {
   team: Team;
   userId: string | null;
@@ -123,11 +125,14 @@ export function TeamDecisionPrimaryAction({
   isMember: boolean;
   onJoin: () => void;
   joining?: boolean;
+  pending?: boolean;
+  unavailable?: boolean;
 }) {
   const { t } = useI18n(["teams"]);
   const displayStatus = getTeamDisplayStatus(team);
 
-  if (isLeader || isMember) return null;
+  if (isLeader || isMember || unavailable) return null;
+  if (pending) return <p role="status" className="flex min-h-12 items-center text-sm text-muted-foreground">{t("teams.loading")}</p>;
 
   if (!canJoin) {
     const unavailableMessage = isFull

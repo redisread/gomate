@@ -103,6 +103,7 @@ test.describe("touch", () => {
     await expect(
       page.getByRole("img", { name: "山间营地 · 图片 1", exact: true }),
     ).toHaveAttribute("src", "/gallery-a.svg");
+    await expect.poll(() => page.getByRole("img", { name: "山间营地 · 图片 1", exact: true }).evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
     const open = page.getByRole("button", {
       name: "查看大图 · 图片 1",
       exact: true,
@@ -199,7 +200,8 @@ test("reduced motion removes cards whose native exit animation was interrupted",
   await page.goto("/locations/motion-gallery");
   const gallery = page.locator(".location-cover-gallery");
   const next = gallery.getByRole("button", { name: "下一张", exact: true });
-  await next.click();
+  await next.focus();
+  await next.press("Enter");
   await expect(
     gallery.getByRole("button", { name: "查看大图 · 图片 2", exact: true }),
   ).toBeVisible();
@@ -220,11 +222,13 @@ test("reversing an exit keeps the returning card and focused controls", async ({
   const gallery = page.locator(".location-cover-gallery");
   const next = gallery.getByRole("button", { name: "下一张", exact: true });
   const previous = gallery.getByRole("button", { name: "上一张", exact: true });
-  await next.click();
+  await next.focus();
+  await next.press("Enter");
   await expect(
     gallery.getByRole("button", { name: "查看大图 · 图片 2", exact: true }),
   ).toBeVisible();
-  await previous.click();
+  await previous.focus();
+  await previous.press("Enter");
   await expect(
     gallery.getByRole("button", { name: "查看大图 · 图片 1", exact: true }),
   ).toBeVisible();
@@ -242,13 +246,15 @@ test("reversing an exit keeps the returning card and focused controls", async ({
   await currentImage.focus();
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(currentImage).toBeFocused();
-  await next.click();
+  await next.focus();
+  await next.press("Enter");
   await expect(
     gallery.getByRole("button", { name: "查看大图 · 图片 2", exact: true }),
   ).toBeVisible();
   await expect(gallery.locator("[data-cover-card]")).toHaveCount(1);
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await next.click();
+  await next.focus();
+  await next.press("Enter");
   await expect(
     gallery.getByRole("button", { name: "查看大图 · 图片 3", exact: true }),
   ).toBeVisible();
@@ -311,7 +317,9 @@ test.describe("mobile swipe", () => {
     page,
     context,
     baseURL,
+    browserName,
   }) => {
+    test.skip(browserName !== "chromium", "Native touch injection requires Chromium CDP; WebKit touch needs real-device verification.");
     await context.addCookies([{ name: "theme", value: "dark", url: baseURL! }]);
     await setup(page);
     await page.goto("/locations/motion-gallery");

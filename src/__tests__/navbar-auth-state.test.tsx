@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AdminQuickActionDialog } from "../components/admin/admin-quick-action";
 import { Navbar } from "../components/layout/navbar";
@@ -259,11 +259,11 @@ describe("Navbar auth state", () => {
       expect(
         screen.getByRole("dialog", { name: "Quick entry" }),
       ).toBeInTheDocument();
-      if (mobile) expect(screen.queryByTestId("nav-admin-mobile")).not.toBeInTheDocument();
+      if (mobile) await waitFor(() => expect(screen.queryByTestId("nav-admin-mobile")).not.toBeInTheDocument());
       else expect(screen.getByTestId("nav-admin")).not.toBeVisible();
       fireEvent.keyDown(document, { key: "Escape" });
       await act(async () => {});
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByRole("dialog", { hidden: true })).not.toBeInTheDocument());
       expect(trigger).toHaveFocus();
       expect(document.body.style.overflow).toBe("");
     },

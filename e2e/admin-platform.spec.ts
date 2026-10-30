@@ -602,7 +602,10 @@ test.describe("admin platform", () => {
       }
       await expect(action).toBeFocused();
       await page.keyboard.press("Enter");
-      await expect(page.getByRole("dialog")).toBeVisible();
+      const quickDialog = page.getByRole("dialog", { name: "Quickly record a location" });
+      await expect(quickDialog).toBeVisible();
+      await expect(page.getByRole("dialog", { name: "Mobile navigation" })).toHaveCount(0);
+      await expect(page.locator("body > [inert]").first()).toBeAttached();
       await page.keyboard.press("Escape");
       await expect(trigger).toBeFocused();
       await expectNoHorizontalOverflow(page);

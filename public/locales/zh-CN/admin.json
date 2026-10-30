@@ -192,7 +192,8 @@
     "revokeAdmin": "撤销管理员",
     "roleConfirm": "确认修改此用户的管理员权限？",
     "locationTeamRefs": "使用数量",
-    "locationTeamRefsHint": "地点数 / 队伍数"
+    "locationTeamRefsHint": "地点数 / 队伍数",
+    "previousResults": "已保留当前列表，可重新搜索以更新结果。"
   },
   "errors": {
     "adminSelfRoleChange": "不能修改自己的管理员权限",

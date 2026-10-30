@@ -1,4 +1,4 @@
-"use client";
+import { withI18n } from "@/i18n/context";
 import type { BrowserSession } from "@/contracts/auth-api";
 import type { ApiResult, LocationResponse, LocationsResponse } from "@/contracts/http-responses";
 
@@ -347,10 +347,12 @@ function MobileFloatingCTA({ location }: { location: Location }) {
 // ─── 主组件 ───────────────────────────────────────────────────────────────────
 interface LocationDetailClientProps {
   locationId: string;
+  initialLocation?: Location;
 }
 
-export function LocationDetailClient({
+function LocationDetailClientContent({
   locationId,
+  initialLocation,
 }: LocationDetailClientProps) {
   const { t } = useI18n([
     "locationDetail",
@@ -361,8 +363,8 @@ export function LocationDetailClient({
     "nav",
     "enums",
   ]);
-  const [location, setLocation] = React.useState<Location | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [location, setLocation] = React.useState<Location | null>(initialLocation ?? null);
+  const [isLoading, setIsLoading] = React.useState(!initialLocation);
   const [error, setError] = React.useState<"missing" | "failed" | null>(null);
   const [attempt, setAttempt] = React.useState(0);
   const [relatedLocations, setRelatedLocations] = React.useState<Location[]>(
@@ -390,12 +392,14 @@ export function LocationDetailClient({
       controller.signal,
       AbortSignal.timeout(15_000),
     ]);
-    setIsLoading(true);
+    const useInitial = attempt === 0 && initialLocation?.id === locationId;
+    setIsLoading(!useInitial);
     setError(null);
-    setLocation(null);
+    setLocation(useInitial ? initialLocation : null);
     setRelatedLocations([]);
     setLightboxIndex(null);
     void (async () => {
+      if (useInitial) return;
       try {
         const res = await fetchAPI(`/locations/${locationId}`, { signal });
         if (res.status === 404) {
@@ -425,7 +429,7 @@ export function LocationDetailClient({
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [locationId, attempt]);
+  }, [locationId, attempt, initialLocation]);
 
   if (isLoading) return <LoadingSkeleton />;
   if (error || !location)
@@ -602,3 +606,5 @@ export function LocationDetailClient({
     </main>
   );
 }
+
+export const LocationDetailClient = withI18n(LocationDetailClientContent);

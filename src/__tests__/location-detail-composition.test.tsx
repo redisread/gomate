@@ -86,6 +86,13 @@ describe("Location detail composition", () => {
     vi.unstubAllGlobals();
   });
 
+  it("renders initial detail immediately and skips the duplicate detail request", async () => {
+    render(<LocationDetailClient locationId="location-1" {...({ initialLocation: location } as object)} />);
+    expect(screen.getByRole("heading", { name: "梧桐山", level: 1 })).toBeVisible();
+    await act(async () => { await Promise.resolve(); });
+    expect(fetchMock.mock.calls.filter(([path]) => path === "/locations/location-1")).toHaveLength(0);
+  });
+
   it("shows a team request failure instead of an empty invitation", async () => {
     const original = fetchMock.getMockImplementation()!;
     fetchMock.mockImplementation((path: string) =>

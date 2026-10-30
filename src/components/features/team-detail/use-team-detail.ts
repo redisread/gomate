@@ -22,22 +22,32 @@ type MemberStatus = "leader" | "member" | null;
 export function useToast() {
   const [toast, setToast] = React.useState<ToastOptions | null>(null);
   const [exiting, setExiting] = React.useState(false);
+  const timers = React.useRef<ReturnType<typeof setTimeout>[]>([]);
+  const clear = React.useCallback(() => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  }, []);
+  React.useEffect(() => clear, [clear]);
   const show = React.useCallback((opts: ToastOptions) => {
+    clear();
     setExiting(false);
     setToast(opts);
-    window.setTimeout(() => {
+    timers.current.push(setTimeout(() => {
       setExiting(true);
-      window.setTimeout(() => setToast(null), 200);
-    }, 2500);
-  }, []);
+      timers.current.push(setTimeout(() => setToast(null), 200));
+    }, 2500));
+  }, [clear]);
   return { toast, exiting, show };
 }
 
-export function useTeamDetail(teamId: string) {
+export function useTeamDetail(teamId: string, initialTeam?: Team) {
   const { t } = useI18n(["teams", "errors", "common"]);
-  const [team, setTeam] = React.useState<Team | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [team, setTeam] = React.useState<Team | null>(initialTeam ?? null);
+  const [loading, setLoading] = React.useState(!initialTeam);
+  const [statusLoading, setStatusLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [refreshError, setRefreshError] = React.useState<string | null>(null);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [userId, setUserId] = React.useState<string | null>(null);
   const [memberStatus, setMemberStatus] = React.useState<MemberStatus>(null);
   const [joining, setJoining] = React.useState(false);
@@ -50,76 +60,81 @@ export function useTeamDetail(teamId: string) {
   const { toast, exiting, show: showToast } = useToast();
 
   const loadTeam = React.useCallback(async () => {
+    setRefreshing(true);
+    setRefreshError(null);
     try {
       const response = await fetchAPI(`/teams/${teamId}`);
       if (response.status === 404) {
-        setError(t("teams.notFound"));
+        setRefreshError(t("teams.notFound"));
         return;
       }
       const data = await response.json<ApiResult<TeamResponse>>();
       if (!response.ok) throw new Error("team unavailable");
       if (data.success && data.team) {
         setTeam(data.team);
-        setError(null);
+        setRefreshError(null);
       } else {
-        setError(t("teams.notFound"));
+        setRefreshError(t("teams.notFound"));
       }
     } catch {
-      setError(t("teams.loadFailed"));
-    }
+      setRefreshError(t("teams.loadFailed"));
+    } finally { setRefreshing(false); }
   }, [teamId, t]);
 
-  const loadMembershipStatus = React.useCallback(
-    async (authenticatedUserId: string | null) => {
-      if (!authenticatedUserId) {
+  const statusAbortRef = React.useRef<AbortController | null>(null);
+  const refreshStatus = React.useCallback(async () => {
+    statusAbortRef.current?.abort();
+    const controller = new AbortController();
+    statusAbortRef.current = controller;
+    setStatusLoading(true);
+    setStatusLoadFailed(false);
+    try {
+      const user = await fetchCurrentUser();
+      if (controller.signal.aborted) return;
+      setUserId(user?.id ?? null);
+      if (!user) {
         setMemberStatus(null);
-        setStatusLoadFailed(false);
         return;
       }
-      try {
-        const response = await fetchAPI(`/teams/${teamId}/my-status`);
-        const data = await response.json<ApiResult<MyTeamStatus>>();
-        if (!data.success) throw new Error("membership status failed");
-        setMemberStatus(data.status);
-        setStatusLoadFailed(false);
-      } catch {
-        setStatusLoadFailed(true);
-      }
-    },
-    [teamId],
-  );
+      const response = await fetchAPI(`/teams/${teamId}/my-status`, {
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
+      });
+      const data = await response.json<ApiResult<MyTeamStatus>>();
+      if (!data.success) throw new Error("membership status failed");
+      if (!controller.signal.aborted) setMemberStatus(data.status);
+    } catch {
+      if (!controller.signal.aborted) setStatusLoadFailed(true);
+    } finally {
+      if (!controller.signal.aborted) setStatusLoading(false);
+    }
+  }, [teamId]);
 
   React.useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    Promise.all([fetchAPI(`/teams/${teamId}`), fetchCurrentUser()])
-      .then(async ([teamResponse, user]) => {
-        if (cancelled) return;
-        if (teamResponse.status === 404) {
-          setError(t("teams.notFound"));
-          return;
-        }
-        if (!teamResponse.ok) throw new Error("team unavailable");
-        const data = await teamResponse.json<ApiResult<TeamResponse>>();
-        if (!data.success || !data.team) {
-          setError(t("teams.notFound"));
-          return;
-        }
-        setTeam(data.team);
-        const authenticatedUserId = user?.id ?? null;
-        setUserId(authenticatedUserId);
-        await loadMembershipStatus(authenticatedUserId);
-      })
-      .catch(() => {
-        if (!cancelled) setError(t("teams.loadFailed"));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [teamId, loadMembershipStatus, t]);
+    const controller = new AbortController();
+    const useInitial = initialTeam?.id === teamId;
+    setLoading(!useInitial);
+    setStatusLoading(true);
+    setError(null);
+    const detail = useInitial ? Promise.resolve(initialTeam) : (async () => {
+      const response = await fetchAPI(`/teams/${teamId}`, { signal: controller.signal });
+      if (response.status === 404) throw new Error("missing");
+      if (!response.ok) throw new Error("unavailable");
+      const data = await response.json<ApiResult<TeamResponse>>();
+      if (!data.success || !data.team) throw new Error("unavailable");
+      return data.team;
+    })();
+    void detail.then((data) => {
+      if (!cancelled) { setTeam(data); setLoading(false); }
+    }).catch((error: unknown) => {
+      if (!cancelled) {
+        setError(t(error instanceof Error && error.message === "missing" ? "teams.notFound" : "teams.loadFailed"));
+        setLoading(false);
+      }
+    });
+    void refreshStatus();
+    return () => { cancelled = true; controller.abort(); statusAbortRef.current?.abort(); };
+  }, [teamId, initialTeam, refreshStatus, t]);
 
   const handleJoin = React.useCallback(async () => {
     if (!userId) {
@@ -252,6 +267,9 @@ export function useTeamDetail(teamId: string) {
     setShowDeleteConfirm,
     isDeleting,
     statusLoadFailed,
+    statusLoading,
+    refreshError,
+    refreshing,
     allMembers,
     isLeader,
     isMember,
@@ -264,7 +282,7 @@ export function useTeamDetail(teamId: string) {
     handleFormTeam,
     handleDelete,
     loadTeam,
-    retryStatus: () => loadMembershipStatus(userId),
+    retryStatus: refreshStatus,
     show: showToast,
   };
 }

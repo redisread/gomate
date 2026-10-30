@@ -130,7 +130,7 @@ function getHreflangUrl(loc: Locale) {
     >
       {ssr.t("common.skipToContent")}
     </a>
-    {showNavbar && <PublicNavbar client:visible />}
+    {showNavbar && <PublicNavbar initialI18n={{ locale, namespaces: { nav: ssrLoadedData.nav, common: ssrLoadedData.common, admin: ssrLoadedData.admin } }} client:load />}
     {/*
       #main-content 是 skip-link 锚点，不是 <main>：
       各 page/组件（skeleton.tsx、create-team、home-main 等）自带 <main> landmark，
@@ -139,6 +139,6 @@ function getHreflangUrl(loc: Locale) {
     <div id="main-content" tabindex="-1" class="outline-none">
       <slot />
     </div>
-    {showFooter && <Footer client:idle />}
+    {showFooter && <Footer initialI18n={{ locale, namespaces: { common: ssrLoadedData.common } }} client:idle />}
   </body>
 </html>

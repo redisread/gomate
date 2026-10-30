@@ -94,6 +94,7 @@ function CoverCard({
     };
   }, [present, reduced, direction, remove, x, tilt, exitTilt]);
   const dragged = React.useRef(false);
+  const pointerStart = React.useRef({ id: -1, x: 0, y: 0 });
   const button = React.useRef<HTMLButtonElement>(null);
   React.useEffect(() => {
     if (restoreFocus) button.current?.focus({ preventScroll: true });
@@ -124,8 +125,16 @@ function CoverCard({
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={reduced ? 0 : 0.8}
       dragMomentum={false}
-      onPointerDownCapture={() => {
+      onPointerDownCapture={(event) => {
         dragged.current = false;
+        pointerStart.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      }}
+      onPointerMoveCapture={(event) => {
+        const start = pointerStart.current;
+        // Motion's drag callback is frame-scheduled and can follow WebKit's click.
+        if (event.buttons && event.pointerId === start.id && Math.hypot(event.clientX - start.x, event.clientY - start.y) > 3) {
+          dragged.current = true;
+        }
       }}
       onDragStart={() => {
         dragged.current = true;

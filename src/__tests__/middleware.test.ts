@@ -31,6 +31,18 @@ function assertResponse(value: void | Response): asserts value is Response {
 }
 
 describe("i18n middleware query preservation", () => {
+  it("provides the cookie locale to SSR islands on an unprefixed route", async () => {
+    const context = contextFor(new Request("https://gomate.test/privacy", { headers: { cookie: "gomate_locale=en" } }));
+    await onRequest(context as never, vi.fn(() => new Response("ok")) as never);
+    expect(context.locals).toMatchObject({ locale: "en" });
+  });
+
+  it("does not replace a rewritten prefix locale with a different cookie", async () => {
+    const context = contextFor(new Request("https://gomate.test/terms", { headers: { cookie: "gomate_locale=zh-CN" } }));
+    Object.assign(context.locals, { locale: "en", __localeRewritten: true });
+    await onRequest(context as never, vi.fn(() => new Response("ok")) as never);
+    expect(context.locals).toMatchObject({ locale: "en" });
+  });
   it("does not recognize removed locale paths or rewrite them", async () => {
     const context = contextFor(
       new Request("https://gomate.test/ja/locations?source=old", {

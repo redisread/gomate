@@ -96,3 +96,31 @@ it("keeps the accessible name attached to the visible image until replacement su
   });
   expect(screen.queryByRole("img", { name: "图片 2" })).not.toBeInTheDocument();
 });
+
+it("keeps the first image node visible through decode and hydration", async () => {
+  render(<GalleryImage src="/first.jpg" alt="首图" />);
+  const first = screen.getByRole("img", { name: "首图" });
+  expect(first).toHaveAttribute("src", "/first.jpg");
+  await loaded(0);
+  expect(screen.getByRole("img", { name: "首图" })).toBe(first);
+  expect(first).not.toHaveStyle({ opacity: "0" });
+});
+
+it("reloads a failed first DOM image after a successful retry", async () => {
+  render(<GalleryImage src="/first.jpg" alt="首图" />);
+  const failedImage = screen.getByRole("img", { name: "首图" });
+  Object.defineProperty(failedImage, "complete", { value: true });
+  act(() => { requests[0].onerror?.(new Event("error")); });
+  fireEvent.click(screen.getByRole("button", { name: "common.retry" }));
+  await loaded(1);
+  expect(screen.getByRole("img", { name: "首图" })).not.toBe(failedImage);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+
+it("recovers a DOM image that failed before hydration when its first preload succeeds", async () => {
+  render(<GalleryImage src="/first.jpg" alt="首图" />);
+  const failedImage = screen.getByRole("img", { name: "首图" });
+  Object.defineProperty(failedImage, "complete", { value: true });
+  await loaded(0);
+  expect(screen.getByRole("img", { name: "首图" })).not.toBe(failedImage);
+});

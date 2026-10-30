@@ -1,4 +1,5 @@
-"use client";
+import { HydratedControls } from "@/components/ui/hydrated-controls";
+import { withI18n } from "@/i18n/context";
 
 import { Button as SwButton } from "@/components/starwind-react/button";
 
@@ -13,7 +14,7 @@ import {
 } from "./teams-ui";
 import { TeamsSelectedFilters } from "./teams-selected-filters";
 
-export function TeamsClient({ initialData }: { initialData?: TeamsInitialData }) {
+function TeamsClientContent({ initialData }: { initialData?: TeamsInitialData }) {
   const { t } = useI18n(["teams"]);
   const ctx = useTeams(initialData);
   const regionOnlyEmptyState = Boolean(ctx.selectedRegionName)
@@ -23,6 +24,7 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
+      <HydratedControls>
       <TeamsHeader
         searchQuery={ctx.searchQuery}
         showFilters={ctx.showFilters}
@@ -56,7 +58,7 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
           />
         )}
       />
-      <section className="py-10">
+      <section className="py-10" onClickCapture={(event) => { if ((event.target as Element).closest("a[href]")) ctx.saveBrowsePosition(); }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-3">
@@ -64,7 +66,7 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
                 <span className="inline-block h-4 w-28 animate-pulse rounded-full bg-stone-200 dark:bg-stone-700" aria-hidden="true" />
               ) : (
                 <p className="text-sm text-muted-foreground" aria-live="polite">
-                  {t("teams.resultCount", { count: ctx.pagination.total })}
+                  {ctx.isRefreshing ? t("teams.updating") : ctx.loadError ? t("teams.showingPreviousResults") : t("teams.resultCount", { count: ctx.pagination.total })}
                 </p>
               )}
               {!ctx.isLoading && (
@@ -97,13 +99,12 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
               </SwButton>
             )}
           </div>
+          {ctx.loadError && !ctx.isLoading && <TeamsErrorState onRetry={ctx.retryCurrentPage} />}
           {ctx.isLoading ? (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label={t("teams.loading")}>
               {Array.from({ length: 6 }).map((_, i) => <TeamSkeleton key={i} />)}
             </div>
-          ) : ctx.loadError ? (
-            <TeamsErrorState onRetry={ctx.retryCurrentPage} />
-          ) : ctx.teams.length === 0 ? (
+          ) : ctx.teams.length === 0 && !ctx.loadError ? (
             <EmptyState
               onClear={ctx.clearFilters}
               onClearRegion={() => ctx.handleRegionSelect("")}
@@ -112,18 +113,21 @@ export function TeamsClient({ initialData }: { initialData?: TeamsInitialData })
             />
           ) : (
             <>
-              <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <ul aria-busy={ctx.isRefreshing} className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 transition-opacity duration-150 motion-reduce:transition-none" style={{ opacity: ctx.isRefreshing ? 0.65 : 1 }}>
                 {ctx.teams.map((team) => <TeamCard key={team.id} team={team} />)}
               </ul>
               <TeamsCtaSection />
             </>
           )}
-          {!ctx.isLoading && !ctx.loadError && (
+          {!ctx.isLoading && !ctx.isRefreshing && !ctx.loadError && (
             <Pagination current={ctx.currentPage} hasNext={Boolean(ctx.pagination.nextCursor)} onChange={ctx.handlePageChange} />
           )}
         </div>
       </section>
+      </HydratedControls>
       <Footer />
     </main>
   );
 }
+
+export const TeamsClient = withI18n(TeamsClientContent);

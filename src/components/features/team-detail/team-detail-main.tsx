@@ -1,4 +1,4 @@
-"use client";
+import { withI18n } from "@/i18n/context";
 
 import { Button as SwButton } from "@/components/starwind-react/button";
 
@@ -17,13 +17,16 @@ import { TeamDepartureBrief } from "./team-detail-overview";
 import { getStatusInfo } from "./team-detail-utils";
 import { getTeamDisplayStatus } from "@/lib/team-display";
 
+import type { Team } from "@/lib/types";
+
 interface TeamDetailPartifulProps {
   teamId: string;
+  initialTeam?: Team;
 }
 
-export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
+function TeamDetailPartifulContent({ teamId, initialTeam }: TeamDetailPartifulProps) {
   const { t } = useI18n(["teams", "common", "enums"]);
-  const ctx = useTeamDetail(teamId);
+  const ctx = useTeamDetail(teamId, initialTeam);
   const { team, loading, error } = ctx;
 
   if (loading) return <TeamDetailSkeleton />;
@@ -69,6 +72,8 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
         isMember={ctx.isMember}
         onJoin={ctx.handleJoin}
         joining={ctx.joining}
+        pending={ctx.statusLoading}
+        unavailable={ctx.statusLoadFailed}
       />
     ) : null;
 
@@ -79,6 +84,12 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
         data-testid="team-detail-content"
         className="mx-auto w-full max-w-6xl flex-1 px-4 pb-[calc(var(--team-action-height,0px)+3rem)] pt-20 sm:px-6 lg:pb-16 lg:pt-24"
       >
+        {(ctx.refreshing || ctx.refreshError) && (
+          <div role={ctx.refreshError ? "alert" : "status"} className="mb-4 flex items-center gap-3 rounded-xl bg-muted px-4 py-3 text-sm">
+            <span>{ctx.refreshError || t("teams.updating")}</span>
+            {ctx.refreshError && <SwButton variant="plain" size="inherit" type="button" onClick={ctx.loadTeam} className="min-h-11 underline">{t("common.retry")}</SwButton>}
+          </div>
+        )}
         <TeamDepartureBrief
           team={team}
           location={ctx.location}
@@ -97,3 +108,5 @@ export function TeamDetailPartiful({ teamId }: TeamDetailPartifulProps) {
     </main>
   );
 }
+
+export const TeamDetailPartiful = withI18n(TeamDetailPartifulContent);

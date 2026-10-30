@@ -1,4 +1,5 @@
 ---
+import { getPageI18n } from "@/i18n/ssr-loader.server";
 import Layout from "../layouts/Layout.astro";
 import { TermsClient } from "../components/features/terms-client";
 import { declareI18nNs } from "../middleware";
@@ -6,5 +7,5 @@ import { declareI18nNs } from "../middleware";
 declareI18nNs(Astro.locals, ['nav', 'content']);
 ---
 <Layout titleKey="content.seo_pages.terms">
-  <TermsClient client:visible />
+  <TermsClient initialI18n={getPageI18n(Astro.locals, true)} />
 </Layout>

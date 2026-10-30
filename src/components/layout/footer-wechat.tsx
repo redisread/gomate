@@ -5,7 +5,7 @@ import { Check, Copy, Download, X } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { useI18n } from "@/hooks/useI18n";
 
-export function FooterWechat({ onClose }: { onClose: () => void }) {
+export function FooterWechat({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useI18n(["common"]);
   const titleId = React.useId();
   const [copied, setCopied] = React.useState(false);
@@ -30,7 +30,7 @@ export function FooterWechat({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal
-      open
+      open={open}
       onClose={onClose}
       labelledBy={titleId}
       overlayClassName="flex items-center justify-center p-4"

@@ -1,4 +1,5 @@
 ---
+import { getPageI18n } from "@/i18n/ssr-loader.server";
 /**
  * 隐私政策页
  */
@@ -10,5 +11,5 @@ declareI18nNs(Astro.locals, ['nav', 'content']);
 ---
 
 <Layout titleKey="content.seo_pages.privacy">
-  <PrivacyClient client:visible />
+  <PrivacyClient initialI18n={getPageI18n(Astro.locals, true)} />
 </Layout>

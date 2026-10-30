@@ -92,7 +92,8 @@ export const TeamCard = React.memo(function TeamCard({ team }: { team: Team }) {
   const { t } = useI18n(["teams", "filter", "common", "enums"]);
   const location = team.location;
   const gradient = getCardGradient(team.id);
-  const start = formatTeamStart(team);
+  // Use the destination timezone so SSR and hydration never depend on the host.
+  const start = formatTeamStart(team, "en-US", team.location?.region?.timezone ?? "UTC");
   const displayStatus = getTeamDisplayStatus(team);
 
   return (

@@ -1,4 +1,4 @@
-import { Card as SwCard } from "@/components/starwind-react/card";
+import { Modal } from "@/components/ui/modal";
 import { Button as SwButton } from "@/components/starwind-react/button";
 import { useEffect, useRef } from "react";
 import { Loader2 } from "lucide-react";
@@ -55,6 +55,8 @@ export function TeamModalsAndFooter({
               userId={ctx.userId}
               canJoin={ctx.canJoin}
               joining={ctx.joining}
+              pending={ctx.statusLoading}
+              unavailable={ctx.statusLoadFailed}
               isFull={ctx.isFull}
               isLeader={ctx.isLeader}
               isMember={ctx.isMember}
@@ -75,7 +77,6 @@ function ConfirmDialogs({ ctx }: { ctx: ReturnType<typeof useTeamDetail> }) {
         onCancel={() => ctx.setShowLeave(false)}
         onConfirm={ctx.handleLeave}
       />
-      {ctx.showFormConfirm && (
         <FormTeamConfirmDialog
           open={ctx.showFormConfirm}
           isFull={ctx.isFull}
@@ -83,11 +84,9 @@ function ConfirmDialogs({ ctx }: { ctx: ReturnType<typeof useTeamDetail> }) {
           onCancel={() => ctx.setShowFormConfirm(false)}
           onConfirm={ctx.handleFormTeam}
         />
-      )}
-      {ctx.showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <SwCard className="block gap-0 py-0 ring-0 bg-card rounded-2xl max-w-sm w-full p-6 animate-[fadeScaleIn_0.2s_ease_both]">
-            <h3 className="text-lg font-bold text-foreground mb-2">
+      <Modal open={ctx.showDeleteConfirm} onClose={() => { if (!ctx.isDeleting) ctx.setShowDeleteConfirm(false); }} role="alertdialog" labelledBy="delete-team-title"
+        overlayClassName="flex items-center justify-center p-4" panelClassName="bg-card rounded-2xl max-w-sm w-full p-6">
+            <h3 id="delete-team-title" className="text-lg font-bold text-foreground mb-2">
               {t("teams.deleteTeamConfirm")}
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
@@ -108,9 +107,7 @@ function ConfirmDialogs({ ctx }: { ctx: ReturnType<typeof useTeamDetail> }) {
             >
               {t("common.cancel")}
             </SwButton>
-          </SwCard>
-        </div>
-      )}
+      </Modal>
     </>
   );
 }

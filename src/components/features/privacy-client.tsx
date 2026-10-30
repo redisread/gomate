@@ -1,3 +1,4 @@
+import { withI18n } from "@/i18n/context";
 /**
  * 隐私政策页面组件
  */
@@ -12,7 +13,7 @@ interface PrivacySection {
   footer?: string;
 }
 
-export function PrivacyClient() {
+function PrivacyClientContent() {
   const { t, getNsData } = useI18n(["nav", "content"]);
 
   const sections = React.useMemo<PrivacySection[]>(() => {
@@ -75,3 +76,5 @@ export function PrivacyClient() {
     </div>
   );
 }
+
+export const PrivacyClient = withI18n(PrivacyClientContent);

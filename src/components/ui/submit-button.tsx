@@ -29,26 +29,15 @@ export function SubmitButton({
     <SwButton variant="plain" size="inherit"
       type="submit"
       disabled={isDisabled}
-      className={`py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-allowed ${className ?? ""}`}
+      aria-busy={loading}
+      className={`py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed motion-safe:enabled:hover:-translate-y-px motion-safe:enabled:active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none ${className ?? ""}`}
       style={{
         background: isDisabled ? "var(--primary)" : GRADIENT_BG,
         boxShadow: isDisabled ? "none" : "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",
       }}
-      onMouseEnter={(e) => {
-        if (!isDisabled) {
-          e.currentTarget.style.transform = "translateY(-1px)";
-          e.currentTarget.style.boxShadow = "0 6px 24px color-mix(in oklab, var(--primary) 45%, transparent)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        if (!isDisabled) {
-          e.currentTarget.style.boxShadow = "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)";
-        }
-      }}
       {...rest}
     >
-      {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+      {loading && <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin motion-reduce:animate-none" />}
       {loading && loadingText ? loadingText : children}
     </SwButton>
   );

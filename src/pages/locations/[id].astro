@@ -1,4 +1,5 @@
 ---
+import { getPageI18n } from "@/i18n/ssr-loader.server";
 /**
  * 地点详情页 - 动态路由
  */
@@ -22,6 +23,8 @@ const locationData = locationResponse?.success
   ? locationResponse.location ?? null
   : null;
 
+Astro.response.headers.set("Cache-Control", "private, no-store");
+
 const ogImage = locationData?.coverImageUrl ?? undefined;
 
 const title = locationData?.name || undefined;
@@ -40,6 +43,6 @@ const description = locationData?.description
   showFooter={false}
 >
   <ErrorBoundary>
-    <LocationDetailClient locationId={id!} client:visible />
+    <LocationDetailClient initialI18n={getPageI18n(Astro.locals)} locationId={id!} initialLocation={locationData ?? undefined} client:load />
   </ErrorBoundary>
 </Layout>

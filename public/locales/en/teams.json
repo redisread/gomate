@@ -1,4 +1,6 @@
 {
+  "updating": "Updating teams…",
+  "showingPreviousResults": "Showing previous results. The update failed.",
   "pageTitle": "Find Your Travel Companions",
   "pageSubtitle": "Choose a city and departure time to find a team you can still join",
   "pageBadge": "Waiting for You",

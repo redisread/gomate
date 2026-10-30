@@ -191,6 +191,7 @@ describe("admin catalog managers", () => {
     expect(screen.getByText("First user")).toBeInTheDocument();
     expect(api.fetchAPI).toHaveBeenLastCalledWith(
       "/admin/users?limit=50&cursor=users-page-2",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
   });
 
@@ -283,6 +284,7 @@ describe("admin catalog managers", () => {
     expect(screen.getByText("First filtered location")).toBeInTheDocument();
     expect(api.fetchAPI).toHaveBeenLastCalledWith(
       "/locations/admin?limit=100&search=trail&status=draft&cursor=locations-page-2",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
   });
 

@@ -26,29 +26,6 @@ function readHistory(): string[] {
   }
 }
 
-/** Motion timing never owns state cleanup; cancellation and live reduced-motion do. */
-function waitForReveal(start: number, signal: AbortSignal) {
-  return new Promise<void>((resolve) => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const finish = () => {
-      clearTimeout(timer);
-      media.removeEventListener("change", changed);
-      signal.removeEventListener("abort", finish);
-      resolve();
-    };
-    const changed = () => {
-      if (media.matches) finish();
-    };
-    const timer = setTimeout(
-      finish,
-      Math.max(0, 1500 - (performance.now() - start)),
-    );
-    media.addEventListener("change", changed);
-    signal.addEventListener("abort", finish, { once: true });
-    if (media.matches || signal.aborted) finish();
-  });
-}
-
 export function useRandomLocation() {
   const [result, setResult] = useState<RandomLocationResponse | null>(null);
   const [busy, setBusy] = useState(false);
@@ -63,7 +40,6 @@ export function useRandomLocation() {
     history.current ??= readHistory();
     setBusy(true);
     setFailed(false);
-    const start = performance.now();
     const timeout = setTimeout(() => controller.abort(), 8000);
     try {
       const query = new URLSearchParams();
@@ -75,7 +51,6 @@ export function useRandomLocation() {
       });
       if (!response.ok) throw new Error("Random location unavailable");
       const data = RandomLocationResponseSchema.parse(await response.json());
-      await waitForReveal(start, controller.signal);
       if (controller.signal.aborted)
         throw new Error("Random location interrupted");
       if (data.location) {

@@ -1,16 +1,19 @@
+import { HydratedControls } from "@/components/ui/hydrated-controls";
+import { withI18n } from "@/i18n/context";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useLocationsList, type LocationsListInitialData } from "./use-locations-list";
 import { LocationsHero, LocationsResultBar } from "./locations-hero";
 import { LocationsGrid, type EmptyStateVariant } from "./locations-grid";
 
-export function LocationsClient({ initialData }: { initialData?: LocationsListInitialData }) {
+function LocationsClientContent({ initialData }: { initialData?: LocationsListInitialData }) {
   const ctx = useLocationsList(initialData);
   const emptyVariant: EmptyStateVariant = ctx.searchQuery ? "noSearch" : ctx.selectedTags.length > 0 ? "tooNarrow" : ctx.selectedRegionId ? "noRegion" : "tooNarrow";
 
   return (
     <main className="min-h-screen bg-background">
       <Navbar />
+      <HydratedControls>
       <LocationsHero
         activeRole={ctx.activeRole}
         searchQuery={ctx.searchQuery}
@@ -48,7 +51,10 @@ export function LocationsClient({ initialData }: { initialData?: LocationsListIn
           />
         </div>
       </section>
+      </HydratedControls>
       <Footer />
     </main>
   );
 }
+
+export const LocationsClient = withI18n(LocationsClientContent);
