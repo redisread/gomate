@@ -1,3 +1,4 @@
+import { renderToStaticMarkup } from "react-dom/server";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TeamDepartureBrief } from "../components/features/team-detail/team-detail-overview";
@@ -99,9 +100,14 @@ const location = {
 } satisfies Location;
 
 describe("team detail responsive information architecture", () => {
-  it("shows departure time in the destination timezone independently of the host", () => {
+  it.each(["en-US", "th-TH", "ar-EG"])("shows departure time in the destination timezone independently of the host (%s)", (hostLocale) => {
+    const Original = Intl.DateTimeFormat;
+    const formatter = vi.spyOn(Intl, "DateTimeFormat").mockImplementation(function(locale, options) { return new Original(locale ?? hostLocale, options); });
+    try {
+    expect(renderToStaticMarkup(<TeamDepartureBrief team={team} location={{ ...location, region: { ...location.region, timezone: "America/New_York" } }} statusLabel="Joined" />)).toContain("02:30");
     render(<TeamDepartureBrief team={team} location={{ ...location, region: { ...location.region, timezone: "America/New_York" } }} statusLabel="Joined" />);
     expect(screen.getByText("02:30")).toBeInTheDocument();
+    } finally { formatter.mockRestore(); }
   });
 
   it("puts the meeting point in the departure brief for a participant", () => {
