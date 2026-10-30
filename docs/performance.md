@@ -35,6 +35,6 @@
 - 中英文、键盘、深浅主题及 320/390/768/1024/1440px 视口；不得把 viewport 或 WebKit 模拟称作 iPhone/Safari 真机验收。
 - 桌面 Chrome/Edge/Safari、iPhone Safari/Android Chrome 为验收矩阵；当前环境不能执行的浏览器单独列明。核心流程不依赖原生 View Transitions，装饰效果可以退化。[跨文档转场](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@view-transition)、[Motion 无障碍](https://motion.dev/docs/react-accessibility)
 
-可用 `pnpm exec playwright test --project=webkit` 运行关键流程的 WebKit 回归，或 `pnpm exec playwright test e2e/performance-experience.spec.ts --project=chrome` 使用已安装的 Google Chrome；先安装对应浏览器，并配置隔离测试服务。
+可用 `pnpm exec playwright test --project=webkit` 运行关键流程的 WebKit 回归，或 `pnpm exec playwright test e2e/performance-experience.spec.ts --project=chrome` 使用已安装的 Google Chrome；先安装对应浏览器，并配置隔离测试服务。 原生触摸滑动注入使用 Chromium CDP，仅在 Chromium/Chrome 执行；WebKit 会明确跳过该项，鼠标拖动与键盘仍在 WebKit 验证，不能据此声称 Safari 触屏滑动已验收。
 
 现有自动回归包括 `e2e/performance-experience.spec.ts` 的无 JavaScript 正文、重复请求、SSR 隐私边界、筛选失败保留结果、游标/滚动恢复及取消退出动画；其他功能 E2E 与 Workers/D1 测试共同覆盖业务正确性。通过这些测试不等于全量真实设备性能认证。
