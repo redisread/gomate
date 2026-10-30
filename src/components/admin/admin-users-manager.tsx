@@ -21,37 +21,47 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
   const [loading, setLoading] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [error, setError] = React.useState("");
+  const requestId = React.useRef(0);
+  const controller = React.useRef<AbortController | null>(null);
+  const invalidate = React.useCallback(() => {
+    requestId.current++;
+    controller.current?.abort();
+  }, []);
 
   const load = React.useCallback(async (
     search = "",
     cursor?: string,
     append = false,
   ) => {
-    if (append) setLoadingMore(true);
-    else setLoading(true);
+    invalidate();
+    const id = requestId.current;
+    const abort = new AbortController();
+    controller.current = abort;
+    setLoadingMore(append);
+    setLoading(!append);
     setError("");
     try {
       const params = new URLSearchParams({ limit: "50" });
       if (search) params.set("q", search);
       if (cursor) params.set("cursor", cursor);
-      const response = await fetchAPI(`/admin/users?${params}`);
+      const response = await fetchAPI(`/admin/users?${params}`, { signal: AbortSignal.any([abort.signal, AbortSignal.timeout(15000)]) });
       const body = await adminJsonOrThrow<{
         users?: AdminUserSummary[];
         nextCursor?: string | null;
       }>(response, t, "admin.management.loadFailed");
+      if (id !== requestId.current) return;
       if (!body.users) throw new Error();
       const loadedUsers = body.users;
       setUsers((current) => append ? [...current, ...loadedUsers] : loadedUsers);
       setNextCursor(body.nextCursor ?? null);
     } catch (cause) {
-      setError(adminCatchMessage(cause, t, "admin.management.loadFailed"));
+      if (id === requestId.current) setError(adminCatchMessage(cause, t, "admin.management.loadFailed"));
     } finally {
-      if (append) setLoadingMore(false);
-      else setLoading(false);
+      if (id === requestId.current) { setLoadingMore(false); setLoading(false); }
     }
-  }, [t]);
+  }, [t, invalidate]);
 
-  React.useEffect(() => { void load(); }, [load]);
+  React.useEffect(() => { void load(); return invalidate; }, [load, invalidate]);
 
   const changeRole = async (user: AdminUserSummary) => {
     const role = user.role === "admin" ? "user" : "admin";
@@ -80,10 +90,12 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
         <SwButton variant="plain" size="inherit" type="submit" className="min-h-11 self-end rounded-lg bg-primary px-4 font-semibold text-primary-foreground">{t("admin.management.search")}</SwButton>
       </form>
       {error && <SwAlert as="p" variant="plain" role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</SwAlert>}
-      {loading ? <p role="status">{t("admin.management.loading")}</p> : users.length === 0 ? (
+      {loading && <p role="status">{t("admin.management.loading")}</p>}
+      {error && users.length > 0 && <p role="status" className="text-sm text-muted-foreground">{t("admin.management.previousResults")}</p>}
+      {users.length === 0 ? (!loading && !error && (
         <p role="status" className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">{t("admin.management.noUsers")}</p>
-      ) : (
-        <div className="space-y-3">
+      )) : (
+        <div aria-busy={loading || loadingMore} className="space-y-3">
           {users.map((user) => {
             const isCurrent = user.id === adminId;
             return (
@@ -93,14 +105,14 @@ export function AdminUsersManager({ adminId }: { adminId: string }) {
                   <p className="truncate text-sm text-muted-foreground">{user.email}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{t(userStatusKey(user.status))} · {t(userRoleKey(user.role))}</p>
                 </div>
-                <SwButton variant="plain" size="inherit" type="button" disabled={isCurrent} aria-label={isCurrent ? t("admin.management.currentUser") : undefined} onClick={() => void changeRole(user)} className="min-h-11 rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+                <SwButton variant="plain" size="inherit" type="button" disabled={isCurrent || loading || loadingMore} aria-label={isCurrent ? t("admin.management.currentUser") : undefined} onClick={() => void changeRole(user)} className="min-h-11 rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">
                   {isCurrent ? t("admin.management.currentUser") : t(user.role === "admin" ? "admin.management.revokeAdmin" : "admin.management.makeAdmin")}
                 </SwButton>
               </article>
             );
           })}
           {nextCursor && (
-            <SwButton variant="plain" size="inherit" type="button" disabled={loadingMore} onClick={() => void load(activeQuery, nextCursor, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
+            <SwButton variant="plain" size="inherit" type="button" disabled={loading || loadingMore || Boolean(error)} onClick={() => void load(activeQuery, nextCursor, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
               {loadingMore ? t("admin.management.loading") : t("admin.management.loadMore")}
             </SwButton>
           )}

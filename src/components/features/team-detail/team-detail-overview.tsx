@@ -37,7 +37,8 @@ export function TeamDepartureBrief({
   showMeetingPoint,
 }: TeamDepartureBriefProps) {
   const { t } = useI18n(["teams", "common"]);
-  const start = formatTeamStart(team);
+  // Use the destination timezone so SSR and hydration never depend on the host.
+  const start = formatTeamStart(team, undefined, location?.region?.timezone ?? "UTC");
   const durationMinutes = getTeamDurationMinutes(team);
   return (
     <section

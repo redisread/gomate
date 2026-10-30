@@ -99,6 +99,11 @@ const location = {
 } satisfies Location;
 
 describe("team detail responsive information architecture", () => {
+  it("shows departure time in the destination timezone independently of the host", () => {
+    render(<TeamDepartureBrief team={team} location={{ ...location, region: { ...location.region, timezone: "America/New_York" } }} statusLabel="Joined" />);
+    expect(screen.getByText("02:30")).toBeInTheDocument();
+  });
+
   it("puts the meeting point in the departure brief for a participant", () => {
     render(
       <TeamDepartureBrief

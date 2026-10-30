@@ -114,6 +114,10 @@ export const onRequest: MiddlewareHandler = async (context, next) => {
     });
   }
 
+  // Every page and island must share the request locale, including unprefixed
+  // links after a language-cookie selection. Preserve an internal rewrite's prefix.
+  (context.locals as AppLocals).locale ??= getRequestLocale(context.request.headers);
+
   if (isAdminPage) {
     const { env } = await import("cloudflare:workers");
     const access = await resolveAdminAccess(

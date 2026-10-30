@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import * as React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { Region } from "@/lib/types";
@@ -29,8 +29,8 @@ describe("CityPicker", () => {
     expect(input).toHaveAttribute("aria-activedescendant");
     await act(async () => fireEvent.keyDown(input, { key: "Enter" }));
     expect(onSelect).toHaveBeenCalledWith("hz");
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "locations.moreCities" })).toHaveFocus();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "locations.moreCities" })).toHaveFocus());
   });
 
   it("首次向上选择最后一项，并能循环回到第一项", async () => {
@@ -51,8 +51,8 @@ describe("CityPicker", () => {
     render(<Picker onSelect={onSelect} />);
     fireEvent.click(screen.getByRole("button", { name: "locations.moreCities" }));
     await act(async () => fireEvent.keyDown(document, { key: "Escape" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "locations.moreCities" })).toHaveFocus();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "locations.moreCities" })).toHaveFocus());
     expect(onSelect).not.toHaveBeenCalled();
     expect(document.body.style.overflow).toBe("");
     expect(document.querySelector("[inert]")).not.toBeInTheDocument();

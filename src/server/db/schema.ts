@@ -306,6 +306,7 @@ export const locations = sqliteTable(
   },
   (table) => [
     uniqueIndex("locations_region_slug_unique").on(table.regionId, table.slug),
+    index("locations_public_feed_idx").on(table.status, table.createdAt, table.id),
     index("locations_region_feed_idx").on(
       table.regionId,
       table.status,
@@ -374,6 +375,7 @@ export const teams = sqliteTable(
       .default(nowMs),
   },
   (table) => [
+    index("teams_start_feed_idx").on(table.startAt, table.id),
     index("teams_location_start_idx").on(
       table.locationId,
       table.startAt,

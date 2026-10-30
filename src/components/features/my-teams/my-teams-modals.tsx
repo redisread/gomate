@@ -1,4 +1,4 @@
-import { Card as SwCard } from "@/components/starwind-react/card";
+import { Modal } from "@/components/ui/modal";
 import { Button as SwButton } from "@/components/starwind-react/button";
 import { Loader2, XCircle, CheckCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -14,15 +14,14 @@ export function CancelTeamModal({
   onCancel: () => void;
 }) {
   const { t } = useI18n(["myTeams", "teams", "common"]);
-  if (!teamId) return null;
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <SwCard className="block gap-0 py-0 ring-0 bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both] motion-reduce:animate-none">
+    <Modal open={Boolean(teamId)} onClose={() => { if (!isCancelling) onCancel(); }} role="alertdialog" labelledBy="my-teams-cancel-title"
+      overlayClassName="flex items-center justify-center p-4" panelClassName="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
             <XCircle className="h-5 w-5 text-red-500" />
           </div>
-          <h3 className="text-base font-bold text-foreground">
+          <h3 id="my-teams-cancel-title" className="text-base font-bold text-foreground">
             {t("teams.cancelTeam")}
           </h3>
         </div>
@@ -46,8 +45,7 @@ export function CancelTeamModal({
             {t("teams.cancelTeam")}
           </SwButton>
         </div>
-      </SwCard>
-    </div>
+    </Modal>
   );
 }
 
@@ -65,15 +63,14 @@ export function FormTeamModal({
   onCancel: () => void;
 }) {
   const { t } = useI18n(["myTeams", "teams", "common"]);
-  if (!teamId) return null;
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <SwCard className="block gap-0 py-0 ring-0 bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both] motion-reduce:animate-none">
+    <Modal open={Boolean(teamId)} onClose={() => { if (!isForming) onCancel(); }} role="alertdialog" labelledBy="my-teams-form-title"
+      overlayClassName="flex items-center justify-center p-4" panelClassName="bg-card rounded-2xl max-w-sm w-full p-6 shadow-xl">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
             <CheckCircle className="h-5 w-5 text-amber-500" />
           </div>
-          <h3 className="text-base font-bold text-foreground">
+          <h3 id="my-teams-form-title" className="text-base font-bold text-foreground">
             {isFull
               ? t("teams.formTeamConfirm")
               : t("teams.formTeamUnderfilledConfirm")}
@@ -99,7 +96,6 @@ export function FormTeamModal({
             {isFull ? t("teams.formTeam") : t("teams.formTeamUnderfilled")}
           </SwButton>
         </div>
-      </SwCard>
-    </div>
+    </Modal>
   );
 }

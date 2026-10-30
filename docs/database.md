@@ -75,3 +75,5 @@ R2 保存头像与地点媒体，D1 保存所有权和引用。跨 R2/D1 操作�
 `pnpm db:check` 检查 schema、journal、snapshot 与迁移链同步；本地迁移测试覆盖空库重放、带旧数据升级、核心记录保留、外键完整性和人数竞争。迁移验证不能由 TypeScript 通过替代。
 
 当前没有 KV、Queues、outbox、异步聚合或读副本 session 调度。未来非敏感路由副本、汇总表、队列与预计算按 [可靠性与性能设计](../CODING_STANDARDS.md#可靠性与性能设计) 记录统计口径、允许延迟、恢复方式和实测收益；权限与人数约束不得改用最终一致缓存。
+
+`0012_public_feed_indexes` 仅增加 `locations(status, created_at, id)` 与 `teams(start_at, id)` 索引，覆盖不限定地区/地点的公开列表顺序。已有按地区/地点查询的索引保留；列、数据与响应合同不变。旧 Worker 可读新 schema，新 Worker 也可在索引未应用时读取，差异仅为查询计划；Worker 回滚不要求删除索引。发布仍由受保护的迁移阶段执行，不能把本地索引验证当作生产已迁移。

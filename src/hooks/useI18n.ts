@@ -8,11 +8,13 @@
  */
 
 import * as React from "react";
+import { I18nContext } from "@/i18n/context";
 import {
   t as translate,
   getLocale,
   loadNamespaces,
   getNamespaceData,
+  getSSRT,
   type Locale,
 } from "@/i18n";
 
@@ -43,12 +45,14 @@ function areAllNsCached(nsList: string[] | undefined, locale: Locale): boolean {
  * <button>{t('teams.joinTeam')}</button>
  */
 export function useI18n(nsList?: string[]): UseI18nReturn {
-  const [locale, setLocale] = React.useState<Locale>(getLocale());
+  const snapshot = React.useContext(I18nContext);
+  const [locale, setLocale] = React.useState<Locale>(() => snapshot?.locale ?? getLocale());
+  const hasSnapshot = snapshot?.locale === locale && (!nsList || nsList.every((ns) => snapshot.namespaces[ns]));
   // SSR 与客户端首帧必须使用相同的 loading 状态；客户端在 effect 中复用 SSR 缓存。
-  const [loading, setLoading] = React.useState(() => Boolean(nsList?.length));
+  const [loading, setLoading] = React.useState(() => Boolean(nsList?.length) && !hasSnapshot);
 
   React.useEffect(() => {
-    if (!nsList || nsList.length === 0) {
+    if (hasSnapshot || !nsList || nsList.length === 0) {
       setLoading(false);
       return;
     }
@@ -76,7 +80,7 @@ export function useI18n(nsList?: string[]): UseI18nReturn {
     return () => {
       cancelled = true;
     };
-  }, [nsList, locale]);
+  }, [nsList, locale, hasSnapshot]);
 
   // Re-read locale on visibility change
   React.useEffect(() => {
@@ -89,20 +93,21 @@ export function useI18n(nsList?: string[]): UseI18nReturn {
     (key: string, vars?: Record<string, string | number>) => {
       // loading 时返回空字符串而非 key，避免 SSR/CSR 不一致
       if (loading) return "";
+      if (hasSnapshot && snapshot) return getSSRT(locale, { [locale]: snapshot.namespaces }).t(key, vars);
       return translate(key, { locale, vars });
     },
-    [locale, loading],
+    [locale, loading, hasSnapshot, snapshot],
   );
 
   const getNsData = React.useCallback(() => {
     if (loading || !nsList || nsList.length === 0) return null;
     const results: Record<string, unknown> = {};
     for (const ns of nsList) {
-      const data = getNamespaceData(ns, locale);
+      const data = hasSnapshot ? snapshot?.namespaces[ns] : getNamespaceData(ns, locale);
       if (data) results[ns] = data;
     }
     return Object.keys(results).length > 0 ? results : null;
-  }, [loading, locale, nsList]);
+  }, [loading, locale, nsList, hasSnapshot, snapshot]);
 
   return { t: tFn, getNsData, locale, loading };
 }

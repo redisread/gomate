@@ -403,7 +403,6 @@ export function Navbar({
       {/* ============================================================
           移动端抽屉菜单
           ============================================================ */}
-      {isMobileMenuOpen && (
         <Modal open={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}
           aria-label={t("common.mobileNav")}
           returnFocusRef={mobileMenuButtonRef}
@@ -556,7 +555,6 @@ export function Navbar({
               )}
             </div>
         </Modal>
-      )}
       {session?.isAdmin &&
         renderAdminQuickAction?.({
           open: quickActionOpen,

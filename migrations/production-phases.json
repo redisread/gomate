@@ -80,6 +80,12 @@
         "verificationUrl": "https://dash.cloudflare.com/e3afbb613458022947cd9dc9f5bd6334/workers/services/view/gomate/production/builds/1beb8b19-844d-4054-8887-976198c495a9",
         "rollbackClosure": "用户已授权继续迁移。关闭 525d4c98 之前旧功能 Worker 的回滚窗口；后续只允许兼容 0011 的 525d4c98 或更新代码。数据库恢复须另经受保护流程；迁移前只读书签 00001247-00000000-00005107-2593bbf0daf8626771b2d56320622306。观察为测试用户环境的重复公开 smoke 和 D1 完整性检查，不代表真实账号写入或长期负载验证。"
       }
+    },
+    {
+      "name": "0012_public_feed_indexes.sql",
+      "sha256": "4008ded1260448db0e51b6dcb8a0325dbb346dd8b1429ea30bc4e6c3ac1533ac",
+      "phase": "expand",
+      "enabled": true
     }
   ]
 }

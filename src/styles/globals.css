@@ -1,7 +1,21 @@
 @import "tailwindcss";
+
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 @import "./icon-sizes.css";
+
+/* Native navigation retains document lifecycles and browser history. */
+@view-transition { navigation: auto; }
+::view-transition-old(root) { animation: gomate-fade-out 100ms ease-out both; }
+::view-transition-new(root) { animation: gomate-fade-in 160ms ease-out both; }
+@keyframes gomate-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes gomate-fade-out { from { opacity: 1; } to { opacity: 0; } }
+.gomate-modal[data-state="closed"] { animation: gomate-fade-out 160ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  ::view-transition-old(root), ::view-transition-new(root), .gomate-modal { animation: none !important; }
+}
+
 
 /* ============================================================
    GoMate Design System v2.0 — globals.css

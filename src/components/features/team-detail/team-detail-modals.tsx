@@ -20,7 +20,7 @@ export function LeaveConfirmDialog({
       role="alertdialog"
       labelledBy="leave-confirm-title"
       overlayClassName="flex items-center justify-center p-4"
-      panelClassName="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      panelClassName="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl"
     >
       <h3
         id="leave-confirm-title"
@@ -71,7 +71,7 @@ export function FormTeamConfirmDialog({
       role="alertdialog"
       labelledBy="form-team-confirm-title"
       overlayClassName="flex items-center justify-center p-4"
-      panelClassName="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl animate-[fadeScaleIn_0.2s_ease_both]"
+      panelClassName="bg-popover rounded-3xl max-w-sm w-full p-6 shadow-xl"
     >
       <h3
         id="form-team-confirm-title"

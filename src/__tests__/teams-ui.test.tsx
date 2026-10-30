@@ -91,6 +91,13 @@ function selectableRegion(id: string, name: string, isHot: boolean): Region {
 }
 
 describe("teams list UI", () => {
+  it("shows card time in the destination timezone independently of the host", () => {
+    const team = makeTeam();
+    team.location!.region = { ...selectableRegion("ny", "New York", false), timezone: "America/New_York" };
+    render(<TeamCard team={team} />);
+    expect(screen.getByText("01:00")).toBeInTheDocument();
+  });
+
   it("uses the card itself as the detail action without a duplicate detail label", () => {
     render(<TeamCard team={makeTeam()} />);
 

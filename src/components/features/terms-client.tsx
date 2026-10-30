@@ -1,3 +1,4 @@
+import { withI18n } from "@/i18n/context";
 import * as React from "react";
 import { useI18n } from "@/hooks/useI18n";
 
@@ -9,7 +10,7 @@ interface TermsSection {
   isDisclaimer?: boolean;
 }
 
-export function TermsClient() {
+function TermsClientContent() {
   const { t, getNsData } = useI18n(["nav", "content"]);
 
   const sections = React.useMemo<TermsSection[]>(() => {
@@ -86,3 +87,5 @@ export function TermsClient() {
     </div>
   );
 }
+
+export const TermsClient = withI18n(TermsClientContent);

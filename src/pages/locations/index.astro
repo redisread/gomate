@@ -1,4 +1,5 @@
 ---
+import { getPageI18n } from "@/i18n/ssr-loader.server";
 /**
  * 地点列表页
  */
@@ -47,5 +48,5 @@ const initialData = locationsData?.success
 ---
 
 <Layout titleKey="content.seo_pages.locations" showNavbar={false} showFooter={false}>
-  <LocationsClient initialData={initialData} client:visible />
+  <LocationsClient initialI18n={getPageI18n(Astro.locals)} initialData={initialData} client:visible />
 </Layout>

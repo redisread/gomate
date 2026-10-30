@@ -23,38 +23,48 @@ export function AdminLocationsManager() {
   const [loading, setLoading] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [error, setError] = React.useState("");
+  const requestId = React.useRef(0);
+  const controller = React.useRef<AbortController | null>(null);
+  const invalidate = React.useCallback(() => {
+    requestId.current++;
+    controller.current?.abort();
+  }, []);
 
   const load = React.useCallback(async (
     filters = { search: "", status: "" },
     cursor?: string,
     append = false,
   ) => {
-    if (append) setLoadingMore(true);
-    else setLoading(true);
+    invalidate();
+    const id = requestId.current;
+    const abort = new AbortController();
+    controller.current = abort;
+    setLoadingMore(append);
+    setLoading(!append);
     setError("");
     try {
       const query = new URLSearchParams({ limit: "100" });
       if (filters.search) query.set("search", filters.search);
       if (filters.status) query.set("status", filters.status);
       if (cursor) query.set("cursor", cursor);
-      const response = await fetchAPI(`/locations/admin?${query}`);
+      const response = await fetchAPI(`/locations/admin?${query}`, { signal: AbortSignal.any([abort.signal, AbortSignal.timeout(15000)]) });
       const body = await adminJsonOrThrow<{
         locations?: Location[];
         nextCursor?: string | null;
       }>(response, t, "admin.management.loadFailed");
+      if (id !== requestId.current) return;
       if (!body.locations) throw new Error();
       const loadedLocations = body.locations;
       setLocations((current) => append ? [...current, ...loadedLocations] : loadedLocations);
       setNextCursor(body.nextCursor ?? null);
     } catch (cause) {
-      setError(adminCatchMessage(cause, t, "admin.management.loadFailed"));
+      if (id === requestId.current) setError(adminCatchMessage(cause, t, "admin.management.loadFailed"));
     } finally {
-      if (append) setLoadingMore(false);
-      else setLoading(false);
+      if (id === requestId.current) { setLoadingMore(false); setLoading(false); }
     }
-  }, [t]);
+  }, [t, invalidate]);
 
-  React.useEffect(() => { void load(); }, [load]);
+  React.useEffect(() => { void load(); return invalidate; }, [load, invalidate]);
 
   const archive = async (location: Location) => {
     if (!window.confirm(t("admin.locationsManagement.archiveConfirm"))) return;
@@ -105,10 +115,12 @@ export function AdminLocationsManager() {
       </form>
 
       {error && <SwAlert as="p" variant="plain" role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{error}</SwAlert>}
-      {loading ? <p role="status">{t("admin.management.loading")}</p> : locations.length === 0 ? (
+      {loading && <p role="status">{t("admin.management.loading")}</p>}
+      {error && locations.length > 0 && <p role="status" className="text-sm text-muted-foreground">{t("admin.management.previousResults")}</p>}
+      {locations.length === 0 ? (!loading && !error && (
         <p role="status" className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">{t("admin.noLocations")}</p>
-      ) : (
-        <div className="space-y-3">
+      )) : (
+        <div aria-busy={loading || loadingMore} className="space-y-3">
           {locations.map((location) => (
             <article key={location.id} className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center">
               <div className="min-w-0 flex-1">
@@ -121,13 +133,13 @@ export function AdminLocationsManager() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <SwButton as="a" variant="plain" size="inherit" href={`/admin/locations/${location.id}/edit`} className="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-semibold">{t("admin.editLocation")}</SwButton>
-                {location.status !== "archived" && <SwButton variant="plain" size="inherit" type="button" onClick={() => void archive(location)} className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold">{t("admin.locationsManagement.archive")}</SwButton>}
-                {location.status === "archived" && <SwButton variant="plain" size="inherit" type="button" onClick={() => void permanentlyDelete(location)} className="min-h-11 rounded-lg border border-destructive/30 px-3 text-sm font-semibold text-destructive">{t("admin.locationsManagement.permanentDelete")}</SwButton>}
+                {location.status !== "archived" && <SwButton variant="plain" size="inherit" type="button" disabled={loading || loadingMore} onClick={() => void archive(location)} className="min-h-11 rounded-lg border border-border px-3 text-sm font-semibold">{t("admin.locationsManagement.archive")}</SwButton>}
+                {location.status === "archived" && <SwButton variant="plain" size="inherit" type="button" disabled={loading || loadingMore} onClick={() => void permanentlyDelete(location)} className="min-h-11 rounded-lg border border-destructive/30 px-3 text-sm font-semibold text-destructive">{t("admin.locationsManagement.permanentDelete")}</SwButton>}
               </div>
             </article>
           ))}
           {nextCursor && (
-            <SwButton variant="plain" size="inherit" type="button" disabled={loadingMore} onClick={() => void load(activeFilters, nextCursor, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
+            <SwButton variant="plain" size="inherit" type="button" disabled={loading || loadingMore || Boolean(error)} onClick={() => void load(activeFilters, nextCursor, true)} className="min-h-11 w-full rounded-lg border border-border px-4 text-sm font-semibold disabled:cursor-wait disabled:opacity-60">
               {loadingMore ? t("admin.management.loading") : t("admin.management.loadMore")}
             </SwButton>
           )}

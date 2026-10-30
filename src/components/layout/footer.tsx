@@ -1,3 +1,4 @@
+import { withI18n } from "@/i18n/context";
 import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
 import { ArrowUp, Heart, Mail } from "lucide-react";
@@ -6,7 +7,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { FooterSocials } from "./footer-socials";
 import { FooterWechat } from "./footer-wechat";
 
-export function Footer() {
+function FooterContent() {
   const { t } = useI18n(["common"]);
   const [showWechatQR, setShowWechatQR] = React.useState(false);
   const [year, setYear] = React.useState<number | null>(null);
@@ -60,7 +61,7 @@ export function Footer() {
               {t("common.contactEmail")}
             </a>
             {/* 社交媒体按钮 */}
-            <FooterSocials onWechat={() => setShowWechatQR(true)} />
+            <FooterSocials ready={year !== null} onWechat={() => setShowWechatQR(true)} />
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))] gap-x-6 gap-y-6 sm:gap-x-8">
             {groups.map((group) => (
@@ -108,6 +109,7 @@ export function Footer() {
               size="inherit"
               type="button"
               onClick={scrollToTop}
+              disabled={year === null}
               className="postcard-link inline-flex items-center gap-2"
             >
               {t("common.backToTop")}
@@ -138,7 +140,9 @@ export function Footer() {
           decoding="async"
         />
       </div>
-      {showWechatQR && <FooterWechat onClose={() => setShowWechatQR(false)} />}
+      <FooterWechat open={showWechatQR} onClose={() => setShowWechatQR(false)} />
     </footer>
   );
 }
+
+export const Footer = withI18n(FooterContent);

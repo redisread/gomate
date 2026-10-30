@@ -124,30 +124,15 @@ it("aborts in-flight requests on unmount without recording unseen results", asyn
   expect(sessionStorage.getItem("gomate.random-locations.v1")).toBeNull();
 });
 
-it("reveals immediately when reduced motion is enabled during the reveal delay", async () => {
-  const listeners = new Set<() => void>();
-  const media = {
-    matches: false,
-    addEventListener: (_name: string, fn: () => void) => listeners.add(fn),
-    removeEventListener: (_name: string, fn: () => void) =>
-      listeners.delete(fn),
-  };
-  vi.stubGlobal("matchMedia", () => media);
-  api.mockResolvedValueOnce(payload("a"));
+it("shows a ready result without spending time on a reveal delay", async () => {
+  vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  api.mockResolvedValueOnce(payload("ready"));
   const { result } = renderHook(useRandomLocation);
-  let pending!: Promise<void>;
   await act(async () => {
-    pending = result.current.draw();
+    void result.current.draw();
+    await Promise.resolve();
     await Promise.resolve();
   });
-  expect(result.current.busy).toBe(true);
-  expect(result.current.result).toBeNull();
-  await act(async () => {
-    media.matches = true;
-    for (const listener of listeners) listener();
-    await pending;
-  });
-  expect(result.current.result?.location?.id).toBe("a");
+  expect(result.current.result?.location?.id).toBe("ready");
   expect(result.current.busy).toBe(false);
-  expect(listeners.size).toBe(0);
 });

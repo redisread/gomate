@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useTeams } from "./use-teams";
 import { fetchPublicAPI } from "@/lib/api";
 import { getDateRangeByQuickType } from "@/lib/date-beijing";
@@ -29,6 +29,8 @@ function selectableRegion(overrides: Partial<Region> = {}): Region {
   };
 }
 
+afterEach(() => vi.useRealTimers());
+
 const EMPTY_FILTERS = {
   searchQuery: "",
   selectedActivityType: "" as const,
@@ -44,6 +46,43 @@ describe("useTeams", () => {
     vi.mocked(fetchPublicAPI).mockReset().mockRejectedValue(new Error("not requested in this test"));
     window.history.replaceState({}, "", "/teams");
     window.scrollTo = vi.fn();
+  });
+
+  it("keeps loaded results visible while updating and when an update fails", async () => {
+    let reject!: (error: Error) => void;
+    vi.mocked(fetchPublicAPI).mockReturnValueOnce(new Promise((_resolve, fail) => { reject = fail; }));
+    const { result } = renderHook(() => useTeams({
+      teams: [{ id: "visible" }] as never,
+      pagination: { limit: 12, total: 1, nextCursor: null },
+      availableTags: [], availableRegions: [selectableRegion()],
+    }));
+    let pending!: Promise<void>;
+    act(() => { pending = result.current.loadTeams({ search: "new" }); });
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isRefreshing).toBe(true);
+    expect(result.current.teams[0].id).toBe("visible");
+    await act(async () => { reject(new Error("offline")); await pending; });
+    expect(result.current.teams[0].id).toBe("visible");
+    expect(result.current.loadError).toBe(true);
+    expect(result.current.isRefreshing).toBe(false);
+  });
+
+  it("does not enter a refresh state for unchanged custom dates", () => {
+    const { result } = renderHook(() => useTeams({
+      teams: [], pagination: { limit: 12, total: 0, nextCursor: null },
+      availableTags: [], availableRegions: [selectableRegion()],
+    }));
+    act(() => { result.current.setStartDate(""); result.current.setEndDate(""); });
+    expect(result.current.isRefreshing).toBe(false);
+  });
+
+  it("preserves a direct cursor when SSR data is unavailable", async () => {
+    window.history.replaceState({}, "", "/teams?cursor=opaque&q=walk");
+    vi.mocked(fetchPublicAPI).mockImplementation(async (path) => new Response(JSON.stringify(
+      String(path).startsWith("/teams?") ? { success: true, teams: [], total: 0, nextCursor: null } : { success: true, tags: [], regions: [] },
+    )));
+    renderHook(() => useTeams());
+    await waitFor(() => expect(vi.mocked(fetchPublicAPI).mock.calls.some(([path]) => String(path).includes("cursor=opaque"))).toBe(true));
   });
 
   it("counts a partially specified custom date range as an active filter", () => {
@@ -268,7 +307,7 @@ describe("useTeams", () => {
     expect(query.has("page")).toBe(false);
     expect(query.has("pageSize")).toBe(false);
     expect(result.current.currentPage).toBe(2);
-    expect(window.location.search).toBe("");
+    expect(new URLSearchParams(window.location.search).get("cursor")).toBe("cursor-page-2");
     vi.useRealTimers();
   });
 
@@ -287,7 +326,8 @@ describe("useTeams", () => {
 
     act(() => result.current.handleSearchChange("徒步"));
     expect(result.current.currentPage).toBe(1);
-    expect(result.current.isLoading).toBe(true);
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isRefreshing).toBe(true);
   });
 
   it("keeps the current page when an already-selected empty region filter is clicked", () => {

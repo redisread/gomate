@@ -58,7 +58,7 @@ const socialLinks = [
   },
 ];
 
-export function FooterSocials({ onWechat }: { onWechat: () => void }) {
+export function FooterSocials({ onWechat, ready = true }: { onWechat: () => void; ready?: boolean }) {
   const { t } = useI18n(["common"]);
   return (
     <div className="mt-2 flex flex-wrap gap-2">
@@ -67,6 +67,7 @@ export function FooterSocials({ onWechat }: { onWechat: () => void }) {
         size="inherit"
         type="button"
         onClick={onWechat}
+        disabled={!ready}
         className="postcard-social"
         aria-label={t("common.socials.wechat")}
       >

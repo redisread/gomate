@@ -130,7 +130,7 @@ describe("AdminQuickActionDialog", () => {
     await waitFor(() => expect(container).toHaveAttribute("inert"));
     fireEvent.keyDown(document, { key: "Escape" });
 
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog", { hidden: true })).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());
     expect(container).not.toHaveAttribute("inert");
     expect(document.body.style.overflow).toBe("");
@@ -138,7 +138,7 @@ describe("AdminQuickActionDialog", () => {
     expect(onOpenChange).toHaveBeenNthCalledWith(2, false);
   });
 
-  it("closes when the backdrop is pressed", () => {
+  it("closes when the backdrop is pressed", async () => {
     render(<QuickActionFixture />);
     fireEvent.click(screen.getByRole("button", { name: "Quick add location" }));
     const overlay = screen.getByTestId("admin-quick-action-overlay");
@@ -146,6 +146,6 @@ describe("AdminQuickActionDialog", () => {
 
     expect(backdrop).not.toBeNull();
     fireEvent.click(backdrop!);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog", { hidden: true })).not.toBeInTheDocument());
   });
 });

@@ -17,24 +17,27 @@ function Picture({
   alt,
   contain,
   enter,
-  zoom,
   reduced,
-}: Props & { enter: boolean; zoom: boolean; reduced: boolean }) {
+}: Props & { enter: boolean; reduced: boolean }) {
   const present = useIsPresent();
   return (
     <motion.img
       draggable={false}
+      width={1200}
+      height={800}
+      loading="eager"
+      decoding="async"
+      fetchPriority={contain ? "auto" : "high"}
       src={src}
       alt={present ? alt : ""}
       aria-hidden={!present}
       initial={
         enter && !reduced
-          ? { opacity: 0, scale: zoom ? (contain ? 0.98 : 1.025) : 1 }
+          ? { opacity: 0 }
           : false
       }
       animate={{
         opacity: 1,
-        scale: 1,
       }}
       exit={{ opacity: 0 }}
       transition={{ duration: reduced ? 0 : 0.24, ease: [0.2, 0, 0, 1] }}
@@ -50,21 +53,12 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
   const [displayed, setDisplayed] = React.useState<{
     src: string;
     alt: string;
-  } | null>(null);
+  }>({ src, alt });
+  const [readySrc, setReadySrc] = React.useState<string | null>(null);
   const [failed, setFailed] = React.useState(false);
   const [attempt, retry] = React.useReducer((value: number) => value + 1, 0);
-  const [returning] = React.useState(
-    () =>
-      typeof performance !== "undefined" &&
-      (
-        performance.getEntriesByType?.("navigation")[0] as
-          | PerformanceNavigationTiming
-          | undefined
-      )?.type === "back_forward",
-  );
   const hasDisplayed = React.useRef(false);
-  const [enter, setEnter] = React.useState(!returning);
-  const [zoom, setZoom] = React.useState(!returning);
+  const [enter, setEnter] = React.useState(false);
 
   React.useEffect(() => {
     let active = true;
@@ -81,10 +75,10 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
         await image.decode();
         if (!active) return;
         window.clearTimeout(timeout);
-        setEnter(hasDisplayed.current || !returning);
-        setZoom(!hasDisplayed.current && !returning);
+        setEnter(hasDisplayed.current);
         hasDisplayed.current = true;
         setDisplayed({ src, alt });
+        setReadySrc(src);
       } catch {
         fail();
       }
@@ -97,14 +91,14 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
       image.onload = null;
       image.onerror = null;
     };
-  }, [src, alt, attempt, returning]);
+  }, [src, alt, attempt]);
 
   return (
     <div
       className="absolute inset-0"
-      aria-busy={!failed && displayed?.src !== src}
+      aria-busy={!failed && readySrc !== src}
     >
-      <AnimatePresence initial={!returning}>
+      <AnimatePresence initial={false}>
         {displayed && (
           <Picture
             key={displayed.src}
@@ -112,12 +106,11 @@ export function GalleryImage({ src, alt, contain, interactive = true }: Props) {
             alt={displayed.alt}
             contain={contain}
             enter={enter}
-            zoom={zoom}
             reduced={reduced}
           />
         )}
       </AnimatePresence>
-      {!failed && displayed?.src !== src && (
+      {!failed && readySrc !== src && (
         <span role="status" className="sr-only">
           {t("common.loading")}
         </span>

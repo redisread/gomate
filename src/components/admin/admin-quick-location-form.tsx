@@ -57,6 +57,12 @@ export function AdminQuickLocationForm({
     return () => { active = false; };
   }, [t]);
 
+  React.useEffect(() => {
+    // This form may mount after the dialog opens because its code is lazy loaded.
+    const field = initialFocusRef.current;
+    if (field?.closest('dialog[open]')) field.focus();
+  }, [initialFocusRef]);
+
   const toggle = <T extends string,>(
     value: T,
     selected: T[],

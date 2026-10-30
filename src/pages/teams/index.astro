@@ -1,4 +1,5 @@
 ---
+import { getPageI18n } from "@/i18n/ssr-loader.server";
 /**
  * 队伍列表页
  */
@@ -13,7 +14,8 @@ import type { Region, Team } from "../../lib/types";
 declareI18nNs(Astro.locals, ["teams", "filter", "enums", "content"]); // task #158：TeamCard/FilterPanel 难度标签走 enums
 
 const filters = parseTeamFilters(Astro.url.searchParams);
-const listQuery = buildTeamListQuery(filters);
+const cursor = Astro.url.searchParams.get("cursor");
+const listQuery = buildTeamListQuery(filters, cursor);
 
 const [teamsData, tagsData, regionsData] = await Promise.all([
   serverApiGet<{ success: boolean; teams: Team[]; total: number; nextCursor: string | null }>(Astro.request, Astro.locals, `/teams?${listQuery}`),
@@ -34,10 +36,11 @@ const initialData = teamsData?.success
       availableRegions: regionsData?.success ? regionsData.regions ?? [] : [],
       regionsComplete: Boolean(regionsData?.success),
       filters,
+      cursor,
     } satisfies TeamsInitialData
   : undefined;
 ---
 
 <Layout titleKey="content.seo_pages.teams" showNavbar={false} showFooter={false}>
-  <TeamsClient initialData={initialData} client:load />
+  <TeamsClient initialI18n={getPageI18n(Astro.locals)} initialData={initialData} client:load />
 </Layout>

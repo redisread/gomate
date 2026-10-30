@@ -96,3 +96,12 @@ it("keeps the accessible name attached to the visible image until replacement su
   });
   expect(screen.queryByRole("img", { name: "图片 2" })).not.toBeInTheDocument();
 });
+
+it("keeps the first image node visible through decode and hydration", async () => {
+  render(<GalleryImage src="/first.jpg" alt="首图" />);
+  const first = screen.getByRole("img", { name: "首图" });
+  expect(first).toHaveAttribute("src", "/first.jpg");
+  await loaded(0);
+  expect(screen.getByRole("img", { name: "首图" })).toBe(first);
+  expect(first).not.toHaveStyle({ opacity: "0" });
+});

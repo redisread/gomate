@@ -192,7 +192,8 @@
     "revokeAdmin": "Revoke admin",
     "roleConfirm": "Confirm this administrator role change?",
     "locationTeamRefs": "Usage count",
-    "locationTeamRefsHint": "Locations / teams"
+    "locationTeamRefsHint": "Locations / teams",
+    "previousResults": "The current list is still shown. Search again to refresh it."
   },
   "errors": {
     "adminSelfRoleChange": "You cannot change administrator access for your current account.",

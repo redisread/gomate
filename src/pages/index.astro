@@ -1,4 +1,5 @@
 ---
+import { getPageI18n } from "@/i18n/ssr-loader.server";
 /**
  * 首页 - GoMate
  */
@@ -27,5 +28,5 @@ const initialData: HomeInitialData = {
 ---
 
 <Layout titleKey="content.title">
-  <HomeClient initialData={initialData} initialTimeZone={Intl.DateTimeFormat().resolvedOptions().timeZone} client:visible />
+  <HomeClient initialI18n={getPageI18n(Astro.locals)} initialData={initialData} initialTimeZone={Intl.DateTimeFormat().resolvedOptions().timeZone} client:visible />
 </Layout>
