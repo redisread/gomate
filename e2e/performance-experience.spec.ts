@@ -165,13 +165,16 @@ test("a cover that failed before hydration recovers when the first preload succe
   let releaseHydration!: () => void;
   const gate = new Promise<void>((resolve) => { releaseHydration = resolve; });
   await page.route("**/_astro/location-detail-client.*.js", async (route) => { await gate; await route.continue(); });
-  let imageRequests = 0;
-  await page.route(location.coverImageUrl, (route) => ++imageRequests === 1
+  let allowImageSuccess = false;
+  // Redirect/preload requests may precede the visible image in WebKit.
+  // Keep every pre-hydration image request failed until the scenario is armed.
+  await page.route(location.coverImageUrl, (route) => !allowImageSuccess
     ? route.fulfill({ status: 503, body: "unavailable" })
     : route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="600" height="400" fill="tan"/></svg>' }));
   await page.goto(`/locations/${location.id}`, { waitUntil: "domcontentloaded" });
   const cover = page.locator('[data-cover-card][aria-hidden="false"] img:not([aria-hidden="true"])');
   await expect.poll(() => cover.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth === 0)).toBe(true);
+  allowImageSuccess = true;
   releaseHydration();
   await expect.poll(() => cover.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(600);
   await expect(page.getByRole("alert")).toHaveCount(0);
