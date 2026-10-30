@@ -34,7 +34,8 @@ test("hydration reuses detail data and idle browsing does not prefetch lists", a
     if (new URL(request.url()).pathname === `/api/locations/${location.id}`) repeats.push(request.url());
   });
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto(`/locations/${location.id}`);
+  // Hydration is the readiness condition here; external images need not finish.
+  await page.goto(`/locations/${location.id}`, { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { level: 1, name: location.name })).toBeVisible();
   await expect(page.locator("astro-island[component-export='LocationDetailClient']")).not.toHaveAttribute("ssr", "");
   expect(repeats).toEqual([]);
