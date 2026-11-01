@@ -498,6 +498,19 @@ test("province focus remains inside the clipped map after zooming", async ({
   await mockMap(page);
   await page.goto("/?mapProvince=广东省#map");
   const map = page.getByTestId("home-map-section");
+  // The toolbar becomes usable before the SVG arrives on slower connections.
+  await expect(map.locator('[data-province="广东省"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(map.locator('[data-province="广东省"]')).toHaveAttribute(
+    "tabindex",
+    "0",
+  );
+  await expect(map.getByTestId("map-content")).not.toHaveAttribute(
+    "visibility",
+    "hidden",
+  );
   await map.getByRole("button", { name: "返回全国地图" }).focus();
   await page.keyboard.press("Tab");
   const focused = await map
@@ -516,3 +529,37 @@ test("province focus remains inside the clipped map after zooming", async ({
     });
   expect(focused.inside).toBe(true);
 });
+
+for (const moveFocus of [false, true]) {
+  test(`returning before the map arrives ${moveFocus ? "preserves the user's new focus" : "restores province focus"}`, async ({
+    page,
+  }) => {
+    await mockMap(page);
+    let releaseMap!: () => void;
+    const pendingMap = new Promise<void>((resolve) => {
+      releaseMap = resolve;
+    });
+    await page.route("**/maps/china-provinces.svg", async (route) => {
+      await pendingMap;
+      await route.continue();
+    });
+    await page.goto("/?mapProvince=广东省#map");
+    const map = page.getByTestId("home-map-section");
+    await map.getByRole("button", { name: "返回全国地图" }).click();
+    await expect(page).not.toHaveURL(/mapProvince/);
+    const navigation = page
+      .getByRole("link", { name: "探索地点", exact: true })
+      .first();
+    if (moveFocus) await navigation.focus();
+    releaseMap();
+    const province = map.locator('[data-province="广东省"]');
+    await expect(province).toBeVisible();
+    await page.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
+    );
+    await expect(moveFocus ? navigation : province).toBeFocused();
+  });
+}

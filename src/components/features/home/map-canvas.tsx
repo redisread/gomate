@@ -56,6 +56,8 @@ export function MapCanvas({
   >({});
   const lastWidth = React.useRef(width);
   const previousProvince = React.useRef(selection.province);
+  const pendingFocusProvince = React.useRef<string | null>(null);
+  const returnFocusSource = React.useRef<Element | null>(null);
   const [hovered, setHovered] = React.useState<string | null>(null);
   const reduced = useReducedMotion();
   const moving = animate && lastWidth.current === width && !reduced;
@@ -97,13 +99,30 @@ export function MapCanvas({
     const previous = previousProvince.current;
     previousProvince.current = selection.province;
     setHovered(null);
-    if (selection.province || !previous) return;
-    // Restore after the click's default action and the SVG geometry have committed.
+    if (selection.province) {
+      pendingFocusProvince.current = null;
+      return;
+    }
+    if (previous) {
+      pendingFocusProvince.current = previous;
+      returnFocusSource.current = document.activeElement;
+    }
+    const name = pendingFocusProvince.current;
+    const element = name ? provinceRefs.current.get(name) : undefined;
+    if (!element) return;
+    // A return can happen before the SVG loads. Keep the target until its path
+    // exists, then restore after the click's default action has committed.
     const frame = window.requestAnimationFrame(() => {
-      provinceRefs.current.get(previous)?.focus({ preventScroll: true });
+      // Do not steal focus if the user moved to another control while loading.
+      if (
+        document.activeElement === returnFocusSource.current ||
+        document.activeElement === document.body
+      )
+        element.focus({ preventScroll: true });
+      pendingFocusProvince.current = null;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [selection.province, selection.locationId]);
+  }, [selection.province, selection.locationId, paths]);
 
   layoutEffect(() => {
     const from = liveCamera.current;
@@ -245,7 +264,8 @@ export function MapCanvas({
                   style={{
                     opacity: visible ? 1 : 0.45,
                     transitionDuration: "0.32s",
-                    transitionProperty: reduced || !animate ? "none" : undefined,
+                    transitionProperty:
+                      reduced || !animate ? "none" : undefined,
                   }}
                   className={`map-atlas-province cursor-pointer transition-[fill,opacity] duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:stroke-foreground focus-visible:[stroke-width:3] `}
                   onClick={() => onProvince(path.name)}
