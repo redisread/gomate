@@ -39,7 +39,7 @@ export function MapPreview({
       data-testid="map-preview"
       role="region"
       aria-label={t("home.discoveryMap.previewLabel")}
-      className="min-h-40 border-t border-border bg-card p-4 sm:min-h-32 sm:p-5"
+      className="map-exploration-preview min-h-40 border-t border-border bg-card p-4 sm:min-h-32 sm:p-5"
       aria-busy={loading}
     >
       {failed ? (
@@ -81,8 +81,8 @@ export function MapPreview({
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
-          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+        <div className="map-preview-content flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+          <div className="map-preview-summary flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
             <MapPreviewCover
               key={`${point?.id ?? "empty"}:${point?.coverImageUrl ?? ""}`}
               src={point?.coverImageUrl}

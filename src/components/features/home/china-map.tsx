@@ -57,10 +57,29 @@ export function ChinaMap({ className }: { className?: string }) {
   };
 
   return (
-    <div className={className ?? ""}>
+    <div
+      className={className ?? ""}
+      onKeyDown={(event) => {
+        if (
+          event.key !== "Escape" ||
+          event.defaultPrevented ||
+          !selection.province
+        )
+          return;
+        if (
+          (event.target as Element).closest(
+            "dialog, input, textarea, select, [contenteditable=true]",
+          )
+        )
+          return;
+        event.preventDefault();
+        event.stopPropagation();
+        leaveProvince();
+      }}
+    >
       <SwCard className="block gap-0 py-0 ring-0 overflow-hidden rounded-2xl border border-border bg-card">
         <div className="flex min-h-20 items-center justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
-          <div className="min-w-0">
+          <div className="order-2 min-w-0 text-end">
             <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <MapPinned
                 className="h-4 w-4 shrink-0 text-primary"
@@ -74,49 +93,53 @@ export function ChinaMap({ className }: { className?: string }) {
                 : t("home.mapHint")}
             </p>
           </div>
-          <SwButton variant="plain" size="inherit"
+          <SwButton
+            variant="plain"
+            size="inherit"
             ref={backButton}
             type="button"
             onClick={leaveProvince}
             disabled={!selection.province}
-            aria-hidden={!selection.province}
-            className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-secondary px-3 text-xs font-semibold text-foreground transition-[background-color,transform,scale,opacity] duration-150 hover:bg-accent motion-safe:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none ${selection.province ? "visible opacity-100" : "invisible opacity-0"}`}
+            className={`order-1 inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl bg-secondary px-3 text-xs font-semibold text-foreground transition-[background-color,transform,scale,opacity] duration-150 hover:bg-accent motion-safe:active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transform-none ${selection.province ? "opacity-100" : "opacity-60"}`}
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             {t("home.mapBackToChina")}
           </SwButton>
         </div>
-        <MapCanvas
-          paths={paths}
-          points={resources.map.value ? points : NO_POINTS}
-          counts={counts}
-          selection={selection}
-          camera={camera}
-          animate={exploration.animate}
-          measuring={Boolean(selection.province && bounds === null)}
-          onBounds={setBounds}
-          onProvince={exploration.focusProvince}
-          onPoints={(matches) => {
-            if (matches.length === 1) selectPoint(matches[0]);
-            else setCandidates(matches);
-          }}
-        />
-        <MapPreview
-          point={selectedPoint}
-          animate={exploration.animate}
-          candidates={candidates}
-          loading={resources.loading}
-          failed={resources.failed}
-          unavailable={exploration.unavailable}
-          emptyProvince={
-            ready && selection.province && count === 0
-              ? selection.province
-              : null
-          }
-          onSelect={selectPoint}
-          onRetry={resources.retry}
-          onNavigate={exploration.saveReturnPosition}
-        />
+        <div className="map-exploration-layout">
+          <MapCanvas
+            paths={paths}
+            points={resources.map.value ? points : NO_POINTS}
+            counts={counts}
+            selection={selection}
+            camera={camera}
+            animate={exploration.animate}
+            measuring={Boolean(selection.province && bounds === null)}
+            onBounds={setBounds}
+            onProvince={exploration.focusProvince}
+            onReset={leaveProvince}
+            onPoints={(matches) => {
+              if (matches.length === 1) selectPoint(matches[0]);
+              else setCandidates(matches);
+            }}
+          />
+          <MapPreview
+            point={selectedPoint}
+            animate={exploration.animate}
+            candidates={candidates}
+            loading={resources.loading}
+            failed={resources.failed}
+            unavailable={exploration.unavailable}
+            emptyProvince={
+              ready && selection.province && count === 0
+                ? selection.province
+                : null
+            }
+            onSelect={selectPoint}
+            onRetry={resources.retry}
+            onNavigate={exploration.saveReturnPosition}
+          />
+        </div>
       </SwCard>
     </div>
   );

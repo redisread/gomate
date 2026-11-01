@@ -182,6 +182,12 @@ for (const width of [320, 768, 1024, 1440]) {
     expect(box?.height).toBeCloseTo(44, 0);
     const preview = map.getByTestId("map-preview");
     const initialHeight = (await preview.boundingBox())!.height;
+    const mapBox = (await map.locator('svg[role="group"]').boundingBox())!;
+    const previewBox = (await preview.boundingBox())!;
+    if (width >= 1024)
+      expect(previewBox.x).toBeGreaterThanOrEqual(mapBox.x + mapBox.width - 1);
+    else
+      expect(previewBox.y).toBeGreaterThanOrEqual(mapBox.y + mapBox.height - 1);
     await first.focus();
     await first.press("Enter");
     const link = preview.getByRole("link", { name: "查看地点" });
@@ -422,3 +428,138 @@ test("enabling reduced motion finishes the active province outline without repla
   await page.evaluate(() => new Promise(requestAnimationFrame));
   expect(await progress()).toBe(1);
 });
+
+test("map exploration supports direct province switching, Escape and blank-space return", async ({
+  page,
+}) => {
+  await mockMap(page);
+  await page.goto("/?mapProvince=广东省");
+  const map = page.getByTestId("home-map-section");
+  await map.locator('[data-province="广西壮族自治区"]').click();
+  await expect(page).toHaveURL(/mapProvince=%E5%B9%BF%E8%A5%BF/);
+  const hunan = map.locator('[data-province="湖南省"]');
+  await expect(hunan).not.toHaveAttribute("aria-hidden", "true");
+  await hunan.focus();
+  await hunan.press("Enter");
+  await expect(page).toHaveURL(/mapProvince=%E6%B9%96%E5%8D%97%E7%9C%81/);
+  await page.keyboard.press("Escape");
+  await expect(page).not.toHaveURL(/mapProvince/);
+  await expect(hunan).toBeFocused();
+  await map.locator('[data-province="广东省"]').press("Enter");
+  await map.scrollIntoViewIfNeeded();
+  // Find actual sea/background rather than assuming a corner is outside every province.
+  const blank = await map.getByTestId("map-background").evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    for (let y = 8; y < box.height; y += 16) {
+      for (let x = 8; x < box.width; x += 16) {
+        if (document.elementFromPoint(box.x + x, box.y + y) === element)
+          return { x, y };
+      }
+    }
+    return null;
+  });
+  expect(blank).not.toBeNull();
+  await map.getByTestId("map-background").click({ position: blank! });
+  await expect(page).not.toHaveURL(/mapProvince/);
+  await expect(map.getByRole("button", { name: "返回全国地图" })).toBeVisible();
+});
+
+test("map fades settle immediately when reduced motion is enabled mid-flight", async ({
+  page,
+}) => {
+  await mockMap(page);
+  await page.goto("/?mapProvince=广东省#map");
+  const map = page.getByTestId("home-map-section");
+  await map.locator('[data-province="湖南省"]').press("Enter");
+  await page.evaluate(() => new Promise(requestAnimationFrame));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  const settled = await map.evaluate((element) => {
+    const province = element.querySelector('[data-province="广东省"]')!;
+    const marker = element.querySelector(
+      '[data-map-point="map-location-1"]',
+    )!.parentElement!;
+    return [
+      getComputedStyle(province).opacity,
+      getComputedStyle(marker).opacity,
+    ];
+  });
+  expect(settled).toEqual(["0.45", "0"]);
+});
+
+test("province focus remains inside the clipped map after zooming", async ({
+  page,
+}) => {
+  await mockMap(page);
+  await page.goto("/?mapProvince=广东省#map");
+  const map = page.getByTestId("home-map-section");
+  // The toolbar becomes usable before the SVG arrives on slower connections.
+  await expect(map.locator('[data-province="广东省"]')).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(map.locator('[data-province="广东省"]')).toHaveAttribute(
+    "tabindex",
+    "0",
+  );
+  await expect(map.getByTestId("map-content")).not.toHaveAttribute(
+    "visibility",
+    "hidden",
+  );
+  await map.getByRole("button", { name: "返回全国地图" }).focus();
+  await page.keyboard.press("Tab");
+  const focused = await map
+    .locator("[data-province]:focus")
+    .evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const host = element.closest("svg")!.getBoundingClientRect();
+      return {
+        name: element.getAttribute("data-province"),
+        inside:
+          box.x >= host.x - 1 &&
+          box.y >= host.y - 1 &&
+          box.right <= host.right + 1 &&
+          box.bottom <= host.bottom + 1,
+      };
+    });
+  expect(focused.inside).toBe(true);
+});
+
+for (const moveFocus of [false, true]) {
+  test(`returning before the map arrives ${moveFocus ? "preserves the user's new focus" : "restores province focus"}`, async ({
+    page,
+  }) => {
+    await mockMap(page);
+    let releaseMap!: () => void;
+    const pendingMap = new Promise<void>((resolve) => {
+      releaseMap = resolve;
+    });
+    await page.route("**/maps/china-provinces.svg", async (route) => {
+      await pendingMap;
+      await route.continue();
+    });
+    await page.goto("/?mapProvince=广东省#map");
+    const map = page.getByTestId("home-map-section");
+    await map.getByRole("button", { name: "返回全国地图" }).click();
+    await expect(page).not.toHaveURL(/mapProvince/);
+    const navigation = page
+      .getByRole("link", { name: "探索地点", exact: true })
+      .first();
+    if (moveFocus) await navigation.focus();
+    releaseMap();
+    const province = map.locator('[data-province="广东省"]');
+    await expect(province).toBeVisible();
+    await page.evaluate(
+      () =>
+        new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        ),
+    );
+    await expect(moveFocus ? navigation : province).toBeFocused();
+  });
+}

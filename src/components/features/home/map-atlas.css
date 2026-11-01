@@ -27,3 +27,44 @@
     stroke: var(--primary);
   }
 }
+
+/* A stable reading area sits alongside the map on desktop, below it on narrow screens. */
+.map-exploration-layout {
+  display: grid;
+  min-width: 0;
+}
+
+.map-exploration-preview {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .map-exploration-layout {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+  }
+
+  .map-exploration-preview {
+    border-top: 0;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .map-preview-content,
+  .map-preview-summary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .map-preview-summary .map-preview-cover {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
+  }
+
+  .map-exploration-preview [role="alert"] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
