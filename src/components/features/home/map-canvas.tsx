@@ -28,6 +28,7 @@ interface Props {
   measuring: boolean;
   onBounds: (bounds: Record<string, MapBounds>) => void;
   onProvince: (name: string) => void;
+  onReset: () => void;
   onPoints: (points: MapPoint[]) => void;
 }
 
@@ -41,6 +42,7 @@ export function MapCanvas({
   measuring,
   onBounds,
   onProvince,
+  onReset,
   onPoints,
 }: Props) {
   const { t } = useI18n(["home", "locations"]);
@@ -49,6 +51,9 @@ export function MapCanvas({
   const provinceRefs = React.useRef(new Map<string, SVGPathElement>());
   const markerRefs = React.useRef(new Map<string, HTMLButtonElement>());
   const [width, setWidth] = React.useState(0);
+  const [provinceBounds, setProvinceBounds] = React.useState<
+    Record<string, MapBounds>
+  >({});
   const lastWidth = React.useRef(width);
   const previousProvince = React.useRef(selection.province);
   const [hovered, setHovered] = React.useState<string | null>(null);
@@ -85,6 +90,7 @@ export function MapCanvas({
           height: box.height,
         };
     }
+    setProvinceBounds(bounds);
     onBounds(bounds);
   }, [paths, onBounds]);
   layoutEffect(() => {
@@ -130,7 +136,7 @@ export function MapCanvas({
     }
     draw(0);
     const animation = animateValue(0, 1, {
-      duration: 0.36,
+      duration: 0.48,
       ease: [0.2, 0, 0, 1],
       onUpdate: draw,
     });
@@ -180,6 +186,14 @@ export function MapCanvas({
           }
           className="block h-auto w-full select-none"
         >
+          <rect
+            data-testid="map-background"
+            width="800"
+            height="620"
+            fill="transparent"
+            aria-hidden="true"
+            onClick={onReset}
+          />
           <g
             ref={cameraRef}
             data-testid="map-content"
@@ -193,6 +207,20 @@ export function MapCanvas({
               const count = counts.get(path.name) ?? 0;
               const visible =
                 !selection.province || selection.province === path.name;
+              const bounds = provinceBounds[path.name];
+              // Only fully visible shapes enter the Tab order: focusing clipped SVG paths
+              // can scroll the overflow container and detach markers from the camera.
+              const inView =
+                !selection.province ||
+                (bounds &&
+                  bounds.x * camera.scale + camera.translateX >= 0 &&
+                  bounds.y * camera.scale + camera.translateY >= 0 &&
+                  (bounds.x + bounds.width) * camera.scale +
+                    camera.translateX <=
+                    800 &&
+                  (bounds.y + bounds.height) * camera.scale +
+                    camera.translateY <=
+                    620);
               return (
                 <path
                   key={path.name}
@@ -211,11 +239,15 @@ export function MapCanvas({
                   strokeWidth={0.8}
                   vectorEffect="non-scaling-stroke"
                   role="button"
-                  aria-hidden={!visible}
                   aria-label={path.name}
                   aria-pressed={selection.province === path.name}
-                  tabIndex={selection.province ? -1 : 0}
-                  className={`map-atlas-province cursor-pointer transition-[fill,opacity] duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:stroke-foreground focus-visible:[stroke-width:3] ${visible ? "opacity-100" : "pointer-events-none opacity-10"}`}
+                  tabIndex={inView ? 0 : -1}
+                  style={{
+                    opacity: visible ? 1 : 0.45,
+                    transitionDuration: "0.32s",
+                    transitionProperty: reduced || !animate ? "none" : undefined,
+                  }}
+                  className={`map-atlas-province cursor-pointer transition-[fill,opacity] duration-150 motion-reduce:transition-none focus-visible:outline-none focus-visible:stroke-foreground focus-visible:[stroke-width:3] `}
                   onClick={() => onProvince(path.name)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -254,15 +286,19 @@ export function MapCanvas({
             <div
               key={point.id}
               aria-hidden={!visible}
-              className="absolute left-0 top-0 transition-none"
+              className="absolute left-0 top-0 transition-opacity motion-reduce:transition-none"
               style={{
-                transform: `translate(${(position.x * width) / 800}px,${(position.y * width) / 800}px)`,
                 opacity: visible && width > 0 ? 1 : 0,
+                transitionDuration: "0.24s",
+                transitionProperty: reduced || !animate ? "none" : undefined,
+                transform: `translate(${(position.x * width) / 800}px,${(position.y * width) / 800}px)`,
                 pointerEvents: visible ? "auto" : "none",
                 zIndex: selected || hovered === point.id ? 2 : 1,
               }}
             >
-              <SwButton variant="plain" size="inherit"
+              <SwButton
+                variant="plain"
+                size="inherit"
                 ref={(element) => {
                   if (element) markerRefs.current.set(point.id, element);
                   else markerRefs.current.delete(point.id);
