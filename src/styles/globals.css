@@ -914,21 +914,14 @@
 .filter-rail::-webkit-scrollbar { display: none; }
 
 /* Travel postcard footer: a quiet paper surface above an original landscape. */
-:root {
-  --footer-paper: oklch(0.94 0.035 85);
-  --footer-ink: oklch(0.32 0.075 250);
-  --footer-muted: oklch(0.43 0.055 250);
-}
-.dark {
-  --footer-paper: oklch(0.22 0.025 250);
-  --footer-ink: oklch(0.91 0.025 85);
-  --footer-muted: oklch(0.77 0.025 85);
-}
 .postcard-footer {
+  --footer-paper: var(--background);
+  --footer-ink: var(--foreground);
+  --footer-muted: var(--muted-foreground);
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  background: linear-gradient(to bottom, var(--background), var(--footer-paper) 5rem);
+  background: var(--footer-paper);
   color: var(--footer-ink);
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -958,9 +951,16 @@
   height: 100%;
   object-fit: cover;
   object-position: 60% 65%;
+  /* Keep the original landscape, with quiet sand/amber tones matching the UI. */
+  filter: saturate(0.6) sepia(0.08);
+  mix-blend-mode: multiply;
   mask-image: linear-gradient(to bottom, transparent, black 20%);
 }
-.dark .postcard-landscape img { opacity: 0.7; filter: brightness(0.75) saturate(0.75); }
+.dark .postcard-landscape img {
+  opacity: 0.55;
+  filter: saturate(0.45) sepia(0.1) brightness(0.7);
+  mix-blend-mode: normal;
+}
 
 /* Starwind controls retain mobile input sizing and reduced-motion behavior. */
 @layer base {
