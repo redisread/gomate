@@ -174,8 +174,8 @@ pnpm build
 
 - 公共页脚采用旅行明信片构图：品牌与探索、支持导航在上，法律链接、返回顶部与版权归入底部信息区，山湖步道与同行者插画在下。文字不嵌入图片，原有联系和社交入口在手机与桌面均可用。
 - 使用一套响应式 DOM：普通字号下窄屏品牌在前、主要导航两列；品牌与导航按各自16rem最小宽度自动并排，导航分组按7rem最小宽度排列，文字放大时可自然收为单列。法律链接与返回顶部按可用宽度换行，不根据客户端窗口宽度替换组件。页脚采用首页的 `max-w-7xl` 与 `px-4 sm:px-6 lg:px-8` 公共边距，阅读页正文保留自己的阅读宽度。
-- 页脚从页面背景渐变到暖纸表面，以分组留白替代顶部及版权区分隔线；不使用负边距覆盖正文。社交图标与外链渲染集中在 `FooterSocials`，弹层状态仍由页脚持有。浏览器验证覆盖首页、关于与博客的衔接、双语深浅色、320px与200%文字放大。
-- `--footer-paper`、`--footer-ink`、`--footer-muted` 是页脚专用语义色，浅色为暖纸与深蓝，深色为暗蓝与暖白。插画保持装饰语义、预留高度、懒加载，不添加视差或循环动画。
+- 页脚沿用页面的暖纸背景，以分组留白替代顶部及版权区分隔线；不使用负边距覆盖正文。社交图标与外链渲染集中在 `FooterSocials`，弹层状态仍由页脚持有。浏览器验证覆盖首页、关于与博客的衔接、双语深浅色、320px与200%文字放大。
+- `--footer-paper`、`--footer-ink`、`--footer-muted` 在页脚作用域分别引用全站 `background`、`foreground`、`muted-foreground`，深浅主题均沿用沙米中性色。插画通过低饱和暖调与顶部蒙版融入页面，浅色使用 multiply 混合，深色降低亮度与不透明度并恢复 normal 混合。插画保持装饰语义、预留高度、懒加载，不添加视差或循环动画。
 - 原创插画发布在 `public/images/footer-landscape.webp`（1920×640，约 211 KiB）及 `footer-landscape-small.webp`（960×320，约 64 KiB）；生成工具为 imagegen，主题为山野、湖泊、步道和三位同行者，未使用参考截图的图像资产。
 - 微信联系方式使用共享 Modal，支持焦点圈定、Escape 与关闭后焦点恢复；剪贴板不可用时选中微信号供手动复制。返回顶部在 reduced-motion 下使用即时滚动。
 - 图片尺寸与加载行为参考 [MDN img](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/img)，滚动偏好参考 [MDN scrollTo](https://developer.mozilla.org/en-US/docs/Web/API/Window/scrollTo)。
