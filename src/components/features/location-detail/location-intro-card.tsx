@@ -7,7 +7,6 @@ import {
   Navigation,
   Check,
   Copy,
-  Sparkles,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { openExternalLink } from "@/lib/open-external";
@@ -56,17 +55,6 @@ export function LocationIntroCard({
       setCopyState("error");
     }
   };
-  const seasons: Record<string, string> = {
-    spring: t("enums.season.spring"),
-    春季: t("enums.season.spring"),
-    summer: t("enums.season.summer"),
-    夏季: t("enums.season.summer"),
-    autumn: t("enums.season.autumn"),
-    秋季: t("enums.season.autumn"),
-    winter: t("enums.season.winter"),
-    冬季: t("enums.season.winter"),
-  };
-  const bestSeasons = location.extra.hiking?.bestSeasons ?? [];
 
   return (
     <section
@@ -109,7 +97,7 @@ export function LocationIntroCard({
           </SwButton>
         )}
       </div>
-      {(address || bestSeasons.length > 0) && (
+      {address && (
         <SwCard className="block gap-0 py-0 ring-0 space-y-6 rounded-3xl bg-card p-5 shadow-card sm:p-6">
           {address && (
             <div className="flex items-start gap-3">
@@ -181,29 +169,6 @@ export function LocationIntroCard({
                       ? t("locationDetail.copyFailed")
                       : ""}
                 </p>
-              </div>
-            </div>
-          )}
-          {bestSeasons.length > 0 && (
-            <div className="flex items-start gap-3">
-              <Sparkles
-                aria-hidden="true"
-                className="mt-1 h-5 w-5 shrink-0 text-accent-foreground"
-              />
-              <div>
-                <h3 className="mb-2 text-sm font-semibold text-foreground">
-                  {t("locationDetail.seasons")}
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {bestSeasons.map((season) => (
-                    <span
-                      key={season}
-                      className="rounded-lg bg-warm-subtle px-3 py-1 text-sm text-foreground"
-                    >
-                      {seasons[season] ?? season}
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
           )}

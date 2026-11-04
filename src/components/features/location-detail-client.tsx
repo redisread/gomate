@@ -468,6 +468,18 @@ function LocationDetailClientContent({
       </main>
     );
 
+  const seasons: Record<string, string> = {
+    spring: t("enums.season.spring"),
+    春季: t("enums.season.spring"),
+    summer: t("enums.season.summer"),
+    夏季: t("enums.season.summer"),
+    autumn: t("enums.season.autumn"),
+    秋季: t("enums.season.autumn"),
+    winter: t("enums.season.winter"),
+    冬季: t("enums.season.winter"),
+  };
+  const bestSeasons = location.extra.hiking?.bestSeasons ?? [];
+
   // 构建画廊图片列表
   const galleryImages: string[] = [];
   if (location.coverImageUrl) galleryImages.push(location.coverImageUrl);
@@ -542,6 +554,12 @@ function LocationDetailClientContent({
                 </span>
               ))}
             </div>
+            {bestSeasons.length > 0 && (
+              <p className="mt-4 break-words text-sm leading-6 text-muted-foreground">
+                <span>{t("locationDetail.seasons")}</span>{" "}
+                {bestSeasons.map((season) => seasons[season] ?? season).join(" · ")}
+              </p>
+            )}
             {location.region && (
               <p className="mt-6 flex items-start gap-2 text-sm text-muted-foreground">
                 <MapPin aria-hidden="true" className="h-4 w-4 shrink-0" />

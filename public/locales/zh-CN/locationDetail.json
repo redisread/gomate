@@ -24,7 +24,7 @@
   "teamsLoadFailed": "暂时无法加载队伍，请重试。",
   "locationLoadFailed": "暂时无法加载地点，请重试。",
   "address": "怎么去",
-  "seasons": "什么时候去",
+  "seasons": "适宜季节：",
   "copied": "地址已复制",
   "copyFailed": "复制失败，请选择地址文本复制。"
 }

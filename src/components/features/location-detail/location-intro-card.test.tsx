@@ -61,7 +61,7 @@ describe("LocationIntroCard", () => {
     ).toBeInTheDocument();
   });
 
-  it("continues to show best seasons", () => {
+  it("keeps address actions after seasons move to the header", () => {
     render(
       <LocationIntroCard
         location={{
@@ -71,7 +71,8 @@ describe("LocationIntroCard", () => {
         address={baseLocation.address!}
       />,
     );
-    expect(screen.getByText("enums.season.autumn")).toBeInTheDocument();
+    expect(screen.queryByText("enums.season.autumn")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "common.copyAddress" })).toBeInTheDocument();
   });
 
   it("keeps the address visible and hides navigation without coordinates", () => {
