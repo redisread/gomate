@@ -24,7 +24,7 @@
   "teamsLoadFailed": "Teams could not load. Please try again.",
   "locationLoadFailed": "This place could not load. Please try again.",
   "address": "Getting there",
-  "seasons": "When to go",
+  "seasons": "Best seasons:",
   "copied": "Address copied",
   "copyFailed": "Could not copy. Select the address text to copy it."
 }
