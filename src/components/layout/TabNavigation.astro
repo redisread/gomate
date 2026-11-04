@@ -1,0 +1,26 @@
+---
+import { ClientRouter } from "astro:transitions";
+---
+<ClientRouter fallback="swap" />
+<script>
+  import { getEffectiveTheme } from "@/stores/theme";
+  document.addEventListener("astro:before-preparation", (event) => {
+    if (event.navigationType !== "traverse") return;
+    const content = document.getElementById("main-content");
+    if (!content) return;
+    // The address bar already points at the destination. Keep the outgoing
+    // content frozen until replacement, even if another navigation supersedes it.
+    content.dataset.historyPending = "true";
+    content.inert = true;
+    // Modal cleanup owns body's direct children and may restore this wrapper.
+    // Freeze its disposable page children too, without touching the navbar.
+    for (const child of content.children) {
+      if (child instanceof HTMLElement) child.inert = true;
+    }
+  });
+  // Swapping <html> must not reset a live system-theme selection to SSR's default.
+  document.addEventListener("astro:before-swap", (event) => {
+    event.viewTransition.skipTransition();
+    event.newDocument.documentElement.classList.toggle("dark", getEffectiveTheme() === "dark");
+  });
+</script>

@@ -27,6 +27,6 @@ const initialData: HomeInitialData = {
 };
 ---
 
-<Layout titleKey="content.title">
+<Layout tabNavigation titleKey="content.title">
   <HomeClient initialI18n={getPageI18n(Astro.locals)} initialData={initialData} initialTimeZone={Intl.DateTimeFormat().resolvedOptions().timeZone} client:visible />
 </Layout>

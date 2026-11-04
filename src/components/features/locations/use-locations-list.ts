@@ -161,7 +161,8 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
         ...(initialDataRef.current?.pagination.nextCursor ? [[2, initialDataRef.current.pagination.nextCursor] as const] : []),
       ]);
       currentWindowRef.current = { cursor, page };
-      restoreScrollRef.current = matches && Number.isFinite(saved.scrollY) ? saved.scrollY : null;
+      const scrollY = window.history.state?.scrollY ?? saved?.scrollY;
+      restoreScrollRef.current = matches && Number.isFinite(scrollY) ? scrollY : null;
       filtersRef.current = next;
       setFilters(next);
       setCurrentPage(page);
@@ -170,7 +171,23 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
     const params = restore();
     setReady(true);
     if (!initialDataRef.current) void loadLocations(params);
-    const onPopState = () => { void loadLocations(restore()); };
+    const onPopState = () => {
+      // ClientRouter will remount this island with the destination's SSR data.
+      if (!document.documentElement.hasAttribute("data-tab-router")) void loadLocations(restore());
+    };
+    const cancelOutgoingRequests = () => {
+      ++requestIdRef.current;
+      abortControllerRef.current?.abort();
+      clearTimeout(searchTimerRef.current);
+    };
+    const onPreparation = (event: Event) => {
+      // Traversal has already changed the URL. Forward navigation may fail,
+      // so keep its outgoing page's queries alive until the actual swap.
+      if ((event as { navigationType?: string }).navigationType === "traverse") cancelOutgoingRequests();
+      else saveBrowsePosition();
+    };
+    document.addEventListener("astro:before-swap", cancelOutgoingRequests);
+    document.addEventListener("astro:before-preparation", onPreparation);
     window.addEventListener("popstate", onPopState);
     window.addEventListener("pagehide", saveBrowsePosition);
     const requests = requestIdRef;
@@ -178,6 +195,8 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
       ++requests.current;
       abortControllerRef.current?.abort();
       clearTimeout(searchTimerRef.current);
+      document.removeEventListener("astro:before-preparation", onPreparation);
+      document.removeEventListener("astro:before-swap", cancelOutgoingRequests);
       window.removeEventListener("popstate", onPopState);
       window.removeEventListener("pagehide", saveBrowsePosition);
     };

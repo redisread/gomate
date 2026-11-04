@@ -47,6 +47,6 @@ const initialData = locationsData?.success
   : undefined;
 ---
 
-<Layout titleKey="content.seo_pages.locations" showNavbar={false} showFooter={false}>
+<Layout tabNavigation titleKey="content.seo_pages.locations" showFooter={false}>
   <LocationsClient initialI18n={getPageI18n(Astro.locals)} initialData={initialData} client:visible />
 </Layout>
