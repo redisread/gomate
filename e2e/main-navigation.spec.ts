@@ -310,3 +310,77 @@ for (const route of ["locations", "teams"]) {
     expect(new URL(page.url()).pathname).toBe(`/${route}`);
   });
 }
+
+for (const route of ["locations", "teams"]) {
+  test(`${route}: a slow history traversal freezes old controls without blocking the navigation`, async ({ page, context, baseURL }) => {
+    await context.addCookies([{ name: "gomate_locale", value: "zh-CN", url: baseURL! }]);
+    await ready(page);
+    await nav(page).locator(`[data-route="/${route}"]`).click();
+    await expect(nav(page).locator(`[data-route="/${route}"]`)).toHaveAttribute("aria-current", "page");
+    const search = page.locator('input[type="text"], input[type="search"]').first();
+    await search.focus();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    await page.route(baseURL! + "/", async handler => {
+      const response = await handler.fetch();
+      await gate;
+      await handler.fulfill({ response });
+    });
+    if (route === "teams") {
+      await page.setViewportSize({ width: 375, height: 812 });
+      await page.getByTestId("nav-mobile-menu-toggle").click();
+      await expect(page.getByRole("dialog")).toBeVisible();
+    }
+    const back = page.goBack();
+    await expect(page.locator("#main-content")).toHaveAttribute("data-history-pending", "true");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(await search.evaluate(el => Boolean(el.closest("[inert]")))).toBe(true);
+    await page.keyboard.type("late-history-query");
+    expect(new URL(page.url()).search).toBe("");
+    await expect(search).toHaveValue("");
+    if (route === "locations") await expect(nav(page)).toBeVisible();
+    else await expect(page.getByTestId("nav-mobile-menu-toggle")).toBeVisible();
+    release();
+    await back;
+    await expect(nav(page).locator('[data-route="/"]')).toHaveAttribute("aria-current", "page");
+    await expect(page.locator("#main-content")).not.toHaveAttribute("inert");
+    expect(new URL(page.url()).search).toBe("");
+  });
+}
+
+test("a replacement after history traversal releases content, including a failed replacement", async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: "gomate_locale", value: "zh-CN", url: baseURL! }]);
+  await ready(page);
+  const goTeams = async () => {
+    await nav(page).locator('[data-route="/teams"]').click();
+    await expect(nav(page).locator('[data-route="/teams"]')).toHaveAttribute("aria-current", "page");
+  };
+  await goTeams();
+  let release!: () => void;
+  let gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route(baseURL! + "/", async handler => {
+    // Native recovery must be allowed to load the current history entry.
+    if (handler.request().resourceType() === "document") return handler.continue();
+    const response = await handler.fetch();
+    await gate;
+    await handler.fulfill({ response });
+  });
+  const back = page.goBack();
+  await expect(page.locator("#main-content")).toHaveAttribute("inert", "");
+  await nav(page).locator('[data-route="/locations"]').click();
+  await expect(nav(page).locator('[data-route="/locations"]')).toHaveAttribute("aria-current", "page");
+  await expect(page.locator("#main-content")).not.toHaveAttribute("inert");
+  release();
+  await back;
+  await goTeams();
+  // Return to the initial entry, delaying its HTML again.
+  gate = new Promise<void>(resolve => { release = resolve; });
+  await page.evaluate(() => history.go(-2));
+  await expect(page.locator("#main-content")).toHaveAttribute("inert", "");
+  await page.route("**/locations", handler => handler.fulfill({ status: 503, contentType: "text/html", body: "Unavailable" }));
+  await nav(page).locator('[data-route="/locations"]').click();
+  await expect(nav(page).locator('[data-route="/"]')).toHaveAttribute("aria-current", "page");
+  await expect(page.locator("#main-content")).not.toHaveAttribute("inert");
+  expect(new URL(page.url()).search).toBe("");
+  release();
+});

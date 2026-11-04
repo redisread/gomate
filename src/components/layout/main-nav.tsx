@@ -160,7 +160,16 @@ export function MainNav({ currentPath }: { currentPath: string }) {
       if (attempt !== request.current) return;
       await go(link.href, { sourceElement: link, info: { mainNav: true } });
     } catch {
-      if (attempt === request.current) setFailed(true);
+      if (attempt === request.current) {
+        // A cancelled history traversal can leave the URL ahead of the DOM.
+        // If its replacement also fails, reload the browser's current entry
+        // rather than re-enable a form belonging to a different page.
+        if (document.querySelector("#main-content[data-history-pending]")) {
+          window.location.reload();
+          return;
+        }
+        setFailed(true);
+      }
     } finally {
       if (attempt === request.current) setPending(null);
     }
