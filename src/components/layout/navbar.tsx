@@ -6,6 +6,7 @@ import { Skeleton as SwSkeleton } from "@/components/starwind-react/skeleton";
 import { Modal } from "@/components/ui/modal";
 import { Button as SwButton } from "@/components/starwind-react/button";
 
+import { MainNav, activeNavRoute } from "./main-nav";
 import { BrandIcon } from "@/components/brand-icon";
 
 import * as React from "react";
@@ -37,6 +38,7 @@ const navLinks = (t: (key: string) => string) => [
 
 interface NavbarProps {
   className?: string;
+  initialPath?: string;
   adminQuickActionLabel?: string;
   renderAdminQuickAction?: (props: {
     open: boolean;
@@ -61,6 +63,7 @@ type NavbarUser = Pick<
  */
 export function Navbar({
   className,
+  initialPath = "",
   renderAdminQuickAction,
   adminQuickActionLabel,
 }: NavbarProps) {
@@ -86,7 +89,7 @@ export function Navbar({
     setQuickActionOpen(true);
   };
 
-  const [currentPath, setCurrentPath] = React.useState("");
+  const [currentPath, setCurrentPath] = React.useState(initialPath);
   const [session, setSession] = React.useState<
     | {
         user: NavbarUser;
@@ -96,12 +99,22 @@ export function Navbar({
     | undefined
   >(undefined);
 
-  // 获取当前路径（使用静态值避免 hydration mismatch）
   React.useEffect(() => {
-    // 只在客户端执行，避免 SSR/CSR 不一致
-    if (typeof window !== "undefined") {
-      setCurrentPath(window.location.pathname);
-    }
+    const syncPath = () => setCurrentPath(window.location.pathname);
+    const closeMenus = () => {
+      setIsMobileMenuOpen(false);
+      setShowUserMenu(false);
+      setQuickActionOpen(false);
+    };
+    syncPath();
+    document.addEventListener("astro:after-swap", syncPath);
+    document.addEventListener("astro:before-preparation", closeMenus);
+    window.addEventListener("pageshow", syncPath);
+    return () => {
+      document.removeEventListener("astro:after-swap", syncPath);
+      document.removeEventListener("astro:before-preparation", closeMenus);
+      window.removeEventListener("pageshow", syncPath);
+    };
   }, []);
 
   // 滚动监听（只在客户端执行）
@@ -110,14 +123,21 @@ export function Navbar({
     setIsScrolled(window.scrollY > 20);
     const onScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    document.addEventListener("astro:page-load", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("astro:page-load", onScroll);
+    };
   }, []);
 
+  const sessionRequest = React.useRef(0);
   const [sessionFailed, setSessionFailed] = React.useState(false);
   const updateSession = React.useCallback((refresh: boolean) => {
+    const attempt = ++sessionRequest.current;
     const request = refresh ? refreshCurrentUser() : fetchCurrentUser();
     void request
       .then((u) => {
+        if (attempt !== sessionRequest.current) return;
         setSessionFailed(false);
         if (u?.role !== "admin") setQuickActionOpen(false);
         setSession(
@@ -129,7 +149,7 @@ export function Navbar({
             : null,
         );
       })
-      .catch(() => setSessionFailed(true));
+      .catch(() => { if (attempt === sessionRequest.current) setSessionFailed(true); });
   }, []);
 
   // 获取登录会话，并在页面恢复后重新读取，避免旧访客态永久驻留。
@@ -143,9 +163,14 @@ export function Navbar({
       if (document.visibilityState === "visible") updateSession(true);
     };
 
+    const invalidate = () => { sessionRequest.current++; };
+    const onSwap = () => updateSession(true);
+    document.addEventListener("astro:after-swap", onSwap);
     window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
+      invalidate();
+      document.removeEventListener("astro:after-swap", onSwap);
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
@@ -161,8 +186,7 @@ export function Navbar({
   const isActive = (href: string) => {
     // SSR 时 currentPath 为空，避免 hydration mismatch
     if (!currentPath) return false;
-    if (href === "/") return currentPath === "/";
-    return currentPath.startsWith(href);
+    return activeNavRoute(currentPath) === href;
   };
   const adminItems = (mobile: boolean) => {
     const AdminLink = mobile ? "a" : MenuPrimitive.LinkItem;
@@ -229,37 +253,7 @@ export function Navbar({
             </a>
 
             {/* ---- 桌面端导航 ---- */}
-            <nav
-              className="hidden md:flex items-center gap-1"
-              aria-label={t("common.mainNav")}
-              suppressHydrationWarning
-            >
-              {navLinks(t).map((link) => {
-                const active = isActive(link.href);
-                return (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    data-testid={`nav-link-${link.href.replace(/\//g, "-") || "home"}`}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "relative px-3.5 py-2 text-sm font-medium rounded-lg transition-colors duration-150",
-                      // task #180 a11y：active text-primary (#D97706) on bg-accent (#fffbeb) = ~3.07:1 挂；amber-800 = ~6.8:1
-                      // inactive muted-foreground 14px 挂；stone-700 dark:stone-300 稳过
-                      active
-                        ? "text-amber-800 dark:text-amber-300 bg-accent"
-                        : "text-stone-700 dark:text-stone-300 hover:text-foreground hover:bg-accent",
-                    )}
-                  >
-                    {link.label}
-                    {/* 活跃下划线 */}
-                    {active && (
-                      <span className="absolute bottom-0.5 left-3.5 right-3.5 h-0.5 rounded-full bg-primary" />
-                    )}
-                  </a>
-                );
-              })}
-            </nav>
+            <MainNav currentPath={currentPath} />
 
             {/* ---- 桌面端操作区 ---- */}
             <div className="hidden md:flex items-center gap-2">

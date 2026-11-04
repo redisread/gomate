@@ -1,0 +1,12 @@
+---
+import { ClientRouter } from "astro:transitions";
+---
+<ClientRouter fallback="swap" />
+<script>
+  import { getEffectiveTheme } from "@/stores/theme";
+  // Swapping <html> must not reset a live system-theme selection to SSR's default.
+  document.addEventListener("astro:before-swap", (event) => {
+    event.viewTransition.skipTransition();
+    event.newDocument.documentElement.classList.toggle("dark", getEffectiveTheme() === "dark");
+  });
+</script>

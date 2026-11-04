@@ -976,3 +976,7 @@
 @media (max-width: 767px) {
   [data-slot="input"], [data-slot="textarea"], [data-slot="native-select"] { font-size: max(1rem, 16px); }
 }
+
+/* Keep the real navigation visible and interactive throughout client swaps. */
+html[data-tab-router] { view-transition-name: none; }
+::view-transition { pointer-events: none; }

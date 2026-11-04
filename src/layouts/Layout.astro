@@ -1,6 +1,7 @@
 ---
 // Shared document shell. Theme tokens live in globals.css.
 import "../styles/globals.css";
+import TabNavigation from "../components/layout/TabNavigation.astro";
 import ThemeInit from "../components/layout/ThemeInit.astro";
 import RoutePrefetch from "../components/layout/RoutePrefetch.astro";
 import { resolvePageMetadata, type PageMetadataProps } from "../lib/page-metadata";
@@ -22,6 +23,7 @@ interface Props extends PageMetadataProps {
   showNavbar?: boolean;
   /** 是否显示页脚，默认 true */
   showFooter?: boolean;
+  tabNavigation?: boolean;
 }
 
 const {
@@ -32,6 +34,7 @@ const {
   ogImage,
   showNavbar = true,
   showFooter = true,
+  tabNavigation = false,
 } = Astro.props;
 const resolvedOgImage = ogImage
   ? new URL(ogImage, Astro.url.origin).toString()
@@ -80,7 +83,7 @@ function getHreflangUrl(loc: Locale) {
 ---
 
 <!doctype html>
-<html lang={locale} class={isDark ? "dark" : ""}>
+<html data-tab-router={tabNavigation || undefined} lang={locale} class={isDark ? "dark" : ""}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -115,6 +118,7 @@ function getHreflangUrl(loc: Locale) {
     ))}
     <link rel="alternate" hreflang="x-default" href={getHreflangUrl(DEFAULT_LOCALE)} />
 
+    {tabNavigation && <TabNavigation />}
     <ThemeInit />
 
     {/* SSR i18n 内联数据 */}
@@ -130,7 +134,7 @@ function getHreflangUrl(loc: Locale) {
     >
       {ssr.t("common.skipToContent")}
     </a>
-    {showNavbar && <PublicNavbar initialI18n={{ locale, namespaces: { nav: ssrLoadedData.nav, common: ssrLoadedData.common, admin: ssrLoadedData.admin } }} client:load />}
+    {showNavbar && <PublicNavbar initialPath={url.pathname} transition:persist={tabNavigation ? "main-navigation" : undefined} transition:persist-props initialI18n={{ locale, namespaces: { nav: ssrLoadedData.nav, common: ssrLoadedData.common, admin: ssrLoadedData.admin } }} client:load />}
     {/*
       #main-content 是 skip-link 锚点，不是 <main>：
       各 page/组件（skeleton.tsx、create-team、home-main 等）自带 <main> landmark，

@@ -1,4 +1,5 @@
 {
+  "navigationFailed": "Page could not load. Select a navigation link to retry.",
   "home": "Home",
   "locations": "Explore Locations",
   "teams": "Find Teams",

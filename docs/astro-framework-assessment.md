@@ -85,7 +85,9 @@ sequenceDiagram
 
 现有 Hono 路由、共享 contracts、D1 schema、R2 和 Better Auth 大部分可以在未来更换页面框架时保留。真正迁移成本集中在 31 个页面的路由/loader 边界、布局、手动 i18n rewrite、SSR 数据传递、导航历史、auth memo 生命周期、构建入口及端到端回归。[contracts](../src/contracts/)、[API app](../src/server/app.ts)、[客户端 API](../src/lib/api.ts)、[布局](../src/layouts/Layout.astro)
 
-尤其 `fetchCurrentUser` 的模块级 memo 明确依赖 MPA 全页刷新重置；加入 SPA 导航或 Astro ClientRouter 时，必须重新设计退出登录、用户资料更新与缓存失效。不是给 Layout 加个 Router 就完成应用化。[客户端 API](../src/lib/api.ts)当前未发现项目使用 `ClientRouter` / `astro:transitions`；[RoutePrefetch](../src/components/layout/RoutePrefetch.astro)是文档预取，不能等同客户端路由与跨页状态保留。
+研究基准（2026-10-28）中，`fetchCurrentUser` 的模块级 memo 依赖 MPA 全页刷新重置；加入 SPA 导航或 Astro ClientRouter 时，必须重新设计退出登录、用户资料更新与缓存失效。不是给 Layout 加个 Router 就完成应用化。[客户端 API](../src/lib/api.ts)在该研究基准下未发现项目使用 `ClientRouter` / `astro:transitions`；[RoutePrefetch](../src/components/layout/RoutePrefetch.astro)是文档预取，不能等同客户端路由与跨页状态保留。
+
+2026-11-04 更新：三项公共主导航已采用 ClientRouter 与持久导航 island，每次交换重新读取会话；其他页面保持整页跳转，范围与验证见[页面文档](frontend-pages.md#顶部主导航)。上述段落保留为研究基准。
 
 ### 兼容补丁不能只看注释就当作当前缺陷
 

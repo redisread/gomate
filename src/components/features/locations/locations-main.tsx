@@ -1,6 +1,5 @@
 import { HydratedControls } from "@/components/ui/hydrated-controls";
 import { withI18n } from "@/i18n/context";
-import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useLocationsList, type LocationsListInitialData } from "./use-locations-list";
 import { LocationsHero, LocationsResultBar } from "./locations-hero";
@@ -12,7 +11,6 @@ function LocationsClientContent({ initialData }: { initialData?: LocationsListIn
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
       <HydratedControls>
       <LocationsHero
         activeRole={ctx.activeRole}

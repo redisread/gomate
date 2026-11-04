@@ -9,12 +9,13 @@ import { Navbar } from "./navbar";
 
 const ADMIN_NAMESPACES = ["admin"];
 
-function PublicNavbarContent() {
+function PublicNavbarContent({ initialPath }: { initialPath?: string }) {
   const { t } = useI18n(ADMIN_NAMESPACES);
   const actionRef = React.useRef<HTMLInputElement>(null);
 
   return (
     <Navbar
+      initialPath={initialPath}
       adminQuickActionLabel={t("admin.platform.quickActionLabel")}
       renderAdminQuickAction={(dialogProps) => (
         <AdminQuickActionDialog

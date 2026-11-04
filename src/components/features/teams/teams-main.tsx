@@ -4,7 +4,6 @@ import { withI18n } from "@/i18n/context";
 import { Button as SwButton } from "@/components/starwind-react/button";
 
 import { X } from "lucide-react";
-import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { useI18n } from "@/hooks/useI18n";
 import { useTeams, type TeamsInitialData } from "./use-teams";
@@ -23,7 +22,6 @@ function TeamsClientContent({ initialData }: { initialData?: TeamsInitialData })
 
   return (
     <main className="min-h-screen bg-background">
-      <Navbar />
       <HydratedControls>
       <TeamsHeader
         searchQuery={ctx.searchQuery}

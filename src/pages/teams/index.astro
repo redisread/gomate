@@ -41,6 +41,6 @@ const initialData = teamsData?.success
   : undefined;
 ---
 
-<Layout titleKey="content.seo_pages.teams" showNavbar={false} showFooter={false}>
+<Layout tabNavigation titleKey="content.seo_pages.teams" showFooter={false}>
   <TeamsClient initialI18n={getPageI18n(Astro.locals)} initialData={initialData} client:load />
 </Layout>

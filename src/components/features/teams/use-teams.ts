@@ -100,10 +100,28 @@ export function useTeams(initialData?: TeamsInitialData) {
       currentWindowRef.current = { cursor: saved.cursor ?? null, page: saved.page };
       setCurrentPage(saved.page);
       if (Array.isArray(saved.cursors)) cursorsByPageRef.current = new Map(saved.cursors);
-      if (Number.isFinite(saved.scrollY)) restoreScrollRef.current = saved.scrollY;
+      const scrollY = window.history.state?.scrollY ?? saved.scrollY;
+      if (Number.isFinite(scrollY)) restoreScrollRef.current = scrollY;
     }
+    const cancelOutgoingRequests = () => {
+      ++latestRequestIdRef.current;
+      requestAbortRef.current?.abort();
+      if (filterRequestTimerRef.current) clearTimeout(filterRequestTimerRef.current);
+    };
+    const onPreparation = (event: Event) => {
+      // Traversal has already changed the URL. Forward navigation may fail,
+      // so keep its outgoing page's queries alive until the actual swap.
+      if ((event as { navigationType?: string }).navigationType === "traverse") cancelOutgoingRequests();
+      else saveBrowsePosition();
+    };
+    document.addEventListener("astro:before-swap", cancelOutgoingRequests);
+    document.addEventListener("astro:before-preparation", onPreparation);
     window.addEventListener("pagehide", saveBrowsePosition);
-    return () => window.removeEventListener("pagehide", saveBrowsePosition);
+    return () => {
+      document.removeEventListener("astro:before-preparation", onPreparation);
+      document.removeEventListener("astro:before-swap", cancelOutgoingRequests);
+      window.removeEventListener("pagehide", saveBrowsePosition);
+    };
   }, [saveBrowsePosition]);
 
   React.useEffect(() => {

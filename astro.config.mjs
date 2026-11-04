@@ -14,6 +14,8 @@ const persistStatePath = resolve(
 
 export default defineConfig({
   output: "server",
+  // RoutePrefetch already handles expressed intent; avoid a second prefetcher.
+  prefetch: false,
   adapter: cloudflare({
     configPath: process.env.GOMATE_WRANGLER_CONFIG ?? "./wrangler.jsonc",
     imageService: "passthrough",

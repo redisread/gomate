@@ -28,6 +28,11 @@ vi.mock("@/hooks/useI18n", () => ({
   }),
 }));
 
+vi.mock("../components/layout/main-nav", () => ({
+  MainNav: () => null,
+  activeNavRoute: () => undefined,
+}));
+
 vi.mock("../components/layout/locale-toggle", () => ({
   LocaleToggle: () => null,
 }));
@@ -62,6 +67,20 @@ describe("Navbar auth state", () => {
     expect(renderAdminQuickAction).not.toHaveBeenCalled();
 
     await act(async () => resolveUser?.(null));
+  });
+
+  it("refreshes after a client page swap without accepting an older session result", async () => {
+    let oldResult!: (user: null) => void;
+    fetchCurrentUserMock.mockReturnValue(new Promise<null>((resolve) => { oldResult = resolve; }));
+    refreshCurrentUserMock.mockResolvedValue({
+      id: "user-1", name: "Tester", nickname: "Tester", email: "test@example.com", image: null, extra: {},
+    });
+    render(<Navbar />);
+    await act(async () => { document.dispatchEvent(new Event("astro:after-swap")); });
+    expect(await screen.findByTestId("nav-create-team")).toBeInTheDocument();
+    await act(async () => oldResult(null));
+    expect(screen.queryByTestId("nav-login")).not.toBeInTheDocument();
+    expect(screen.getByTestId("nav-create-team")).toBeInTheDocument();
   });
 
   it("shows guest actions after authentication resolves without a user", async () => {
