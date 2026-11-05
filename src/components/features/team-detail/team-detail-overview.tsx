@@ -8,13 +8,12 @@ import {
   Footprints,
   MapPin,
   Mountain,
-  Timer,
 } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { TeamLeaderMini } from "@/components/features/teams/shared";
 import type { Location, Team } from "@/lib/types";
-import { formatTeamStart, getTeamDurationMinutes } from "@/lib/team-display";
-import { formatDuration } from "./team-detail-utils";
+import { formatTeamStart, formatTeamSchedule } from "@/lib/team-display";
+import { TeamMeetingInfo } from "./team-meeting-info";
 import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
 interface TeamDepartureBriefProps {
@@ -25,6 +24,7 @@ interface TeamDepartureBriefProps {
   desktopAction?: ReactNode;
   decisionPanel?: ReactNode;
   showMeetingPoint?: boolean;
+  isLeader?: boolean;
 }
 
 export function TeamDepartureBrief({
@@ -35,11 +35,12 @@ export function TeamDepartureBrief({
   desktopAction,
   decisionPanel,
   showMeetingPoint,
+  isLeader = false,
 }: TeamDepartureBriefProps) {
-  const { t } = useI18n(["teams", "common"]);
+  const { t, locale } = useI18n(["teams", "common"]);
   // Use the destination timezone so SSR and hydration never depend on the host.
   const start = formatTeamStart(team, "en-US", location?.region?.timezone ?? "UTC");
-  const durationMinutes = getTeamDurationMinutes(team);
+  const schedule = formatTeamSchedule(team, locale, location?.region?.timezone ?? "UTC");
   return (
     <section
       data-testid="team-departure-brief"
@@ -89,7 +90,7 @@ export function TeamDepartureBrief({
               className="min-w-0 space-y-1 tabular-nums"
             >
               <span className="block text-sm text-muted-foreground">
-                {start.date.slice(0, 4)}
+                {start.date.slice(0, 4)} · {schedule.weekday}
               </span>
               <span className="block text-3xl font-bold tracking-tight text-foreground">
                 {start.date.slice(5)}
@@ -105,13 +106,10 @@ export function TeamDepartureBrief({
                   {start.time}
                 </span>
               )}
-              {durationMinutes > 0 && (
-                <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Timer className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  {t("teams.estimatedPrefix")}{" "}
-                  {formatDuration(durationMinutes / 60)}
-                </span>
-              )}
+              <span className="text-sm text-muted-foreground">
+                {t("teams.expectedEnd", { time: schedule.end })}
+              </span>
+              <span className="text-xs text-muted-foreground">{schedule.timeZone}</span>
             </div>
           </div>
           {location && (
@@ -134,16 +132,7 @@ export function TeamDepartureBrief({
               <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />
             </a>
           )}
-          {showMeetingPoint && team.meetingPoint && (
-            <div className="mt-4 rounded-lg bg-secondary p-4">
-              <h2 className="text-sm font-semibold">
-                {t("teams.meetingPoint")}
-              </h2>
-              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-muted-foreground">
-                {team.meetingPoint}
-              </p>
-            </div>
-          )}
+          {showMeetingPoint && <TeamMeetingInfo team={team} isLeader={isLeader} />}
           {decisionPanel}
           {desktopAction && (
             <div

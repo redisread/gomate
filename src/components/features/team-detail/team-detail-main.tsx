@@ -97,6 +97,7 @@ function TeamDetailPartifulContent({ teamId, initialTeam }: TeamDetailPartifulPr
           statusColor={statusInfo.color}
           decisionPanel={<TeamDecisionPanel ctx={ctx} />}
           showMeetingPoint={ctx.isLeader || ctx.isMember}
+          isLeader={ctx.isLeader}
           desktopAction={desktopAction}
         />
 

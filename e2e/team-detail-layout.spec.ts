@@ -160,7 +160,7 @@ for (const role of ["member", "leader"] as const) {
     if (role === "member")
       await expect(brief.getByTestId("team-member-status")).toBeVisible();
     else
-      await expect(brief.getByRole("button", { name: /组建/ })).toBeVisible();
+      await expect(brief.getByRole("button", { name: /确认出发/ })).toBeVisible();
     await page.screenshot({
       path: `.wrangler/team-shots/${role}-390.png`,
       fullPage: true,
@@ -249,9 +249,37 @@ test("join success toast clears the home indicator after the mobile bar disappea
   await expect(bar).toHaveCSS("padding-bottom", "34px");
   await bar.getByTestId("team-join-button").click();
   await expect(bar).toHaveCount(0);
-  const toast = page.getByRole("status");
+  const toast = page.getByRole("status").filter({ hasText: /Joined the team|已加入队伍/ });
   await expect(toast).toBeVisible();
   expect(
     await toast.evaluate((el) => parseFloat(getComputedStyle(el).bottom)),
   ).toBeGreaterThanOrEqual(50);
+});
+
+test("member can read departure details and manually copy contact when clipboard is unavailable", async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: "gomate_locale", value: "zh-CN", url: baseURL! }]);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+      writeText: async () => { throw new Error("Clipboard blocked for this test"); },
+    } });
+  });
+  await setup(page, "member", {
+    leader: { ...team.leader, extra: { ...team.leader.extra, wechat: "gomate-leader" } },
+    location: { ...team.location, region: { ...team.location.region, timezone: "Asia/Shanghai" } },
+  });
+  await page.goto("/teams/invitation-layout");
+  const brief = page.getByTestId("team-departure-brief");
+  await expect(brief.getByText("已加入 · 等待队长确认出发")).toBeVisible();
+  await expect(brief.getByText("预计 15:30 结束")).toBeVisible();
+  await expect(brief.getByText(/星期六/)).toBeVisible();
+  const copy = brief.getByRole("button", { name: "复制队长微信号" });
+  await copy.focus();
+  await copy.press("Enter");
+  const manual = brief.getByRole("textbox", { name: "复制队长微信号" });
+  await expect(manual).toBeFocused();
+  await expect(manual).toHaveValue("gomate-leader");
+  await expect(brief.getByText("复制失败，请选中文字手动复制")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: ".wrangler/team-shots/departure-copy-mobile.png", fullPage: true });
 });

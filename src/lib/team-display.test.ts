@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Team } from "@/contracts";
 import {
   formatTeamStart,
+  formatTeamSchedule,
   getTeamDisplayStatus,
   getTeamDurationMinutes,
   isTeamJoinable,
@@ -77,4 +78,15 @@ describe("team-display", () => {
       }),
     ).toBe(false);
   });
+});
+
+
+it("formats cross-day schedules in the destination timezone", () => {
+  const schedule = formatTeamSchedule({ startAt: "2027-04-17T15:30:00Z", endAt: "2027-04-17T17:30:00Z" }, "en-US", "Asia/Shanghai");
+  expect(schedule).toEqual({ weekday: "Saturday", end: "2027/04/18 01:30", timeZone: "GMT+8" });
+});
+
+it("makes an offset change visible when an activity crosses daylight saving time", () => {
+  const schedule = formatTeamSchedule({ startAt: "2027-11-07T05:30:00Z", endAt: "2027-11-07T06:30:00Z" }, "en-US", "America/New_York");
+  expect(schedule).toEqual({ weekday: "Sunday", end: "01:30 EST", timeZone: "EDT" });
 });

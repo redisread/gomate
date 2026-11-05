@@ -4,11 +4,15 @@
  */
 import { env } from "cloudflare:workers";
 import { isGoogleAuthAvailable } from "../server/lib/google-auth";
+import { resolveLoginReturnPath } from "../lib/login-return-path";
 import Layout from "../layouts/Layout.astro";
 import { RegisterClient } from "../components/features/register-client";
 import { declareI18nNs } from "../middleware";
 
 declareI18nNs(Astro.locals, ["auth", "content"]);
+const target = resolveLoginReturnPath(Astro.url.searchParams.get("returnTo") ?? Astro.url.searchParams.get("redirect"));
+const returnTo = Astro.locals.locale === "en" && !/^\/(en|zh-CN)(?:\/|$)/u.test(target) ? `/en${target}` : target;
+Astro.response.headers.set("Cache-Control", "private, no-store");
 ---
 
 <Layout
@@ -16,5 +20,5 @@ declareI18nNs(Astro.locals, ["auth", "content"]);
   showNavbar={false}
   showFooter={false}
 >
-  <RegisterClient googleEnabled={isGoogleAuthAvailable(Astro.request, env)} client:load />
+  <RegisterClient returnTo={returnTo} googleEnabled={isGoogleAuthAvailable(Astro.request, env)} client:load />
 </Layout>

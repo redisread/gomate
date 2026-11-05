@@ -288,3 +288,46 @@ it("cancels an old location detail request and ignores its late failure", async 
   unmount();
   expect(detailCall?.[1]?.signal.aborted).toBe(true);
 });
+
+it("preserves the selected destination through login", async () => {
+  arrangeRequests();
+  window.history.replaceState({}, "", "/en/teams/create?locationId=location-a");
+  render(<CreateTeamClient />);
+  await waitFor(() => expect(fetchCurrentUser).toHaveBeenCalled());
+  const loginUrl = new URL(fetchCurrentUser.mock.calls.at(-1)![0], window.location.origin);
+  expect(loginUrl.searchParams.get("returnTo")).toBe("/en/teams/create?locationId=location-a");
+});
+
+it("keeps activity input while saving a missing contact and retrying a failure", async () => {
+  window.history.replaceState({}, "", "/teams/create");
+  vi.clearAllMocks();
+  arrangeRequests();
+  fetchCurrentUser.mockResolvedValue({ id: "leader", extra: {} });
+  const ordinaryFetch = fetchAPI.getMockImplementation()!;
+  let fail = true;
+  fetchAPI.mockImplementation(async (path: string, init?: RequestInit) => {
+    if (path === "/users/me" && init?.method === "PATCH") {
+      return new Response(JSON.stringify(fail
+        ? { success: false }
+        : { success: true, user: { extra: { wechat: "my-wechat" } } }), { status: fail ? 503 : 200 });
+    }
+    return ordinaryFetch(path, init);
+  });
+  render(<CreateTeamClient />);
+  fireEvent.change(await screen.findByTestId("create-team-title"), { target: { value: "周末去湖边" } });
+  await selectLocation(locationA.name);
+  fireEvent.change(await screen.findByTestId("create-team-activity-type"), { target: { value: "travel" } });
+  fireEvent.change(screen.getByLabelText("teams.contactWechatLabel"), { target: { value: " my-wechat " } });
+  fireEvent.click(screen.getByRole("button", { name: "teams.saveContact" }));
+  await screen.findByRole("alert");
+  expect(screen.getByTestId("create-team-title")).toHaveValue("周末去湖边");
+  expect(screen.getByTestId("create-team-submit")).toBeDisabled();
+  fail = false;
+  fireEvent.click(screen.getByRole("button", { name: "teams.saveContact" }));
+  await waitFor(() => expect(screen.getByTestId("create-team-submit")).toBeEnabled());
+  expect(screen.getByTestId("create-team-title")).toHaveFocus();
+  expect(screen.getByTestId("create-team-title")).toHaveValue("周末去湖边");
+  expect(screen.getByTestId("create-team-activity-type")).toHaveValue("travel");
+  expect(fetchAPI).toHaveBeenCalledWith("/users/me", expect.objectContaining({ body: JSON.stringify({ extra: { wechat: "my-wechat" } }) }));
+  expect(fetchAPI.mock.calls.some(([path]) => path === "/teams")).toBe(false);
+});

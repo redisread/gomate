@@ -9,6 +9,7 @@ import {
 } from "@/lib/activity-types";
 import { ACTIVITY_TYPES } from "@/contracts";
 import type { Location } from "@/lib/types";
+import { authPageHref } from "@/lib/login-return-path";
 import { createTeamPayload } from "./team-form-data";
 import type { CreateTeamFormData } from "./team-form-data";
 
@@ -54,7 +55,7 @@ export function useCreateTeamForm() {
   React.useEffect(() => {
     (async () => {
       const u = await fetchCurrentUser(
-        `/login?redirect=${encodeURIComponent("/teams/create")}`,
+        authPageHref("login", `${window.location.pathname}${window.location.search}`),
       );
       if (!u) return;
       setIsAuthenticated(true);
@@ -172,6 +173,7 @@ export function useCreateTeamForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hasWechat || isSubmitting) return;
     setIsSubmitting(true);
     setError("");
     try {
@@ -217,6 +219,7 @@ export function useCreateTeamForm() {
     setLocationSearchVersion,
     isAuthenticated,
     hasWechat,
+    contactSaved: () => setHasWechat(true),
     isSubmitting,
     sessionFailed,
     error,
