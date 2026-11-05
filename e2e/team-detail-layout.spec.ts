@@ -160,7 +160,7 @@ for (const role of ["member", "leader"] as const) {
     if (role === "member")
       await expect(brief.getByTestId("team-member-status")).toBeVisible();
     else
-      await expect(brief.getByRole("button", { name: /组建/ })).toBeVisible();
+      await expect(brief.getByRole("button", { name: /确认出发/ })).toBeVisible();
     await page.screenshot({
       path: `.wrangler/team-shots/${role}-390.png`,
       fullPage: true,

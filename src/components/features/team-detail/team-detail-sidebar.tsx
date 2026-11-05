@@ -12,6 +12,7 @@ import { useI18n } from "@/hooks/useI18n";
 import type { Team } from "@/lib/types";
 import { useTeamDetail } from "./use-team-detail";
 
+import { getStatusInfo } from "./team-detail-utils";
 import { getTeamDisplayStatus } from "@/lib/team-display";
 
 export function TeamDecisionPanel({
@@ -37,7 +38,7 @@ export function TeamDecisionPanel({
 
         {isLeader && <LeaderActions ctx={ctx} team={team} />}
         {isMember && (
-          <MemberStatusIndicator onLeave={() => ctx.setShowLeave(true)} />
+          <MemberStatusIndicator team={team} onLeave={() => ctx.setShowLeave(true)} />
         )}
         {statusLoadFailed && <StatusLoadError onRetry={ctx.retryStatus} />}
       </div>
@@ -238,25 +239,31 @@ function LeaderActions({
   );
 }
 
-function MemberStatusIndicator({ onLeave }: { onLeave: () => void }) {
-  const { t } = useI18n(["teams"]);
+function MemberStatusIndicator({ team, onLeave }: { team: Team; onLeave: () => void }) {
+  const { t } = useI18n(["teams", "enums"]);
+  const message = team.lifecycle === "pending"
+    ? t("teams.memberAwaitingDeparture")
+    : team.lifecycle === "formed"
+      ? t("teams.memberDepartureConfirmed")
+      : getStatusInfo(getTeamDisplayStatus(team), t).label;
+  const canLeave = team.lifecycle !== "cancelled" && Date.parse(team.startAt) > Date.now();
   return (
     <div
       data-testid="team-member-status"
-      className="rounded-lg bg-success-subtle p-3 space-y-2"
+      className="rounded-lg bg-secondary p-3 space-y-2"
     >
       <div className="flex items-center gap-2 text-accent-foreground">
         <CheckCircle className="w-4 h-4" />
         <span className="font-medium text-sm">
-          {t("teams.joinedTeamStatus")}
+          {message}
         </span>
       </div>
-      <SwButton variant="plain" size="inherit" type="button"
+      {canLeave && <SwButton variant="plain" size="inherit" type="button"
         onClick={onLeave}
         className="min-h-11 w-full rounded-lg text-sm text-muted-foreground hover:text-foreground py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {t("teams.leaveTeam")}
-      </SwButton>
+      </SwButton>}
     </div>
   );
 }

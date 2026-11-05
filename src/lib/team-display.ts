@@ -76,3 +76,26 @@ export function isTeamJoinable(
 export function isTeamActive(team: Pick<Team, "lifecycle">): boolean {
   return team.lifecycle === "pending" || team.lifecycle === "formed" || team.lifecycle === "in_progress";
 }
+
+
+export function formatTeamSchedule(
+  team: Pick<Team, "startAt" | "endAt">,
+  locale: string,
+  timeZone: string,
+): { weekday: string; end: string; timeZone: string } {
+  const startDate = validDate(team.startAt);
+  const endDate = validDate(team.endAt);
+  if (!startDate || !endDate) return { weekday: "", end: "", timeZone: "" };
+  const start = formatTeamStart(team, locale, timeZone);
+  const end = formatTeamStart({ startAt: team.endAt }, locale, timeZone);
+  const zoneFormatter = new Intl.DateTimeFormat(locale, { timeZone, timeZoneName: "short" });
+  const zone = (date: Date) => zoneFormatter.formatToParts(date).find((part) => part.type === "timeZoneName")?.value ?? timeZone;
+  const startZone = zone(startDate);
+  const endZone = zone(endDate);
+  const endTime = startZone === endZone ? end.time : `${end.time} ${endZone}`;
+  return {
+    weekday: new Intl.DateTimeFormat(locale, { timeZone, weekday: "long" }).format(startDate),
+    end: start.date === end.date ? endTime : `${end.date} ${endTime}`,
+    timeZone: startZone,
+  };
+}

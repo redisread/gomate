@@ -107,6 +107,11 @@ async function apiFetch(
   };
 }
 
+/** Synthetic challenges stay behind the localhost-only secret guard. */
+export function createLocalVerificationToken(email: string) {
+  return createEmailVerificationToken(localAuthSecret(), email, undefined, 60 * 60);
+}
+
 /** 注册、验证邮箱并登录一个仅用于本地 E2E 的用户。 */
 export async function signUpUser(
   email: string,
@@ -130,12 +135,7 @@ export async function signUpUser(
     );
   }
 
-  const token = await createEmailVerificationToken(
-    localAuthSecret(),
-    email,
-    undefined,
-    60 * 60,
-  );
+  const token = await createLocalVerificationToken(email);
   const verification = await apiFetch(
     "POST",
     "/auth/confirm-email",

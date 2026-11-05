@@ -39,8 +39,14 @@ export function TeamContactSetup({ onSaved }: { onSaved: () => void }) {
   }
 
   return (
-    <form onSubmit={saveContact} className="mb-6 space-y-3 rounded-2xl border border-border bg-card p-4">
-      <label htmlFor="team-contact-wechat" className="block text-sm font-semibold">
+    <form
+      onSubmit={saveContact}
+      className="mb-6 space-y-3 rounded-2xl border border-border bg-card p-4"
+    >
+      <label
+        htmlFor="team-contact-wechat"
+        className="block text-sm font-semibold"
+      >
         {t("teams.contactWechatLabel")}
       </label>
       <p id="team-contact-hint" className="text-sm text-muted-foreground">
@@ -57,11 +63,19 @@ export function TeamContactSetup({ onSaved }: { onSaved: () => void }) {
           aria-describedby="team-contact-hint"
           className="min-h-11 min-w-0 flex-1 text-base"
         />
-        <SubmitButton loading={saving} disabled={!wechat.trim()} className="min-h-11 px-4">
+        <SubmitButton
+          loading={saving}
+          disabled={!wechat.trim()}
+          className="min-h-11 px-4"
+        >
           {t("teams.saveContact")}
         </SubmitButton>
       </div>
-      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </form>
   );
 }
