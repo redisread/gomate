@@ -220,10 +220,18 @@ for (const locale of ["zh-CN", "en"]) {
       .locator('label[for="title"]')
       .evaluate((element) => getComputedStyle(element).color);
     await expect(page.locator("h1")).toHaveCSS("color", labelColor);
-    await expect(extra).toHaveCSS("color", labelColor);
+    await expect(extra.locator(".font-semibold")).toHaveCSS(
+      "color",
+      labelColor,
+    );
+    await expect(form.locator('a[href^="/locations/"] .font-medium')).toHaveCSS(
+      "color",
+      labelColor,
+    );
     await page.screenshot({
       path: testInfo.outputPath("edit-mobile-dark.png"),
       fullPage: true,
+      animations: "disabled",
     });
     expect(browserErrors).toEqual([]);
   });

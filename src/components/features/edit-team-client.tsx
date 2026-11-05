@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Loader2, LockKeyhole, Plus, X } from "lucide-react";
+import { Calendar, Loader2, LockKeyhole, X } from "lucide-react";
 import { Input } from "@/components/starwind-react/input";
 import { Button } from "@/components/starwind-react/button";
 import { FieldGroup } from "@/components/ui/field-group";
@@ -179,7 +179,6 @@ export function EditTeamClient({ teamId }: { teamId: string }) {
                 onClick={ctx.addRequirement}
                 className="min-h-11 gap-2"
               >
-                <Plus className="h-4 w-4" aria-hidden="true" />
                 {t("teams.editAddRequirement")}
               </Button>
             )}
