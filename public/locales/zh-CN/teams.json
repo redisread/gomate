@@ -61,7 +61,7 @@
   "recommendedActivityType": "{name}（地点推荐）",
   "inactiveActivityType": "{name}（已停用，仅保留历史）",
   "wechatRequiredTitle": "请填写微信号",
-  "wechatRequiredDesc": "创建队伍前需要在个人资料中填写微信号，以便队友联系您。",
+  "wechatRequiredDesc": "用于队友联系，仅同队成员可见。保存后继续填写活动。",
   "goToFillWechat": "前往填写微信号",
   "loading": "加载中...",
   "locationSearchLabel": "搜索地点",
@@ -370,5 +370,8 @@
   "departureCardTitle": "这次，一起出发",
   "aboutTrip": "关于这次出发",
   "tagsLoadFailed": "标签加载失败",
-  "locationDetailLoadFailed": "地点详情加载失败"
+  "locationDetailLoadFailed": "地点详情加载失败",
+  "contactWechatLabel": "微信号",
+  "saveContact": "保存微信号",
+  "contactSaveFailed": "微信号保存失败，请重试。已填写的活动内容会保留。"
 }

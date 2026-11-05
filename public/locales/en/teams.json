@@ -61,7 +61,7 @@
   "recommendedActivityType": "{name} (recommended for this place)",
   "inactiveActivityType": "{name} (inactive, kept for history)",
   "wechatRequiredTitle": "Please Fill in WeChat ID",
-  "wechatRequiredDesc": "You need to fill in your WeChat ID in your profile before creating a team so teammates can contact you.",
+  "wechatRequiredDesc": "Share your contact with teammates only. Save it to continue creating your activity.",
   "goToFillWechat": "Go Fill in WeChat ID",
   "loading": "Loading...",
   "locationSearchLabel": "Search locations",
@@ -370,5 +370,8 @@
   "departureCardTitle": "Your next outing",
   "aboutTrip": "About this outing",
   "tagsLoadFailed": "Could not load tags",
-  "locationDetailLoadFailed": "Could not load location details"
+  "locationDetailLoadFailed": "Could not load location details",
+  "contactWechatLabel": "WeChat ID",
+  "saveContact": "Save WeChat ID",
+  "contactSaveFailed": "Could not save your WeChat ID. Please retry. Your activity details are still here."
 }

@@ -28,6 +28,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { FieldGroup } from "@/components/ui/field-group";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { QuickDurationButton } from "./create-team/quick-duration-button";
+import { TeamContactSetup } from "./create-team/team-contact-setup";
 import { TeamLocationPicker } from "./create-team/team-location-picker";
 import { TeamLocationPreview } from "./teams/shared/team-location-preview";
 import { Footer } from "@/components/layout/footer";
@@ -52,6 +53,7 @@ export function CreateTeamClient() {
     setLocationSearchVersion,
     isAuthenticated,
     hasWechat,
+    contactSaved,
     isSubmitting,
     sessionFailed,
     error,
@@ -99,32 +101,12 @@ export function CreateTeamClient() {
           </p>
         </div>
 
-        {/* 微信号提醒 */}
-        {!hasWechat && (
-          <div className="mb-6 rounded-2xl p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-500" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold mb-1 text-amber-800 dark:text-amber-300">
-                  {t("teams.wechatRequiredTitle")}
-                </p>
-                <p className="text-sm mb-3 text-amber-700 dark:text-amber-400">
-                  {t("teams.wechatRequiredDesc")}
-                </p>
-                <a href="/profile/edit">
-                  <SwButton variant="plain" size="inherit" type="button" className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150 bg-card border border-amber-300/50 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 hover:bg-accent">
-                    {t("teams.fillWechatBtn")}
-                  </SwButton>
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
+        {!hasWechat && <TeamContactSetup onSaved={() => {
+          contactSaved();
+          document.getElementById("title")?.focus();
+        }} />}
 
-        {/* 表单卡片 */}
-        <div
-          className={`rounded-2xl p-6 sm:p-8 card-base ${!hasWechat ? "opacity-50 pointer-events-none" : ""}`}
-        >
+        <div className="rounded-2xl p-6 sm:p-8 card-base">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 队伍标题 */}
             <TeamNameField
@@ -348,7 +330,8 @@ export function CreateTeamClient() {
               </SwButton>
               <SubmitButton
                 data-testid="create-team-submit"
-                loading={isSubmitting || !hasWechat}
+                loading={isSubmitting}
+                disabled={!hasWechat}
                 loadingText={
                   !hasWechat
                     ? t("teams.wechatRequiredBtn")
