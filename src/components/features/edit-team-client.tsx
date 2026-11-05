@@ -90,7 +90,7 @@ export function EditTeamClient({ teamId }: { teamId: string }) {
           </TeamActivityField>
         </div>
         <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid gap-3 min-[380px]:grid-cols-2 sm:gap-4">
             <FieldGroup label={t("teams.formLabel.date")}>
               <div className="flex min-h-11 flex-wrap items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm">
                 <Calendar
@@ -113,7 +113,7 @@ export function EditTeamClient({ teamId }: { teamId: string }) {
             {t("teams.formFixedDetails")}
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid gap-3 min-[380px]:grid-cols-2 sm:gap-4">
           <TeamDurationField
             value={formData.durationMinutes}
             onChange={handleChange}

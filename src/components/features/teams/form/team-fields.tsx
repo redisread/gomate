@@ -180,7 +180,7 @@ export function TeamActivityField({
         onChange={onChange}
         required
         data-testid={testId}
-        className={TEAM_CONTROL_CLASS}
+        className={`${TEAM_CONTROL_CLASS} pr-9`}
       >
         {children}
       </SwNativeSelect>
@@ -211,7 +211,7 @@ export function TeamDurationField({
         onChange={onChange}
         required={required}
         data-testid={testId}
-        className={TEAM_CONTROL_CLASS}
+        className={`${TEAM_CONTROL_CLASS} pr-9`}
       >
         {!hasCurrentOption && (
           <option value={value}>

@@ -31,6 +31,16 @@ async function checkLayout(page: Page) {
         ),
       ).toBeGreaterThanOrEqual(16);
       expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      if (
+        ["date", "time"].includes((await control.getAttribute("type")) ?? "")
+      ) {
+        expect((await control.boundingBox())!.width).toBeGreaterThanOrEqual(
+          150,
+        );
+      }
+      if (await control.evaluate((element) => element.tagName === "SELECT")) {
+        await expect(control).toHaveCSS("padding-right", "36px");
+      }
     }
   }
 }
@@ -38,6 +48,7 @@ async function checkLayout(page: Page) {
 for (const locale of ["zh-CN", "en"]) {
   test(`${locale} compact forms retain data, support keyboard and adapt across widths`, async ({
     page,
+    browserName,
   }, testInfo) => {
     test.setTimeout(60_000);
     const browserErrors: string[] = [];
@@ -61,15 +72,13 @@ for (const locale of ["zh-CN", "en"]) {
       description: "轻松走走，沿途休息，期待遇见新朋友。",
       requirements: ["穿舒适的鞋子"],
     });
-    await page
-      .context()
-      .addCookies([
-        {
-          name: "gomate_locale",
-          value: locale,
-          url: process.env.E2E_BASE_URL || "http://localhost:5432",
-        },
-      ]);
+    await page.context().addCookies([
+      {
+        name: "gomate_locale",
+        value: locale,
+        url: process.env.E2E_BASE_URL || "http://localhost:5432",
+      },
+    ]);
     await loginAs(page, user.email, user.password);
     await page.goto(`/teams/create?locationId=${locationId}`);
     const form = page.getByTestId("team-form");
@@ -84,7 +93,11 @@ for (const locale of ["zh-CN", "en"]) {
     await expect(extra).toHaveAttribute("aria-expanded", "false");
     await expect(panel).toHaveAttribute("inert", "");
     await extra.focus();
-    await page.keyboard.press("Tab");
+    await page.keyboard.press(
+      browserName === "webkit" && process.platform === "darwin"
+        ? "Alt+Tab"
+        : "Tab",
+    );
     await expect(
       page.getByRole("button", { name: /取消|Cancel/u, exact: true }),
     ).toBeFocused();
@@ -111,6 +124,8 @@ for (const locale of ["zh-CN", "en"]) {
       reducedMotion: "no-preference",
     });
     await title.fill("周末一起出发 · Weekend walk");
+    await page.getByTestId("create-team-activity-type").selectOption("hiking");
+    await page.getByTestId("create-team-max-members").fill("6");
     await page
       .getByTestId("create-team-date")
       .fill(new Date(start).toISOString().slice(0, 10));
@@ -129,6 +144,7 @@ for (const locale of ["zh-CN", "en"]) {
       .click();
     await expect(page.getByTestId("create-team-activity-type")).toBeEnabled();
     await expect(picker).toContainText(name);
+    await expect(picker).toHaveAccessibleName(new RegExp(name, "u"));
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
       path: testInfo.outputPath("create-desktop.png"),
@@ -176,13 +192,16 @@ for (const locale of ["zh-CN", "en"]) {
     await page.getByTestId("create-team-submit").click();
     await expect(actions.getByRole("alert")).toBeVisible();
     await expect(title).toHaveValue("周末一起出发 · Weekend walk");
-    expect(
-      await page
-        .locator(".team-form-page")
-        .evaluate((element) =>
-          parseFloat(getComputedStyle(element).paddingBottom),
-        ),
-    ).toBeGreaterThan((await actions.boundingBox())!.height);
+    await expect
+      .poll(async () => {
+        const padding = await page
+          .locator(".team-form-page")
+          .evaluate((element) =>
+            parseFloat(getComputedStyle(element).paddingBottom),
+          );
+        return padding - (await actions.boundingBox())!.height;
+      })
+      .toBeGreaterThanOrEqual(24);
     await page.unroute("**/api/teams");
     await page.goto(`/teams/${teamId}/edit`);
     await expect(form.locator('[name="title"]')).toBeVisible();
@@ -196,6 +215,12 @@ for (const locale of ["zh-CN", "en"]) {
     });
     await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
     await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator("html")).toHaveClass(/dark/u);
+    const labelColor = await form
+      .locator('label[for="title"]')
+      .evaluate((element) => getComputedStyle(element).color);
+    await expect(page.locator("h1")).toHaveCSS("color", labelColor);
+    await expect(extra).toHaveCSS("color", labelColor);
     await page.screenshot({
       path: testInfo.outputPath("edit-mobile-dark.png"),
       fullPage: true,

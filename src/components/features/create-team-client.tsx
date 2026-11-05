@@ -113,7 +113,7 @@ export function CreateTeamClient() {
           </TeamActivityField>
         </div>
         <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid gap-3 min-[380px]:grid-cols-2 sm:gap-4">
             <FieldGroup
               htmlFor="startDateInput"
               label={t("teams.formLabel.date")}
@@ -146,7 +146,7 @@ export function CreateTeamClient() {
             {t("teams.formDateHint")}
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid gap-3 min-[380px]:grid-cols-2 sm:gap-4">
           <TeamDurationField
             value={formData.durationMinutes}
             onChange={handleChange}

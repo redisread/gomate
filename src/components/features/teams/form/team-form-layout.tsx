@@ -25,7 +25,7 @@ export function TeamFormFrame({
   beforeForm?: ReactNode;
 }) {
   return (
-    <main className="team-form-page min-h-screen bg-background">
+    <main className="team-form-page min-h-screen bg-background text-foreground">
       <Navbar />
       <div className="mx-auto max-w-3xl px-4 pt-20 sm:px-6 sm:pb-12 sm:pt-24">
         <header className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2">

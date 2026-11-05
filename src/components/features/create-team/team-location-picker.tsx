@@ -107,7 +107,7 @@ export function TeamLocationPicker({
         ref={triggerRef}
         type="button"
         data-testid="create-team-location"
-        aria-label={t("teams.formLabel.location")}
+        aria-label={[t("teams.formLabel.location"), selectedLocation?.name].filter(Boolean).join(" ")}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls="create-team-location-dialog"
@@ -147,7 +147,7 @@ export function TeamLocationPicker({
         <div
           id="create-team-location-dialog"
           role="dialog"
-          aria-label={t("teams.formLabel.location")}
+          aria-label={[t("teams.formLabel.location"), selectedLocation?.name].filter(Boolean).join(" ")}
           className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border border-border bg-popover p-2 shadow-xl shadow-stone-950/10"
         >
           <SwLabel className="flex min-h-11 items-center gap-2 rounded-xl bg-muted px-3">
