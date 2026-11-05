@@ -9,12 +9,13 @@ import { BrandIcon } from "@/components/brand-icon";
 import * as React from "react";
 import { Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
-import { resolveLoginReturnPath } from "@/lib/login-return-path";
+import { authPageHref, resolveLoginReturnPath } from "@/lib/login-return-path";
 import { GoogleSignIn } from "./google-sign-in";
 import { signIn } from "@/lib/auth-client";
 
 interface LoginClientProps {
   googleEnabled?: boolean;
+  returnTo?: string;
   onNavigate?: (path: string) => void;
 }
 
@@ -25,6 +26,7 @@ interface LoginClientProps {
  */
 export function LoginClient({
   googleEnabled = false,
+  returnTo,
   onNavigate = (path) => {
     window.location.href = path;
   },
@@ -48,9 +50,12 @@ export function LoginClient({
     setError("");
 
     try {
+      const params = new URLSearchParams(window.location.search);
+      const destination = resolveLoginReturnPath(returnTo ?? params.get("returnTo") ?? params.get("redirect"));
       const result = await signIn.email({
         email: formData.email,
         password: formData.password,
+        callbackURL: destination,
       });
 
       if (result.error) {
@@ -58,10 +63,7 @@ export function LoginClient({
         return;
       }
 
-      const returnTo = new URLSearchParams(window.location.search).get(
-        "returnTo",
-      );
-      onNavigate(resolveLoginReturnPath(returnTo ?? new URLSearchParams(window.location.search).get("redirect")));
+      onNavigate(destination);
     } catch {
       setError(t("auth.loginErrorRetry"));
     } finally {
@@ -285,7 +287,7 @@ export function LoginClient({
               <p className="text-center text-sm text-muted-foreground">
                 {t("auth.noAccount")}{" "}
                 <a
-                  href="/register"
+                  href={authPageHref("register", returnTo ?? "/")}
                   className="font-semibold text-primary hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-150"
                 >
                   {t("auth.registerNow")} →

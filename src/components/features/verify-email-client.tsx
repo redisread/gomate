@@ -8,6 +8,7 @@ import * as React from "react";
 import { CheckCircle2, Loader2, MailCheck, XCircle } from "lucide-react";
 
 import { useI18n } from "@/hooks/useI18n";
+import { authPageHref, resolveLoginReturnPath } from "@/lib/login-return-path";
 import { fetchAPI } from "@/lib/api";
 
 type VerificationState = "ready" | "confirming" | "success" | "error";
@@ -15,11 +16,14 @@ type VerificationState = "ready" | "confirming" | "success" | "error";
 export function VerifyEmailClient() {
   const { t } = useI18n(["auth"]);
   const [state, setState] = React.useState<VerificationState>("ready");
+  const [returnTo, setReturnTo] = React.useState("/");
   const [token, setToken] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.hash.replace(/^#/u, ""));
     const fragmentToken = params.get("token");
+    const destination = resolveLoginReturnPath(params.get("returnTo"));
+    setReturnTo(destination);
     const scrubbedUrl = new URL(window.location.href);
     scrubbedUrl.searchParams.delete("token");
     window.history.replaceState(
@@ -94,7 +98,7 @@ export function VerifyEmailClient() {
           )}
           {!isChecking && !isReady && (
             <SwButton as="a" variant="plain" size="inherit"
-              href={isSuccess ? "/login" : "/register"}
+              href={authPageHref(isSuccess ? "login" : "register", returnTo)}
               className="mt-6 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
             >
               {isSuccess ? t("auth.goLogin") : t("auth.registerNow")}

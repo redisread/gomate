@@ -10,6 +10,7 @@ import { GoogleSignIn } from "./google-sign-in";
 import * as React from "react";
 import { Eye, EyeOff, Loader2, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
+import { authPageHref, resolveLoginReturnPath } from "@/lib/login-return-path";
 import { sendVerificationEmail, signUp } from "@/lib/auth-client";
 
 /**
@@ -17,7 +18,8 @@ import { sendVerificationEmail, signUp } from "@/lib/auth-client";
  * 左侧：品牌故事 + 功能亮点（桌面端可见）
  * 右侧：注册表单
  */
-export function RegisterClient({ googleEnabled = false }: { googleEnabled?: boolean } = {}) {
+export function RegisterClient({ googleEnabled = false, returnTo = "/" }: { googleEnabled?: boolean; returnTo?: string } = {}) {
+  const destination = resolveLoginReturnPath(returnTo);
   const { t } = useI18n(["auth"]);
   const [googleBusy, setGoogleBusy] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -62,6 +64,7 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
         email: formData.email,
         password: formData.password,
         name: formData.name,
+        callbackURL: destination,
       });
 
       if (result.error) {
@@ -83,7 +86,7 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
     try {
       const result = await sendVerificationEmail({
         email: formData.email.trim().toLowerCase(),
-        callbackURL: "/login",
+        callbackURL: destination,
       });
       setResendMessage(
         result.error
@@ -127,7 +130,7 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
             <p className="text-sm text-muted-foreground" role="status">{resendMessage}</p>
           )}
           <p>
-            <a href="/login" className="text-sm font-medium underline" style={{ color: "var(--primary)" }}>
+            <a href={authPageHref("login", destination)} className="text-sm font-medium underline" style={{ color: "var(--primary)" }}>
               {t("auth.goLogin")}
             </a>
           </p>
@@ -368,7 +371,7 @@ export function RegisterClient({ googleEnabled = false }: { googleEnabled?: bool
               <p className="text-center text-sm text-muted-foreground">
                 {t("auth.hasAccount")}{" "}
                 <a
-                  href="/login"
+                  href={authPageHref("login", destination)}
                   className="font-semibold text-primary hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-150"
                 >
                   {t("auth.loginNow")} →

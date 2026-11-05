@@ -4,6 +4,7 @@ export function resolveLoginReturnPath(
 ): string {
   if (
     !value ||
+    value.length > 2_048 ||
     !value.startsWith("/") ||
     value.startsWith("//") ||
     value.includes("\\") ||
@@ -19,8 +20,17 @@ export function resolveLoginReturnPath(
   const pagePath = url.pathname.replace(/^\/(?:en|zh-CN)(?=\/|$)/u, "");
   if (
     url.origin !== "https://gomate.invalid" ||
-    /^\/(?:api|login|register)(?:\/|$)/u.test(pagePath)
+    /^\/(?:api|login|register|verify-email|reset-password)(?:\/|$)/u.test(pagePath)
   )
     return "/";
   return `${url.pathname}${url.search}`;
+}
+
+
+/** Keep authentication links and their destination in the same language. */
+export function authPageHref(page: "login" | "register", returnTo: string): string {
+  const target = resolveLoginReturnPath(returnTo);
+  const prefix = target.match(/^\/(en|zh-CN)(?=\/|$)/u)?.[0] ?? "";
+  const pathname = `${prefix}/${page}`;
+  return target === "/" ? pathname : `${pathname}?${new URLSearchParams({ returnTo: target })}`;
 }

@@ -73,6 +73,19 @@ describe("createAuth security configuration", () => {
     expect(options.emailAndPassword.password).toBeTruthy();
   });
 
+  it.each(["/en/teams/create?locationId=lake", "https://evil.test", "/api/auth/sign-out"])("validates verification return target %s", async (callbackURL) => {
+    const auth = createAuth({ DB: {}, BETTER_AUTH_SECRET: "test-secret-key-for-testing-32chars", APP_URL: "https://gomate.test" } as never);
+    const options = (auth as unknown as { options: unknown }).options as { emailVerification: { sendVerificationEmail(input: { user: { email: string; name: string }; url: string; token: string }): Promise<void> } };
+    const source = new URL("/api/auth/verify-email", "https://gomate.test");
+    source.searchParams.set("callbackURL", callbackURL);
+    await options.emailVerification.sendVerificationEmail({ user: { email: "member@example.test", name: "Member" }, url: source.href, token: "secret" });
+    const sent = new URL(mocks.sendEmailVerificationEmail.mock.calls[0][1]);
+    const fragment = new URLSearchParams(sent.hash.slice(1));
+    expect(fragment.get("returnTo")).toBe(callbackURL.startsWith("/en/teams") ? callbackURL : null);
+    expect(sent.search).toBe("");
+    expect(fragment.get("token")).toBe("secret");
+  });
+
   it("schedules verification delivery without exposing provider latency", async () => {
     let release!: (value: { success: true }) => void;
     mocks.sendEmailVerificationEmail.mockReturnValueOnce(

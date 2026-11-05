@@ -1,3 +1,4 @@
+import { resolveLoginReturnPath } from "../../lib/login-return-path";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createDb } from "../db";
@@ -36,10 +37,23 @@ type BackgroundExecutionContext = {
   waitUntil(promise: Promise<unknown>): void;
 };
 
-function privateClientUrl(appUrl: string, pathname: string, token: string) {
+function privateClientUrl(appUrl: string, pathname: string, token: string, verificationUrl: string) {
   const url = new URL(pathname, appUrl);
   url.search = "";
-  url.hash = new URLSearchParams({ token }).toString();
+  const fragment = new URLSearchParams({ token });
+  const callback = new URL(verificationUrl).searchParams.get("callbackURL");
+  if (callback) {
+    const destination = new URL(callback, appUrl);
+    const returnTo = destination.origin === new URL(appUrl).origin
+      ? resolveLoginReturnPath(callback.startsWith("/") ? callback : `${destination.pathname}${destination.search}`)
+      : "/";
+    if (returnTo !== "/") {
+      fragment.set("returnTo", returnTo);
+      const prefix = returnTo.match(/^\/(en|zh-CN)(?=\/|$)/u)?.[0] ?? "";
+      url.pathname = `${prefix}${pathname}`;
+    }
+  }
+  url.hash = fragment.toString();
   return url.toString();
 }
 
@@ -122,10 +136,10 @@ export function createAuth(
       sendOnSignIn: true,
       autoSignInAfterVerification: false,
       expiresIn: 60 * 60,
-      sendVerificationEmail: async ({ user, url: _url, token }: VerifyEmailParams) => {
+      sendVerificationEmail: async ({ user, url: verificationUrl, token }: VerifyEmailParams) => {
         const task = sendEmailVerificationEmail(
           user.email,
-          privateClientUrl(env.APP_URL, "/verify-email", token),
+          privateClientUrl(env.APP_URL, "/verify-email", token, verificationUrl),
           user.nickname || user.name || user.email,
           env,
         ).then((result) => {
