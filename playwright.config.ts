@@ -52,7 +52,7 @@ export default defineConfig({
     },
     {
       name: "webkit",
-      testMatch: /(?:performance-experience|location-gallery|location-filters|home-map|team-membership|bilingual|footer|smoke)\.spec\.ts/,
+      testMatch: /(?:team-form-experience|performance-experience|location-gallery|location-filters|home-map|team-membership|bilingual|footer|smoke)\.spec\.ts/,
       use: { ...devices["Desktop Safari"] },
     },
     { name: "chrome", use: { ...devices["Desktop Chrome"], channel: "chrome" } },

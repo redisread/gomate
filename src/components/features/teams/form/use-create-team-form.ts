@@ -152,11 +152,6 @@ export function useCreateTeamForm() {
     [selectedLocation],
   );
 
-  // 快捷设置时长
-  const handleDurationQuickSelect = (minutes: number) => {
-    setFormData((prev) => ({ ...prev, durationMinutes: String(minutes) }));
-  };
-
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -167,6 +162,7 @@ export function useCreateTeamForm() {
   };
 
   const handleLocationChange = (locationId: string) => {
+    if (locationId === formData.locationId) return;
     setSelectedLocation(null);
     setFormData((prev) => ({ ...prev, locationId, activityType: "" }));
   };
@@ -224,7 +220,6 @@ export function useCreateTeamForm() {
     sessionFailed,
     error,
     orderedActivityTypes,
-    handleDurationQuickSelect,
     handleChange,
     handleLocationChange,
     handleSubmit,

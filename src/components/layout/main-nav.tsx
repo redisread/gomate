@@ -31,14 +31,18 @@ function NavIndicator({
   const initial = React.useRef({ x, width });
   React.useEffect(() => {
     const element = ref.current;
-    if (!element) return;
+    if (!element || element.getClientRects().length === 0) return;
     const animation = animate(
       element,
       { transform: `translateX(${x}px)`, width: `${width}px` },
       { duration: reduced ? 0 : 0.26, ease: [0.22, 1, 0.36, 1] },
     );
     // Commit the current position before retargeting, including a live reduced-motion change.
-    return () => animation.stop();
+    return () => {
+      // Hidden or detached elements cannot commit WAAPI styles during responsive teardown.
+      if (element.getClientRects().length === 0) animation.cancel();
+      else animation.stop();
+    };
   }, [x, width, reduced]);
   return (
     <span

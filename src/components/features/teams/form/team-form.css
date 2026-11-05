@@ -1,0 +1,64 @@
+.team-form-page {
+  padding-bottom: calc(
+    var(--team-form-actions-height, 5rem) +
+      var(--team-form-keyboard-offset, 0px) + 1.5rem
+  );
+}
+.team-form-page :is(input, select, textarea, button, a) {
+  scroll-margin-block: 6rem;
+}
+.team-form-actions {
+  position: fixed;
+  z-index: 40;
+  inset-inline: 0;
+  bottom: var(--team-form-keyboard-offset, 0px);
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+.team-form-extra {
+  overflow: hidden;
+}
+.team-form-extra[data-animated="true"][data-state="open"] {
+  animation: team-form-expand 180ms ease-out;
+}
+.team-form-extra[data-animated="true"][data-state="closed"] {
+  animation: team-form-collapse 160ms ease-out;
+}
+@keyframes team-form-expand {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: var(--starwind-collapsible-panel-height);
+    opacity: 1;
+  }
+}
+@keyframes team-form-collapse {
+  from {
+    height: var(--starwind-collapsible-panel-height);
+    opacity: 1;
+  }
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+@media (min-width: 640px) {
+  .team-form-page {
+    padding-bottom: 0;
+  }
+  .team-form-actions {
+    position: static;
+    padding: 1.25rem 0 0;
+    border: 0;
+    box-shadow: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .team-form-extra[data-animated][data-state] {
+    animation: none;
+  }
+}

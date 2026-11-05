@@ -77,6 +77,15 @@
 - 检查方式：运行 `e2e/home-map.spec.ts` 的延迟地图返回及可见 Tab 焦点回归，覆盖目标迟到和用户主动转移焦点。
 - 出现记录：1 次；2026-11-01。
 
+## 动画清理应覆盖响应式隐藏
+
+当动画元素在断点切换中隐藏或移除时，清理应取消动画；提交中间样式前先确认元素仍参与布局。
+
+- 原因是顶部导航滑块在动态 reduced-motion 与桌面切手机交错时，对已隐藏元素调用 Motion `stop()`，触发 WAAPI `commitStyles` 异常。
+- 本次 `180332e0` 构建的本地 Chromium 表单验证记录了两次 `Target element is not rendered`，堆栈指向自已合并提交 `c96bf807` 引入的 `main-nav.tsx` 动画清理。
+- 运行 `e2e/team-form-experience.spec.ts` 与 `e2e/main-navigation.spec.ts`，检查断点切换、动态 reduced-motion 和页面异常。
+- 出现记录为 1 次，2026-11-06，本地复现。
+
 ## 记录模板
 
 ```markdown

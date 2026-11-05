@@ -111,7 +111,9 @@ describe("EditTeamClient contract", () => {
     expect(
       screen.queryByRole("button", { name: "teams.editAddRequirement" }),
     ).toBeNull();
-    fireEvent.click(screen.getAllByRole("button", { name: "✕" })[0]);
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /teams.formRemoveRequirement/ })[0],
+    );
     expect(
       screen.getByRole("button", { name: "teams.editAddRequirement" }),
     ).toBeInTheDocument();
@@ -140,3 +142,27 @@ describe("EditTeamClient contract", () => {
     expect(fetchAPI).toHaveBeenCalledTimes(1);
   });
 });
+
+it.each([
+  ["03:00", "90", "teams.duration1_5h"],
+  ["03:05", "95", "teams.formDurationMinutes"],
+])(
+  "opens saved supplementary details and retains duration ending at %s",
+  async (endTime, minutes, label) => {
+    fetchCurrentUser.mockResolvedValue({ id: "leader" });
+    fetchAPI.mockResolvedValue({
+      status: 200,
+      json: async () => ({
+        success: true,
+        team: { ...team, endAt: `2099-08-16T${endTime}:00.000Z` },
+      }),
+    });
+    const { element } = await form();
+    expect(
+      screen.getByRole("button", { name: /teams.formSupplementary/ }),
+    ).toHaveAttribute("aria-expanded", "true");
+    const duration = element.querySelector('[name="durationMinutes"]');
+    expect(duration).toHaveValue(minutes);
+    expect(duration?.querySelector("option:checked")).toHaveTextContent(label);
+  },
+);
