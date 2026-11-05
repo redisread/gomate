@@ -177,7 +177,7 @@
   "durationFullDay": "一天",
   "durationTwoDays": "两天",
   "durationCustom": "自定义",
-  "maxSizeHint": "2~50 人",
+  "maxSizeHint": "1–49 人，包含队长",
   "descriptionHint": "让伙伴们了解这次活动的安排和特色",
   "introTitle": "队伍介绍",
   "progressLabel": "进度",
@@ -271,7 +271,7 @@
   "editLocationLocked": "队伍创建后地点不可修改",
   "editDateLocked": "队伍创建后日期不可修改",
   "editDurationHours": "{hours} 小时",
-  "editMaxSizeHint": "至少 {current} 人（当前成员）",
+  "editMaxSizeHint": "至少 {current} 人，包含队长",
   "editMaxMembersTip": "当前已有 {current} 名成员，人数上限不能低于此数",
   "editRequirementsLabel": "参与要求",
   "editRequirementsHint": "最多 10 条，将展示给队伍成员。",
@@ -383,5 +383,12 @@
   "copySuccess": "已复制",
   "copyManually": "复制失败，请选中文字手动复制",
   "meetingPointPending": "集合信息待队长补充",
-  "addMeetingPoint": "补充集合信息"
+  "addMeetingPoint": "补充集合信息",
+  "formSupplementary": "补充信息",
+  "formSupplementaryHint": "集合信息与参与要求 · 选填",
+  "formDateHint": "发布后日期固定，开始时间可调整。",
+  "formFixedDetails": "地点与日期已固定，可调整开始时间。",
+  "formDurationMinutes": "{minutes} 分钟",
+  "formRequirementNumber": "参与要求 {number}",
+  "formRemoveRequirement": "删除参与要求 {number}"
 }

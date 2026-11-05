@@ -177,7 +177,7 @@
   "durationFullDay": "Full Day",
   "durationTwoDays": "Two Days",
   "durationCustom": "Custom",
-  "maxSizeHint": "2-50 people",
+  "maxSizeHint": "1–49 people, including you",
   "descriptionHint": "Let companions know about the activity plan and highlights",
   "introTitle": "Team Introduction",
   "progressLabel": "Progress",
@@ -271,7 +271,7 @@
   "editLocationLocked": "Location cannot be modified after team creation",
   "editDateLocked": "Date cannot be modified after team creation",
   "editDurationHours": "{hours} hours",
-  "editMaxSizeHint": "At least {current} people (current members)",
+  "editMaxSizeHint": "At least {current} people, including you",
   "editMaxMembersTip": "There are already {current} members. The member limit cannot be lower than this number",
   "editRequirementsLabel": "Participation Requirements",
   "editRequirementsHint": "Up to 10 requirements, shown to team members.",
@@ -383,5 +383,12 @@
   "copySuccess": "Copied",
   "copyManually": "Copy failed. Select the text to copy it manually.",
   "meetingPointPending": "Meeting details are waiting for the leader to add them.",
-  "addMeetingPoint": "Add meeting details"
+  "addMeetingPoint": "Add meeting details",
+  "formSupplementary": "Additional details",
+  "formSupplementaryHint": "Meeting point and requirements · Optional",
+  "formDateHint": "The date is fixed after publishing. You can adjust the start time.",
+  "formFixedDetails": "The place and date are fixed. You can adjust the start time.",
+  "formDurationMinutes": "{minutes} minutes",
+  "formRequirementNumber": "Requirement {number}",
+  "formRemoveRequirement": "Remove requirement {number}"
 }

@@ -2,9 +2,12 @@ import { Input as SwInput } from "@/components/starwind-react/input";
 import { Textarea as SwTextarea } from "@/components/starwind-react/textarea";
 import { NativeSelect as SwNativeSelect } from "@/components/starwind-react/native-select";
 import type { ChangeEventHandler, ReactNode } from "react";
-import { Clock, Users } from "lucide-react";
+import { DURATION_OPTION_DEFS } from "@/lib/duration-options";
 import { FieldGroup } from "@/components/ui/field-group";
 import { useI18n } from "@/hooks/useI18n";
+
+export const TEAM_CONTROL_CLASS =
+  "min-h-11 w-full min-w-0 rounded-lg border border-border bg-background px-3 py-2 text-base text-foreground placeholder:text-muted-foreground transition-[border-color,box-shadow,background-color] duration-150 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:opacity-50 motion-reduce:transition-none";
 
 type ChangeHandler = ChangeEventHandler<
   HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -14,6 +17,7 @@ interface FieldProps {
   onChange: ChangeHandler;
   required?: boolean;
   testId?: string;
+  disabled?: boolean;
 }
 
 export function TeamNameField({
@@ -24,7 +28,7 @@ export function TeamNameField({
 }: FieldProps & { maxLength?: number }) {
   const { t } = useI18n(["teams"]);
   return (
-    <FieldGroup icon="✏️" label={t("teams.formLabel.name")} required>
+    <FieldGroup htmlFor="title" label={t("teams.formLabel.name")} required>
       <SwInput
         id="title"
         aria-label={t("teams.formLabel.name")}
@@ -36,7 +40,7 @@ export function TeamNameField({
         required
         maxLength={maxLength}
         data-testid={testId}
-        className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+        className={TEAM_CONTROL_CLASS}
       />
     </FieldGroup>
   );
@@ -51,76 +55,68 @@ export function TeamTimeField({
   const { t } = useI18n(["teams"]);
   return (
     <FieldGroup
-      icon="⏰"
+      htmlFor="startClockInput"
       label={t("teams.formLabel.startTime")}
       required={required}
     >
       <div className="relative">
-        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
         <SwInput
           id="startClockInput"
-          aria-label={t("teams.formLabel.startTime")}
           name="startClockInput"
           type="time"
           value={value}
           onChange={onChange}
           required={required}
           data-testid={testId}
-          className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+          className={TEAM_CONTROL_CLASS}
         />
       </div>
     </FieldGroup>
   );
 }
 
-export function TeamDescriptionFields({
-  meetingPoint,
-  description,
+export function TeamDescriptionField({
+  value,
   onChange,
   required,
-  hint,
   testId,
-}: {
-  meetingPoint: string;
-  description: string;
-  onChange: ChangeHandler;
-  required?: boolean;
-  hint?: string;
-  testId?: string;
-}) {
+}: FieldProps) {
   const { t } = useI18n(["teams"]);
   return (
-    <>
-      <FieldGroup icon="📍" label={t("teams.meetingPoint")}>
-        <SwTextarea
-          name="meetingPoint"
-          aria-label={t("teams.meetingPoint")}
-          maxLength={1000}
-          value={meetingPoint}
-          onChange={onChange}
-          className="w-full rounded-xl border border-border bg-background p-3"
-        />
-      </FieldGroup>
-      <FieldGroup
-        icon="📝"
-        label={t("teams.formLabel.description")}
+    <FieldGroup
+      htmlFor="description"
+      label={t("teams.formLabel.description")}
+      required={required}
+    >
+      <SwTextarea
+        id="description"
+        name="description"
+        value={value}
+        onChange={onChange}
         required={required}
-        hint={hint}
-      >
-        <SwTextarea
-          id="description"
-          aria-label={t("teams.formLabel.description")}
-          required={required}
-          data-testid={testId}
-          name="description"
-          placeholder={t("teams.formPlaceholder.description")}
-          value={description}
-          onChange={onChange}
-          rows={4}
-          className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none resize-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-        />
-      </FieldGroup>
-    </>
+        data-testid={testId}
+        placeholder={t("teams.formPlaceholder.description")}
+        rows={3}
+        className={`${TEAM_CONTROL_CLASS} resize-y`}
+      />
+    </FieldGroup>
+  );
+}
+
+export function TeamMeetingField({ value, onChange }: FieldProps) {
+  const { t } = useI18n(["teams"]);
+  return (
+    <FieldGroup htmlFor="meetingPoint" label={t("teams.meetingPoint")}>
+      <SwTextarea
+        id="meetingPoint"
+        name="meetingPoint"
+        maxLength={1000}
+        value={value}
+        onChange={onChange}
+        rows={2}
+        className={`${TEAM_CONTROL_CLASS} resize-y`}
+      />
+    </FieldGroup>
   );
 }
 
@@ -135,16 +131,15 @@ export function TeamCapacityField({
   const { t } = useI18n(["teams"]);
   return (
     <FieldGroup
-      icon="👥"
+      htmlFor="maxParticipants"
       label={t("teams.formLabel.maxSize")}
       required
       hint={hint}
     >
       <div className="relative">
-        <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
         <SwInput
+          aria-describedby="maxParticipants-hint"
           id="maxParticipants"
-          aria-label={t("teams.formLabel.maxSize")}
           data-testid={testId}
           name="maxParticipants"
           type="number"
@@ -154,7 +149,7 @@ export function TeamCapacityField({
           value={value}
           onChange={onChange}
           required
-          className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground placeholder:text-muted-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+          className={TEAM_CONTROL_CLASS}
         />
       </div>
       {children}
@@ -163,6 +158,7 @@ export function TeamCapacityField({
 }
 
 export function TeamActivityField({
+  disabled,
   value,
   onChange,
   testId,
@@ -170,8 +166,13 @@ export function TeamActivityField({
 }: FieldProps & { children: ReactNode }) {
   const { t } = useI18n(["teams"]);
   return (
-    <FieldGroup icon="🧭" label={t("teams.formLabel.activityType")} required>
+    <FieldGroup
+      htmlFor="activityType"
+      label={t("teams.formLabel.activityType")}
+      required
+    >
       <SwNativeSelect
+        disabled={disabled}
         id="activityType"
         name="activityType"
         aria-label={t("teams.formLabel.activityType")}
@@ -179,7 +180,7 @@ export function TeamActivityField({
         onChange={onChange}
         required
         data-testid={testId}
-        className="w-full px-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
+        className={TEAM_CONTROL_CLASS}
       >
         {children}
       </SwNativeSelect>
@@ -192,34 +193,37 @@ export function TeamDurationField({
   onChange,
   required,
   testId,
-  hint,
-  children,
-  footer,
-}: FieldProps & { hint?: string; children: ReactNode; footer?: ReactNode }) {
+}: FieldProps) {
   const { t } = useI18n(["teams"]);
+  const hasCurrentOption = DURATION_OPTION_DEFS.some(
+    ([minutes]) => String(minutes) === value,
+  );
   return (
     <FieldGroup
-      icon="⌛"
+      htmlFor="durationMinutes"
       label={t("teams.formLabel.duration")}
       required={required}
-      hint={hint}
     >
-      <div className="relative">
-        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none text-muted-foreground" />
-        <SwNativeSelect
-          id="durationMinutes"
-          name="durationMinutes"
-          aria-label={t("teams.formLabel.duration")}
-          value={value}
-          onChange={onChange}
-          required={required}
-          data-testid={testId}
-          className="w-full pl-11 pr-4 py-3 rounded-xl border bg-muted text-foreground text-sm transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 focus:outline-none appearance-none focus:border-primary focus:bg-card focus:ring-3 focus:ring-primary/10"
-        >
-          {children}
-        </SwNativeSelect>
-      </div>
-      {footer}
+      <SwNativeSelect
+        id="durationMinutes"
+        name="durationMinutes"
+        value={value}
+        onChange={onChange}
+        required={required}
+        data-testid={testId}
+        className={TEAM_CONTROL_CLASS}
+      >
+        {!hasCurrentOption && (
+          <option value={value}>
+            {t("teams.formDurationMinutes", { minutes: value })}
+          </option>
+        )}
+        {DURATION_OPTION_DEFS.map(([minutes, key]) => (
+          <option key={minutes} value={minutes}>
+            {t(key)}
+          </option>
+        ))}
+      </SwNativeSelect>
     </FieldGroup>
   );
 }

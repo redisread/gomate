@@ -112,6 +112,7 @@ test.describe("Team Flow", () => {
     await editTitle.fill("E2E Edited Team");
     await page.locator('[name="activityType"]').selectOption("travel");
     await page.locator('[name="durationMinutes"]').selectOption("180");
+    await page.getByRole("button", { name: /补充信息|Additional details/u }).click();
     await page.locator('[name="meetingPoint"]').fill("  Main entrance  ");
     await page.locator('button[type="submit"]').click();
     await page.waitForURL(`/teams/${teamId}`);

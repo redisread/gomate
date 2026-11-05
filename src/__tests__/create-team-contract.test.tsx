@@ -37,9 +37,6 @@ vi.mock("@/hooks/useI18n", () => ({
 
 vi.mock("@/components/layout/navbar", () => ({ Navbar: () => null }));
 vi.mock("@/components/layout/footer", () => ({ Footer: () => null }));
-vi.mock("@/components/features/teams/shared/team-location-preview", () => ({
-  TeamLocationPreview: () => null,
-}));
 
 function location(
   id: string,
@@ -170,6 +167,9 @@ describe("CreateTeamClient contract", () => {
     fireEvent.change(screen.getByTestId("create-team-description"), {
       target: { value: "  一起旅行  " },
     });
+    fireEvent.click(
+      screen.getByRole("button", { name: /teams.formSupplementary/ }),
+    );
     fireEvent.change(
       screen.getByRole("textbox", { name: "teams.formLabel.requirements" }),
       { target: { value: "  自备饮用水  \n   \n 防晒用品 \n" } },
@@ -224,7 +224,10 @@ describe("CreateTeamClient contract", () => {
       expect(screen.getByTestId("create-team-location")).toHaveTextContent(
         locationB.name,
       );
-      expect(fetchAPI).toHaveBeenCalledWith(`/locations/${locationB.id}`, expect.objectContaining({ signal: expect.any(AbortSignal) }));
+      expect(fetchAPI).toHaveBeenCalledWith(
+        `/locations/${locationB.id}`,
+        expect.objectContaining({ signal: expect.any(AbortSignal) }),
+      );
     });
   });
 
@@ -253,15 +256,20 @@ it("shows a selected location detail failure and allows retry", async () => {
   const normalFetch = fetchAPI.getMockImplementation()!;
   let fail = true;
   fetchAPI.mockImplementation((path: string, init?: RequestInit) => {
-    if (path === `/locations/${locationA.id}` && fail) return Promise.reject(new Error("offline"));
+    if (path === `/locations/${locationA.id}` && fail)
+      return Promise.reject(new Error("offline"));
     return normalFetch(path, init);
   });
   render(<CreateTeamClient />);
   await selectLocation(locationA.name);
-  expect(await screen.findByText("teams.locationDetailLoadFailed")).toBeTruthy();
+  expect(
+    await screen.findByText("teams.locationDetailLoadFailed"),
+  ).toBeTruthy();
   fail = false;
   fireEvent.click(screen.getByRole("button", { name: "common.retry" }));
-  await waitFor(() => expect(screen.queryByText("teams.locationDetailLoadFailed")).toBeNull());
+  await waitFor(() =>
+    expect(screen.queryByText("teams.locationDetailLoadFailed")).toBeNull(),
+  );
   expect(await screen.findByTestId("create-team-activity-type")).toBeTruthy();
 });
 
@@ -273,7 +281,9 @@ it("cancels an old location detail request and ignores its late failure", async 
   fetchAPI.mockImplementation((path: string, init?: RequestInit) => {
     if (path === `/locations/${locationA.id}`) {
       oldSignal = init?.signal as AbortSignal;
-      return new Promise((_resolve, reject) => { rejectOld = reject; });
+      return new Promise((_resolve, reject) => {
+        rejectOld = reject;
+      });
     }
     return normalFetch(path, init);
   });
@@ -282,9 +292,13 @@ it("cancels an old location detail request and ignores its late failure", async 
   await selectLocation(locationB.name);
   expect(oldSignal?.aborted).toBe(true);
   rejectOld(new Error("old failure"));
-  await waitFor(() => expect(screen.getByTestId("create-team-activity-type")).toBeTruthy());
+  await waitFor(() =>
+    expect(screen.getByTestId("create-team-activity-type")).toBeTruthy(),
+  );
   expect(screen.queryByText("teams.locationDetailLoadFailed")).toBeNull();
-  const detailCall = fetchAPI.mock.calls.find(([path]) => path === `/locations/${locationB.id}`);
+  const detailCall = fetchAPI.mock.calls.find(
+    ([path]) => path === `/locations/${locationB.id}`,
+  );
   unmount();
   expect(detailCall?.[1]?.signal.aborted).toBe(true);
 });
@@ -294,8 +308,13 @@ it("preserves the selected destination through login", async () => {
   window.history.replaceState({}, "", "/en/teams/create?locationId=location-a");
   render(<CreateTeamClient />);
   await waitFor(() => expect(fetchCurrentUser).toHaveBeenCalled());
-  const loginUrl = new URL(fetchCurrentUser.mock.calls.at(-1)![0], window.location.origin);
-  expect(loginUrl.searchParams.get("returnTo")).toBe("/en/teams/create?locationId=location-a");
+  const loginUrl = new URL(
+    fetchCurrentUser.mock.calls.at(-1)![0],
+    window.location.origin,
+  );
+  expect(loginUrl.searchParams.get("returnTo")).toBe(
+    "/en/teams/create?locationId=location-a",
+  );
 });
 
 it("keeps activity input while saving a missing contact and retrying a failure", async () => {
@@ -307,27 +326,61 @@ it("keeps activity input while saving a missing contact and retrying a failure",
   let fail = true;
   fetchAPI.mockImplementation(async (path: string, init?: RequestInit) => {
     if (path === "/users/me" && init?.method === "PATCH") {
-      return new Response(JSON.stringify(fail
-        ? { success: false }
-        : { success: true, user: { extra: { wechat: "my-wechat" } } }), { status: fail ? 503 : 200 });
+      return new Response(
+        JSON.stringify(
+          fail
+            ? { success: false }
+            : { success: true, user: { extra: { wechat: "my-wechat" } } },
+        ),
+        { status: fail ? 503 : 200 },
+      );
     }
     return ordinaryFetch(path, init);
   });
   render(<CreateTeamClient />);
-  fireEvent.change(await screen.findByTestId("create-team-title"), { target: { value: "周末去湖边" } });
+  fireEvent.change(await screen.findByTestId("create-team-title"), {
+    target: { value: "周末去湖边" },
+  });
   await selectLocation(locationA.name);
-  fireEvent.change(await screen.findByTestId("create-team-activity-type"), { target: { value: "travel" } });
-  fireEvent.change(screen.getByLabelText("teams.contactWechatLabel"), { target: { value: " my-wechat " } });
+  fireEvent.change(await screen.findByTestId("create-team-activity-type"), {
+    target: { value: "travel" },
+  });
+  fireEvent.change(screen.getByLabelText("teams.contactWechatLabel"), {
+    target: { value: " my-wechat " },
+  });
   fireEvent.click(screen.getByRole("button", { name: "teams.saveContact" }));
   await screen.findByRole("alert");
   expect(screen.getByTestId("create-team-title")).toHaveValue("周末去湖边");
   expect(screen.getByTestId("create-team-submit")).toBeDisabled();
   fail = false;
   fireEvent.click(screen.getByRole("button", { name: "teams.saveContact" }));
-  await waitFor(() => expect(screen.getByTestId("create-team-submit")).toBeEnabled());
+  await waitFor(() =>
+    expect(screen.getByTestId("create-team-submit")).toBeEnabled(),
+  );
   expect(screen.getByTestId("create-team-title")).toHaveFocus();
   expect(screen.getByTestId("create-team-title")).toHaveValue("周末去湖边");
   expect(screen.getByTestId("create-team-activity-type")).toHaveValue("travel");
-  expect(fetchAPI).toHaveBeenCalledWith("/users/me", expect.objectContaining({ body: JSON.stringify({ extra: { wechat: "my-wechat" } }) }));
+  expect(fetchAPI).toHaveBeenCalledWith(
+    "/users/me",
+    expect.objectContaining({
+      body: JSON.stringify({ extra: { wechat: "my-wechat" } }),
+    }),
+  );
   expect(fetchAPI.mock.calls.some(([path]) => path === "/teams")).toBe(false);
+});
+
+it("keeps supplementary fields collapsed until requested and preserves their input", async () => {
+  window.history.replaceState({}, "", "/teams/create");
+  arrangeRequests();
+  render(<CreateTeamClient />);
+  const toggle = await screen.findByRole("button", {
+    name: /teams.formSupplementary/,
+  });
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  fireEvent.click(toggle);
+  const meeting = await screen.findByLabelText("teams.meetingPoint");
+  fireEvent.change(meeting, { target: { value: "北门集合" } });
+  fireEvent.click(toggle);
+  fireEvent.click(toggle);
+  expect(screen.getByLabelText("teams.meetingPoint")).toHaveValue("北门集合");
 });

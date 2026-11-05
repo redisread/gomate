@@ -9,6 +9,7 @@ import * as React from "react";
 import { Check, ChevronDown, Loader2, MapPin, Search } from "lucide-react";
 
 import { useI18n } from "@/hooks/useI18n";
+import { TeamLocationIdentity } from "../teams/shared/team-location-preview";
 import { cn } from "@/lib/utils";
 import type { Location } from "@/lib/types";
 import { getRegionDisplayName } from "@/components/shared/quick-city-options";
@@ -121,15 +122,21 @@ export function TeamLocationPicker({
           setHighlightIndex(-1);
         }}
         className={cn(
-          "flex min-h-12 w-full items-center gap-3 rounded-xl border bg-muted px-4 text-left text-sm text-foreground",
+          "flex min-h-12 w-full items-center gap-3 rounded-lg border bg-background px-3 py-2 text-start text-sm text-foreground",
           "transition-[background-color,border-color,box-shadow] duration-200",
           "hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:bg-card focus-visible:ring-3 focus-visible:ring-primary/10",
         )}
       >
-        <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        <span className={cn("min-w-0 flex-1 truncate", !selectedLocation && "text-muted-foreground")}>
-          {selectedLocation?.name ?? t("teams.formPlaceholder.location")}
-        </span>
+        {selectedLocation ? (
+          <TeamLocationIdentity location={selectedLocation} />
+        ) : (
+          <>
+            <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span className="min-w-0 flex-1 text-muted-foreground">
+              {t("teams.formPlaceholder.location")}
+            </span>
+          </>
+        )}
         <ChevronDown
           className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none", open && "rotate-180")}
           aria-hidden="true"

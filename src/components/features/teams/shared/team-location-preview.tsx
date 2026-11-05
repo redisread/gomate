@@ -1,63 +1,60 @@
-import { Card as SwCard } from "@/components/starwind-react/card";
-import { ArrowRight, Image as ImageIcon, MapPin } from "lucide-react";
+import { ArrowUpRight, MapPin } from "lucide-react";
 import type { Location } from "@/lib/types";
 import { getRegionDisplayName } from "@/components/shared/quick-city-options";
+import { useI18n } from "@/hooks/useI18n";
 
-interface TeamLocationPreviewProps {
-  location: Location;
-  detailHref: string;
-  selectedLabel: string;
-  emptyCoverLabel: string;
-  detailLabel: string;
+export function TeamLocationIdentity({ location }: { location: Location }) {
+  return (
+    <>
+      <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary text-muted-foreground">
+        <MapPin className="h-4 w-4" aria-hidden="true" />
+        {location.coverImageUrl && (
+          <img
+            key={location.coverImageUrl}
+            src={location.coverImageUrl}
+            alt=""
+            width={44}
+            height={44}
+            className="absolute inset-0 h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
+            onError={(event) => {
+              event.currentTarget.style.display = "none";
+            }}
+          />
+        )}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block break-words text-sm font-medium">
+          {location.name}
+        </span>
+        {location.region && (
+          <span className="block text-xs text-muted-foreground">
+            {getRegionDisplayName(location.region)}
+          </span>
+        )}
+      </span>
+    </>
+  );
 }
 
 export function TeamLocationPreview({
   location,
   detailHref,
-  selectedLabel,
-  emptyCoverLabel,
-  detailLabel,
-}: TeamLocationPreviewProps) {
+}: {
+  location: Location;
+  detailHref: string;
+}) {
+  const { t } = useI18n(["teams"]);
   return (
-    <SwCard className="block gap-0 py-0 ring-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
-      <a
-        href={detailHref}
-        className="group grid grid-cols-[7rem_1fr] items-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset sm:grid-cols-[9rem_1fr]"
-        aria-label={`${selectedLabel}: ${location.name}`}
-      >
-        <div className="relative min-h-28 overflow-hidden bg-muted sm:min-h-32">
-          {location.coverImageUrl ? (
-            <img
-              src={location.coverImageUrl}
-              alt={location.name}
-              className="h-full w-full object-cover outline outline-1 -outline-offset-1 outline-[oklch(0_0_0_/_0.1)] dark:outline-[oklch(1_0_0_/_0.1)] transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-full min-h-28 flex-col items-center justify-center gap-1.5 text-muted-foreground sm:min-h-32">
-              <ImageIcon className="h-5 w-5" aria-hidden="true" />
-              <span className="px-2 text-center text-[11px] leading-tight">{emptyCoverLabel}</span>
-            </div>
-          )}
-          <div className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm">
-            <MapPin className="h-3 w-3" aria-hidden="true" />
-            {selectedLabel}
-          </div>
-        </div>
-
-        <div className="flex min-w-0 flex-col justify-center gap-2 px-4 py-3.5 sm:px-5">
-          <div className="min-w-0">
-            <h3 className="truncate text-sm font-semibold text-foreground sm:text-base">{location.name}</h3>
-            {location.region?.name && (
-              <p className="mt-1 truncate text-xs text-muted-foreground">{getRegionDisplayName(location.region)}</p>
-            )}
-          </div>
-          <span className="inline-flex items-center gap-1 self-start text-xs font-medium text-primary transition-[color,transform] duration-150 group-hover:translate-x-0.5">
-            {detailLabel}
-            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </span>
-        </div>
-      </a>
-    </SwCard>
+    <a
+      href={detailHref}
+      aria-label={`${t("teams.viewDetailShort")} ${location.name}`}
+      className="flex min-h-11 items-center gap-3 rounded-lg bg-muted px-3 py-2 transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <TeamLocationIdentity location={location} />
+      <ArrowUpRight
+        className="h-4 w-4 shrink-0 text-muted-foreground"
+        aria-hidden="true"
+      />
+    </a>
   );
 }
