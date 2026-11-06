@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { fetchCurrentUser, refreshCurrentUser } from "@/lib/api";
 import { Button as SwButton } from "@/components/starwind-react/button";
 import { ArrowRight } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
@@ -7,6 +9,33 @@ import { HomeRandomDiscovery } from "./home-random-discovery";
 type HomeData = ReturnType<typeof useHomeData>;
 
 export function HomeHero({ data }: { data: HomeData }) {
+  const [isGuest, setIsGuest] = useState(false);
+  useEffect(() => {
+    let requestId = 0;
+    const update = (refresh: boolean) => {
+      const current = ++requestId;
+      const request = refresh ? refreshCurrentUser() : fetchCurrentUser();
+      void request.then((user) => {
+        if (current === requestId) setIsGuest(user === null);
+      }).catch(() => {
+        if (current === requestId) setIsGuest(false);
+      });
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) update(true);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") update(true);
+    };
+    update(false);
+    window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      requestId++;
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, []);
   const { animate } = data;
   const { t } = useI18n(["home"]);
 
@@ -28,7 +57,7 @@ export function HomeHero({ data }: { data: HomeData }) {
           </h1>
 
           <p className={`mt-6 max-w-xl text-base leading-8 text-stone-700 dark:text-stone-300 sm:text-lg ${animate.subtitle}`}>
-            {t("home.guestHero.description")}
+            {t(isGuest ? "home.guestHero.description" : "home.guestHero.memberDescription")}
           </p>
 
           <div className={`mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 ${animate.cta}`}>
@@ -36,11 +65,11 @@ export function HomeHero({ data }: { data: HomeData }) {
               {t("home.guestHero.primaryCta")}
               <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" aria-hidden="true" />
             </SwButton>
-            <a href="/login?redirect=/teams" className="inline-flex min-h-10 items-center text-sm font-semibold text-stone-700 hover:text-amber-800 dark:text-stone-300 dark:hover:text-amber-300">
+            {isGuest && <a href="/login?redirect=/teams" className="inline-flex min-h-10 items-center text-sm font-semibold text-stone-700 hover:text-amber-800 dark:text-stone-300 dark:hover:text-amber-300">
               {t("home.guestHero.loginPrompt")}
-            </a>
+            </a>}
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">{t("home.guestHero.noLoginRequired")}</p>
+          {isGuest && <p className="mt-3 text-xs text-muted-foreground">{t("home.guestHero.noLoginRequired")}</p>}
         </div>
 
         <div className={`relative mx-auto min-w-0 w-full lg:mx-0 ${animate.search}`}>
