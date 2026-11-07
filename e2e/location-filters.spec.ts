@@ -131,3 +131,31 @@ test("分享的分页链接在新页面仍能下一页再返回落地窗口", as
   await expect(cards(sharedPage).first()).toHaveAttribute("href", landingLink!);
   await sharedPage.close();
 });
+
+
+test("全部兴趣暂存取消与应用，手机标签完整换行", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openList(page);
+  const trigger = page.getByRole("button", { name: "全部兴趣", exact: true });
+  await trigger.click();
+  let dialog = page.getByRole("dialog", { name: "全部兴趣", exact: true });
+  await dialog.getByRole("button", { name: "自然", exact: true }).click();
+  await dialog.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  expect(new URL(page.url()).searchParams.has("tags")).toBe(false);
+  await trigger.click();
+  dialog = page.getByRole("dialog", { name: "全部兴趣", exact: true });
+  await expect(dialog.getByRole("button", { name: "自然", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await dialog.getByRole("button", { name: "自然", exact: true }).click();
+  await dialog.getByRole("button", { name: "应用筛选", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByTestId("locations-tag-options").getByRole("button", { name: "自然", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => new URL(page.url()).searchParams.get("tags")).toContain("tag-nature");
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    const tags = page.getByTestId("locations-tag-options");
+    expect(await tags.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+  }
+});

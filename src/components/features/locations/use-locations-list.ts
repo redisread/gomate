@@ -256,6 +256,7 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
   }, [changeFilters]);
   const handleRoleSelect = React.useCallback((role: RoleKey) => changeFilters({ ...filtersRef.current, activeRole: filtersRef.current.activeRole === role ? "" : role }), [changeFilters]);
   const handleClearFilters = React.useCallback(() => changeFilters({ ...filtersRef.current, selectedTags: [], selectedRegionId: "" }), [changeFilters]);
+  const handleTagsApply = React.useCallback((selectedTags: string[]) => changeFilters({ ...filtersRef.current, selectedTags }), [changeFilters]);
   const handleClearTags = React.useCallback(() => changeFilters({ ...filtersRef.current, selectedTags: [] }), [changeFilters]);
   const handleClearAll = React.useCallback(() => changeFilters(readLocationFilters(new URLSearchParams())), [changeFilters]);
   const handleRetry = React.useCallback(() => loadLocations(retryParamsRef.current), [loadLocations]);
@@ -276,7 +277,7 @@ export function useLocationsList(initialData?: LocationsListInitialData) {
     locations, isLoading, isRefreshing, hasLoadError, ...filters, currentPage, pagination, popularTags,
     regions, showRegionDropdown, selectedRegionName, hasActiveFilters, userRegionId,
     setSearchQuery, setShowRegionDropdown, loadLocations, handleTagToggle, handleRegionSelect,
-    handleRoleSelect, handlePageChange, handleClearAll, handleClearFilters, handleClearTags, handleRetry,
+    handleRoleSelect, handlePageChange, handleClearAll, handleClearFilters, handleTagsApply, handleClearTags, handleRetry,
     onClearSearch: () => setSearchQuery(""),
     onChangeRegion: () => setShowRegionDropdown(true),
     saveBrowsePosition,

@@ -6,6 +6,7 @@ import type { Region } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/hooks/useI18n";
 import { getQuickRegions, getRegionDisplayName } from "@/components/shared/quick-city-options";
+import { InterestPicker } from "./interest-picker";
 import { CityPicker } from "./city-picker";
 
 const chipClass = "relative inline-flex min-h-11 min-w-11 max-w-full shrink-0 items-center justify-center rounded-xl pl-6 pr-3 text-sm font-medium ring-1 ring-inset transition-[background-color,color,transform] duration-150 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none motion-reduce:active:scale-100";
@@ -40,7 +41,7 @@ function FilterRail({ selectedKey, testId, children }: { selectedKey: string; te
   );
 }
 
-export function LocationFilters({ regions, popularTags, selectedRegionId, selectedTags, showRegionDropdown, onRegionSelect, onTagToggle, onClear, onOpenChange }: {
+export function LocationFilters({ regions, popularTags, selectedRegionId, selectedTags, showRegionDropdown, onRegionSelect, onTagToggle, onTagsApply, onClear, onOpenChange }: {
   regions: Region[];
   popularTags: { id: string; name: string }[];
   selectedRegionId: string;
@@ -48,6 +49,7 @@ export function LocationFilters({ regions, popularTags, selectedRegionId, select
   showRegionDropdown: boolean;
   onRegionSelect: (id: string) => void;
   onTagToggle: (id: string) => void;
+  onTagsApply: (ids: string[]) => void;
   onClear: () => void;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -57,10 +59,6 @@ export function LocationFilters({ regions, popularTags, selectedRegionId, select
     const selected = regions.find((region) => region.id === selectedRegionId);
     return selected && !hot.some((region) => region.id === selected.id) ? [...hot, selected] : hot;
   }, [regions, selectedRegionId]);
-  const tags = React.useMemo(() => {
-    const visible = popularTags.slice(0, 8);
-    return [...visible, ...popularTags.filter((tag) => selectedTags.includes(tag.id) && !visible.some((item) => item.id === tag.id))];
-  }, [popularTags, selectedTags]);
   return (
     <div className="mt-4 rounded-2xl border border-border/70 bg-muted/20" data-testid="locations-filters">
       <div className="px-3 py-2 sm:px-4 sm:py-3">
@@ -80,18 +78,7 @@ export function LocationFilters({ regions, popularTags, selectedRegionId, select
             <CityPicker regions={regions} selectedRegionId={selectedRegionId} open={showRegionDropdown} onOpenChange={onOpenChange} onSelect={onRegionSelect} />
           </div>
         </div>
-        {tags.length > 0 && (
-          <div role="group" aria-label={t("locations.tagsLabel")} aria-describedby="locations-interest-hint" className="mt-2 flex min-w-0 items-start gap-2 border-t border-border/60 pt-2">
-            <span className="flex min-h-13 w-14 shrink-0 items-center text-xs font-semibold text-foreground/70">{t("locations.tagsLabel")}</span>
-            <FilterRail selectedKey={selectedTags.join(",")} testId="locations-tag-options">
-              {tags.map((tag) => (
-                <SwButton variant="plain" size="inherit" key={tag.id} type="button" aria-pressed={selectedTags.includes(tag.id)} onClick={() => onTagToggle(tag.id)} className={cn(chipClass, chipState(selectedTags.includes(tag.id)))}>
-                  <Check className={cn(checkClass, !selectedTags.includes(tag.id) && "invisible")} aria-hidden="true" /><span className="min-w-0 truncate" title={tag.name}>{tag.name}</span>
-                </SwButton>
-              ))}
-            </FilterRail>
-          </div>
-        )}
+        {popularTags.length > 0 && <InterestPicker tags={popularTags} selectedTags={selectedTags} onToggle={onTagToggle} onApply={onTagsApply} />}
       </div>
       <SwCard className="block gap-0 py-0 ring-0 flex flex-row min-h-11 items-center justify-between gap-2 rounded-b-2xl border-t border-border/60 bg-card/60 px-3 sm:px-4">
         <p id="locations-interest-hint" className="text-xs text-muted-foreground">{t("locations.interestHint")}</p>

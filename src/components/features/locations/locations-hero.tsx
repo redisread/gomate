@@ -2,7 +2,7 @@ import { Alert as SwAlert } from "@/components/starwind-react/alert";
 import { Button as SwButton } from "@/components/starwind-react/button";
 import { Input as SwInput } from "@/components/starwind-react/input";
 import * as React from "react";
-import { Search, X, Sparkles, LoaderCircle } from "lucide-react";
+import { Search, X, LoaderCircle } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
 import { getRoleConfig, type RoleKey, type RoleCfg } from "./constants";
@@ -21,6 +21,7 @@ interface LocationsHeroProps {
   onRoleSelect: (role: RoleKey) => void;
   onSearchChange: (q: string) => void;
   onTagToggle: (tagId: string) => void;
+  onTagsApply: (ids: string[]) => void;
   onRegionSelect: (regionId: string) => void;
   onClearFilters: () => void;
   onRegionDropdownChange: (open: boolean) => void;
@@ -28,7 +29,7 @@ interface LocationsHeroProps {
 
 export function LocationsHero({
   activeRole, searchQuery, selectedRegionId, selectedTags, regions, popularTags,
-  showRegionDropdown, onRoleSelect, onSearchChange, onTagToggle,
+  showRegionDropdown, onRoleSelect, onSearchChange, onTagToggle, onTagsApply,
   onRegionSelect, onClearFilters, onRegionDropdownChange,
 }: LocationsHeroProps) {
   const { t, loading: i18nLoading } = useI18n(["locations"]);
@@ -41,40 +42,30 @@ export function LocationsHero({
   }
 
   return (
-    <section className="relative pt-28 pb-10 bg-card border-b border-border">
+    <section className="relative pt-24 pb-6 bg-card border-b border-border">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-amber-50/60 dark:bg-amber-900/20 blur-3xl" />
         <div className="absolute -bottom-10 -left-10 w-60 h-60 rounded-full bg-stone-50/60 dark:bg-stone-900 blur-2xl" />
       </div>
 
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-center">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-xs font-medium"
-            style={{ background: "rgba(217,119,6,0.08)", border: "1px solid rgba(217,119,6,0.2)", color: "#b45309" }}
-          >
-            <Sparkles className="h-3 w-3" />
-            {t("locations.ctaHeroBadge")}
-          </div>
-        </div>
-
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2 leading-tight text-center">
           {t("locations.pageTitle")}
         </h1>
         <div className="flex justify-center">
-          <p className="text-stone-500 dark:text-stone-500 text-sm sm:text-base mb-7 leading-relaxed w-full max-w-xl text-center">
+          <p className="text-stone-500 dark:text-stone-500 text-sm sm:text-base mb-5 leading-relaxed w-full max-w-xl text-center">
             {t("locations.pageSubtitle")}
           </p>
         </div>
 
         {/* 场景角色入口 */}
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {(Object.entries(cfg) as [Exclude<RoleKey, "">, RoleCfg][]).map(([key, cfg]) => {
               const Icon = cfg.icon;
               const isActive = activeRole === key;
               return (
-                <SwButton variant="plain" size="inherit" key={key} type="button" onClick={() => onRoleSelect(key)}
+                <SwButton variant="plain" size="inherit" key={key} type="button" aria-pressed={isActive} onClick={() => onRoleSelect(key)}
                   className="relative group flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-left transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-250 active:scale-[0.96] overflow-hidden"
                   style={isActive ? { background: cfg.activeBg, borderColor: "transparent", boxShadow: `0 6px 20px ${cfg.iconColor}35` } : { background: `linear-gradient(135deg, ${cfg.gradientFrom}, ${cfg.gradientTo})`, borderColor: "rgba(231,229,228,0.8)" }}
                 >
@@ -114,7 +105,7 @@ export function LocationsHero({
 
         <LocationFilters regions={regions} popularTags={popularTags} selectedRegionId={selectedRegionId}
           selectedTags={selectedTags} showRegionDropdown={showRegionDropdown}
-          onRegionSelect={onRegionSelect} onTagToggle={onTagToggle} onClear={onClearFilters} onOpenChange={onRegionDropdownChange} />
+          onRegionSelect={onRegionSelect} onTagToggle={onTagToggle} onTagsApply={onTagsApply} onClear={onClearFilters} onOpenChange={onRegionDropdownChange} />
 
       </div>
     </section>
