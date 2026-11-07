@@ -8,7 +8,7 @@ import {
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("Resend SDK transport contract", () => {
+describe("Resend HTTP transport contract", () => {
   it("serializes reply-to and idempotency without sending real mail", async () => {
     const request = vi
       .fn()

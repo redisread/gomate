@@ -2,10 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { feedbackRoute } from "./feedback";
 import type { Env } from "../lib/auth";
 const mocks = vi.hoisted(() => ({ send: vi.fn() }));
-vi.mock("resend", () => ({
-  Resend: class {
-    emails = { send: mocks.send };
-  },
+vi.mock("../lib/resend-http", () => ({
+  sendResendEmail: (_apiKey: string, ...args: Parameters<typeof mocks.send>) => mocks.send(...args),
 }));
 const limit = vi.fn();
 const env = {

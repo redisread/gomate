@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import { sendResendEmail } from "./resend-http";
 import { logger } from "./logger";
 import { withTimeout } from "./timeout";
 
@@ -20,17 +20,18 @@ export async function sendEmail(
   buildMessage: () => EmailMessage,
   options?: { idempotencyKey: string },
 ): Promise<{ success: boolean; error?: string }> {
-  if (!env.RESEND_API_KEY) {
+  const apiKey = env.RESEND_API_KEY;
+  if (!apiKey) {
     logger.warn("email_provider_not_configured");
     return { success: false, error: "Email service not configured" };
   }
 
   try {
     const message = buildMessage();
-    const resend = new Resend(env.RESEND_API_KEY);
     const result = await withTimeout(
       () =>
-        resend.emails.send(
+        sendResendEmail(
+          apiKey,
           {
             ...message,
             from: env.RESEND_FROM_EMAIL || "GoMate <noreply@gomate.live>",

@@ -4,7 +4,7 @@ import type * as React from "react";
 import type { VariantProps } from "tailwind-variants";
 import "./styles.css";
 import CheckboxPrimitive from "@starwind-ui/react/checkbox";
-import { IconCheck as Check } from "@tabler/icons-react";
+import { Check } from "lucide-react";
 import {
   checkbox,
   checkboxIndicator,
