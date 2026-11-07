@@ -12,11 +12,8 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+  checks:
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.64.1-noble
-      options: --user 1001
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -37,32 +34,171 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Audit production dependencies
+      - name: pnpm audit --prod --audit-level high
         run: pnpm audit --prod --audit-level high
 
-      - name: Build locale data
+      - name: pnpm i18n:build
         run: pnpm i18n:build
 
-      - name: Run application gates
-        run: pnpm test:ci
+      - name: pnpm i18n:validate
+        run: pnpm i18n:validate
 
-      - name: Generate Worker runtime types
+      - name: pnpm test:build-guard
+        run: pnpm test:build-guard
+
+      - name: pnpm db:check
+        run: pnpm db:check
+
+      - name: pnpm lint
+        run: pnpm lint
+
+      - name: pnpm type-check
+        run: pnpm type-check
+
+      - name: pnpm check
+        run: pnpm check
+
+      - name: pnpm test
+        run: pnpm test
+
+      - name: pnpm test:server
+        run: pnpm test:server
+
+      - name: pnpm worker:types
         run: pnpm worker:types
 
-      - name: Validate Wrangler bundle
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Check toolchain
+        run: node scripts/check-toolchain.mjs
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm test:db-reset
+        run: pnpm test:db-reset
+
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Check toolchain
+        run: node scripts/check-toolchain.mjs
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm i18n:build
+        run: pnpm i18n:build
+
+      - name: pnpm build
+        run: pnpm build
+
+      - name: pnpm test:worker:run
+        run: pnpm test:worker:run
+
+      - name: pnpm worker:dry-run
         run: pnpm worker:dry-run
 
-      - name: Enforce Worker size budget
+      - name: pnpm worker:size
         run: pnpm worker:size
 
-      - name: Prepare isolated E2E database
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --user 1001
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      BETTER_AUTH_SECRET: local-ci-${{ github.run_id }}-${{ github.run_attempt }}-only-not-production
+      RESEND_API_KEY: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Check toolchain
+        run: node scripts/check-toolchain.mjs
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm i18n:build
+        run: pnpm i18n:build
+
+      - name: pnpm db:reset
         run: pnpm db:reset
         env:
-          GOMATE_LOCAL_STATE: ${{ runner.temp }}/gomate-e2e-state
+          GOMATE_LOCAL_STATE: ${{ runner.temp }}/gomate-e2e-${{ matrix.shard }}
 
-      - name: Run browser E2E
-        run: pnpm test:e2e:ci
+      - name: pnpm test:e2e:ci --shard=${{ matrix.shard }}/2
+        run: pnpm test:e2e:ci --shard=${{ matrix.shard }}/2
         env:
-          BETTER_AUTH_SECRET: local-ci-${{ github.run_id }}-${{ github.run_attempt }}-only-not-production
-          GOMATE_LOCAL_STATE: ${{ runner.temp }}/gomate-e2e-state
-          RESEND_API_KEY: ""
+          GOMATE_LOCAL_STATE: ${{ runner.temp }}/gomate-e2e-${{ matrix.shard }}
+
+      - name: Upload browser reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: e2e-${{ matrix.shard }}-attempt-${{ github.run_attempt }}
+          path: |
+            e2e-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: warn
+
+  validate:
+    if: ${{ always() }}
+    needs: [checks, database, worker, e2e]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require every gate to succeed
+        env:
+          CHECKS: ${{ needs.checks.result }}
+          DATABASE: ${{ needs.database.result }}
+          WORKER: ${{ needs.worker.result }}
+          E2E: ${{ needs.e2e.result }}
+        run: |
+          test "$CHECKS" = success
+          test "$DATABASE" = success
+          test "$WORKER" = success
+          test "$E2E" = success

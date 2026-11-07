@@ -60,3 +60,76 @@ test("CI reads toolchain declarations and checks actual versions before install"
     checkIndex >= 0 && checkIndex < workflow.indexOf("run: pnpm install"),
   );
 });
+
+test("parallel jobs preserve every application gate and both E2E shards", async () => {
+  const workflow = await readFile(
+    new URL("../.github/workflows/ci.yml", import.meta.url),
+    "utf8",
+  );
+  const { scripts } = JSON.parse(
+    await readFile(new URL("../package.json", import.meta.url), "utf8"),
+  );
+  for (const command of scripts["test:ci"].split(" && ")) {
+    assert.ok(
+      workflow.includes(`run: ${command}\n`),
+      `Missing CI gate: ${command}`,
+    );
+  }
+  for (const command of [
+    "pnpm audit --prod --audit-level high",
+    "pnpm worker:types",
+    "pnpm worker:dry-run",
+    "pnpm worker:size",
+  ]) {
+    assert.ok(
+      workflow.includes(`run: ${command}\n`),
+      `Missing CI gate: ${command}`,
+    );
+  }
+  assert.match(workflow, /needs: \[checks, database, worker, e2e\]/u);
+  assert.match(workflow, /fail-fast: false/u);
+  assert.match(workflow, /shard: \[1, 2\]/u);
+  assert.match(
+    workflow,
+    /pnpm test:e2e:ci --shard=\$\{\{ matrix.shard \}\}\/2/u,
+  );
+  assert.match(workflow, /gomate-e2e-\$\{\{ matrix.shard \}\}/u);
+  assert.doesNotMatch(workflow, /continue-on-error|paths-ignore:|paths:/u);
+});
+
+test("required aggregate rejects failed, cancelled, skipped and missing jobs", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const workflow = await readFile(
+    new URL("../.github/workflows/ci.yml", import.meta.url),
+    "utf8",
+  );
+  const aggregate = workflow.split("\n  validate:\n")[1];
+  assert.match(aggregate, /if: \$\{\{ always\(\) \}\}/u);
+  const script = aggregate
+    .split("run: |\n")[1]
+    .split("\n")
+    .map((line) => line.replace(/^ {10}/u, ""))
+    .join("\n");
+  const jobs = ["CHECKS", "DATABASE", "WORKER", "E2E"];
+  const success = Object.fromEntries(jobs.map((job) => [job, "success"]));
+  assert.equal(
+    spawnSync("sh", ["-eu", "-c", script], { env: success }).status,
+    0,
+  );
+  for (const job of jobs) {
+    assert.ok(
+      aggregate.includes(
+        job + ": ${{ needs." + job.toLowerCase() + ".result }}",
+      ),
+    );
+    for (const result of ["failure", "cancelled", "skipped", ""]) {
+      assert.notEqual(
+        spawnSync("sh", ["-eu", "-c", script], {
+          env: { ...success, [job]: result },
+        }).status,
+        0,
+        `${job}=${result} must block`,
+      );
+    }
+  }
+});
