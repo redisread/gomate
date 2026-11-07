@@ -1,3 +1,4 @@
+import { getNestedValue } from "../../i18n/nested-value";
 /**
  * 邮件模板国际化加载器
  *
@@ -30,21 +31,6 @@ function interpolate(template: string, vars?: Record<string, string>): string {
   });
 }
 
-/**
- * 从嵌套对象中通过点号路径获取值
- */
-function getNestedValue(
-  obj: Record<string, unknown>,
-  path: string,
-): string | undefined {
-  const keys = path.split(".");
-  let current: unknown = obj;
-  for (const key of keys) {
-    if (current == null || typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[key];
-  }
-  return typeof current === "string" ? current : undefined;
-}
 
 /**
  * 获取指定 locale 的邮件模板数据

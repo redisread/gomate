@@ -1,3 +1,4 @@
+import { cleanStrings } from "@/lib/string-list";
 import type { ActivityType, Team } from "@/lib/types";
 
 export interface TeamFormFields {
@@ -20,10 +21,6 @@ export interface EditTeamFormData extends TeamFormFields {
   requirements: string[];
 }
 
-function cleanRequirements(requirements: string[]) {
-  return requirements.map((value) => value.trim()).filter(Boolean);
-}
-
 function schedulePayload(fields: TeamFormFields, durationMinutes: number) {
   const startAt = new Date(
     `${fields.startDateInput}T${fields.startClockInput}:00`,
@@ -44,7 +41,7 @@ export function createTeamPayload(
     maxParticipants: parseInt(fields.maxParticipants, 10),
     meetingPoint: fields.meetingPoint.trim() || null,
     description: fields.description || null,
-    requirements: cleanRequirements(fields.requirementsInput.split(/\r?\n/u)),
+    requirements: cleanStrings(fields.requirementsInput.split(/\r?\n/u)),
     recruitmentStatus: "open" as const,
   };
 }
@@ -59,7 +56,7 @@ export function editTeamPayload(
     description: fields.description.trim() || null,
     maxParticipants: parseInt(fields.maxParticipants, 10),
     ...schedulePayload(fields, parseInt(fields.durationMinutes, 10) || 240),
-    requirements: cleanRequirements(fields.requirements),
+    requirements: cleanStrings(fields.requirements),
     ...(fields.activityType !== originalActivityType
       ? { activityType: fields.activityType }
       : {}),

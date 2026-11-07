@@ -3,7 +3,7 @@
 
 import { spawn } from "node:child_process";
 import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import net from "node:net";
+import { probePort } from "./port-probe.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseJsonc } from "./production-build-guard.mjs";
@@ -18,18 +18,7 @@ export function readWranglerConfig() {
 }
 
 function isPortFree(port) {
-  const check = (address) =>
-    new Promise((resolve) => {
-      const server = net.createServer();
-      server.once("error", (error) =>
-        resolve(
-          error.code === "EADDRNOTAVAIL" || error.code === "EAFNOSUPPORT",
-        ),
-      );
-      server.once("listening", () => server.close(() => resolve(true)));
-      server.listen(port, address);
-    });
-  return Promise.all([check("0.0.0.0"), check("::1")]).then((results) =>
+  return Promise.all([probePort(port, "0.0.0.0"), probePort(port, "::1")]).then((results) =>
     results.every(Boolean),
   );
 }

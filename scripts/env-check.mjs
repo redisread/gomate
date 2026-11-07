@@ -3,7 +3,7 @@
 
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import net from "node:net";
+import { probePort } from "./port-probe.mjs";
 import { checkToolchain } from "./toolchain.mjs";
 import path from "node:path";
 
@@ -90,18 +90,7 @@ async function checkPort(port) {
   if (!Number.isInteger(port) || port < 1 || port > 65_535) {
     return fail(`GOMATE_WEB_PORT 无效：${port}`);
   }
-  const probe = (address) =>
-    new Promise((resolve) => {
-      const server = net.createServer();
-      server.once("error", (error) =>
-        resolve(
-          error.code === "EADDRNOTAVAIL" || error.code === "EAFNOSUPPORT",
-        ),
-      );
-      server.once("listening", () => server.close(() => resolve(true)));
-      server.listen(port, address);
-    });
-  const results = await Promise.all([probe("127.0.0.1"), probe("::1")]);
+  const results = await Promise.all([probePort(port, "127.0.0.1"), probePort(port, "::1")]);
   if (!results.every(Boolean)) return fail(`统一 Worker 端口 ${port} 已被占用`);
   ok(`统一 Worker 端口 ${port} 可用`);
   return true;

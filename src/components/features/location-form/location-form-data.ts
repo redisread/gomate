@@ -1,3 +1,4 @@
+import { cleanStrings } from "@/lib/string-list";
 import type { ActivityType, Location, LocationStatus } from "@/lib/types";
 
 export interface LocationFormData {
@@ -71,10 +72,6 @@ export const DEFAULT_LOCATION_FORM: LocationFormData = {
   },
   tagIds: [],
 };
-
-function cleanStrings(values: string[]): string[] {
-  return values.map((value) => value.trim()).filter(Boolean);
-}
 
 export function getCoordinatePairErrors(
   latitude: number | string,
