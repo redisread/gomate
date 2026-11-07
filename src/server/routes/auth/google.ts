@@ -3,6 +3,9 @@ import { isGoogleAuthAvailable } from "../../lib/google-auth";
 import { APIErrors } from "../../lib/api-errors";
 import { logger } from "../../lib/logger";
 import { createAuth } from "../../lib/auth";
+import { getActiveSession } from "../../lib/active-session";
+import { completeNativeRequest } from "../../lib/native-auth";
+import { z } from "../../lib/openapi";
 import { googleSignInSchema } from "./schemas";
 import {
   type AuthContext,
@@ -61,6 +64,19 @@ export async function handleGoogleCallback(c: AuthContext) {
     const response = await createAuth(c.env, getExecutionContext(c)).handler(
       new Request(normalizeBetterAuthUrl(c.req.raw.url), c.req.raw),
     );
+    const location = response.headers.get("location");
+    if (response.status === 302 && location) {
+      const destination = new URL(location, c.env.APP_URL);
+      if (destination.origin === new URL(c.env.APP_URL).origin && destination.pathname === "/api/auth/native/google/complete") {
+        const id = destination.searchParams.get("request");
+        const cookies = response.headers.getSetCookie().map((value) => value.split(";", 1)[0]).join("; ");
+        const session = cookies ? await getActiveSession(c.env, new Headers({ cookie: cookies })) : null;
+        const code = session && z.uuid().safeParse(id).success ? await completeNativeRequest(c.env, id!, session.user.id) : null;
+        return noStoreResponse(c.redirect(code
+          ? `gomate://auth/callback#request=${id}&code=${code}`
+          : "gomate://auth/callback#error=authentication_failed"));
+      }
+    }
     return noStoreResponse(response);
   } catch {
     logger.error("google_oauth_callback_failed");

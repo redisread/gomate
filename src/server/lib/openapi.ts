@@ -30,6 +30,7 @@ export type ApiEnv = {
 };
 /** HTTP 与 HTTPS 部署沿用 Better Auth 的 Cookie 名称；两种方案择一认证。 */
 export const cookieSecurity: Record<string, string[]>[] = [
+  { bearerAuth: [] },
   { cookieAuth: [] },
   { secureCookieAuth: [] },
 ];

@@ -42,6 +42,7 @@ export const TeamQuerySchema = z.object({
 });
 
 export const teamCookieSecurity: NonNullable<RouteConfig["security"]> = [
+  { bearerAuth: [] },
   { cookieAuth: [] },
   { secureCookieAuth: [] },
 ];

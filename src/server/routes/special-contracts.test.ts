@@ -63,7 +63,7 @@ describe("controlled authentication and upload contracts", () => {
       Object.values(auth.paths ?? {}).flatMap((item) =>
         Object.keys(item ?? {}),
       ),
-    ).toHaveLength(12);
+    ).toHaveLength(19);
     expect(
       Object.values(upload.paths ?? {}).flatMap((item) =>
         Object.keys(item ?? {}),

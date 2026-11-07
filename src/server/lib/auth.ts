@@ -1,5 +1,8 @@
 import { resolveLoginReturnPath } from "../../lib/login-return-path";
 import { betterAuth } from "better-auth";
+import { bearer } from "better-auth/plugins/bearer";
+import { and, eq } from "drizzle-orm";
+import { appleClientSecret, isAppleConfigured } from "./apple-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createDb } from "../db";
 import * as schema from "../db/schema";
@@ -63,6 +66,7 @@ function privateClientUrl(appUrl: string, pathname: string, token: string, verif
 export function createAuth(
   env: Env,
   executionContext?: BackgroundExecutionContext,
+  nativeAppleRefreshToken?: string,
 ) {
   const authSecret = env.BETTER_AUTH_SECRET;
 
@@ -79,7 +83,10 @@ export function createAuth(
   // 本地 HTTP 开发时不能使用 Secure cookie，否则浏览器不会保存/发送 session
   const isSecure = (env.APP_URL || "").startsWith("https");
 
+  const bearerPlugin = bearer();
   return betterAuth({
+    // Keep browser session credentials out of bearer response headers.
+    plugins: [{ ...bearerPlugin, hooks: { before: bearerPlugin.hooks.before } }],
     // Better Auth's default logger includes raw adapter errors and SQL params.
     // Disable it and throw unexpected API failures through Hono's sanitized
     // request boundary instead of persisting tokens, emails or query details.
@@ -94,21 +101,64 @@ export function createAuth(
         verification: schema.verifications,
       },
     }),
-    socialProviders: env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET ? {
-      google: {
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
-        disableIdTokenSignIn: true,
-        includeGrantedScopes: false,
-        accessType: "online",
-        prompt: "select_account",
-        mapProfileToUser: (profile) => ({
-          email: profile.email.toLocaleLowerCase("en-US"),
-          // Profile media stays under GoMate's existing upload boundary.
-          image: undefined,
-        }),
-      },
-    } : {},
+    socialProviders: {
+      ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+        ? {
+            google: {
+              clientId: env.GOOGLE_CLIENT_ID,
+              clientSecret: env.GOOGLE_CLIENT_SECRET,
+              disableIdTokenSignIn: true,
+              includeGrantedScopes: false,
+              accessType: "online",
+              prompt: "select_account",
+              mapProfileToUser: (profile) => ({
+                email: profile.email.toLocaleLowerCase("en-US"),
+                // Profile media stays under GoMate's existing upload boundary.
+                image: undefined,
+              }),
+            },
+          }
+        : {}),
+      ...(isAppleConfigured(env)
+        ? {
+            apple: async () => ({
+              clientId: env.APPLE_CLIENT_ID!,
+              clientSecret: await appleClientSecret(env),
+              appBundleIdentifier: env.APPLE_CLIENT_ID!,
+              mapProfileToUser: async (profile) => {
+                const [existing] = profile.email
+                  ? []
+                  : await db
+                      .select({
+                        email: schema.users.email,
+                        emailVerified: schema.users.emailVerified,
+                      })
+                      .from(schema.accounts)
+                      .innerJoin(
+                        schema.users,
+                        eq(schema.accounts.userId, schema.users.id),
+                      )
+                      .where(
+                        and(
+                          eq(schema.accounts.providerId, "apple"),
+                          eq(schema.accounts.accountId, profile.sub),
+                        ),
+                      )
+                      .limit(1);
+                return {
+                  email:
+                    profile.email?.toLocaleLowerCase("en-US") ??
+                    existing?.email,
+                  ...(existing
+                    ? { emailVerified: existing.emailVerified }
+                    : {}),
+                  image: undefined,
+                };
+              },
+            }),
+          }
+        : {}),
+    },
     account: {
       encryptOAuthTokens: true,
       // Keep the 1.7.0–1.7.2 column populated until a separate schema
@@ -215,14 +265,37 @@ export function createAuth(
       account: {
         create: {
           before: async (account) => {
-            const issuer = account.providerId === "credential"
-              ? "local:credential"
-              : account.providerId === "google"
-                ? "https://accounts.google.com"
-                : null;
+            const issuer =
+              account.providerId === "credential"
+                ? "local:credential"
+                : account.providerId === "google"
+                  ? "https://accounts.google.com"
+                  : account.providerId === "apple"
+                    ? "https://appleid.apple.com"
+                    : null;
             if (!issuer) throw new Error("Unsupported account provider");
-            return { data: { ...account, issuer } };
+            return {
+              data: {
+                ...account,
+                issuer,
+                ...(account.providerId === "apple" && nativeAppleRefreshToken
+                  ? { refreshToken: nativeAppleRefreshToken }
+                  : {}),
+              },
+            };
           },
+        },
+        update: {
+          // This request-scoped override is only supplied by the controlled
+          // Apple ID-token login, whose account target is resolved by Apple sub.
+          before: async (account) => ({
+            data: {
+              ...account,
+              ...(nativeAppleRefreshToken
+                ? { refreshToken: nativeAppleRefreshToken }
+                : {}),
+            },
+          }),
         },
       },
       session: {
@@ -233,7 +306,7 @@ export function createAuth(
     },
     user: {
       validateUserInfo: ({ user, source }) => {
-        if (source.oauth?.providerId === "google" && user.emailVerified !== true) {
+        if (["google", "apple"].includes(source.oauth?.providerId ?? "") && user.emailVerified !== true) {
           return { error: "google_email_not_verified" };
         }
       },

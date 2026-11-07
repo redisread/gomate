@@ -86,6 +86,15 @@
 - 运行 `e2e/team-form-experience.spec.ts` 与 `e2e/main-navigation.spec.ts`，检查断点切换、动态 reduced-motion 和页面异常。
 - 出现记录为 1 次，2026-11-06，本地复现。
 
+## 认证转发统一规范化资源路径
+
+**规则：** 调用 Better Auth handler 前规范化到 `/api/auth/*`，同时验证完整 URL 和本地 dispatcher 的资源相对 URL。
+
+- 原因：原有退出处理直接转发请求，本地 dispatcher 已去掉 `/api` 前缀时，Better Auth 无法匹配 `/auth/sign-out`，返回 404。
+- 证据：本次 iOS 隔离联调复现该入口返回 404；真实 D1 的 `native-auth.test.ts` 退出回归先失败，采用现有 `normalizeBetterAuthUrl` 后通过，并确认会话已撤销。此为本地验证。
+- 检查方式：运行 `tests/worker/native-auth.test.ts` 的退出回归，断言 HTTP 200 及后续权威会话读取为空。
+- 出现记录：1 次，2026-11-07。
+
 ## 记录模板
 
 ```markdown

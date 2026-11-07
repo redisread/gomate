@@ -105,7 +105,8 @@ test("详情返回恢复分页窗口、筛选条件和列表滚动位置", async
   const href = await link.getAttribute("href");
   await link.click();
   await page.waitForURL(`**${href}`);
-  await page.goBack();
+  // Assert restored list state independently of third-party image delivery.
+  await page.goBack({ waitUntil: "domcontentloaded" });
   await expect(page.getByRole("button", { name: "更多城市", exact: true })).toBeVisible();
   expect(page.url()).toBe(currentURL);
   await expect(cards(page).nth(3)).toHaveAttribute("href", href!);

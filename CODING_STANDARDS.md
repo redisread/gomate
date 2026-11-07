@@ -76,7 +76,7 @@
 
 - 新增/修改路由遵循 `src/server/app.ts` 和现有 `routes/` 边界；错误使用统一 API error/envelope，列表使用有界 limit 与 opaque cursor。
 - 权限与跨表不变量必须在最终写语句中复核，不能只依赖先查后写；关键批处理需覆盖竞争与回滚测试。
-- 认证只接受同源受控入口。邮箱验证和密码重置 token 只经 URL fragment 到页面，再以同源 POST body 提交；不得把 token 放进 path/query、日志或数据库明文。
+- 浏览器认证使用同源受控入口。iOS 经 `docs/native-auth.md` 定义的原生入口获取可撤销 Bearer 会话，原生登录拒绝 Cookie 并保留 origin 与写保护校验。邮箱验证和密码重置 token 经 URL fragment 到受控页面或已关联 App，再以 POST body 提交；不得把 token 放进 path/query、日志或数据库明文。
 - 日志事件名必须是稳定的 lowercase snake_case 字面量；禁止记录 body、headers、cookie、token、secret、原始 email/IP、用户资料或 Error message/stack/cause。
 
 ## 验证门禁

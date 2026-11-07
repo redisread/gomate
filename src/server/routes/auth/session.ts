@@ -5,11 +5,12 @@ import {
   getExecutionContext,
   noStoreResponse,
   noStoreJsonResponse,
+  normalizeBetterAuthUrl,
 } from "./request";
 
 export function handleSignOut(c: AuthContext) {
   return createAuth(c.env, getExecutionContext(c))
-    .handler(c.req.raw)
+    .handler(new Request(normalizeBetterAuthUrl(c.req.raw.url), c.req.raw))
     .then(noStoreResponse);
 }
 

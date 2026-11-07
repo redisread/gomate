@@ -97,6 +97,7 @@ export function audienceDocument(
 
 export function registerDocumentation(app: DocumentationApp) {
   app.openAPIRegistry.register("ApiError", apiErrorSchema);
+  app.openAPIRegistry.registerComponent("securitySchemes", "bearerAuth", { type: "http", scheme: "bearer", description: "原生客户端使用可撤销会话凭据。" });
   app.openAPIRegistry.registerComponent("securitySchemes", "cookieAuth", {
     type: "apiKey",
     in: "cookie",
