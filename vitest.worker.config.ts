@@ -20,6 +20,9 @@ export default defineConfig({
   ],
   test: {
     globals: true,
+    // vitest-plugin 1.4.4 can inline warm modules into a >32 MiB RPC frame.
+    // https://github.com/cloudflare/workers-sdk/issues/16349
+    fsModuleCache: false,
     testTimeout: 30_000,
     include: ["tests/worker/**/*.test.ts"],
   },

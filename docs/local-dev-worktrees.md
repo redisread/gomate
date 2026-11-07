@@ -67,6 +67,12 @@ D1 binding。随后重新应用完整 migration 链和 seed。执行前停止所
 
 ## E2E
 
+Workers 集成测试在 `vitest.worker.config.ts` 中关闭 Vitest 5 文件系统模块缓存。
+当前 `@cloudflare/vitest-plugin` 1.4.4 会把 warm modules 合并进单个 WebSocket 消息，
+较大依赖图可能触及 32 MiB 上限。逐模块读取可避免该问题，代价是重新转换模块。
+升级测试插件时结合 [上游问题 #16349](https://github.com/cloudflare/workers-sdk/issues/16349)
+复核这项设置，验证完整 Workers 套件及 Linux CI。
+
 Playwright 验证首页/健康检查、登录、认证保护、建队、直接加入与退出等核心路径，默认针对同一个 origin：
 
 - 页面：`http://localhost:5432`
