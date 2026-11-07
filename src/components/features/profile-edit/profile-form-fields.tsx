@@ -16,7 +16,7 @@ import type { Region } from "@/lib/types";
 import { inputCls, LEVEL_OPTIONS } from "./constants";
 
 // ─── FieldLabel ─────────────────────────────────────────────────────
-export function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
     <SwLabel className="text-sm font-semibold text-stone-700 dark:text-stone-300 flex items-center gap-1">
       {children}{required && <span className="text-red-400">*</span>}

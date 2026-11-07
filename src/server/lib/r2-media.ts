@@ -21,11 +21,6 @@ export function getR2PublicBaseUrl(env: Pick<Env, "R2_PUBLIC_URL">): string | nu
   }
 }
 
-export function r2PublicUrl(env: Pick<Env, "R2_PUBLIC_URL">, key: string) {
-  const base = getR2PublicBaseUrl(env);
-  return base ? `${base}/${key}` : null;
-}
-
 export function exactR2KeyFromPublicUrl(
   env: Pick<Env, "R2_PUBLIC_URL">,
   value: string,

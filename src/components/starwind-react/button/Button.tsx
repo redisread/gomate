@@ -14,7 +14,7 @@ type NativeButtonProps = React.ComponentPropsWithRef<"button"> &
   SharedProps & { as?: "button"; href?: never };
 type LinkButtonProps = React.ComponentPropsWithRef<"a"> &
   SharedProps & { as?: "a"; href: string };
-export type ButtonProps = NativeButtonProps | LinkButtonProps;
+type ButtonProps = NativeButtonProps | LinkButtonProps;
 
 function Button(props: NativeButtonProps): React.JSX.Element;
 function Button(props: LinkButtonProps): React.JSX.Element;

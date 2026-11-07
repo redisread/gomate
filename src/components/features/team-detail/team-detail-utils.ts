@@ -40,18 +40,3 @@ export function getStatusInfo(
   };
   return map[status];
 }
-
-export function formatDuration(hours: number, minutes?: number): string {
-  if (minutes !== undefined) {
-    const parts: string[] = [];
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
-    return parts.join(" ") || "0m";
-  }
-  const h = Math.floor(hours);
-  const m = Math.round((hours - h) * 60);
-  const parts: string[] = [];
-  if (h > 0) parts.push(`${h}h`);
-  if (m > 0) parts.push(`${m}m`);
-  return parts.join(" ") || "0m";
-}

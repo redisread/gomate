@@ -44,7 +44,7 @@ const hikingExtraSchema = z
   })
   .strict();
 
-export const locationExtraInputSchema = z
+const locationExtraInputSchema = z
   .object({
     hiking: hikingExtraSchema.optional(),
     facilities: extraStringArraySchema.optional(),
@@ -303,7 +303,7 @@ function wildcardHostMatch(hostname: string, suffix: string) {
   return hostname.endsWith(`.${suffix}`) && hostname.length > suffix.length + 1;
 }
 
-export function isAllowedLocationImageUrl(value: string, env: Env) {
+function isAllowedLocationImageUrl(value: string, env: Env) {
   let url: URL;
   try {
     url = new URL(value);

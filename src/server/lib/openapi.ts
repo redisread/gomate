@@ -20,7 +20,7 @@ import {
 } from "./admin-access";
 
 export { createRoute, z } from "@hono/zod-openapi";
-export type { RouteHandler, RouteConfig } from "@hono/zod-openapi";
+export type { RouteConfig } from "@hono/zod-openapi";
 export type ApiEnv = {
   Bindings: Env;
   Variables: {

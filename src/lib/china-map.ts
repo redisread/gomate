@@ -25,8 +25,8 @@ export interface MapBounds extends MapPointPosition {
   height: number;
 }
 
-export const MAP_PROVINCE_PARAM = "mapProvince";
-export const MAP_LOCATION_PARAM = "mapLocation";
+const MAP_PROVINCE_PARAM = "mapProvince";
+const MAP_LOCATION_PARAM = "mapLocation";
 export function isMapProvince(province: string): boolean {
   return Object.hasOwn(PROVINCE_CENTERS, province);
 }
@@ -60,7 +60,7 @@ export function getMapPointCandidates<T extends MapPointPosition>(points: T[], h
   const nearest = nearby[0];
   return nearest ? nearby.filter(entry => entry.distance <= nearest.distance + 4).map(entry => entry.point) : [];
 }
-export const PROVINCE_ZOOM_SCALE = 3;
+const PROVINCE_ZOOM_SCALE = 3;
 const MAX_PROVINCE_ZOOM_SCALE = 4.5;
 const FOCUSED_MAP_VIEWPORT = {
   x: 64,
@@ -127,7 +127,7 @@ export function parseMapProvince(search: string): string | null {
 }
 
 /** 省名 → 投影后的省中心坐标（tooltip 定位用） */
-export const PROVINCE_CENTERS: Record<string, { x: number; y: number }> = {
+const PROVINCE_CENTERS: Record<string, { x: number; y: number }> = {
   "北京市": { x: 551.2, y: 236.2 },
   "天津市": { x: 561.1, y: 249.2 },
   "河北省": { x: 527.0, y: 267.3 },

@@ -4,7 +4,7 @@ import MenuPrimitive from "@starwind-ui/react/menu";
 import type * as React from "react";
 import { dropdownRadioItem, dropdownRadioItemIndicator } from "./variants";
 
-export type DropdownRadioItemProps = Omit<
+type DropdownRadioItemProps = Omit<
   React.ComponentPropsWithoutRef<"div">,
   "aria-checked" | "role"
 > & {

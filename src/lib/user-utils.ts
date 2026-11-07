@@ -37,17 +37,6 @@ export function getAgeNumber(birthday: string | number | null | undefined): numb
 }
 
 /**
- * 根据生日计算年龄字符串
- * @param birthday ISO 字符串、时间戳或 null
- * @returns 年龄字符串（如 "25岁"）或空字符串
- */
-export function getAgeFromBirthday(birthday: string | number | null | undefined): string {
-  const age = getAgeNumber(birthday);
-  if (age === null) return "";
-  return `${age}岁`;
-}
-
-/**
  * 将日期字符串转为时间戳
  * @param dateStr 日期字符串 (YYYY-MM-DD)
  * @returns 时间戳 (ms) 或 null

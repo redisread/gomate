@@ -40,10 +40,6 @@ export function parseUserExtra(value: unknown): UserExtra {
   };
 }
 
-export function mergeUserExtra(current: UserExtra, patch: UserExtraPatch): UserExtra {
-  return userExtraSchema.parse({ ...current, ...patch });
-}
-
 /**
  * Builds one SQLite JSON update expression from the current column value.
  * The database evaluates it at UPDATE time, so unrelated concurrent changes
@@ -67,18 +63,4 @@ export function userExtraPatchExpression(
     expression = sql`json_set(${expression}, ${path}, ${value})`;
   }
   return expression;
-}
-
-export function serializeUserExtra(value: UserExtra): string {
-  return JSON.stringify(toStoredUserExtra(value));
-}
-
-export function toStoredUserExtra(value: UserExtra): z.infer<typeof storedUserExtraSchema> {
-  const parsed = userExtraSchema.parse(value);
-  return {
-    level: parsed.level,
-    completed_hikes: parsed.completedHikes,
-    wechat: parsed.wechat,
-    city: parsed.city,
-  };
 }

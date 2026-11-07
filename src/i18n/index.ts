@@ -133,7 +133,7 @@ const pendingLoads = new Map<string, Promise<Record<string, unknown>>>();
 /**
  * 加载单个 namespace 到内存和缓存
  */
-export async function loadNamespace(
+async function loadNamespace(
   ns: string,
   locale: Locale,
 ): Promise<Record<string, unknown>> {
@@ -182,29 +182,6 @@ export async function loadNamespaces(
     }),
   );
   return results;
-}
-
-/**
- * 预加载 SSR 内联数据（客户端 hydration 时调用）
- * 从 window.__I18N_DATA__ 读取服务端注入的翻译
- */
-export function hydrateSSRData(
-  data?: Record<Locale, Record<string, Record<string, unknown>>>,
-): void {
-  if (typeof window === "undefined") return;
-  const ssrData =
-    data ?? (window as unknown as Record<string, unknown>).__I18N_DATA__;
-  if (!ssrData) return;
-
-  for (const [locale, nsMap] of Object.entries(ssrData)) {
-    for (const [ns, nsData] of Object.entries(nsMap)) {
-      setCache(ns, locale as Locale, nsData as Record<string, unknown>);
-    }
-  }
-  // 清理全局变量
-  if (typeof window !== "undefined") {
-    delete (window as unknown as Record<string, unknown>).__I18N_DATA__;
-  }
 }
 
 // ─── 核心翻译函数 ─────────────────────────────────────────────────────────────
@@ -397,4 +374,4 @@ export function getSSRT(
 // ─── 导出 ─────────────────────────────────────────────────────────────────────
 
 export type { TranslationKey, NamespacedKeys } from "./types";
-export { DEFAULT_LOCALE, SUPPORTED_LOCALES, FALLBACK_MAP };
+export { DEFAULT_LOCALE, SUPPORTED_LOCALES };

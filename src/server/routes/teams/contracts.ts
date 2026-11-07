@@ -2,7 +2,7 @@ import type { RouteConfig } from "../../lib/openapi";
 import { z } from "../../lib/openapi";
 
 /** 同名查询参数重复出现时只取第一个值，文档注释不得改变既有解析语义。 */
-export const queryString = z.preprocess(
+const queryString = z.preprocess(
   (value) => (Array.isArray(value) ? value[0] : value),
   z.string().optional(),
 );

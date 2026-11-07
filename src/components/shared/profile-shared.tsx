@@ -82,9 +82,7 @@ export function StatCard({
   return href ? <a href={href}>{inner}</a> : inner;
 }
 
-export function ProfileSkeleton({ variant = "amber" }: { variant?: "amber" | "sky" }) {
-  const _bgColor = variant === "amber" ? "amber" : "sky";
-  
+export function ProfileSkeleton() {
   return (
     <SwCard className="block gap-0 py-0 ring-0 bg-card rounded-2xl border border-border overflow-hidden mb-6">
       <div className="h-36 bg-muted animate-pulse" />

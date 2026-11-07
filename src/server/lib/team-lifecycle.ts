@@ -15,11 +15,6 @@ export interface TeamLifecycleFields {
   endAt: Timestamp;
 }
 
-export interface TeamRecruitmentFields extends TeamLifecycleFields {
-  recruitmentStatus: "open" | "closed";
-  maxParticipants: number;
-}
-
 function timestampMs(value: Timestamp): number {
   return value instanceof Date ? value.getTime() : value;
 }
@@ -40,17 +35,4 @@ export function getTeamLifecycle(
 
   if (startAt > nowMs) return "formed";
   return endAt <= nowMs ? "completed" : "in_progress";
-}
-
-export function isTeamRecruitable(
-  team: TeamRecruitmentFields,
-  activeParticipantCount: number,
-  now: Timestamp = Date.now(),
-): boolean {
-  return (
-    team.recruitmentStatus === "open" &&
-    team.cancelledAt === null &&
-    timestampMs(team.startAt) > timestampMs(now) &&
-    activeParticipantCount < team.maxParticipants
-  );
 }

@@ -11,5 +11,4 @@ usersRoute.route("/", timeline);
 usersRoute.route("/", account);
 usersRoute.route("/", publicProfile);
 
-export default usersRoute;
 export { usersRoute };

@@ -71,7 +71,7 @@ export function planProductionMigrations(files, manifest) {
   return { enabled, held };
 }
 
-export async function readProductionMigrationPlan(root) {
+async function readProductionMigrationPlan(root) {
   const dir = path.join(root, "migrations");
   const names = (await readdir(dir))
     .filter((name) => name.endsWith(".sql"))

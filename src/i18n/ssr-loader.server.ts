@@ -45,13 +45,3 @@ export async function loadLocaleData(
 
   return results;
 }
-
-/**
- * 生成内联 <script> 标签，包含 SSR 翻译数据
- *
- * @param data - 已加载的 locale 数据
- */
-export function renderSSRScript(data: Record<string, Record<string, Record<string, unknown>>>): string {
-  const json = JSON.stringify(data);
-  return `<script id="__i18n_data__" type="application/json">${json}</script>`;
-}

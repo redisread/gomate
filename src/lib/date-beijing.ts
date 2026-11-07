@@ -5,41 +5,35 @@
 
 const BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
 
-export interface DateRange {
-  start: string; // ISO date string (YYYY-MM-DD) for API query
-  end: string;   // ISO date string (YYYY-MM-DD) for API query
-  quickType: string | null; // 'today' | 'tomorrow' | 'weekend' | '7days' | '30days' | null
-}
-
 /** Convert UTC Date to Beijing Date */
-export function toBeijingDate(utcDate: Date): Date {
+function toBeijingDate(utcDate: Date): Date {
   return new Date(utcDate.getTime() + BEIJING_OFFSET_MS);
 }
 
 /** Convert Beijing Date to UTC Date */
-export function fromBeijingDate(beijingDate: Date): Date {
+function fromBeijingDate(beijingDate: Date): Date {
   return new Date(beijingDate.getTime() - BEIJING_OFFSET_MS);
 }
 
 /** Get current time in Beijing */
-export function getBeijingNow(): Date {
+function getBeijingNow(): Date {
   return toBeijingDate(new Date());
 }
 
 /** Format date to YYYY-MM-DD */
-export function formatDateISO(date: Date): string {
+function formatDateISO(date: Date): string {
   return date.toISOString().split("T")[0];
 }
 
 /** Get Beijing today's date range (for API query) */
-export function getBeijingTodayRange(): { start: string; end: string } {
+function getBeijingTodayRange(): { start: string; end: string } {
   const beijingNow = getBeijingNow();
   const dateStr = formatDateISO(fromBeijingDate(beijingNow));
   return { start: dateStr, end: dateStr };
 }
 
 /** Get Beijing tomorrow's date range (for API query) */
-export function getBeijingTomorrowRange(): { start: string; end: string } {
+function getBeijingTomorrowRange(): { start: string; end: string } {
   const beijingNow = getBeijingNow();
   const tomorrow = new Date(beijingNow);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -48,7 +42,7 @@ export function getBeijingTomorrowRange(): { start: string; end: string } {
 }
 
 /** Get Beijing this weekend's date range (Saturday-Sunday) */
-export function getBeijingWeekendRange(): { start: string; end: string } {
+function getBeijingWeekendRange(): { start: string; end: string } {
   const beijingNow = getBeijingNow();
   const dayOfWeek = beijingNow.getUTCDay(); // 0=Sunday, 6=Saturday in UTC (same as Beijing)
 
@@ -68,7 +62,7 @@ export function getBeijingWeekendRange(): { start: string; end: string } {
 }
 
 /** Get next N days range from today */
-export function getBeijingNextNDaysRange(n: number): { start: string; end: string } {
+function getBeijingNextNDaysRange(n: number): { start: string; end: string } {
   const beijingNow = getBeijingNow();
   const start = formatDateISO(fromBeijingDate(beijingNow));
 

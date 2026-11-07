@@ -4,7 +4,7 @@ import MenuPrimitive from "@starwind-ui/react/menu";
 import type * as React from "react";
 import { dropdown } from "./variants";
 
-export type DropdownProps = React.ComponentPropsWithoutRef<"div"> & {
+type DropdownProps = React.ComponentPropsWithoutRef<"div"> & {
   defaultOpen?: boolean;
   open?: boolean;
   disabled?: boolean;

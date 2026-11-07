@@ -1,41 +1,7 @@
 /**
  * GoMate 动效 Hooks 系统
- * 纯 CSS 变量 + Intersection Observer 实现，不依赖额外动画库
+ * 通过 CSS 类与 animation-delay 控制入场动画，不依赖额外动画库
  */
-
-import { useState, useEffect, useRef, type RefObject } from "react";
-
-/* ============================================================
-   useInView — 视口进入检测
-   用于 Section 滚动进入时触发动画
-   ============================================================ */
-export function useInView(threshold = 0.1): [RefObject<HTMLDivElement | null>, boolean] {
-  const ref = useRef<HTMLDivElement>(null);
-  const [inView, setInView] = useState(true); // 默认可见，渐进增强
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          // 触发后取消观察，避免重复触发
-          observer.unobserve(el);
-        }
-      },
-      { threshold }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [threshold]);
-
-  return [ref, inView];
-}
-
-
 
 /* ============================================================
    useAnimateIn — Hero 入场动画系统
@@ -50,19 +16,9 @@ export interface AnimateInConfig {
   stats: string;
 }
 
-export function useAnimateIn(enabled = true): AnimateInConfig {
+export function useAnimateIn(): AnimateInConfig {
   // 修复 hydration 错误：统一 SSR/CSR 返回值
   // 动画通过 CSS animation-delay 控制，hydration 完成后自动播放
-  if (!enabled) {
-    return {
-      badge: "opacity-0",
-      title: "opacity-0",
-      subtitle: "opacity-0",
-      search: "opacity-0",
-      cta: "opacity-0",
-      stats: "opacity-0",
-    };
-  }
 
   return {
     badge:    "animate-fade-up [animation-delay:0ms]   [animation-fill-mode:both]",

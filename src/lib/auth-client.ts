@@ -16,6 +16,3 @@ export const {
   resetPassword,
   sendVerificationEmail,
 } = authClient;
-
-// 导出类型
-export type ClientAuthSession = typeof authClient.$Infer.Session;

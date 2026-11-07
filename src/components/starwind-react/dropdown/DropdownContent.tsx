@@ -4,7 +4,7 @@ import MenuPrimitive from "@starwind-ui/react/menu";
 import type * as React from "react";
 import { dropdownContent } from "./variants";
 
-export type DropdownContentProps = React.ComponentPropsWithoutRef<"div"> & {
+type DropdownContentProps = React.ComponentPropsWithoutRef<"div"> & {
   side?: "top" | "right" | "bottom" | "left";
   align?: "start" | "center" | "end";
   sideOffset?: number;

@@ -76,25 +76,3 @@ export async function withTimeout<T>(
       });
   });
 }
-
-/**
- * 数据库查询超时包装器
- * 用于为 Drizzle ORM 查询添加超时控制
- * @param query - 数据库查询 Promise
- * @param timeoutMs - 超时时间（毫秒），默认 10000ms
- * @param operation - 操作名称（用于错误信息）
- * @returns Promise<T>
- * @note 数据库查询本身不可取消，超时后 Promise 仍会在后台执行完毕，
- *       但结果会被丢弃。适用于防止请求长时间挂起，不适用于节省 DB 资源。
- */
-export async function withQueryTimeout<T>(
-  query: Promise<T>,
-  timeoutMs: number = 10000,
-  operation: string = "Database query"
-): Promise<T> {
-  return withTimeout(
-    () => query,
-    timeoutMs,
-    `${operation} timeout after ${timeoutMs}ms`
-  );
-}

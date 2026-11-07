@@ -2,7 +2,7 @@ import type * as React from "react";
 import type { VariantProps } from "tailwind-variants";
 import { card } from "./variants";
 
-export type CardProps = React.ComponentPropsWithoutRef<"div"> &
+type CardProps = React.ComponentPropsWithoutRef<"div"> &
   VariantProps<typeof card> & {
     ref?: React.Ref<HTMLDivElement>;
   };

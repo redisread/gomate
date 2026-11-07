@@ -18,7 +18,7 @@ const methods = [
 ] as const;
 
 /** Only non-product infrastructure and intentionally denied legacy entrypoints are exempt. */
-export const openApiExclusions: Readonly<Record<string, string>> = {
+const openApiExclusions: Readonly<Record<string, string>> = {
   "ALL /*":
     "Global request logging, write protection and same-origin middleware; not an endpoint.",
   "ALL /admin/teams/*":

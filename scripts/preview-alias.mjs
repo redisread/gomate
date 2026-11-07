@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 
-export const DEFAULT_WORKER_NAME = "gomate";
+const DEFAULT_WORKER_NAME = "gomate";
 export const MAX_DNS_LABEL_LENGTH = 63;
-export const PREVIEW_WRANGLER_CONFIG = "dist/server/wrangler.json";
+const PREVIEW_WRANGLER_CONFIG = "dist/server/wrangler.json";
 
 function branchHash(branch) {
   return createHash("sha256").update(branch, "utf8").digest("hex").slice(0, 8);

@@ -2,7 +2,7 @@ import type * as React from "react";
 import type { VariantProps } from "tailwind-variants";
 import { label } from "./variants";
 
-export type LabelProps = React.ComponentPropsWithoutRef<"label"> &
+type LabelProps = React.ComponentPropsWithoutRef<"label"> &
   VariantProps<typeof label> & {
     ref?: React.Ref<HTMLLabelElement>;
   };

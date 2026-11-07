@@ -4,7 +4,7 @@ import ProgressPrimitive from "@starwind-ui/react/progress";
 import type * as React from "react";
 import { progress, progressIndicator, progressTrack } from "./variants";
 
-export type ProgressProps = Omit<
+type ProgressProps = Omit<
   React.ComponentPropsWithoutRef<"div">,
   "value"
 > & {

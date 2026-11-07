@@ -5,7 +5,7 @@ import type * as React from "react";
 import type { VariantProps } from "tailwind-variants";
 import { radioGroup } from "./variants";
 
-export type RadioGroupProps = Omit<
+type RadioGroupProps = Omit<
   React.ComponentPropsWithoutRef<"div">,
   "defaultValue" | "onChange"
 > &
