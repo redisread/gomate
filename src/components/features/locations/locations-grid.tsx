@@ -104,7 +104,7 @@ function LocationCard({ location, index, onNavigate }: { location: Location; ind
  */
 export type EmptyStateVariant = "noSearch" | "noRegion" | "noRegionSet" | "tooNarrow";
 
-export interface EmptyStateProps {
+interface EmptyStateProps {
   variant: EmptyStateVariant;
   /** Search query for the noSearch variant template. */
   query?: string;
@@ -141,7 +141,7 @@ const VARIANT_SECONDARY: Record<EmptyStateVariant, string> = {
   tooNarrow: "locations.empty.tooNarrow.homeBtn",
 };
 
-export function EmptyState({
+function EmptyState({
   variant,
   query,
   regionName,

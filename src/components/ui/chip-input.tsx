@@ -167,9 +167,3 @@ export function ChipInput({
     </div>
   );
 }
-
-// 单独导出常量供测试引用
-export const CHIP_INPUT_LIMITS = {
-  maxItem: DEFAULT_MAX_ITEM,
-  maxItems: DEFAULT_MAX_ITEMS,
-};

@@ -21,7 +21,7 @@ import {
   isPreviewRequest,
 } from "./lib/preview-policy";
 
-export type WriteMode = "open" | "protected";
+type WriteMode = "open" | "protected";
 
 export type ApiBindings = WorkerEnv;
 
@@ -37,7 +37,7 @@ function effectiveWriteMode(request: Request, env: ApiBindings): WriteMode {
     : resolveWriteMode(env.WRITE_MODE);
 }
 
-export function resolveWriteMode(value: unknown): WriteMode {
+function resolveWriteMode(value: unknown): WriteMode {
   return value === "open" ? "open" : "protected";
 }
 
@@ -255,5 +255,3 @@ apiApp.onError((error, c) => {
 });
 
 registerDocumentation(apiApp);
-
-export type ApiApp = typeof apiApp;

@@ -7,12 +7,6 @@ export const LEVEL_OPTIONS = [
   { value: "expert", emoji: "🦅", label: "enums.level.expert", description: "enums.levelDesc.expert" },
 ] as const;
 
-export const PRESET_EQUIPMENT_KEYS = [
-  "trekkingPole", "hardshellJacket", "hikingBackpack", "hikingShoes", "kneePads",
-  "headlamp", "sleepingBag", "tent", "sleepingPad", "waterBottle",
-  "sunscreen", "sunglasses", "raincoat", "hat", "gloves",
-] as const;
-
 export const inputCls =
   "w-full px-4 py-3 border border-stone-200 dark:border-stone-700 rounded-xl text-stone-900 dark:text-stone-100 placeholder:text-stone-300 dark:placeholder:text-stone-600 " +
   "focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-[transform,background-color,border-color,color,opacity,box-shadow]";

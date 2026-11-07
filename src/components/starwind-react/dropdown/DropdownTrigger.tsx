@@ -4,7 +4,7 @@ import MenuPrimitive from "@starwind-ui/react/menu";
 import type * as React from "react";
 import { dropdownTrigger } from "./variants";
 
-export type DropdownTriggerProps = React.ComponentPropsWithoutRef<"button"> & {
+type DropdownTriggerProps = React.ComponentPropsWithoutRef<"button"> & {
   asChild?: boolean;
   ref?: React.Ref<HTMLElement>;
 };

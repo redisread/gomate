@@ -26,7 +26,7 @@ function previewHostSuffix(env: PreviewPolicyEnv): string | null {
   return suffix;
 }
 
-export function previewHostPattern(env: PreviewPolicyEnv): string | null {
+function previewHostPattern(env: PreviewPolicyEnv): string | null {
   const suffix = previewHostSuffix(env);
   return suffix ? `*-gomate.${suffix}` : null;
 }

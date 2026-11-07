@@ -4,7 +4,6 @@ import { Input as SwInput } from "@/components/starwind-react/input";
 
 import { RequestFailure } from "@/components/ui/request-failure";
 
-import * as React from "react";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { Navbar } from "@/components/layout/navbar";

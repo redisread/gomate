@@ -13,57 +13,12 @@ import { cn } from "@/lib/utils";
 import type { ActivityType, RecruitmentStatus, Team } from "@/lib/types";
 import { formatTeamStart, getTeamDisplayStatus } from "@/lib/team-display";
 import {
-  getCardGradient, getProgressGradient,
+  getCardGradient,
 } from "@/lib/constants";
 import { getStatusConfig } from "./constants";
 import { TeamProgress, TeamLeaderMini } from "./shared";
 import { TeamsQuickFilters } from "./teams-quick-filters";
 import type { Region } from "@/lib/types";
-
-// ─── MemberProgress ────────────────────────────────────────────────
-export function MemberProgress({ current, max, showUrgency = true }: { current: number; max: number; showUrgency?: boolean }) {
-  const { t } = useI18n(["teams", "filter", "common"]);
-  const pct = Math.min((current / max) * 100, 100);
-  const remaining = max - current;
-  const isFull = current >= max;
-  const isUrgent = remaining <= 2 && !isFull;
-  const isWarning = remaining <= 3 && !isFull;
-
-  const getUrgencyStyle = () => {
-    if (isFull) return { text: "text-stone-400 dark:text-stone-500", badge: "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400", label: t("teams.memberFull", { current, max }) };
-    if (isUrgent) return { text: "text-red-600", badge: "bg-red-50 text-red-600 ring-1 ring-red-200", label: t("teams.spotsOneLeft") };
-    if (isWarning) return { text: "text-amber-600", badge: "bg-amber-50 text-amber-700 ring-1 ring-amber-200", label: t("teams.spotsLeft", { count: remaining }) };
-    return { text: "text-amber-600", badge: "bg-amber-50/50 text-amber-700", label: t("teams.spotsLeft", { count: remaining }) };
-  };
-
-  const style = getUrgencyStyle();
-
-  return (
-    <div className="space-y-2">
-      {showUrgency && (
-        <div className="flex items-center justify-between">
-          <span className={cn("text-xs font-semibold", style.text)}>
-            {isFull ? (
-              <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{style.label}</span>
-            ) : (
-              <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs", style.badge)}>
-                {isUrgent && <span className="animate-pulse">🔥</span>}
-                {style.label}
-              </span>
-            )}
-          </span>
-          {!isFull && <span className="text-xs text-stone-400 dark:text-stone-500">{current}/{max}</span>}
-        </div>
-      )}
-      <div className={cn("bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden", isUrgent ? "h-2.5" : "h-2")}>
-        <div
-          className={cn("h-full rounded-full transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-700 ease-out", isUrgent && "animate-pulse")}
-          style={{ width: `${pct}%`, background: getProgressGradient(pct), boxShadow: isUrgent ? "0 0 8px rgba(239, 68, 68, 0.4)" : undefined }}
-        />
-      </div>
-    </div>
-  );
-}
 
 // ─── StatusBadge ────────────────────────────────────────────────────
 export function StatusBadge({ status }: { status: string }) {

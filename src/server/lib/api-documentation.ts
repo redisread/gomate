@@ -7,7 +7,7 @@ import { adminAccessErrorResponse, requireAdmin } from "./admin-access";
 import { APIErrors } from "./api-errors";
 import { apiErrorSchema } from "./openapi";
 
-export const SCALAR_ASSET_PATH = "/generated/scalar-1.75.0/standalone.js";
+const SCALAR_ASSET_PATH = "/generated/scalar-1.75.0/standalone.js";
 type DocumentationApp = OpenAPIHono<{ Bindings: WorkerEnv }>;
 type Document = ReturnType<DocumentationApp["getOpenAPI31Document"]>;
 const methods = [
@@ -22,7 +22,7 @@ const methods = [
 ] as const;
 
 /** 先按受众过滤操作，再保留可达组件，避免公开规范泄露管理员专用结构。 */
-export function audienceDocument(
+function audienceDocument(
   document: Document,
   audience: "public" | "admin",
 ): Document {

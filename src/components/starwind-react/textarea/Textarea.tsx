@@ -2,7 +2,7 @@ import type * as React from "react";
 import type { VariantProps } from "tailwind-variants";
 import { textarea } from "./variants";
 
-export type TextareaProps = Omit<
+type TextareaProps = Omit<
   React.ComponentPropsWithoutRef<"textarea">,
   "children"
 > &

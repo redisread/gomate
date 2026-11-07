@@ -18,7 +18,7 @@ import { Modal } from "@/components/ui/modal";
 import { DEFAULT_LOCALE, type Locale } from "@/i18n";
 import type { AdminIdentity } from "@/server/lib/admin-access";
 
-export interface AdminNavigationCopy {
+interface AdminNavigationCopy {
   brand: string;
   navigationLabel: string;
   navHome: string;

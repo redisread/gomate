@@ -106,7 +106,7 @@ function TeamCard({ team, isLeader = false, onCancel, onForm }: {
   );
 }
 
-export function CollapsibleSection({ title, count, children, defaultExpanded = true }: {
+function CollapsibleSection({ title, count, children, defaultExpanded = true }: {
   title: string; count: number; children: React.ReactNode; defaultExpanded?: boolean;
 }) {
   const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);

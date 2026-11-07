@@ -5,7 +5,7 @@ import type * as React from "react";
 import type { VariantProps } from "tailwind-variants";
 import { input } from "./variants";
 
-export type InputProps = Omit<
+type InputProps = Omit<
   React.ComponentPropsWithoutRef<"input">,
   "children" | "defaultValue" | "size" | "value"
 > &

@@ -2,7 +2,6 @@
 
 import { Button as SwButton } from "@/components/starwind-react/button";
 
-import * as React from "react";
 import { Loader2, RotateCcw, Save, Send } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { cn } from "@/lib/utils";
@@ -25,7 +24,6 @@ const statusTone: Record<LocationStatus, string> = {
   published: "bg-emerald-50 text-emerald-800 ring-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-900",
   archived: "bg-stone-100 text-stone-600 ring-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:ring-stone-700",
 };
-
 
 export function LocationActionBar({
   status,

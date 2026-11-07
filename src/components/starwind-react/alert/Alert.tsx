@@ -2,7 +2,7 @@ import type * as React from "react";
 import type { VariantProps } from "tailwind-variants";
 import { alert } from "./variants";
 
-export type AlertProps = React.ComponentPropsWithoutRef<"div"> &
+type AlertProps = React.ComponentPropsWithoutRef<"div"> &
   VariantProps<typeof alert> & {
     ref?: React.Ref<HTMLDivElement>;
     as?: "div" | "p";

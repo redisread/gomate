@@ -4,7 +4,7 @@ import CollapsiblePrimitive from "@starwind-ui/react/collapsible";
 import type * as React from "react";
 import { collapsible } from "./variants";
 
-export type CollapsibleProps = React.ComponentPropsWithoutRef<"div"> & {
+type CollapsibleProps = React.ComponentPropsWithoutRef<"div"> & {
   defaultOpen?: boolean;
   disabled?: boolean;
   open?: boolean;

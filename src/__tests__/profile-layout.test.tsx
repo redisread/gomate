@@ -1,5 +1,4 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
-import * as React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ProfileClient } from "../components/features/profile-client";
 

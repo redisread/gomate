@@ -8,7 +8,7 @@ function assertResourcePath(path: string) {
 }
 
 /** Dispatch an SSR request directly into Hono without a Worker self-fetch. */
-export async function serverApiFetch(
+async function serverApiFetch(
   request: Request,
   locals: App.Locals,
   path: string,

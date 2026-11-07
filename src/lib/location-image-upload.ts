@@ -1,7 +1,7 @@
 import { isImageUploadReason } from "@/contracts/image-upload";
 import { API_BASE } from "@/lib/api";
 
-export const LOCATION_IMAGE_MAX_FILE_SIZE = 5 * 1024 * 1024;
+const LOCATION_IMAGE_MAX_FILE_SIZE = 5 * 1024 * 1024;
 export const LOCATION_IMAGE_ACCEPT = [
   "image/jpeg",
   "image/png",
@@ -39,7 +39,7 @@ const EXTENSION_FAMILY: Record<string, ImageFamily> = {
   heif: "heic",
 };
 
-export type LocationImageUploadErrorCode =
+type LocationImageUploadErrorCode =
   | "unsupported_format"
   | "invalid_image_content"
   | "image_conversion_failed"
@@ -50,7 +50,7 @@ export type LocationImageUploadErrorCode =
   | "invalid_response"
   | "network_error";
 
-export class LocationImageUploadError extends Error {
+class LocationImageUploadError extends Error {
   constructor(readonly code: LocationImageUploadErrorCode) {
     super(code);
     this.name = "LocationImageUploadError";

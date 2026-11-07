@@ -83,28 +83,6 @@ export async function fetchPublicAPI(
 }
 
 /**
- * 公开 GET 请求。
- */
-export async function publicApiGet<T>(path: string): Promise<T> {
-  const res = await fetchPublicAPI(path);
-  if (!res.ok) {
-    throw new Error(`API GET ${path} failed: ${res.status}`);
-  }
-  return res.json();
-}
-
-/**
- * 通用 GET 请求，携带当前登录态。
- */
-export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetchAPI(path);
-  if (!res.ok) {
-    throw new Error(`API GET ${path} failed: ${res.status}`);
-  }
-  return res.json();
-}
-
-/**
  * POST 请求
  */
 export async function apiPost<T>(path: string, body?: unknown): Promise<T> {

@@ -80,18 +80,3 @@ export function getEmailField(
   const fallbackValue = rawValue ?? `{{${type}.${field}}}`;
   return interpolate(rawValue ?? fallbackValue, vars);
 }
-
-/**
- * 获取完整的邮件模板内容
- *
- * @param locale 用户语言
- * @param type 邮件类型
- * @returns 包含 subject 和模板字段的对象
- */
-export function getEmailTemplate(
-  locale: EmailLocale,
-  type: EmailType,
-): Record<string, unknown> {
-  const data = getTemplateData(locale);
-  return (data[type] as Record<string, unknown>) ?? {};
-}

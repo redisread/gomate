@@ -7,7 +7,7 @@ import {
   nativeSelectWrapper,
 } from "./variants";
 
-export type NativeSelectProps = Omit<
+type NativeSelectProps = Omit<
   React.ComponentPropsWithoutRef<"select">,
   "size"
 > &

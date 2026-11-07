@@ -12,7 +12,7 @@ import {
   checkboxWrapper,
 } from "./variants";
 
-export type CheckboxProps = Omit<
+type CheckboxProps = Omit<
   React.ComponentPropsWithoutRef<"span">,
   "defaultChecked" | "id" | "onChange"
 > &

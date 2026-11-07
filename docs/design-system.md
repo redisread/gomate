@@ -1,8 +1,7 @@
 # GoMate 前端设计系统
 
 设计 token 与基础样式的事实来源是
-[`src/styles/globals.css`](../src/styles/globals.css)；Tailwind 补充配置在
-[`tailwind.config.ts`](../tailwind.config.ts)，共享组件在
+[`src/styles/globals.css`](../src/styles/globals.css)，Tailwind 4 通过 Vite 插件加载 CSS-first 配置，共享组件在
 [`src/components/ui/`](../src/components/ui/)。本文只记录稳定的使用约束。
 
 ## 体验优化目标

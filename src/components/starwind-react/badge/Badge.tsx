@@ -2,7 +2,7 @@ import type * as React from "react";
 import type { VariantProps } from "tailwind-variants";
 import { badge } from "./variants";
 
-export type BadgeProps = React.ComponentPropsWithoutRef<"div"> &
+type BadgeProps = React.ComponentPropsWithoutRef<"div"> &
   Omit<React.ComponentPropsWithoutRef<"a">, "type"> &
   Omit<VariantProps<typeof badge>, "isLink"> & {
     ref?: React.Ref<HTMLDivElement | HTMLAnchorElement>;

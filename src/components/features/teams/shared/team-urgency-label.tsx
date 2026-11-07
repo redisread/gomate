@@ -20,7 +20,7 @@ interface TeamUrgencyLabelProps {
  * @param dateStr - ISO 日期字符串
  * @returns 是否为本周末（当前周的周六或周日）
  */
-export function isThisWeekendBeijing(dateStr: string): boolean {
+function isThisWeekendBeijing(dateStr: string): boolean {
   const targetDate = new Date(dateStr);
   const now = new Date();
 

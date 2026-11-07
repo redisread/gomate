@@ -23,7 +23,7 @@ function asIso(value: Date | number): string {
   return new Date(value).toISOString();
 }
 
-export function parseStringArray(value: unknown): string[] {
+function parseStringArray(value: unknown): string[] {
   let parsed = value;
   if (typeof value === "string") {
     try {

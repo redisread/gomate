@@ -4,7 +4,7 @@ import MenuPrimitive from "@starwind-ui/react/menu";
 import type * as React from "react";
 import { dropdownRadioGroup } from "./variants";
 
-export type DropdownRadioGroupProps = React.ComponentPropsWithoutRef<"div"> & {
+type DropdownRadioGroupProps = React.ComponentPropsWithoutRef<"div"> & {
   value?: string;
   defaultValue?: string;
   onValueChange?: (

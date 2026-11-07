@@ -18,11 +18,3 @@ export const alert = tv({
     variant: "default",
   },
 });
-
-export const alertDescription = tv({
-  base: "leading-relaxed",
-});
-
-export const alertTitle = tv({
-  base: "font-heading mb-2 flex items-center gap-2 text-lg leading-none font-medium tracking-tight",
-});
