@@ -49,6 +49,7 @@ function renderHero(overrides: Partial<ComponentProps<typeof LocationsHero>> = {
             onRoleSelect={vi.fn()}
       onSearchChange={vi.fn()}
       onTagToggle={vi.fn()}
+      onTagsApply={vi.fn()}
       onRegionSelect={vi.fn()}
       onClearFilters={vi.fn()}
       onRegionDropdownChange={vi.fn()}
@@ -71,7 +72,7 @@ describe("LocationsHero", () => {
     expect(screen.getByRole("button", { name: "深圳" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "香港" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("group", { name: "locations.tagsLabel" })).toBeInTheDocument();
-    expect(screen.getByTestId("locations-tag-options")).toHaveClass("overflow-x-auto");
+    expect(screen.getByTestId("locations-tag-options")).toHaveClass("grid");
     expect(screen.getByRole("button", { name: "徒步" })).toBeInTheDocument();
   });
 

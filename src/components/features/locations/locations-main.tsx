@@ -23,11 +23,12 @@ function LocationsClientContent({ initialData }: { initialData?: LocationsListIn
         onRoleSelect={ctx.handleRoleSelect}
         onSearchChange={ctx.setSearchQuery}
         onTagToggle={ctx.handleTagToggle}
+        onTagsApply={ctx.handleTagsApply}
         onRegionSelect={ctx.handleRegionSelect}
         onClearFilters={ctx.handleClearFilters}
         onRegionDropdownChange={ctx.setShowRegionDropdown}
       />
-      <section className="py-6 lg:py-10">
+      <section className="py-6">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <LocationsResultBar isLoading={ctx.isLoading} isRefreshing={ctx.isRefreshing} pagination={ctx.pagination} hasLoadError={ctx.hasLoadError} onRetry={ctx.handleRetry} />
           <LocationsGrid

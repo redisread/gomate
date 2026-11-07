@@ -108,5 +108,9 @@
   "clearInterests": "Clear interests",
   "changeCity": "Change city",
   "loadFailed": "Could not update places. Please retry.",
-  "retry": "Retry"
+  "retry": "Retry",
+  "multipleInterests": "Choose several",
+  "allInterests": "All interests",
+  "applyInterests": "Apply filters",
+  "interestSelectionCount": "{count} selected, up to 20"
 }

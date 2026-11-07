@@ -108,5 +108,9 @@
   "clearInterests": "清除兴趣",
   "changeCity": "切换城市",
   "loadFailed": "地点更新失败，请重试",
-  "retry": "重试"
+  "retry": "重试",
+  "multipleInterests": "可多选",
+  "allInterests": "全部兴趣",
+  "applyInterests": "应用筛选",
+  "interestSelectionCount": "已选 {count} 项，最多 20 项"
 }
