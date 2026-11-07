@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { spawn } from "node:child_process";
+import { runWrangler } from "./run-wrangler.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -9,8 +9,6 @@ import {
 } from "./preview-alias.mjs";
 import { assertPreviewDeployEnvironment } from "./production-build-guard.mjs";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const WRANGLER = process.platform === "win32" ? "wrangler.cmd" : "wrangler";
 
 export function previewDeployCommand(environment = process.env) {
   assertPreviewDeployEnvironment(environment);
@@ -18,26 +16,6 @@ export function previewDeployCommand(environment = process.env) {
   return { alias, args: previewWranglerCommand(alias) };
 }
 
-function runWrangler(args) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(WRANGLER, args, {
-      cwd: ROOT,
-      env: { ...process.env, CLOUDFLARE_ENV: "production" },
-      stdio: "inherit",
-      shell: process.platform === "win32",
-    });
-    child.once("error", reject);
-    child.once("exit", (code, signal) => {
-      if (signal) {
-        reject(new Error(`wrangler stopped by ${signal}`));
-      } else if (code !== 0) {
-        reject(new Error(`wrangler exited with code ${code ?? 1}`));
-      } else {
-        resolve();
-      }
-    });
-  });
-}
 
 async function main() {
   const { alias, args } = previewDeployCommand();

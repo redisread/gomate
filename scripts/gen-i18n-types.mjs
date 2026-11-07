@@ -8,6 +8,7 @@
  *   - NamespacedKeys type map
  */
 
+import { collectKeys } from "./locale-keys.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,21 +18,6 @@ const PROJECT_ROOT = path.resolve(__dirname, "..");
 const LOCALES_DIR = path.join(PROJECT_ROOT, "public", "locales", "zh-CN");
 const OUTPUT_FILE = path.join(PROJECT_ROOT, "src", "i18n", "types.ts");
 
-/**
- * Collect all leaf key paths from a nested object.
- */
-function collectKeys(obj, prefix = "") {
-  const keys = [];
-  for (const k of Object.keys(obj)) {
-    const full = prefix ? `${prefix}.${k}` : k;
-    if (typeof obj[k] === "object" && obj[k] !== null && !Array.isArray(obj[k])) {
-      keys.push(...collectKeys(obj[k], full));
-    } else {
-      keys.push(full);
-    }
-  }
-  return keys;
-}
 
 function main() {
   // Read all JSON files

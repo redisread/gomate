@@ -1,3 +1,4 @@
+import { getNestedValue } from "./nested-value";
 /**
  * i18n 翻译引擎 - 支持按需 namespace 加载
  *
@@ -184,23 +185,6 @@ export async function loadNamespaces(
   return results;
 }
 
-// ─── 核心翻译函数 ─────────────────────────────────────────────────────────────
-
-/**
- * 从嵌套对象中通过点号路径获取值
- */
-function getNestedValue(
-  obj: Record<string, unknown>,
-  path: string,
-): string | undefined {
-  const keys = path.split(".");
-  let current: unknown = obj;
-  for (const key of keys) {
-    if (current == null || typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[key];
-  }
-  return typeof current === "string" ? current : undefined;
-}
 
 /**
  * 替换模板字符串中的 {variable} 占位符

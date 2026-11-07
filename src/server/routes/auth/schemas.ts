@@ -1,5 +1,19 @@
 import { z } from "../../lib/openapi";
 
+const authEmailSchema = z
+  .string()
+  .trim()
+  .max(254)
+  .email()
+  .transform((value) => value.toLocaleLowerCase("en-US"))
+  .describe("邮箱地址，去除首尾空白并归一化为小写。");
+
+const authCallbackUrlSchema = z
+  .string()
+  .max(2_048)
+  .optional()
+  .describe("可选本站回跳地址，须通过服务端允许的返回地址校验。");
+
 export const forgotPasswordSchema = z
   .object({
     email: z
@@ -14,13 +28,7 @@ export const forgotPasswordSchema = z
 
 export const signUpEmailSchema = z
   .object({
-    email: z
-      .string()
-      .trim()
-      .max(254)
-      .email()
-      .transform((value) => value.toLocaleLowerCase("en-US"))
-      .describe("邮箱地址，去除首尾空白并归一化为小写。"),
+    email: authEmailSchema,
     password: z.string().min(8).max(128).describe("登录密码，8–128 字符。"),
     name: z
       .string()
@@ -28,47 +36,23 @@ export const signUpEmailSchema = z
       .min(1)
       .max(100)
       .describe("显示姓名，去除首尾空白后为 1–100 字符。"),
-    callbackURL: z
-      .string()
-      .max(2_048)
-      .optional()
-      .describe("可选本站回跳地址，须通过服务端允许的返回地址校验。"),
+    callbackURL: authCallbackUrlSchema,
   })
   .strict();
 
 export const signInEmailSchema = z
   .object({
-    email: z
-      .string()
-      .trim()
-      .max(254)
-      .email()
-      .transform((value) => value.toLocaleLowerCase("en-US"))
-      .describe("邮箱地址，去除首尾空白并归一化为小写。"),
+    email: authEmailSchema,
     password: z.string().min(1).max(128).describe("登录密码，1–128 字符。"),
-    callbackURL: z
-      .string()
-      .max(2_048)
-      .optional()
-      .describe("可选本站回跳地址，须通过服务端允许的返回地址校验。"),
+    callbackURL: authCallbackUrlSchema,
     rememberMe: z.boolean().optional().describe("是否由认证服务保持登录状态。"),
   })
   .strict();
 
 export const verificationEmailSchema = z
   .object({
-    email: z
-      .string()
-      .trim()
-      .max(254)
-      .email()
-      .transform((value) => value.toLocaleLowerCase("en-US"))
-      .describe("邮箱地址，去除首尾空白并归一化为小写。"),
-    callbackURL: z
-      .string()
-      .max(2_048)
-      .optional()
-      .describe("可选本站回跳地址，须通过服务端允许的返回地址校验。"),
+    email: authEmailSchema,
+    callbackURL: authCallbackUrlSchema,
   })
   .strict();
 

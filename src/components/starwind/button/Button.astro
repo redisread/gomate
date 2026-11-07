@@ -2,7 +2,7 @@
 import ButtonPrimitive from "@starwind-ui/astro/button";
 import type { HTMLAttributes } from "astro/types";
 import type { VariantProps } from "tailwind-variants";
-import { button } from "./variants";
+import { button } from "../../starwind-react/button/variants";
 
 interface Props
   extends HTMLAttributes<"button">, Omit<HTMLAttributes<"a">, "type">, VariantProps<typeof button> {

@@ -1,9 +1,10 @@
 "use client";
 
+import { AuthActionLink, AuthSubmitButton } from "./auth-presentation";
+
 
 import { Label as SwLabel } from "@/components/starwind-react/label";
 import { Input as SwInput } from "@/components/starwind-react/input";
-import { Button as SwButton } from "@/components/starwind-react/button";
 
 import { BrandIcon } from "@/components/brand-icon";
 
@@ -98,26 +99,9 @@ export function ForgotPasswordClient() {
                 </p>
               </div>
 
-              <a
-                href="/login"
-                className="inline-block w-full py-3 rounded-xl text-sm font-semibold text-white text-center transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200"
-                style={{
-                  background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",
-                  boxShadow: "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget as HTMLAnchorElement;
-                  el.style.transform = "translateY(-1px)";
-                  el.style.boxShadow = "0 6px 24px color-mix(in oklab, var(--primary) 45%, transparent)";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLAnchorElement;
-                  el.style.transform = "translateY(0)";
-                  el.style.boxShadow = "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)";
-                }}
-              >
+              <AuthActionLink href="/login">
                 {t("common.backLogin")}
-              </a>
+              </AuthActionLink>
             </div>
           ) : (
             /* 表单状态 */
@@ -174,27 +158,7 @@ export function ForgotPasswordClient() {
                 )}
 
                 {/* 发送按钮 */}
-                <SwButton variant="plain" size="inherit"
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{
-                    background: isLoading ? "var(--primary)" : "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",
-                    boxShadow: isLoading ? "none" : "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isLoading) {
-                      const el = e.currentTarget as HTMLButtonElement;
-                      el.style.transform = "translateY(-1px)";
-                      el.style.boxShadow = "0 6px 24px color-mix(in oklab, var(--primary) 45%, transparent)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLButtonElement;
-                    el.style.transform = "translateY(0)";
-                    el.style.boxShadow = "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)";
-                  }}
-                >
+                <AuthSubmitButton isLoading={isLoading} disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -206,7 +170,7 @@ export function ForgotPasswordClient() {
                       {t("auth.sendResetLink")}
                     </>
                   )}
-                </SwButton>
+                </AuthSubmitButton>
 
                 {/* 提示文案 */}
                 <p className="text-center text-xs text-muted-foreground">

@@ -13,12 +13,9 @@ import type { Team } from "../lib/types";
 import { homeTeamQuery } from "../components/features/home/team-query";
 declareI18nNs(Astro.locals, ["home", "locations", "locationDetail", "teams", "enums", "content"]);
 
-const fetchJson = <T,>(path: string) =>
-  serverApiGet<T>(Astro.request, Astro.locals, path);
-
 const [locationsData, teamsData] = await Promise.all([
-  fetchJson<LocationsResponse>("/locations?limit=6&view=card"),
-  fetchJson<{ success: boolean; teams: Team[] }>(homeTeamQuery()),
+  serverApiGet<LocationsResponse>(Astro.request, Astro.locals, "/locations?limit=6&view=card"),
+  serverApiGet<{ success: boolean; teams: Team[] }>(Astro.request, Astro.locals, homeTeamQuery()),
 ]);
 
 const initialData: HomeInitialData = {

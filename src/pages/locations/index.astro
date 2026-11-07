@@ -13,9 +13,6 @@ import type { Location, Region } from "../../lib/types";
 
 declareI18nNs(Astro.locals, ["locations", "locationDetail", "filter", "content"]);
 
-const fetchJson = <T,>(path: string) =>
-  serverApiGet<T>(Astro.request, Astro.locals, path);
-
 const params = Astro.url.searchParams;
 const listQuery = new URLSearchParams();
 listQuery.set("limit", "12");
@@ -26,9 +23,9 @@ if (params.get("regionId")) listQuery.set("regionId", params.get("regionId")!);
 if (params.get("activityType")) listQuery.set("activityType", params.get("activityType")!);
 
 const [locationsData, tagsData, regionsData] = await Promise.all([
-  fetchJson<{ success: boolean; locations: Location[]; total: number; nextCursor: string | null }>(`/locations?${listQuery}`),
-  fetchJson<{ success: boolean; tags: { id: string; name: string }[] }>("/tags?limit=200"),
-  fetchJson<{ success: boolean; regions: Region[] }>("/regions?countryCode=CN&level=city&serviceEnabled=true"),
+  serverApiGet<{ success: boolean; locations: Location[]; total: number; nextCursor: string | null }>(Astro.request, Astro.locals, `/locations?${listQuery}`),
+  serverApiGet<{ success: boolean; tags: { id: string; name: string }[] }>(Astro.request, Astro.locals, "/tags?limit=200"),
+  serverApiGet<{ success: boolean; regions: Region[] }>(Astro.request, Astro.locals, "/regions?countryCode=CN&level=city&serviceEnabled=true"),
 ]);
 
 const initialData = locationsData?.success

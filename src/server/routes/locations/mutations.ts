@@ -1,3 +1,4 @@
+import { d1Changes } from "../../lib/d1-result";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import {
   createApiApp,
@@ -77,8 +78,13 @@ const deleteLocationQuerySchema = z
   })
   .strict();
 
-function d1Changes(result: D1Result<unknown> | undefined): number {
-  return Number(result?.meta?.changes ?? 0);
+
+function locationMediaErrorBody(error: LocationMediaError) {
+  return error.status === 403
+    ? APIErrors.forbidden(error.message)
+    : error.status === 400
+      ? APIErrors.badRequest(error.message)
+      : APIErrors.internalError(error.message);
 }
 
 function generatedSlug(id: string) {
@@ -237,11 +243,7 @@ mutations.openapi(
       }
       if (error instanceof LocationMediaError) {
         return c.json(
-          error.status === 403
-            ? APIErrors.forbidden(error.message)
-            : error.status === 400
-              ? APIErrors.badRequest(error.message)
-              : APIErrors.internalError(error.message),
+          locationMediaErrorBody(error),
           error.status,
         );
       }
@@ -492,11 +494,7 @@ mutations.openapi(
       }
       if (error instanceof LocationMediaError) {
         return c.json(
-          error.status === 403
-            ? APIErrors.forbidden(error.message)
-            : error.status === 400
-              ? APIErrors.badRequest(error.message)
-              : APIErrors.internalError(error.message),
+          locationMediaErrorBody(error),
           error.status,
         );
       }

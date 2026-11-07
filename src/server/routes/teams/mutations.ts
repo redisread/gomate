@@ -1,3 +1,4 @@
+import { d1Changes } from "../../lib/d1-result";
 import { teamCookieSecurity } from "./contracts";
 import { teamSessionMiddleware } from "./session-middleware";
 import { TeamResponseSchema, TeamSuccessSchema } from "@/contracts/team-api";
@@ -24,6 +25,24 @@ import { activeTeamParticipantCount } from "../../lib/team-participant-count";
 import { legacyJsonBody, validationHook } from "../../lib/openapi";
 import { toTeamResponse } from "./utils";
 
+const teamDescriptionSchema = z
+  .string()
+  .trim()
+  .max(2_000)
+  .nullable()
+  .optional()
+  .describe("队伍补充说明，可传 null 清空。");
+
+const meetingPointSchema = z
+  .string()
+  .trim()
+  .max(1000)
+  .nullable()
+  .optional()
+  .describe(
+    "集合地点说明，最多 1000 字符；null 表示清空，普通访客不可见。",
+  );
+
 const mutations = createApiApp();
 
 const activityTypeSchema = z.enum(ACTIVITY_TYPES);
@@ -46,22 +65,8 @@ export const createTeamSchema = z
       "活动类型的稳定枚举值，与地点推荐类型无强制绑定。",
     ),
     title: z.string().trim().min(1).max(100),
-    description: z
-      .string()
-      .trim()
-      .max(2_000)
-      .nullable()
-      .optional()
-      .describe("队伍补充说明，可传 null 清空。"),
-    meetingPoint: z
-      .string()
-      .trim()
-      .max(1000)
-      .nullable()
-      .optional()
-      .describe(
-        "集合地点说明，最多 1000 字符；null 表示清空，普通访客不可见。",
-      ),
+    description: teamDescriptionSchema,
+    meetingPoint: meetingPointSchema,
     startAt: offsetDateTimeSchema.describe(
       "活动开始时间，必须带时区；创建或修改时须在未来。",
     ),
@@ -123,22 +128,8 @@ export const updateTeamSchema = z
       .optional()
       .describe("活动类型的稳定枚举值，与地点推荐类型无强制绑定。"),
     title: z.string().trim().min(1).max(100).optional(),
-    description: z
-      .string()
-      .trim()
-      .max(2_000)
-      .nullable()
-      .optional()
-      .describe("队伍补充说明，可传 null 清空。"),
-    meetingPoint: z
-      .string()
-      .trim()
-      .max(1000)
-      .nullable()
-      .optional()
-      .describe(
-        "集合地点说明，最多 1000 字符；null 表示清空，普通访客不可见。",
-      ),
+    description: teamDescriptionSchema,
+    meetingPoint: meetingPointSchema,
     startAt: offsetDateTimeSchema
       .optional()
       .describe("活动开始时间，必须带时区；创建或修改时须在未来。"),
@@ -173,9 +164,6 @@ export const updateTeamSchema = z
 
 type Db = ReturnType<typeof createDb>;
 
-function changes(result: D1Result<unknown> | undefined): number {
-  return Number(result?.meta?.changes ?? 0);
-}
 
 function isConstraintError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -328,7 +316,7 @@ mutations.openapi(
       );
 
       const results = await c.env.DB.batch([createTeam, ...tagStatements]);
-      if (changes(results[0]) !== 1) {
+      if (d1Changes(results[0]) !== 1) {
         return c.json(
           APIErrors.validationError("地点不存在、未发布或活动类型不可用"),
           422,
@@ -484,7 +472,7 @@ mutations.openapi(
           })
         : [updateTeam];
       const results = await c.env.DB.batch(statements);
-      if (changes(results[0]) !== 1) {
+      if (d1Changes(results[0]) !== 1) {
         return c.json(
           APIErrors.conflict(
             "队伍已成行、已取消、已出发、地点不可用，或活动类型无效",
@@ -560,7 +548,7 @@ mutations.openapi(
       )
         .bind(teamId, session.user.id, Date.now())
         .run();
-      if (changes(result) !== 1) {
+      if (d1Changes(result) !== 1) {
         return c.json(
           APIErrors.conflict("仅可删除尚未成行且没有活动成员的未来队伍"),
           409,

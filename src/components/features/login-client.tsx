@@ -1,5 +1,7 @@
 "use client";
 
+import { AuthMountains, AuthSubmitButton } from "./auth-presentation";
+
 import { Label as SwLabel } from "@/components/starwind-react/label";
 import { Input as SwInput } from "@/components/starwind-react/input";
 import { Button as SwButton } from "@/components/starwind-react/button";
@@ -138,22 +140,7 @@ export function LoginClient({
         </div>
 
         {/* 底部 SVG 山脉装饰 */}
-        <svg
-          className="absolute bottom-0 left-0 right-0 w-full pointer-events-none"
-          viewBox="0 0 560 120"
-          fill="none"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M0 120L80 80L160 100L240 55L320 75L400 30L480 55L560 20V120H0Z"
-            fill="color-mix(in oklab, white 6%, transparent)"
-          />
-          <path
-            d="M0 120L100 90L200 110L300 65L420 85L520 45L560 60V120H0Z"
-            fill="color-mix(in oklab, white 4%, transparent)"
-          />
-        </svg>
+        <AuthMountains />
       </div>
 
       {/* ── 右侧：表单区 ── */}
@@ -248,28 +235,7 @@ export function LoginClient({
               )}
 
               {/* 登录按钮 */}
-              <SwButton variant="plain" size="inherit"
-                data-testid="login-submit"
-                type="submit"
-                disabled={isLoading || googleBusy}
-                className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-[transform,background-color,border-color,color,opacity,box-shadow] duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{
-                  background: isLoading ? "var(--primary)" : "linear-gradient(135deg, var(--primary) 0%, var(--primary-400) 100%)",
-                  boxShadow: isLoading ? "none" : "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading) {
-                    const el = e.currentTarget as HTMLButtonElement;
-                    el.style.transform = "translateY(-1px)";
-                    el.style.boxShadow = "0 6px 24px color-mix(in oklab, var(--primary) 45%, transparent)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLButtonElement;
-                  el.style.transform = "translateY(0)";
-                  el.style.boxShadow = "0 4px 18px color-mix(in oklab, var(--primary) 35%, transparent)";
-                }}
-              >
+              <AuthSubmitButton isLoading={isLoading} disabled={isLoading || googleBusy} testId="login-submit">
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -281,7 +247,7 @@ export function LoginClient({
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
-              </SwButton>
+              </AuthSubmitButton>
 
               {/* 注册链接 */}
               <p className="text-center text-sm text-muted-foreground">

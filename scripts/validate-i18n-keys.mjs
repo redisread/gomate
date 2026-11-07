@@ -11,6 +11,7 @@
  * Exit code 0 = pass, 1 = fail.
  */
 
+import { collectKeys } from "./locale-keys.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,21 +34,6 @@ function log(type, msg) {
   else warnings++;
 }
 
-/**
- * Collect all leaf key paths from a nested object.
- */
-function collectKeys(obj, prefix = "") {
-  const keys = [];
-  for (const k of Object.keys(obj)) {
-    const full = prefix ? `${prefix}.${k}` : k;
-    if (typeof obj[k] === "object" && obj[k] !== null && !Array.isArray(obj[k])) {
-      keys.push(...collectKeys(obj[k], full));
-    } else {
-      keys.push(full);
-    }
-  }
-  return keys;
-}
 
 /**
  * Check max nesting depth.
