@@ -23,6 +23,7 @@ export const openApiExclusions: Readonly<Record<string, string>> = {
     "Global request logging, write protection and same-origin middleware; not an endpoint.",
   "ALL /admin/teams/*":
     "Administrator response cache middleware; concrete endpoints are audited separately.",
+  "ALL /auth/native/*": "Native origin, cookie and write-protection middleware; individual endpoints require contracts.",
   "ALL /auth/*":
     "Canonicalization and deny-by-default Better Auth fallback; concrete controlled endpoints require contracts.",
   "GET /docs": "Documentation HTML bootstrap; excluded from its own document.",

@@ -1,5 +1,7 @@
 import { SuccessSchema } from "@/contracts/public-responses";
 import { eq } from "drizzle-orm";
+import { symmetricDecrypt } from "better-auth/crypto";
+import { revokeAppleToken } from "../../lib/apple-auth";
 import { eraseAccount } from "../../lib/account-erasure";
 import { ownedAvatarKeyFromStoredValue } from "../../lib/avatar-media";
 import { deleteR2ObjectsWithRetry } from "../../lib/r2-media";
@@ -71,6 +73,19 @@ account.openapi(
     const deletedEmail = `deleted-${userId}@deleted.invalid`;
     if (user.status === "deleted" && user.email === deletedEmail) {
       return c.json({ success: true as const }, 200);
+    }
+
+    const appleAccount = await c.env.DB.prepare("SELECT refresh_token FROM accounts WHERE user_id=? AND provider_id='apple'")
+      .bind(userId).first<{ refresh_token: string | null }>();
+    if (appleAccount) {
+      if (!appleAccount.refresh_token) return c.json(APIErrors.serviceUnavailable("Apple revocation unavailable"), 503);
+      try {
+        const token = await symmetricDecrypt({ key: c.env.BETTER_AUTH_SECRET, data: appleAccount.refresh_token });
+        await revokeAppleToken(c.env, token);
+      } catch {
+        logger.error("account_apple_revocation_failed");
+        return c.json(APIErrors.serviceUnavailable("Apple revocation unavailable"), 503);
+      }
     }
 
     const avatarKey = user.image

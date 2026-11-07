@@ -2,19 +2,24 @@ import { env } from "cloudflare:workers";
 import { applyD1Migrations, reset } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createAuth } from "../../src/server/lib/auth";
+import { apiApp } from "../../src/server/app";
+import { pkceChallenge } from "../../src/server/lib/native-auth";
 
 const origin = "https://gomate.live";
 let verified = true;
 let sequence = 0;
 const userEmail = "google-member@example.test";
-function auth() {
-  return createAuth({
+function configuredEnv() {
+  return {
     ...env,
     APP_URL: origin,
     BETTER_AUTH_SECRET: "test-google-secret-key-at-least-32-characters",
     GOOGLE_CLIENT_ID: "test-google-client",
     GOOGLE_CLIENT_SECRET: "test-google-secret",
-  });
+  } as typeof env;
+}
+function auth() {
+  return createAuth(configuredEnv());
 }
 function cookieHeader(response: Response) {
   return response.headers
@@ -205,5 +210,83 @@ describe("Google OAuth with real Better Auth and D1", () => {
     expect(
       await env.DB.prepare("SELECT count(*) AS count FROM sessions").first(),
     ).toEqual({ count: 0 });
+  });
+});
+
+describe("native Google callback binding", () => {
+  it("only releases a fresh callback code after validated OAuth, then requires code and verifier", async () => {
+    const verifier = "native-google-verifier".repeat(3);
+    const nativeEnv = configuredEnv();
+    const start = await apiApp.fetch(
+      new Request(`${origin}/auth/native/google/start`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "cf-connecting-ip": "198.51.100.241",
+        },
+        body: JSON.stringify({ challenge: await pkceChallenge(verifier) }),
+      }),
+      nativeEnv,
+    );
+    expect(start.status).toBe(200);
+    const { requestId, url } = (await start.json()) as {
+      requestId: string;
+      url: string;
+    };
+    const authorize = await apiApp.fetch(
+      new Request(url.replace("/api/auth/", "/auth/")),
+      nativeEnv,
+    );
+    expect(authorize.status).toBe(302);
+    const state = new URL(authorize.headers.get("location")!).searchParams.get(
+      "state",
+    );
+    const response = await apiApp.fetch(
+      new Request(
+        `${origin}/auth/callback/google?code=test-code&state=${state}`,
+        {
+          headers: {
+            cookie: cookieHeader(authorize),
+            "cf-connecting-ip": "198.51.100.241",
+          },
+        },
+      ),
+      nativeEnv,
+    );
+    expect(response.status).toBe(302);
+    const callback = new URL(response.headers.get("location")!);
+    expect(callback.protocol).toBe("gomate:");
+    const fragment = new URLSearchParams(callback.hash.slice(1));
+    expect(fragment.get("request")).toBe(requestId);
+    const code = fragment.get("code");
+    expect(code).toHaveLength(72);
+    const exchange = (candidate: string) =>
+      apiApp.fetch(
+        new Request(`${origin}/auth/native/exchange`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "cf-connecting-ip": "198.51.100.241",
+          },
+          body: JSON.stringify({ requestId, verifier, code: candidate }),
+        }),
+        nativeEnv,
+      );
+    expect((await exchange("x".repeat(72))).status).toBe(401);
+    expect((await exchange(code!)).status).toBe(200);
+    expect((await exchange(code!)).status).toBe(401);
+    const replay = await apiApp.fetch(
+      new Request(
+        `${origin}/auth/callback/google?code=test-code&state=${state}`,
+        {
+          headers: {
+            cookie: cookieHeader(authorize),
+            "cf-connecting-ip": "198.51.100.241",
+          },
+        },
+      ),
+      nativeEnv,
+    );
+    expect(replay.headers.get("location")).not.toContain("#request=");
   });
 });

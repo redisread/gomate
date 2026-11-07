@@ -13,9 +13,11 @@ import {
 import { handleSignOut, handleGetSession } from "./session";
 import { handleGoogleSignIn, handleGoogleCallback } from "./google";
 import { registerAuthContracts, authProvidersContract } from "./contracts";
+import { nativeAuthRoute } from "./native";
 export { normalizeBetterAuthUrl } from "./request";
 
 const auth = createApiApp<{ Bindings: Env }>();
+auth.route("/native", nativeAuthRoute);
 
 auth.post("/forgot-password", handleForgotPassword);
 
