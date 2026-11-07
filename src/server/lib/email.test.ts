@@ -9,10 +9,8 @@ const mocks = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock("resend", () => ({
-  Resend: class {
-    readonly emails = { send: mocks.send };
-  },
+vi.mock("./resend-http", () => ({
+  sendResendEmail: (_apiKey: string, ...args: Parameters<typeof mocks.send>) => mocks.send(...args),
 }));
 
 vi.mock("./logger", () => ({

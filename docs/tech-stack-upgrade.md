@@ -20,7 +20,6 @@
 | `@scalar/hono-api-reference` | `0.12.13` | `0.12.13` |
 | `@starwind-ui/astro` | `新增` | `1.3.0` |
 | `@starwind-ui/react` | `新增` | `1.3.0` |
-| `@tabler/icons-react` | `新增` | `3.49.0` |
 | `@tailwindcss/vite` | `^4.3.3` | `4.3.3` |
 | `astro` | `~7.4.0` | `7.4.0` |
 | `better-auth` | `^1.7.1` | `1.7.10` |
@@ -33,14 +32,12 @@
 | `react-dom` | `^18.3.1` | `19.3.1` |
 | `react-markdown` | `^10.1.0` | `10.1.0` |
 | `remark-gfm` | `^4.0.1` | `4.0.1` |
-| `resend` | `^4.0.0` | `6.34.1` |
 | `tailwind-merge` | `^2.5.0` | `3.7.0` |
 | `tailwind-variants` | `新增` | `3.3.1` |
 | `tailwindcss` | `^4.0.0` | `4.3.3` |
 | `tw-animate-css` | `新增` | `1.4.0` |
 | `zod` | `^4.6.1` | `4.6.7` |
 | `@astrojs/check` | `^0.9.10` | `0.9.10` |
-| `@cloudflare/vite-plugin` | `1.64.0` | `1.64.0` |
 | `@cloudflare/vitest-plugin` | `^1.0.0` | `1.4.4` |
 | `@eslint/js` | `^9.0.0` | `10.0.1` |
 | `@playwright/test` | `^1.61.1` | `1.64.1` |
@@ -58,13 +55,14 @@
 | `eslint-plugin-react-hooks` | `^5.2.0` | `7.1.1` |
 | `globals` | `^16.5.0` | `17.13.0` |
 | `jsdom` | `^29.0.2` | `30.1.3` |
-| `prettier` | `^3.0.0` | `3.9.10` |
 | `tsx` | `^4.22.3` | `4.23.15` |
 | `typescript` | `^5.9.3` | `6.0.3` |
 | `typescript-eslint` | `^8.58.1` | `8.71.2` |
 | `vite` | `^8.3.4` | `8.3.4` |
 | `vitest` | `^4.1.11` | `5.0.5` |
 | `wrangler` | `^4.151.1` | `4.151.1` |
+
+项目图标统一使用 Lucide。邮件通过 `src/server/lib/resend-http.ts` 调用 Resend HTTP API，统一传输边界负责超时、幂等键和安全错误。Cloudflare Vite 插件由 Astro 适配器引入，Prettier 由语言服务依赖链引入。
 
 ## Starwind 覆盖与保留范围
 

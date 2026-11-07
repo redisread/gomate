@@ -1,4 +1,4 @@
-import { IconChevronDown as ChevronDown } from "@tabler/icons-react";
+import { ChevronDown } from "lucide-react";
 import type * as React from "react";
 import type { VariantProps } from "tailwind-variants";
 import {

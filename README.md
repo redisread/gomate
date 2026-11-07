@@ -50,7 +50,7 @@ The interface supports Simplified Chinese and English.
 | Authentication | Better Auth                  |
 | Database       | Cloudflare D1 · Drizzle ORM  |
 | File storage   | Cloudflare R2                |
-| Email          | Resend                       |
+| Email          | Resend HTTP API              |
 
 ## Documentation
 

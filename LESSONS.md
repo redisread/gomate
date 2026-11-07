@@ -52,11 +52,11 @@
 
 ## 邮件发送必须检查供应商返回值
 
-**规则：** 对邮件 SDK 同时测试返回 error 和抛异常，不能只靠 catch 判断发送成功。
+**规则：** 对邮件传输同时测试 HTTP 失败、返回 error 和抛异常，不能只靠 catch 判断发送成功。
 
 - 原因：验证、重置和欢迎邮件忽略 Resend 返回值，HTTP 422 被误报成功；反馈邮件原有检查未被其他模板复用。
 - 证据：基线 `4b1f937c` 使用实际 SDK 与模拟 HTTP 422，三个发送函数返回 success:true；统一传输边界后回归通过。这是本地复现，不是生产事故证明。
-- 检查方式：运行 `src/server/lib/email-sdk.test.ts`，同时保留超时不重试与日志脱敏测试。
+- 检查方式：运行 `src/server/lib/email-http.test.ts` 与 `src/server/lib/resend-http.test.ts`，同时保留超时不重试与日志脱敏测试。
 - 出现记录：1 次；2026-10-21。
 
 ## 主题 class 只能有一个状态来源
