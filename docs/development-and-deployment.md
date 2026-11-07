@@ -69,6 +69,21 @@ pnpm test:e2e
 
 CI 模式使用 `pnpm test:e2e:ci`；交互式调试使用 `pnpm exec playwright test --ui --project=chromium`。
 
+### PR CI 执行方式
+
+Worker CI 对目标为 main 的 PR 并行执行四类门禁，每个命令单独显示耗时。
+
+- `checks` 执行生产依赖审计、locale 生成与校验、构建护栏、迁移元数据、lint、TypeScript/Astro、前端及服务端单元测试和生成类型一致性校验。
+- `database` 执行完整的真实 D1 重置与迁移回归。
+- `worker` 生成 locale 后构建 production Worker，执行 Workers 集成测试、bundle dry-run 和体积预算。
+- `e2e` 使用两个 Chromium shard，每个 shard 保持一个 Playwright worker，并独立初始化本地 D1/R2、构建和启动本地应用。文件内测试顺序由现有 Playwright 配置保持。
+
+必需检查 `validate` 等待上述 jobs，并仅在全部成功时通过。失败、取消及跳过均阻止通过；E2E 的一个 shard 失败时另一个仍完成诊断。`pnpm test:ci` 保留本地完整应用门禁，CI 政策回归检查每个子命令仍出现在工作流中，并执行聚合脚本验证失败状态。
+
+每个 shard 的 HTML/JSON 报告及失败截图、trace 上传为独立 artifact，保留 7 天。产物只包含本地隔离测试生成的 `e2e-report/` 和 `test-results/`。比较优化效果时同时记录 PR 等待时间、各 job 排队/运行耗时、总 runner-minutes、首次通过率及缓存命中情况。
+
+production 构建和 E2E 本地构建使用各自的绑定配置与工作目录。工作流定义见 [ci.yml](../.github/workflows/ci.yml)，原有完整本地入口见 [package.json](../package.json)。
+
 <details>
 <summary>本地管理员与故障排查</summary>
 
