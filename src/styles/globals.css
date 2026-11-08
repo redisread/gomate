@@ -338,6 +338,14 @@
   --neutral-900: oklch(0.214 0.015 66.9);
 
   /* ==== shadcn/ui 语义变量（映射到精确色值） ==== */
+  /* Fixed light export palette, shared with the brand primitives. */
+  --poster-background: var(--neutral-50);
+  --poster-ink: var(--neutral-900);
+  --poster-muted: var(--neutral-500);
+  --poster-brand: var(--primary-500);
+  --poster-surface: var(--primary-50);
+  --poster-border: var(--neutral-200);
+
   --background:     oklch(0.98 0.005 78.3);   /* neutral-50：温暖沙米页面背景 */
   --foreground:     oklch(0.214 0.015 66.9);   /* neutral-900 */
 
