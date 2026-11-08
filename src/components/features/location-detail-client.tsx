@@ -1,6 +1,10 @@
 import { withI18n } from "@/i18n/context";
 import type { BrowserSession } from "@/contracts/auth-api";
-import type { ApiResult, LocationResponse, LocationsResponse } from "@/contracts/http-responses";
+import type {
+  ApiResult,
+  LocationResponse,
+  LocationsResponse,
+} from "@/contracts/http-responses";
 
 import { Button as SwButton } from "@/components/starwind-react/button";
 
@@ -205,40 +209,53 @@ function Lightbox({
   );
 }
 
+function LocationIdentity({
+  location,
+  className,
+}: {
+  location: Location;
+  className: string;
+}) {
+  return (
+    <div aria-hidden="true" data-testid="location-identity" className={className}>
+      <p className="break-words text-page-h1 text-foreground">
+        {location.name}
+      </p>
+      {location.region && (
+        <p className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
+          <MapPin aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
+          <span className="break-words">{location.region.name}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ActionCard({ location }: { location: Location }) {
   const { t } = useI18n(["locationDetail", "locations"]);
   return (
-    <section
-      aria-labelledby="location-action-title"
-      className="rounded-3xl bg-warm-subtle p-6"
+    <nav
+      aria-label={t("locations.detailParticipate")}
+      className="hidden flex-wrap items-center gap-3 lg:flex"
     >
-      <span className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-card text-primary shadow-card">
-        <Users aria-hidden="true" className="h-5 w-5" />
-      </span>
-      <h2
-        id="location-action-title"
-        className="text-xl font-bold text-foreground"
-      >
-        {t("locations.detailParticipate")}
-      </h2>
-      <p className="mb-6 mt-3 text-sm leading-7 text-muted-foreground">
-        {t("locationDetail.actionDescription")}
-      </p>
-      <SwButton as="a" variant="plain" size="inherit"
+      <SwButton
+        as="a"
+        variant="plain"
+        size="inherit"
         href={`/teams/create?locationId=${location.id}`}
-        className="flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-center text-sm font-semibold text-foreground dark:text-primary-foreground shadow-card transition-[transform,background-color] hover:bg-primary/90 active:scale-[0.96] motion-reduce:transform-none"
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2 text-center text-sm font-semibold text-foreground dark:text-primary-foreground transition-[transform,background-color] hover:bg-primary/90 active:scale-[0.96] motion-reduce:transform-none"
       >
         <Users aria-hidden="true" className="h-4 w-4 shrink-0" />
         {t("locations.detailCreateTeam")}
       </SwButton>
       <SwButton as="a" variant="plain" size="inherit"
         href="#location-teams"
-        className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-semibold text-foreground hover:bg-card/60"
+        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold text-foreground hover:bg-muted"
       >
         {t("locationDetail.browseTeams")}
         <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
       </SwButton>
-    </section>
+    </nav>
   );
 }
 
@@ -247,10 +264,6 @@ interface RelatedLocationsProps {
   locations: Location[];
 }
 
-/**
- * 相关地点推荐（升级版）
- * 角色：视觉总监
- */
 function RelatedLocations({ locations }: RelatedLocationsProps) {
   const { t } = useI18n([
     "locationDetail",
@@ -265,8 +278,8 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
   if (locations.length === 0) return null;
 
   return (
-    <section className="px-2">
-      <div className="flex items-center justify-between mb-4">
+    <section className="min-w-0">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-bold text-foreground">
           {t("locations.relatedTitle")}
         </h2>
@@ -279,13 +292,13 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
         </a>
       </div>
 
-      <div className="space-y-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         {locations.map((loc) => {
           return (
             <a
               key={loc.id}
               href={`/locations/${loc.id}`}
-              className="flex items-center gap-3 group rounded-xl p-2 -mx-2 transition-colors duration-150 hover:bg-muted"
+              className="flex items-center gap-3 group rounded-xl bg-card p-3 transition-colors duration-150 hover:bg-muted"
             >
               <div className="w-[68px] h-[52px] rounded-xl overflow-hidden flex-shrink-0 bg-muted">
                 {loc.coverImageUrl ? (
@@ -304,7 +317,7 @@ function RelatedLocations({ locations }: RelatedLocationsProps) {
               <div className="flex-1 min-w-0">
                 <h3
                   title={loc.name}
-                  className="font-semibold text-foreground group-hover:text-accent-foreground transition-colors text-sm truncate leading-snug"
+                  className="font-semibold text-foreground group-hover:text-accent-foreground transition-colors text-sm break-words leading-snug"
                 >
                   {loc.name}
                 </h3>
@@ -363,7 +376,9 @@ function LocationDetailClientContent({
     "nav",
     "enums",
   ]);
-  const [location, setLocation] = React.useState<Location | null>(initialLocation ?? null);
+  const [location, setLocation] = React.useState<Location | null>(
+    initialLocation ?? null,
+  );
   const [isLoading, setIsLoading] = React.useState(!initialLocation);
   const [error, setError] = React.useState<"missing" | "failed" | null>(null);
   const [attempt, setAttempt] = React.useState(0);
@@ -511,8 +526,18 @@ function LocationDetailClientContent({
             </SwButton>
           )}
         </div>
-        <div className="grid min-w-0 items-center gap-6 pb-10 pt-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-12 lg:pb-14">
-          <div className="min-w-0 rounded-3xl bg-warm-subtle pb-4">
+      </header>
+      <div className="mx-auto max-w-6xl px-4 pb-12 sm:px-6 lg:px-8">
+        <div className="sr-only">
+          <h1>{location.name}</h1>
+          {location.region && <p>{location.region.name}</p>}
+        </div>
+        <LocationIdentity
+          location={location}
+          className="mb-5 min-w-0 lg:hidden"
+        />
+        <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-8">
+          <div className="min-w-0 rounded-3xl bg-warm-subtle">
             <LocationCoverGallery
               key={location.id}
               images={galleryImages}
@@ -520,78 +545,61 @@ function LocationDetailClientContent({
               onOpen={setLightboxIndex}
             />
           </div>
-          <div className="min-w-0 py-3">
-            <p className="mb-5 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground">
-              <span
-                aria-hidden="true"
-                className="h-2 w-2 shrink-0 rounded-full bg-warm"
-              />
-              {t("locationDetail.journal")}
-            </p>
-            <h1 className="break-words text-4xl sm:text-5xl font-black text-foreground">
-              {location.name}
-            </h1>
-            {location.subtitle && (
-              <p className="mt-4 break-words text-lg leading-8 text-muted-foreground">
-                {location.subtitle}
-              </p>
-            )}
-            <div className="mt-6 flex flex-wrap gap-2">
-              {location.supportedActivityTypes.map((activity) => (
-                <span
-                  key={activity}
-                  className="rounded-lg bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground"
-                >
-                  {t(`enums.locationType.${activity}`)}
-                </span>
-              ))}
-              {location.tags?.map((tag) => (
-                <span
-                  key={tag.id}
-                  className="rounded-lg bg-muted px-3 py-1.5 text-sm text-muted-foreground"
-                >
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-            {bestSeasons.length > 0 && (
-              <p className="mt-4 break-words text-sm leading-6 text-muted-foreground">
-                <span>{t("locationDetail.seasons")}</span>{" "}
-                {bestSeasons.map((season) => seasons[season] ?? season).join(" · ")}
-              </p>
-            )}
-            {location.region && (
-              <p className="mt-6 flex items-start gap-2 text-sm text-muted-foreground">
-                <MapPin aria-hidden="true" className="h-4 w-4 shrink-0" />
-                <span className="break-words">{location.region.name}</span>
-              </p>
-            )}
-          </div>
-        </div>
-      </header>
-      <div
-        data-testid="location-detail-content"
-        className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8"
-      >
-        <div className="grid min-w-0 gap-12 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-16">
           <div
+            className="min-w-0 space-y-5"
             data-testid="location-detail-primary-column"
-            className="min-w-0 space-y-12"
           >
+            <div className="min-w-0">
+              <LocationIdentity
+                location={location}
+                className="hidden min-w-0 lg:block"
+              />
+              {location.subtitle && (
+                <p className="mt-3 break-words text-base leading-7 text-muted-foreground">
+                  {location.subtitle}
+                </p>
+              )}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {location.supportedActivityTypes.map((activity) => (
+                  <span
+                    key={activity}
+                    className="rounded-lg bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground"
+                  >
+                    {t(`enums.locationType.${activity}`)}
+                  </span>
+                ))}
+                {location.tags?.map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="rounded-lg bg-muted px-3 py-1.5 text-sm text-muted-foreground"
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+              {bestSeasons.length > 0 && (
+                <p className="mt-3 break-words text-sm leading-6 text-muted-foreground">
+                  <span>{t("locationDetail.seasons")}</span>{" "}
+                  {bestSeasons
+                    .map((season) => seasons[season] ?? season)
+                    .join(" · ")}
+                </p>
+              )}
+            </div>
             <LocationIntroCard
               key={location.id}
               location={location}
               address={location.address ?? undefined}
             />
-            <TeamListSection key={location.id} locationId={location.id} />
-          </div>
-          <aside
-            data-testid="location-detail-sidebar"
-            className="hidden min-w-0 space-y-8 lg:sticky lg:top-24 lg:block"
-          >
             <ActionCard location={location} />
-            <RelatedLocations locations={relatedLocations} />
-          </aside>
+          </div>
+        </div>
+        <div
+          data-testid="location-detail-content"
+          className="mt-8 min-w-0 space-y-8"
+        >
+          <TeamListSection key={location.id} locationId={location.id} />
+          <RelatedLocations locations={relatedLocations} />
         </div>
       </div>
       <MobileFloatingCTA location={location} />

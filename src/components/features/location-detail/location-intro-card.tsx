@@ -1,13 +1,7 @@
 import { Card as SwCard } from "@/components/starwind-react/card";
 import { Button as SwButton } from "@/components/starwind-react/button";
 import * as React from "react";
-import {
-  ChevronDown,
-  MapPin,
-  Navigation,
-  Check,
-  Copy,
-} from "lucide-react";
+import { ChevronDown, MapPin, Navigation, Check, Copy } from "lucide-react";
 import { useI18n } from "@/hooks/useI18n";
 import { openExternalLink } from "@/lib/open-external";
 import { cn } from "@/lib/utils";
@@ -59,12 +53,12 @@ export function LocationIntroCard({
   return (
     <section
       aria-labelledby="location-intro-title"
-      className="min-w-0 space-y-6"
+      className="min-w-0 space-y-5"
     >
       <div>
         <h2
           id="location-intro-title"
-          className="mb-5 text-section-h2 text-foreground"
+          className="mb-2 text-lg font-semibold text-foreground"
         >
           {t("locations.locationIntro")}
         </h2>
@@ -72,7 +66,7 @@ export function LocationIntroCard({
           id={descriptionId}
           ref={descRef}
           className={cn(
-            "whitespace-pre-line break-words text-base leading-8 text-muted-foreground",
+            "whitespace-pre-line break-words text-sm leading-6 text-muted-foreground",
             !expanded && "line-clamp-4",
           )}
         >
@@ -98,7 +92,7 @@ export function LocationIntroCard({
         )}
       </div>
       {address && (
-        <SwCard className="block gap-0 py-0 ring-0 space-y-6 rounded-3xl bg-card p-5 shadow-card sm:p-6">
+        <SwCard className="block gap-0 py-0 ring-0 rounded-2xl bg-muted/50 p-4">
           {address && (
             <div className="flex items-start gap-3">
               <MapPin
@@ -106,13 +100,13 @@ export function LocationIntroCard({
                 className="mt-1 h-5 w-5 shrink-0 text-accent-foreground"
               />
               <div className="min-w-0 flex-1">
-                <h3 className="mb-2 text-sm font-semibold text-foreground">
+                <h3 className="mb-1 text-sm font-semibold text-foreground">
                   {t("locationDetail.address")}
                 </h3>
-                <p className="break-words text-sm leading-7 text-muted-foreground">
+                <p className="break-words text-sm leading-6 text-muted-foreground">
                   {address}
                 </p>
-                <div className="mt-3 flex flex-wrap gap-3">
+                <div className="mt-3 flex flex-wrap gap-2">
                   {hasValidCoordinates && (
                     <SwButton variant="plain" size="inherit"
                       type="button"

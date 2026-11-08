@@ -67,6 +67,11 @@ for (const locale of ["zh-CN", "en"]) {
         ? "A weekend wandering between the mountains and the sea"
         : place.name,
     );
+    const titleBox = (await page.locator('[data-testid="location-identity"]:visible').boundingBox())!;
+    const photoBox = (await page
+      .locator(".location-cover-gallery")
+      .boundingBox())!;
+    expect(titleBox.y + titleBox.height).toBeLessThan(photoBox.y);
     const actions = page.getByTestId("location-mobile-actions");
     await expect(actions).toBeVisible();
     await expect(actions.locator('a[href*="/teams/create"]')).toBeInViewport();
@@ -114,10 +119,13 @@ test("desktop places title beside photos and keeps a single primary create actio
   await setup(page);
   await page.goto("/locations/journal-layout");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(place.name);
-  const title = (await page.getByRole("heading", { level: 1 }).boundingBox())!;
+  const title = (await page.locator('[data-testid="location-identity"]:visible').boundingBox())!;
   const photo = (await page.locator(".location-cover-gallery").boundingBox())!;
   expect(title.x).toBeGreaterThan(photo.x + photo.width);
   expect(title.y).toBeLessThan(photo.y + photo.height);
+  const intro = (await page.locator("#location-intro-title").boundingBox())!;
+  expect(intro.x).toBeGreaterThan(photo.x + photo.width);
+  expect(intro.y).toBeLessThan(photo.y + photo.height);
   await expect(
     page.locator('a[href*="/teams/create?locationId="]:visible'),
   ).toHaveCount(1);
@@ -209,3 +217,87 @@ test("320px ticket cards wrap long team names and keep the full date accessible"
   ).toBe(true);
   await page.screenshot({ path: ".wrangler/journal-shots/ticket-320.png" });
 });
+
+for (const width of [320, 768, 1024, 1440]) {
+  test(`${width}px compact detail keeps its identity, address and actions readable`, async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await context.addCookies([
+      { name: "gomate_locale", value: "zh-CN", url: baseURL! },
+    ]);
+    await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await setup(page);
+    await page.route("**/api/locations/journal-layout", (route) =>
+      route.fulfill({
+        json: {
+          success: true,
+          location: {
+            ...place,
+            name: "梧桐山",
+            subtitle: "登高望海，走进深圳的山野。",
+            description:
+              "沿山径穿过树林，在山顶眺望城市与海湾。适合周末结伴徒步，沿途有多处休息点。",
+            address: "深圳市罗湖区梧桐山风景区",
+            region: { id: "sz", name: "深圳" },
+            images: ["/journal-photo.svg?second", "/journal-photo.svg?third"],
+          },
+        },
+      }),
+    );
+    await page.route("**/journal-photo.svg?*", (route) =>
+      route.fulfill({
+        contentType: "image/svg+xml",
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600"><rect width="900" height="600" fill="#aec8bc"/></svg>',
+      }),
+    );
+    await page.goto("/locations/journal-layout");
+    const heading = page.getByRole("heading", { level: 1 });
+    await expect(heading).toHaveCount(1);
+      await expect(page.locator("h1")).toHaveCount(1);
+    await expect(heading).toHaveText("梧桐山");
+    await expect(page.locator("p:visible").filter({ hasText: /^深圳$/ })).toBeVisible();
+    const create = page.locator('a[href*="/teams/create?locationId="]:visible');
+    await expect(create).toHaveCount(1);
+    await expect(create).toBeInViewport();
+    if (width >= 1024) {
+      await expect(page.locator("#location-intro-title")).toBeInViewport();
+      await expect(page.locator("#location-teams-title")).toBeInViewport();
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: `.wrangler/journal-shots/compact-${width}.png`,
+      fullPage: true,
+    });
+    // Text-only zoom also stresses labels without relying on browser chrome controls.
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = "200%";
+    });
+    await expect(heading).toHaveCount(1);
+      await expect(page.locator("h1")).toHaveCount(1);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await create.focus();
+    await expect(create).toBeFocused();
+    await page.evaluate(() => {
+      document.documentElement.dir = "rtl";
+    });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await expect(
+      page.getByRole("button", { name: "复制地址", exact: true }),
+    ).toBeVisible();
+  });
+}
