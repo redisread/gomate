@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Download, Share2, X } from "lucide-react";
 import { Button } from "@/components/starwind-react/button";
+import { HydratedControls } from "@/components/ui/hydrated-controls";
 import { Modal } from "@/components/ui/modal";
 import { fetchAPI } from "@/lib/api";
 import type { SelfUserResponse } from "@/contracts/public-responses";
@@ -105,20 +106,22 @@ export function SharePoster({
 
   return (
     <>
-      <Button
-        ref={trigger}
-        variant="plain"
-        size="inherit"
-        type="button"
-        onClick={() => {
-          setState({ status: "loading" });
-          setOpen(true);
-        }}
-        className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-card px-3 text-sm font-semibold text-foreground shadow-card hover:bg-muted"
-      >
-        <Share2 aria-hidden="true" className="h-4 w-4" />
-        {t(`${namespace}.poster.action`)}
-      </Button>
+      <HydratedControls>
+        <Button
+          ref={trigger}
+          variant="plain"
+          size="inherit"
+          type="button"
+          onClick={() => {
+            setState({ status: "loading" });
+            setOpen(true);
+          }}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-card px-3 text-sm font-semibold text-foreground shadow-card hover:bg-muted"
+        >
+          <Share2 aria-hidden="true" className="h-4 w-4" />
+          {t(`${namespace}.poster.action`)}
+        </Button>
+      </HydratedControls>
       <Modal
         open={open}
         onClose={close}

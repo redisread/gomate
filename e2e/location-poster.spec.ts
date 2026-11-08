@@ -252,7 +252,24 @@ test("generates through a real local session and published location API", async 
   const { locations } = await response.json();
   expect(locations.length).toBeGreaterThan(0);
   await page.route("**/api/proxy-image?**", (route) => route.abort());
-  await page.goto(`/locations/${locations[0].id}`);
+  let release!: () => void;
+  const hydration = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/_astro/location-detail-client.*.js", async (route) => {
+    await hydration;
+    await route.continue();
+  });
+  await page.goto(`/locations/${locations[0].id}`, {
+    waitUntil: "domcontentloaded",
+  });
+  try {
+    await expect(
+      page.getByRole("button", { name: "分享海报", exact: true }),
+    ).toBeDisabled();
+  } finally {
+    release();
+  }
   const { dialog } = await open(page);
   await expect(dialog.getByRole("img")).toHaveAttribute(
     "alt",
