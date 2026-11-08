@@ -26,5 +26,18 @@
   "address": "Getting there",
   "seasons": "Best seasons:",
   "copied": "Address copied",
-  "copyFailed": "Could not copy. Select the address text to copy it."
+  "copyFailed": "Could not copy. Select the address text to copy it.",
+  "poster": {
+    "action": "Share poster",
+    "generating": "Creating your poster…",
+    "failed": "Could not create the poster. Please try again.",
+    "coverFallback": "The photo is unavailable. A location card is shown instead.",
+    "save": "Save image",
+    "saveHint": "On mobile, touch and hold the image to save it, or use Save image and your browser’s image options.",
+    "description": "Create a location poster to share your next destination.",
+    "loginRequired": "Log in to generate a location share poster.",
+    "imageAlt": "Location share poster for {title}",
+    "scan": "Scan to explore this place",
+    "detailNote": "See the location page for the full introduction and latest details."
+  }
 }

@@ -26,5 +26,18 @@
   "address": "怎么去",
   "seasons": "适宜季节：",
   "copied": "地址已复制",
-  "copyFailed": "复制失败，请选择地址文本复制。"
+  "copyFailed": "复制失败，请选择地址文本复制。",
+  "poster": {
+    "action": "分享海报",
+    "generating": "正在生成海报…",
+    "failed": "海报生成失败，请重试。",
+    "coverFallback": "照片暂不可用，已生成地点文字卡。",
+    "save": "保存图片",
+    "saveHint": "手机可长按图片保存；也可点击保存图片后使用浏览器的图片操作。",
+    "description": "生成地点海报，分享给想一起出发的人。",
+    "loginRequired": "登录后即可生成地点分享海报。",
+    "imageAlt": "{title}的地点分享海报",
+    "scan": "扫码探索这个地点",
+    "detailNote": "完整介绍与最新信息，请查看地点详情。"
+  }
 }
