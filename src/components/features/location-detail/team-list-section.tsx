@@ -46,13 +46,10 @@ export function TeamListSection({ locationId }: { locationId: string }) {
     <section
       id="location-teams"
       aria-labelledby="location-teams-title"
-      className="scroll-mt-24 min-w-0 space-y-6"
+      className="scroll-mt-24 min-w-0 space-y-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div>
-          <p className="mb-2 text-xs font-semibold tracking-widest text-muted-foreground">
-            {t("locationDetail.together")}
-          </p>
           <h2
             id="location-teams-title"
             className="text-section-h2 text-foreground"
@@ -90,7 +87,7 @@ export function TeamListSection({ locationId }: { locationId: string }) {
           </SwButton>
         </div>
       ) : state.data.teams.length === 0 ? (
-        <div className="flex items-start gap-4 rounded-2xl bg-warm-subtle p-6 sm:p-8">
+        <div className="flex items-start gap-4 rounded-2xl bg-warm-subtle p-4 sm:p-5">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-card text-accent-foreground">
             <Users aria-hidden="true" className="h-5 w-5" />
           </span>

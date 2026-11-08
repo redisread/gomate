@@ -96,7 +96,7 @@ test.describe("touch", () => {
       route.fulfill({ status: 503, body: "unavailable" }),
     );
     await page.goto("/locations/motion-gallery");
-    const retry = page.getByRole("button", { name: "重试", exact: true });
+    const retry = page.getByRole("group", { name: "地点照片" }).getByRole("button", { name: "重试", exact: true });
     await expect(retry).toBeVisible();
     await page.unroute("**/gallery-a.svg");
     await retry.click();
