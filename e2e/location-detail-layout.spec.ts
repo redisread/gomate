@@ -17,6 +17,9 @@ const place = {
   extra: { hiking: { bestSeasons: ["spring", "autumn"] } },
 };
 async function setup(page: Page, english = false) {
+  await page.route("**/api/locations?limit=4", (route) =>
+    route.fulfill({ json: { success: true, locations: [] } }),
+  );
   await page.route("**/api/locations/journal-layout", (route) =>
     route.fulfill({
       json: {
@@ -67,7 +70,9 @@ for (const locale of ["zh-CN", "en"]) {
         ? "A weekend wandering between the mountains and the sea"
         : place.name,
     );
-    const titleBox = (await page.locator('[data-testid="location-identity"]:visible').boundingBox())!;
+    const titleBox = (await page
+      .locator('[data-testid="location-identity"]:visible')
+      .boundingBox())!;
     const photoBox = (await page
       .locator(".location-cover-gallery")
       .boundingBox())!;
@@ -119,7 +124,9 @@ test("desktop places title beside photos and keeps a single primary create actio
   await setup(page);
   await page.goto("/locations/journal-layout");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(place.name);
-  const title = (await page.locator('[data-testid="location-identity"]:visible').boundingBox())!;
+  const title = (await page
+    .locator('[data-testid="location-identity"]:visible')
+    .boundingBox())!;
   const photo = (await page.locator(".location-cover-gallery").boundingBox())!;
   expect(title.x).toBeGreaterThan(photo.x + photo.width);
   expect(title.y).toBeLessThan(photo.y + photo.height);
@@ -159,7 +166,10 @@ test("team failure can be retried without claiming there are no teams", async ({
   );
   await expect(page.getByText("这趟旅程，等一个发起人")).toHaveCount(0);
   fail = false;
-  await page.getByRole("button", { name: "重试", exact: true }).click();
+  await page
+    .locator("#location-teams")
+    .getByRole("button", { name: "重试", exact: true })
+    .click();
   await expect(page.getByText("这趟旅程，等一个发起人")).toBeVisible();
 });
 
@@ -230,6 +240,19 @@ for (const width of [320, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await setup(page);
+    await page.route("**/api/locations?limit=4", (route) =>
+      route.fulfill({
+        json: {
+          success: true,
+          locations: [1, 2, 3].map((index) => ({
+            ...place,
+            id: `related-${index}`,
+            name: `山海步道与周末漫游地点${index}`,
+            coverImageUrl: "/journal-photo.svg",
+          })),
+        },
+      }),
+    );
     await page.route("**/api/locations/journal-layout", (route) =>
       route.fulfill({
         json: {
@@ -256,10 +279,15 @@ for (const width of [320, 768, 1024, 1440]) {
     await page.goto("/locations/journal-layout");
     const heading = page.getByRole("heading", { level: 1 });
     await expect(heading).toHaveCount(1);
-      await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.locator("h1")).toHaveCount(1);
     await expect(heading).toHaveText("梧桐山");
-    await expect(page.locator("p:visible").filter({ hasText: /^深圳$/ })).toBeVisible();
+    await expect(
+      page
+        .locator('[data-testid="location-identity"]:visible p')
+        .filter({ hasText: /^深圳$/ }),
+    ).toBeVisible();
     const create = page.locator('a[href*="/teams/create?locationId="]:visible');
+    await expect(page.locator('a[href="/locations/related-1"]')).toBeVisible();
     await expect(create).toHaveCount(1);
     await expect(create).toBeInViewport();
     if (width >= 1024) {
@@ -280,7 +308,7 @@ for (const width of [320, 768, 1024, 1440]) {
       document.documentElement.style.fontSize = "200%";
     });
     await expect(heading).toHaveCount(1);
-      await expect(page.locator("h1")).toHaveCount(1);
+    await expect(page.locator("h1")).toHaveCount(1);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
