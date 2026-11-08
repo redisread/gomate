@@ -390,5 +390,31 @@
   "formFixedDetails": "The place and date are fixed. You can adjust the start time.",
   "formDurationMinutes": "{minutes} minutes",
   "formRequirementNumber": "Requirement {number}",
-  "formRemoveRequirement": "Remove requirement {number}"
+  "formRemoveRequirement": "Remove requirement {number}",
+  "poster": {
+    "action": "Share poster",
+    "description": "A 3:4 portrait poster for WeChat and Xiaohongshu.",
+    "generating": "Creating your poster…",
+    "loginRequired": "Sign in to create a team poster.",
+    "failed": "Could not create the poster. Please try again.",
+    "imageAlt": "Team poster for {title}",
+    "coverFallback": "The photo is unavailable. A location card is shown instead.",
+    "save": "Save image",
+    "saveHint": "On mobile, touch and hold the image to save it, or use Save image and your browser’s image options.",
+    "capacity": "Up to {count} people",
+    "expectedEnd": "Expected end",
+    "scan": "Scan to view the team",
+    "snapshotNote": "A snapshot at creation. See the team page for the latest status.",
+    "locationUnavailable": "Location to be confirmed",
+    "status": {
+      "recruiting": "Recruiting",
+      "full": "Full",
+      "closed": "Recruitment closed",
+      "formed": "Confirmed",
+      "ongoing": "In progress",
+      "completed": "Ended",
+      "cancelled": "Cancelled",
+      "expired_unformed": "Expired · Unconfirmed"
+    }
+  }
 }

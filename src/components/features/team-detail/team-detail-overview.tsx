@@ -13,6 +13,7 @@ import { useI18n } from "@/hooks/useI18n";
 import { TeamLeaderMini } from "@/components/features/teams/shared";
 import type { Location, Team } from "@/lib/types";
 import { formatTeamStart, formatTeamSchedule } from "@/lib/team-display";
+import { TeamSharePoster } from "./team-share-poster";
 import { TeamMeetingInfo } from "./team-meeting-info";
 import { getRegionDisplayName } from "@/components/shared/quick-city-options";
 
@@ -46,13 +47,16 @@ export function TeamDepartureBrief({
       data-testid="team-departure-brief"
       className="space-y-5 sm:space-y-7"
     >
-      <SwButton as="a" variant="plain" size="inherit"
-        href="/teams"
-        className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        {t("common.backTeams")}
-      </SwButton>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SwButton as="a" variant="plain" size="inherit"
+          href="/teams"
+          className="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          {t("common.backTeams")}
+        </SwButton>
+        <TeamSharePoster teamId={team.id} />
+      </div>
       <header className="relative max-w-4xl space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <span
