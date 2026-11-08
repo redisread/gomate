@@ -1,3 +1,4 @@
+import { LocationSharePoster } from "./location-detail/location-share-poster";
 import { withI18n } from "@/i18n/context";
 import type { BrowserSession } from "@/contracts/auth-api";
 import type {
@@ -516,15 +517,18 @@ function LocationDetailClientContent({
             <ChevronLeft aria-hidden="true" className="h-4 w-4" />
             {t("nav.locations")}
           </SwButton>
-          {isAdmin && (
-            <SwButton as="a" variant="plain" size="inherit"
-              href={`/admin/locations/${location.id}/edit`}
-              aria-label={t("admin.editLocation")}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-card text-foreground shadow-card hover:bg-muted"
-            >
-              <Pencil aria-hidden="true" className="h-4 w-4" />
-            </SwButton>
-          )}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <LocationSharePoster locationId={location.id} />
+            {isAdmin && (
+              <SwButton as="a" variant="plain" size="inherit"
+                href={`/admin/locations/${location.id}/edit`}
+                aria-label={t("admin.editLocation")}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-card text-foreground shadow-card hover:bg-muted"
+              >
+                <Pencil aria-hidden="true" className="h-4 w-4" />
+              </SwButton>
+            )}
+          </div>
         </div>
       </header>
       <div className="mx-auto max-w-6xl px-4 pb-12 sm:px-6 lg:px-8">
