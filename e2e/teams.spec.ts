@@ -127,6 +127,19 @@ test.describe("Team Flow", () => {
     expect(
       Date.parse(edited.team.endAt) - Date.parse(edited.team.startAt),
     ).toBe(180 * 60_000);
+    await page.route("**/api/proxy-image?**", route => route.fulfill({
+      path: "public/images/footer-landscape-small.webp",
+      contentType: "image/webp",
+    }));
+    await page.getByRole("button", { name: /^(分享海报|Share poster)$/u }).click();
+    const poster = page.getByRole("dialog");
+    await expect(poster.getByRole("img")).toHaveJSProperty("naturalWidth", 1080);
+    await expect(poster.getByRole("img")).toHaveJSProperty("naturalHeight", 1440);
+    await expect(poster).not.toContainText("Main entrance");
+    await expect(poster).not.toContainText(`e2e${RUN_ID}`);
+    await expect(poster).toContainText("E2E Edited Team");
+    await page.keyboard.press("Escape");
+    await expect(poster).not.toBeVisible();
     expect(browserErrors).toEqual([]);
   });
 });
