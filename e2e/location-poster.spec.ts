@@ -228,7 +228,10 @@ test("handles English missing fields and failed images, then retries fresh publi
   await page.getByRole("button", { name: "Share poster", exact: true }).click();
   await expect(page.getByRole("dialog").getByRole("alert")).toBeVisible();
   fail = false;
-  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Retry", exact: true })
+    .click();
   await expect(page.getByRole("dialog").getByRole("img")).toHaveAttribute(
     "alt",
     "Location share poster for Fresh place",

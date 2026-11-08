@@ -17,7 +17,7 @@ type Text = (
   size: number,
   fill?: string,
   weight?: number,
-) => void;
+) => number;
 interface PosterDrawing {
   context: CanvasRenderingContext2D;
   color: (name: string) => string;
@@ -201,6 +201,7 @@ export async function renderPoster(
       lines.forEach((line, index) =>
         context!.fillText(line, x, y + index * lineHeight),
       );
+      return lines.length * lineHeight;
     }
 
     // Summaries retain a readable type size and end with an explicit ellipsis.
@@ -237,6 +238,7 @@ export async function renderPoster(
       visible.forEach((line, index) =>
         context.fillText(line, x, y + index * lineHeight),
       );
+      return visible.length * lineHeight;
     };
 
     box(0, 0, WIDTH, HEIGHT, 0, color("background"));
