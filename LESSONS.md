@@ -95,6 +95,15 @@
 - 检查方式：运行 `tests/worker/native-auth.test.ts` 的退出回归，断言 HTTP 200 及后续权威会话读取为空。
 - 出现记录：1 次，2026-11-07。
 
+## 海报回归必须覆盖真实媒体域名的代理路径
+
+**规则：** 海报照片测试除同源 fixture 外，还要通过实际图片代理校验公开地点媒体域名，并保留近似域名、HTTP、重定向和非栅格内容的拒绝测试。
+
+- 原因：已有海报成功测试使用同源图片，未覆盖 `cos.gomate.live` 被代理白名单遗漏的情况；详情可见的照片在海报中回退为文字卡。
+- 证据：[Issue #700](https://github.com/redisread/gomate/issues/700) 的马峦山封面直接读取返回 200 image/jpeg，代理返回 403 Domain not allowed；`src/server/proxy-image.test.ts` 在修复前复现预期 200、实际 403。
+- 检查方式：运行 `pnpm exec vitest run --config vitest.server.config.ts src/server/proxy-image.test.ts`，并用浏览器验证外链照片海报。
+- 出现记录：1 次；2026-11-09。
+
 ## 记录模板
 
 ```markdown

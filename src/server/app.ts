@@ -177,6 +177,7 @@ apiApp.get("/r2/*", async (c) => {
 });
 
 const ALLOWED_IMAGE_PATTERNS = [
+  "cos.gomate.live",
   "gomate.cos.jiahongw.com",
   "*.githubusercontent.com",
   "*.googleusercontent.com",
