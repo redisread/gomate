@@ -91,10 +91,10 @@ test("parallel jobs preserve every application gate and all E2E shards", async (
     /needs: \[changes, checks, unit, database, worker, e2e\]/u,
   );
   assert.match(workflow, /fail-fast: false/u);
-  assert.match(workflow, /shard: \[1, 2, 3, 4\]/u);
+  assert.match(workflow, /shard: \[1, 2, 3, 4, 5, 6\]/u);
   assert.match(
     workflow,
-    /pnpm test:e2e:ci --shard=\$\{\{ matrix.shard \}\}\/4/u,
+    /pnpm test:e2e:ci --shard=\$\{\{ matrix.shard \}\}\/6/u,
   );
   assert.match(workflow, /gomate-e2e-\$\{\{ matrix.shard \}\}/u);
   assert.doesNotMatch(workflow, /continue-on-error|paths-ignore:|paths:/u);

@@ -77,7 +77,7 @@ Worker CI 对目标为 main 的 PR 先分类完整 diff，再并行执行五类�
 - `unit` 生成 locale 后执行前端及服务端单元测试。
 - `database` 执行完整的真实 D1 重置与迁移回归。
 - `worker` 生成 locale 后构建 production Worker，执行 Workers 集成测试、bundle dry-run 和体积预算。
-- `e2e` 使用四个 Chromium shard，每个 shard 保持一个 Playwright worker，并独立初始化本地 D1/R2、构建和启动本地应用。文件内测试顺序由现有 Playwright 配置保持。
+- `e2e` 使用六个 Chromium shard，每个 shard 保持一个 Playwright worker，并独立初始化本地 D1/R2、构建和启动本地应用。文件内测试顺序由现有 Playwright 配置保持。
 
 纯文档 PR 仅允许根目录 README、AGENTS、CLAUDE、CODING_STANDARDS、LESSONS、REVIEW 的 `.md` 文件及 `docs/**/*.md`。分类比较触发事件固定的 base/head SHA，重跑旧运行仍检查原版本。分类同时核对重命名前的路径和 API 文件总数，达到 Compare API 的 300 文件上限、未知路径或不完整列表执行全量检查。API 失败会阻止通过。工作流始终触发，避免必需检查因 workflow 层路径过滤停留在 Pending。
 
