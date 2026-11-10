@@ -5,14 +5,41 @@ on:
     branches: [main]
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      run-tests: ${{ steps.paths.outputs.run-tests }}
+    steps:
+      - name: Classify complete PR diff
+        id: paths
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              ...context.repo, pull_number: pr.number, per_page: 100,
+            });
+            // Unknown paths and incomplete API results always run the full suite.
+            const isDocumentation = (path) =>
+              /^(README|AGENTS|CLAUDE|CODING_STANDARDS|LESSONS|REVIEW)\.md$/.test(path) ||
+              /^docs\/.+\.md$/.test(path);
+            const docsOnly = files.length > 0 && files.length === pr.changed_files &&
+              files.every((file) => isDocumentation(file.filename) &&
+                (!file.previous_filename || isDocumentation(file.previous_filename)));
+            core.setOutput('run-tests', !docsOnly);
+
   checks:
+    needs: changes
+    if: needs.changes.outputs.run-tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -58,16 +85,45 @@ jobs:
       - name: pnpm check
         run: pnpm check
 
+      - name: pnpm worker:types
+        run: pnpm worker:types
+
+  unit:
+    needs: changes
+    if: needs.changes.outputs.run-tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Check toolchain
+        run: node scripts/check-toolchain.mjs
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm i18n:build
+        run: pnpm i18n:build
+
       - name: pnpm test
         run: pnpm test
 
       - name: pnpm test:server
         run: pnpm test:server
 
-      - name: pnpm worker:types
-        run: pnpm worker:types
-
   database:
+    needs: changes
+    if: needs.changes.outputs.run-tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -93,6 +149,8 @@ jobs:
         run: pnpm test:db-reset
 
   worker:
+    needs: changes
+    if: needs.changes.outputs.run-tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -130,6 +188,8 @@ jobs:
         run: pnpm worker:size
 
   e2e:
+    needs: changes
+    if: needs.changes.outputs.run-tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     container:
@@ -138,7 +198,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3, 4]
     env:
       BETTER_AUTH_SECRET: local-ci-${{ github.run_id }}-${{ github.run_attempt }}-only-not-production
       RESEND_API_KEY: ""
@@ -169,8 +229,8 @@ jobs:
         env:
           GOMATE_LOCAL_STATE: ${{ runner.temp }}/gomate-e2e-${{ matrix.shard }}
 
-      - name: pnpm test:e2e:ci --shard=${{ matrix.shard }}/2
-        run: pnpm test:e2e:ci --shard=${{ matrix.shard }}/2
+      - name: pnpm test:e2e:ci --shard=${{ matrix.shard }}/4
+        run: pnpm test:e2e:ci --shard=${{ matrix.shard }}/4
         env:
           GOMATE_LOCAL_STATE: ${{ runner.temp }}/gomate-e2e-${{ matrix.shard }}
 
@@ -187,18 +247,26 @@ jobs:
 
   validate:
     if: ${{ always() }}
-    needs: [checks, database, worker, e2e]
+    needs: [changes, checks, unit, database, worker, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Require every gate to succeed
         env:
+          CHANGES: ${{ needs.changes.result }}
+          RUN_TESTS: ${{ needs.changes.outputs.run-tests }}
+          UNIT: ${{ needs.unit.result }}
           CHECKS: ${{ needs.checks.result }}
           DATABASE: ${{ needs.database.result }}
           WORKER: ${{ needs.worker.result }}
           E2E: ${{ needs.e2e.result }}
         run: |
-          test "$CHECKS" = success
-          test "$DATABASE" = success
-          test "$WORKER" = success
-          test "$E2E" = success
+          test "$CHANGES" = success
+          case "$RUN_TESTS" in
+            true) expected=success ;;
+            false) expected=skipped ;;
+            *) exit 1 ;;
+          esac
+          for result in "$CHECKS" "$UNIT" "$DATABASE" "$WORKER" "$E2E"; do
+            test "$result" = "$expected" || exit 1
+          done
