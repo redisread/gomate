@@ -87,6 +87,8 @@ Worker CI 对目标为 main 的 PR 先分类完整 diff，再并行执行五类�
 
 每个 shard 的 HTML/JSON 报告及失败截图、trace 上传为独立 artifact，保留 7 天。产物只包含本地隔离测试生成的 `e2e-report/` 和 `test-results/`。比较优化效果时同时记录 PR 等待时间、各 job 排队/运行耗时、总 runner-minutes、首次通过率及缓存命中情况。
 
+端到端等待从本次运行的创建时间算到 `validate` 完成，重跑使用对应 attempt 的时间。job 排队从依赖就绪算到启动，上游依赖等待单列；安装、容器、locale、构建及浏览器服务启动计入准备，检查与测试计入执行，报告上传和清理单列。工作流 `updated_at` 可能受后续事件影响，不用于代替完成时间。历史不同版本样本与同应用版本的对照分开统计，同时保留失败和取消记录。
+
 production 构建和 E2E 本地构建使用各自的绑定配置与工作目录。工作流定义见 [ci.yml](../.github/workflows/ci.yml)，原有完整本地入口见 [package.json](../package.json)。
 
 <details>
