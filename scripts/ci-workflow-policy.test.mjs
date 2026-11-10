@@ -143,8 +143,12 @@ test("documentation classification is complete and conservative", async () => {
     let output;
     const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
     await new AsyncFunction("github", "context", "core", script)(
-      { paginate: async () => files, rest: { pulls: { listFiles() {} } } },
-      { repo: {}, payload: { pull_request: { number: 1, changed_files: count } } },
+      { rest: { repos: { compareCommitsWithBasehead: async ({ basehead, per_page }) => {
+        assert.equal(basehead, "event-base...event-head");
+        assert.equal(per_page, 1);
+        return { data: { files } };
+      } } } },
+      { repo: {}, payload: { pull_request: { number: 1, changed_files: count, base: { sha: "event-base" }, head: { sha: "event-head" } } } },
       { setOutput: (name, value) => { assert.equal(name, "run-tests"); output = String(value); } },
     );
     return output;
@@ -157,6 +161,7 @@ test("documentation classification is complete and conservative", async () => {
     assert.equal(await classify([{ filename: "docs/moved.md", previous_filename: filename }]), "true");
   }
   assert.equal(await classify([]), "true");
+  assert.equal(await classify(Array.from({ length: 300 }, () => ({ filename: "README.md" }))), "true");
   assert.equal(await classify([{ filename: "README.md" }], 3001), "true");
 });
 

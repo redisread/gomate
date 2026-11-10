@@ -10,7 +10,6 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: read
 
 jobs:
   changes:
@@ -25,14 +24,17 @@ jobs:
         with:
           script: |
             const pr = context.payload.pull_request;
-            const files = await github.paginate(github.rest.pulls.listFiles, {
-              ...context.repo, pull_number: pr.number, per_page: 100,
+            const { data } = await github.rest.repos.compareCommitsWithBasehead({
+              ...context.repo,
+              basehead: `${pr.base.sha}...${pr.head.sha}`,
+              per_page: 1,
             });
+            const files = data.files ?? [];
             // Unknown paths and incomplete API results always run the full suite.
             const isDocumentation = (path) =>
               /^(README|AGENTS|CLAUDE|CODING_STANDARDS|LESSONS|REVIEW)\.md$/.test(path) ||
               /^docs\/.+\.md$/.test(path);
-            const docsOnly = files.length > 0 && files.length === pr.changed_files &&
+            const docsOnly = files.length > 0 && files.length < 300 && files.length === pr.changed_files &&
               files.every((file) => isDocumentation(file.filename) &&
                 (!file.previous_filename || isDocumentation(file.previous_filename)));
             core.setOutput('run-tests', !docsOnly);
