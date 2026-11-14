@@ -11,6 +11,8 @@ import { BrandIcon } from "@/components/brand-icon";
 
 import * as React from "react";
 import { authClient } from "@/lib/auth-client";
+import { clearSignedOutTeamCreate } from "@/components/features/teams/form/team-create-operation";
+import { publishTeamCreateLogout, synchronizeTeamCreateLogout, watchTeamCreateLogout } from "@/components/features/teams/form/team-create-logout";
 import {
   Mountain,
   MapPinPlus,
@@ -131,6 +133,7 @@ export function Navbar({
   }, []);
 
   const sessionRequest = React.useRef(0);
+  const sessionOwner = React.useRef<string | null>(null);
   const [sessionFailed, setSessionFailed] = React.useState(false);
   const updateSession = React.useCallback((refresh: boolean) => {
     const attempt = ++sessionRequest.current;
@@ -138,6 +141,10 @@ export function Navbar({
     void request
       .then((u) => {
         if (attempt !== sessionRequest.current) return;
+        if (refresh && sessionOwner.current && u?.id !== sessionOwner.current) {
+          clearSignedOutTeamCreate(window.sessionStorage, sessionOwner.current);
+        }
+        sessionOwner.current = u?.id ?? null;
         setSessionFailed(false);
         if (u?.role !== "admin") setQuickActionOpen(false);
         setSession(
@@ -176,10 +183,35 @@ export function Navbar({
     };
   }, [updateSession]);
 
+  React.useEffect(() => {
+    const owner = session?.user.id;
+    if (!owner) return;
+    try { synchronizeTeamCreateLogout(owner); } catch { /* Creation refuses inaccessible storage. */ }
+    return watchTeamCreateLogout(owner, () => {
+      sessionRequest.current++;
+      sessionOwner.current = null;
+      setSession(null);
+    });
+  }, [session?.user.id]);
+
   const handleLogout = async () => {
-    await authClient.signOut();
-    setSession(null);
-    window.location.href = "/";
+    const owner = session?.user.id;
+    try {
+      const result = await authClient.signOut();
+      if (result.error || !result.data?.success) {
+        setSessionFailed(true);
+        return;
+      }
+      if (owner) {
+        publishTeamCreateLogout(owner);
+        clearSignedOutTeamCreate(window.sessionStorage, owner);
+      }
+      setSession(null);
+      window.location.href = "/";
+    } catch {
+      // Unknown logout results retain the retry identity and private payload.
+      setSessionFailed(true);
+    }
   };
 
   /** 判断链接是否活跃（只在客户端执行，避免 SSR/CSR 不一致） */

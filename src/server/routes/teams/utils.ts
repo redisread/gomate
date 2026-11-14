@@ -83,6 +83,7 @@ export function toTeamResponse(input: TeamResponseInput): TeamDto {
 
   return {
     id: team.id,
+    version: team.version,
     locationId: team.locationId,
     leaderId: team.leaderId,
     activityType: team.activityType,

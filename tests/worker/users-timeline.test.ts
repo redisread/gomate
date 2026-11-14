@@ -21,7 +21,7 @@ async function seedTimeline() {
       title TEXT, description TEXT, start_at INTEGER, end_at INTEGER,
       max_participants INTEGER, requirements TEXT, recruitment_status TEXT,
       formed_at INTEGER, cancelled_at INTEGER, meeting_point TEXT,
-      created_at INTEGER, updated_at INTEGER
+      created_at INTEGER, updated_at INTEGER, version INTEGER NOT NULL DEFAULT 1
     )`),
     env.DB.prepare(
       `CREATE TABLE team_members (team_id TEXT, user_id TEXT, left_at INTEGER)`,
@@ -38,7 +38,7 @@ async function seedTimeline() {
   ] as const) {
     await env.DB.prepare(
       `INSERT INTO teams VALUES (?, 'location-1', ?, 'hiking', ?, NULL,
-      4000000000000, 4000003600000, 2, '["water"]', 'open', NULL, NULL, 'Gate', ?, ?)`,
+      4000000000000, 4000003600000, 2, '["water"]', 'open', NULL, NULL, 'Gate', ?, ?, 1)`,
     )
       .bind(id, leader, id, createdAt, createdAt)
       .run();

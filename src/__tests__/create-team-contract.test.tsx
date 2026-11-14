@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CreateTeamClient } from "../components/features/create-team-client";
@@ -12,8 +12,11 @@ const { fetchAPI, fetchCurrentUser } = vi.hoisted(() => ({
 vi.mock("@/lib/api", () => ({
   fetchAPI,
   fetchCurrentUser,
+  refreshCurrentUser: fetchCurrentUser,
   getApiErrorMessage: (_data: unknown, fallback: string) => fallback,
 }));
+
+afterEach(() => { sessionStorage.clear(); vi.restoreAllMocks(); });
 
 vi.mock("@/hooks/useI18n", () => ({
   useI18n: () => ({
@@ -104,10 +107,167 @@ async function selectLocation(name: string) {
   );
 }
 
+async function fillCreation() {
+  await selectLocation(locationA.name);
+  fireEvent.change(await screen.findByTestId("create-team-activity-type"), { target: { value: "explore" } });
+  fireEvent.change(screen.getByTestId("create-team-title"), { target: { value: "唯一的一次创建" } });
+  fireEvent.change(screen.getByTestId("create-team-date"), { target: { value: "2099-08-16" } });
+  fireEvent.change(screen.getByTestId("create-team-max-members"), { target: { value: "6" } });
+  fireEvent.change(screen.getByTestId("create-team-description"), { target: { value: "一起出发" } });
+}
+
+it("retries the exact persisted creation after a lost response and a page reopen", async () => {
+  arrangeRequests();
+  const ordinary = fetchAPI.getMockImplementation()!;
+  fetchAPI.mockImplementation((path: string, init?: RequestInit) => path === "/teams"
+    ? Promise.reject(new Error("response lost")) : ordinary(path, init));
+  const first = render(<CreateTeamClient />);
+  await fillCreation();
+  fireEvent.click(screen.getByTestId("create-team-submit"));
+  await screen.findByRole("button", { name: "teams.retryOriginalCreate" });
+  const sent = fetchAPI.mock.calls.find(([path]) => path === "/teams")![1].body;
+  expect(JSON.parse(sent).requestId).toMatch(/^[0-9a-f-]{36}$/);
+  expect(screen.queryByTestId("create-team-title")).toBeNull();
+  expect(screen.getByRole("link", { name: "teams.checkMyTeams" })).toHaveAttribute("href", "/my-teams");
+  first.unmount();
+  render(<CreateTeamClient />);
+  fetchAPI.mockImplementation((path: string, init?: RequestInit) => path === "/teams"
+    ? Promise.resolve({ status: 400, json: async () => ({ success: false }) }) : ordinary(path, init));
+  fireEvent.click(await screen.findByRole("button", { name: "teams.retryOriginalCreate" }));
+  await waitFor(() => expect(fetchAPI.mock.calls.filter(([path]) => path === "/teams")).toHaveLength(2));
+  expect(fetchAPI.mock.calls.filter(([path]) => path === "/teams")[1][1].body).toBe(sent);
+  await waitFor(() => expect(screen.getByRole("button", { name: "teams.retryOriginalCreate" })).toBeEnabled());
+  expect(screen.queryByTestId("create-team-title")).toBeNull();
+});
+
+it("does not send a creation when durable tab storage is unavailable", async () => {
+  arrangeRequests();
+  render(<CreateTeamClient />);
+  await fillCreation();
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("quota"); });
+  fireEvent.click(screen.getByTestId("create-team-submit"));
+  await screen.findByText("teams.createStorageUnavailable");
+  expect(fetchAPI.mock.calls.some(([path]) => path === "/teams")).toBe(false);
+});
+
+it("does not restore another account's pending creation", async () => {
+  arrangeRequests();
+  const ordinary = fetchAPI.getMockImplementation()!;
+  fetchAPI.mockImplementation((path: string, init?: RequestInit) => path === "/teams"
+    ? Promise.reject(new Error("lost")) : ordinary(path, init));
+  const first = render(<CreateTeamClient />);
+  await fillCreation();
+  fireEvent.click(screen.getByTestId("create-team-submit"));
+  await screen.findByRole("button", { name: "teams.retryOriginalCreate" });
+  first.unmount();
+  fetchCurrentUser.mockResolvedValue({ id: "another-user", extra: { wechat: "other" } });
+  render(<CreateTeamClient />);
+  expect(await screen.findByTestId("create-team-title")).toHaveValue("");
+  expect(screen.queryByRole("button", { name: "teams.retryOriginalCreate" })).toBeNull();
+});
+
+it("does not send a pending creation under a changed account", async () => {
+  arrangeRequests();
+  render(<CreateTeamClient />);
+  await fillCreation();
+  fetchCurrentUser.mockResolvedValue({ id: "other-user", extra: { wechat: "other" } });
+  fireEvent.click(screen.getByTestId("create-team-submit"));
+  await screen.findByRole("alert");
+  expect(fetchAPI.mock.calls.some(([path]) => path === "/teams")).toBe(false);
+});
+
+it("allows corrected input with a new identity after an initial definite rejection", async () => {
+  arrangeRequests();
+  const ordinary = fetchAPI.getMockImplementation()!;
+  fetchAPI.mockImplementation((path: string, init?: RequestInit) => path === "/teams"
+    ? Promise.resolve({ status: 400, json: async () => ({ success: false }) }) : ordinary(path, init));
+  render(<CreateTeamClient />);
+  await fillCreation();
+  fireEvent.click(screen.getByTestId("create-team-submit"));
+  const title = await screen.findByTestId("create-team-title");
+  fireEvent.change(title, { target: { value: "修正后的队伍" } });
+  fireEvent.click(screen.getByTestId("create-team-submit"));
+  await waitFor(() => expect(fetchAPI.mock.calls.filter(([path]) => path === "/teams")).toHaveLength(2));
+  const sent = fetchAPI.mock.calls.filter(([path]) => path === "/teams").map(([, init]) => JSON.parse(init.body));
+  expect(sent[0].requestId).not.toBe(sent[1].requestId);
+  expect(sent[1].title).toBe("修正后的队伍");
+});
+
+it("only releases an unknown creation after explicit reconciliation confirmation", async () => {
+  arrangeRequests();
+  const ordinary = fetchAPI.getMockImplementation()!;
+  fetchAPI.mockImplementation((path: string, init?: RequestInit) => path === "/teams"
+    ? Promise.reject(new Error("lost")) : ordinary(path, init));
+  render(<CreateTeamClient />);
+  await fillCreation();
+  fireEvent.click(screen.getByTestId("create-team-submit"));
+  const discard = await screen.findByRole("button", { name: "teams.discardCheckedCreate" });
+  const saved = sessionStorage.getItem("gomate.team-create.leader");
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+  fireEvent.click(discard);
+  expect(sessionStorage.getItem("gomate.team-create.leader")).toBe(saved);
+  expect(screen.queryByTestId("create-team-title")).toBeNull();
+  confirm.mockReturnValue(true);
+  fireEvent.click(discard);
+  expect(await screen.findByTestId("create-team-title")).toHaveValue("唯一的一次创建");
+  expect(sessionStorage.getItem("gomate.team-create.leader")).toBeNull();
+});
+
+it("preserves a corrupt record until the user explicitly discards it", async () => {
+  arrangeRequests();
+  sessionStorage.setItem("gomate.team-create.leader", "{broken");
+  render(<CreateTeamClient />);
+  const discard = await screen.findByRole("button", { name: "teams.discardCheckedCreate" });
+  expect(sessionStorage.getItem("gomate.team-create.leader")).toBe("{broken");
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  fireEvent.click(discard);
+  await waitFor(() => expect(screen.getByTestId("create-team-submit")).toBeEnabled());
+  expect(sessionStorage.getItem("gomate.team-create.leader")).toBeNull();
+});
+
+it("rechecks identity on focus without treating an unavailable identity service as logout", async () => {
+  arrangeRequests();
+  const ordinary = fetchAPI.getMockImplementation()!;
+  fetchAPI.mockImplementation((path: string, init?: RequestInit) => path === "/teams"
+    ? Promise.reject(new Error("lost")) : ordinary(path, init));
+  render(<CreateTeamClient />);
+  await fillCreation();
+  fireEvent.click(screen.getByTestId("create-team-submit"));
+  await screen.findByRole("button", { name: "teams.retryOriginalCreate" });
+  const saved = sessionStorage.getItem("gomate.team-create.leader");
+  fetchCurrentUser.mockRejectedValue(new Error("identity unavailable"));
+  await act(async () => window.dispatchEvent(new Event("focus")));
+  expect(sessionStorage.getItem("gomate.team-create.leader")).toBe(saved);
+  expect(screen.getByRole("button", { name: "teams.retryOriginalCreate" })).toBeVisible();
+  fetchCurrentUser.mockResolvedValue(null);
+  await act(async () => window.dispatchEvent(new Event("focus")));
+  expect(sessionStorage.getItem("gomate.team-create.leader")).toBeNull();
+  expect(screen.queryByText("唯一的一次创建")).toBeNull();
+});
+
 describe("CreateTeamClient contract", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
     window.history.replaceState({}, "", "/teams/create");
+  });
+
+  it.each([
+    [2026, 10, 14, 7],
+    [2026, 10, 14, 22],
+    [2026, 11, 31, 22],
+  ])("defaults to four hours ahead in local time (%i/%i/%i %i:00)", async (year, month, day, hour) => {
+    const now = new Date(year, month, day, hour, 0);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(now);
+    arrangeRequests();
+    render(<CreateTeamClient />);
+    const date = await screen.findByTestId("create-team-date");
+    const time = screen.getByTestId("create-team-time");
+    const start = new Date(`${(date as HTMLInputElement).value}T${(time as HTMLInputElement).value}:00`);
+    expect(start.getTime() - now.getTime()).toBe(4 * 60 * 60 * 1000);
+    const today = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    expect(date).toHaveAttribute("min", today);
   });
 
   it("prioritizes location recommendations without filtering the code enum", async () => {
@@ -187,8 +347,8 @@ describe("CreateTeamClient contract", () => {
     expect(createCall).toBeDefined();
     const payload = JSON.parse((createCall?.[1] as RequestInit).body as string);
     expect(payload).toMatchObject({
-      title: "  周末旅行  ",
-      description: "  一起旅行  ",
+      title: "周末旅行",
+      description: "一起旅行",
       maxParticipants: 6,
       meetingPoint: null,
       startAt: new Date("2099-08-16T09:30:00").toISOString(),

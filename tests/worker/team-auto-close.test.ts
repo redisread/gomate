@@ -1,5 +1,5 @@
 import { env, exports } from "cloudflare:workers";
-import { createScheduledController, reset } from "cloudflare:test";
+import { applyD1Migrations, createScheduledController, reset } from "cloudflare:test";
 import { afterEach, describe, expect, it } from "vitest";
 import { scheduled } from "../../src/server/scheduled";
 
@@ -10,12 +10,9 @@ const cutoff = now - 86_400_000;
 const controller = createScheduledController({ scheduledTime: now });
 
 async function seedTeams() {
-  await env.DB.prepare(
-    `CREATE TABLE teams (
-    id TEXT PRIMARY KEY, end_at INTEGER, recruitment_status TEXT,
-    formed_at INTEGER, cancelled_at INTEGER, updated_at INTEGER
-  )`,
-  ).run();
+  await applyD1Migrations(env.DB, JSON.parse(env.TEST_MIGRATIONS as string));
+  await env.DB.prepare("INSERT INTO users(id,name,email,email_verified) VALUES ('cron-leader','Cron','cron@example.test',1)").run();
+  const locationId = await env.DB.prepare("SELECT id FROM locations LIMIT 1").first<string>("id");
   const cases = [
     ["overdue", cutoff - 1, "open", null, null],
     ["boundary", cutoff, "open", null, null],
@@ -27,9 +24,11 @@ async function seedTeams() {
   ];
   await env.DB.batch(
     cases.map((values) =>
-      env.DB.prepare("INSERT INTO teams VALUES (?, ?, ?, ?, ?, 0)").bind(
-        ...values,
-      ),
+      env.DB.prepare(`INSERT INTO teams
+        (id,end_at,recruitment_status,formed_at,cancelled_at,updated_at,
+         location_id,leader_id,activity_type,title,start_at,max_participants)
+        VALUES (?, ?, ?, ?, ?, 0, ?, 'cron-leader','explore','Cron',0,6)`)
+        .bind(...values, locationId),
     ),
   );
 }

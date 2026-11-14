@@ -183,10 +183,12 @@ for (const locale of ["zh-CN", "en"]) {
       window.visualViewport!.dispatchEvent(new Event("resize"));
     });
     await expect(actions).toHaveCSS("bottom", "0px");
+    // A definite rejection keeps the editable form and its action-bar error.
+    // Unknown 5xx outcomes use the locked recovery view, covered separately.
     await page.route("**/api/teams", (route) =>
       route.fulfill({
-        status: 503,
-        json: { success: false, error: { message: "Unavailable" } },
+        status: 422,
+        json: { success: false, error: { message: "Invalid request" } },
       }),
     );
     await page.getByTestId("create-team-submit").click();

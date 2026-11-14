@@ -304,7 +304,7 @@ describe("team API wire compatibility", () => {
     const response = await request(
       "/t",
       "PUT",
-      JSON.stringify({ meetingPoint: "Station exit A\n09:00" }),
+      JSON.stringify({ expectedVersion: 1, meetingPoint: "Station exit A\n09:00" }),
       "application/json",
     );
     expect(response.status).toBe(200);

@@ -21,18 +21,15 @@ vi.mock("../../lib/location-media", () => {
   }
 
   return {
-    backupLocationMedia: vi.fn(),
-    discardLocationMediaBackups: vi.fn(),
     discardPreparedLocationMedia: vi.fn(),
     finalizeLocationMedia: vi.fn(),
     LocationMediaError: MockLocationMediaError,
     ownedLocationMediaKeys: vi.fn(() => []),
     prepareLocationMedia: mocks.prepareLocationMedia,
-    restoreLocationMediaBackups: vi.fn(),
+    registerLocationMedia: vi.fn().mockResolvedValue(undefined),
   };
 });
 vi.mock("../../lib/r2-media", () => ({
-  deleteR2ObjectsWithRetry: vi.fn(),
   getR2PublicBaseUrl: vi.fn(() => "https://media.example.com"),
 }));
 vi.mock("./utils", async (importOriginal) => {

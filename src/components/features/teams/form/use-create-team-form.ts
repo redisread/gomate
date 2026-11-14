@@ -2,7 +2,7 @@ import type { ApiResult, LocationResponse, LocationsResponse } from "@/contracts
 import type { TeamResponse } from "@/contracts/team-api";
 import * as React from "react";
 import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser, refreshCurrentUser, getApiErrorMessage } from "@/lib/api";
 import {
   orderActivityTypesForLocation,
   isActivityType,
@@ -12,6 +12,14 @@ import type { Location } from "@/lib/types";
 import { authPageHref } from "@/lib/login-return-path";
 import { createTeamPayload } from "./team-form-data";
 import type { CreateTeamFormData } from "./team-form-data";
+import { teamDefaultSchedule } from "./team-default-schedule";
+
+import {
+  clearTeamCreateOperation, clearSignedOutTeamCreate, discardTeamCreateRecord, newTeamCreateOperation, readTeamCreateOperation, readTeamCreateRaw,
+  saveTeamCreateOperation, type TeamCreateOperation,
+} from "./team-create-operation";
+
+import { synchronizeTeamCreateLogout, watchTeamCreateLogout } from "./team-create-logout";
 
 export function useCreateTeamForm() {
   const { t } = useI18n(["teams", "errors", "common", "enums"]);
@@ -32,19 +40,26 @@ export function useCreateTeamForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [sessionFailed, setSessionFailed] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [pendingCreate, setPendingCreate] = React.useState<TeamCreateOperation | null>(null);
+  const [storageBlocked, setStorageBlocked] = React.useState(false);
+  const userId = React.useRef<string | null>(null);
+  const savedRecord = React.useRef<string | null>(null);
+  const submitting = React.useRef(false);
+  const mounted = React.useRef(true);
+  React.useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
-  // 获取默认日期/时间
-  const now = new Date();
-  const defaultDate = now.toISOString().split("T")[0];
-  const futureTime = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-  const defaultTime = `${String(futureTime.getHours()).padStart(2, "0")}:${String(futureTime.getMinutes()).padStart(2, "0")}`;
+  const defaultSchedule = teamDefaultSchedule(new Date());
+  const defaultDate = defaultSchedule.minDate;
 
   const [formData, setFormData] = React.useState<CreateTeamFormData>({
     title: "",
     locationId: "",
     activityType: "",
-    startDateInput: defaultDate,
-    startClockInput: defaultTime,
+    startDateInput: defaultSchedule.startDateInput,
+    startClockInput: defaultSchedule.startClockInput,
     durationMinutes: "240",
     maxParticipants: "",
     description: "",
@@ -53,11 +68,57 @@ export function useCreateTeamForm() {
   });
 
   React.useEffect(() => {
+    let active = true;
+    let removeLogoutListener: (() => void) | undefined;
+    const invalidatePrivateState = () => {
+      if (!active) return;
+      userId.current = null;
+      savedRecord.current = null;
+      setPendingCreate(null);
+      const schedule = teamDefaultSchedule(new Date());
+      setFormData({
+        title: "", locationId: "", activityType: "",
+        startDateInput: schedule.startDateInput, startClockInput: schedule.startClockInput,
+        durationMinutes: "240", maxParticipants: "", description: "", meetingPoint: "", requirementsInput: "",
+      });
+      setHasWechat(false);
+      setSessionFailed(true);
+    };
+    const checkSession = async () => {
+      const owner = userId.current;
+      if (!owner) return;
+      try {
+        if (synchronizeTeamCreateLogout(owner)) { invalidatePrivateState(); return; }
+      } catch { /* Continue with an authoritative session check. */ }
+      try {
+        const current = await refreshCurrentUser();
+        if (!active || userId.current !== owner) return;
+        if (current?.id !== owner) {
+          try { clearSignedOutTeamCreate(window.sessionStorage, owner); }
+          finally { invalidatePrivateState(); }
+        }
+      } catch { /* An unavailable identity service is not confirmation of logout. */ }
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") void checkSession(); };
+    const onPageShow = (event: PageTransitionEvent) => { if (event.persisted) void checkSession(); };
+    const onFocus = () => { void checkSession(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onPageShow);
     (async () => {
       const u = await fetchCurrentUser(
         authPageHref("login", `${window.location.pathname}${window.location.search}`),
       );
-      if (!u) return;
+      if (!u || !mounted.current || !active) return;
+      userId.current = u.id;
+      removeLogoutListener = watchTeamCreateLogout(u.id, invalidatePrivateState);
+      try {
+        synchronizeTeamCreateLogout(u.id);
+        savedRecord.current = readTeamCreateRaw(window.sessionStorage, u.id);
+        setPendingCreate(readTeamCreateOperation(window.sessionStorage, u.id));
+      } catch {
+        setStorageBlocked(true);
+      }
       setIsAuthenticated(true);
       setHasWechat(!!u.extra.wechat);
     })().catch(() => setSessionFailed(true));
@@ -65,6 +126,13 @@ export function useCreateTeamForm() {
     const params = new URLSearchParams(window.location.search);
     const locId = params.get("locationId");
     if (locId) setFormData((prev) => ({ ...prev, locationId: locId }));
+    return () => {
+      active = false;
+      removeLogoutListener?.();
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -167,41 +235,101 @@ export function useCreateTeamForm() {
     setFormData((prev) => ({ ...prev, locationId, activityType: "" }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!hasWechat || isSubmitting) return;
+  const sendOperation = async (operation: TeamCreateOperation, retry = false) => {
+    const owner = userId.current;
+    if (!owner || submitting.current || storageBlocked) return;
+    submitting.current = true;
     setIsSubmitting(true);
     setError("");
     try {
-      const activityType = formData.activityType;
-      if (
-        !activityType ||
-        selectedLocation?.id !== formData.locationId ||
-        !isActivityType(activityType)
-      ) {
-        setError(t("errors.createTeamFailed"));
-        setIsSubmitting(false);
+      const currentUser = await refreshCurrentUser();
+      if (!mounted.current || userId.current !== owner) return;
+      if (currentUser?.id !== owner) {
+        setSessionFailed(true);
         return;
       }
       const res = await fetchAPI("/teams", {
-        method: "POST",
-        body: JSON.stringify(createTeamPayload(formData, activityType)),
+        method: "POST", body: JSON.stringify(operation),
       });
       const data = await res.json<ApiResult<TeamResponse>>();
+      if (!mounted.current || userId.current !== owner) return;
       if (data.success && data.team?.id) {
-        window.location.href = `/teams/${data.team.id}`;
+        clearTeamCreateOperation(window.sessionStorage, owner, operation.requestId);
+        setPendingCreate(null);
+        if (mounted.current) window.location.href = `/teams/${data.team.id}`;
       } else {
+        // Only definite input/auth rejection releases the saved operation. A
+        // conflict or unknown result must retain its original identity/content.
+        if (!retry && [400, 401, 403, 404, 422].includes(res.status)) {
+          clearTeamCreateOperation(window.sessionStorage, owner, operation.requestId);
+          setPendingCreate(null);
+        }
         setError(getApiErrorMessage(data, t("errors.createTeamFailed")));
-        setIsSubmitting(false);
       }
     } catch {
+      setError(t("teams.createOutcomeUnknown"));
+    } finally {
+      submitting.current = false;
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hasWechat || submitting.current || pendingCreate || storageBlocked || !userId.current) return;
+    const activityType = formData.activityType;
+    if (!activityType || selectedLocation?.id !== formData.locationId || !isActivityType(activityType)) {
       setError(t("errors.createTeamFailed"));
+      return;
+    }
+    let operation: TeamCreateOperation;
+    try {
+      operation = newTeamCreateOperation({
+        ...createTeamPayload(formData, activityType), requestId: crypto.randomUUID(),
+      });
+    } catch {
+      setError(t("errors.createTeamFailed"));
+      return;
+    }
+    try {
+      saveTeamCreateOperation(window.sessionStorage, userId.current, operation);
+      savedRecord.current = JSON.stringify(operation);
+    } catch {
+      setError(t("teams.createStorageUnavailable"));
+      return;
+    }
+    setPendingCreate(operation);
+    await sendOperation(operation);
+  };
+
+  const reconcileCreate = async () => {
+    const owner = userId.current;
+    if (!owner || submitting.current || !window.confirm(t("teams.discardCheckedCreateConfirm"))) return;
+    submitting.current = true;
+    setIsSubmitting(true);
+    try {
+      const current = await refreshCurrentUser();
+      if (!mounted.current || userId.current !== owner) return;
+      if (current?.id !== owner) { setSessionFailed(true); return; }
+      discardTeamCreateRecord(window.sessionStorage, owner, savedRecord.current);
+      savedRecord.current = null;
+      setPendingCreate(null);
+      setStorageBlocked(false);
+      setError("");
+    } catch {
+      setError(t("teams.createStorageUnavailable"));
+    } finally {
+      submitting.current = false;
       setIsSubmitting(false);
     }
   };
 
   return {
     t,
+    pendingCreate,
+    storageBlocked,
+    reconcileCreate,
+    retryCreate: () => pendingCreate && sendOperation(pendingCreate, true),
     formData,
     defaultDate,
     locations,
@@ -218,7 +346,7 @@ export function useCreateTeamForm() {
     contactSaved: () => setHasWechat(true),
     isSubmitting,
     sessionFailed,
-    error,
+    error: storageBlocked ? t("teams.createStorageUnavailable") : error,
     orderedActivityTypes,
     handleChange,
     handleLocationChange,

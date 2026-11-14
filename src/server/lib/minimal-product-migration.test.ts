@@ -63,7 +63,7 @@ describe("minimal product migration boundary", () => {
       ).toMatchObject({ tag_id: "migration-tag" });
       expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
       const snapshot = JSON.parse(
-        readFileSync(new URL("meta/0011_snapshot.json", directory), "utf8"),
+        readFileSync(new URL(`meta/${files.at(-1)!.slice(0, 4)}_snapshot.json`, directory), "utf8"),
       );
       const tableNames = db
         .prepare(

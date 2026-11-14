@@ -22,7 +22,7 @@ GoMate iOS 复用现有用户、账号及可撤销 session。原生请求通过 
 
 `POST /api/auth/native/sign-in/apple` 接收原生授权码、nonce 和可选姓名。服务端兑换一次性授权码，Better Auth 校验 ID token 的签名、issuer、audience 和 nonce。Apple 后续缺少 email 时，仅按已验证的 provider subject 查询既有账号邮箱。
 
-Better Auth 1.7.10 的 ID-token 登录路径没有自动保存 refresh token，因此受控的单次 Apple 登录实例通过账号 create/update hook 一并写入加密 refresh token。账号删除先撤销 Apple 授权，撤销失败返回可重试错误并保留账号，后续执行头像清理、个人资料匿名化及本地凭据和 session 撤销。
+Better Auth 1.7.10 的 ID-token 登录路径没有自动保存 refresh token，因此受控的单次 Apple 登录实例通过账号 create/update hook 一并写入加密 refresh token。账号删除先撤销 Apple 授权，撤销失败返回可重试错误并保留账号，后续先登记精确头像对象，再匿名化个人资料并撤销凭据和 session；未被其他记录引用的头像随后按持久化记录有界清理。成功响应不保证物理对象已经立即删除；存储失败不会恢复已匿名化账号。
 
 ## 部署配置
 

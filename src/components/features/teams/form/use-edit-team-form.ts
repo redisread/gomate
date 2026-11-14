@@ -2,7 +2,7 @@ import type { ApiResult } from "@/contracts/http-responses";
 import type { TeamResponse } from "@/contracts/team-api";
 import * as React from "react";
 import { useI18n } from "@/hooks/useI18n";
-import { fetchAPI, fetchCurrentUser, getApiErrorMessage } from "@/lib/api";
+import { fetchAPI, fetchCurrentUser, refreshCurrentUser, getApiErrorMessage } from "@/lib/api";
 import type { Team } from "@/lib/types";
 import { editTeamPayload, teamToFormData } from "./team-form-data";
 import type { EditTeamFormData } from "./team-form-data";
@@ -17,6 +17,9 @@ export function useEditTeamForm(teamId: string) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [sessionFailed, setSessionFailed] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [conflict, setConflict] = React.useState(false);
+  const ownerId = React.useRef<string | null>(null);
+  const submitting = React.useRef(false);
 
   const [formData, setFormData] = React.useState<EditTeamFormData>({
     title: "",
@@ -36,6 +39,7 @@ export function useEditTeamForm(teamId: string) {
         `/login?redirect=${encodeURIComponent(`/teams/${teamId}/edit`)}`,
       );
       if (!u) return;
+      ownerId.current = u.id;
       setIsAuthenticated(true);
 
       try {
@@ -101,13 +105,15 @@ export function useEditTeamForm(teamId: string) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!team) return;
+    if (!team || submitting.current || conflict) return;
+    submitting.current = true;
     setIsSubmitting(true);
     setError("");
 
     if (!formData.title.trim()) {
       setError(t("errors.teamNameEmpty"));
       setIsSubmitting(false);
+      submitting.current = false;
       return;
     }
 
@@ -115,6 +121,7 @@ export function useEditTeamForm(teamId: string) {
     if (isNaN(maxParticipants) || maxParticipants < 1 || maxParticipants > 49) {
       setError(t("errors.maxMembersRange"));
       setIsSubmitting(false);
+      submitting.current = false;
       return;
     }
 
@@ -125,6 +132,7 @@ export function useEditTeamForm(teamId: string) {
         }),
       );
       setIsSubmitting(false);
+      submitting.current = false;
       return;
     }
 
@@ -132,23 +140,56 @@ export function useEditTeamForm(teamId: string) {
       const res = await fetchAPI(`/teams/${teamId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editTeamPayload(formData, team.activityType)),
+        body: JSON.stringify({ ...editTeamPayload(formData, team.activityType), expectedVersion: team.version }),
       });
       const data = await res.json<ApiResult<TeamResponse>>();
       if (data.success) {
         window.location.href = `/teams/${teamId}`;
       } else {
-        setError(getApiErrorMessage(data, t("errors.editTeamSaveFailed")));
+        if (res.status === 409) setConflict(true);
+        setError(res.status === 409 ? t("teams.editConflict") : getApiErrorMessage(data, t("errors.editTeamSaveFailed")));
         setIsSubmitting(false);
+        submitting.current = false;
       }
     } catch {
       setError(t("errors.editTeamSaveFailed"));
+      setIsSubmitting(false);
+      submitting.current = false;
+    }
+  };
+
+  const loadLatest = async () => {
+    if (submitting.current || !window.confirm(t("teams.replaceEditsConfirm"))) return;
+    submitting.current = true;
+    setIsSubmitting(true);
+    try {
+      const current = await refreshCurrentUser();
+      if (!current || current.id !== ownerId.current) {
+        setSessionFailed(true);
+        return;
+      }
+      const res = await fetchAPI(`/teams/${teamId}`);
+      const data = await res.json<ApiResult<TeamResponse>>();
+      if (!data.success || !data.team || data.team.leaderId !== current.id) {
+        setError(t("errors.editTeamInfoFailed"));
+        return;
+      }
+      setTeam(data.team);
+      setFormData(teamToFormData(data.team));
+      setConflict(false);
+      setError("");
+    } catch {
+      setError(t("errors.editTeamInfoFailed"));
+    } finally {
+      submitting.current = false;
       setIsSubmitting(false);
     }
   };
 
   return {
     t,
+    conflict,
+    loadLatest,
     team,
     isLoading,
     isAuthenticated,

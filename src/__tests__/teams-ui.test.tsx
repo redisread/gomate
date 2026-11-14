@@ -33,6 +33,7 @@ function makeTeam(overrides: Partial<Team> = {}): Team {
   return {
     id: "team-1",
     locationId: "location-1",
+    version: 1,
     leaderId: "leader-1",
     activityType: "hiking",
     title: "梧桐山日出",

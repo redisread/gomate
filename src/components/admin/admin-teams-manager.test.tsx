@@ -37,6 +37,7 @@ const team: Team = {
   ...summary(),
   activityType: "hiking",
   locationId: "place",
+  version: 1,
   leaderId: "leader",
   description: "完整活动说明",
   startAt: "2026-10-12T04:00:00Z",

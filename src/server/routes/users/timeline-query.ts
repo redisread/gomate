@@ -14,6 +14,7 @@ type TeamSummaryRow = Awaited<
 function teamSummary(row: TeamSummaryRow) {
   return {
     id: row.id,
+    version: row.version,
     locationId: row.locationId,
     leaderId: row.leaderId,
     activityType: row.activityType,
@@ -44,6 +45,7 @@ const participantCount = activeTeamParticipantCount(schema.teams.id);
 
 const teamSummarySelection = {
   id: schema.teams.id,
+  version: schema.teams.version,
   locationId: schema.teams.locationId,
   leaderId: schema.teams.leaderId,
   activityType: schema.teams.activityType,

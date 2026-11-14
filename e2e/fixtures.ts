@@ -205,7 +205,7 @@ export async function createTeamAs(
   const res = await apiFetch(
     "POST",
     "/teams",
-    team as unknown as Record<string, unknown>,
+    { ...team, requestId: crypto.randomUUID() },
     user.cookie,
   );
   const teamId = res.data?.team?.id as string | undefined;

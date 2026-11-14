@@ -11,6 +11,7 @@ import {
 const BASE_TEAM = {
   id: "team-1",
   locationId: "location-1",
+  version: 1,
   leaderId: "leader-1",
   activityType: "hiking",
   title: "周末徒步",

@@ -184,10 +184,16 @@ export function EditTeamClient({ teamId }: { teamId: string }) {
             )}
           </FieldGroup>
         </TeamFormSupplementary>
+        {ctx.conflict && (
+          <Button type="button" variant="outline" disabled={ctx.isSubmitting} onClick={ctx.loadLatest}>
+            {t("teams.loadLatestTeam")}
+          </Button>
+        )}
         <TeamFormActions
           label={t("teams.editSaveBtn")}
           loadingLabel={t("common.saving")}
           loading={ctx.isSubmitting}
+          disabled={ctx.conflict}
           error={ctx.error}
           onCancel={() => {
             window.location.href = backHref;

@@ -10,6 +10,7 @@ const { fetchAPI, fetchCurrentUser, t } = vi.hoisted(() => ({
 vi.mock("@/lib/api", () => ({
   fetchAPI,
   fetchCurrentUser,
+  refreshCurrentUser: fetchCurrentUser,
   getApiErrorMessage: (_: unknown, fallback: string) => fallback,
 }));
 vi.mock("@/hooks/useI18n", () => ({ useI18n: () => ({ t }) }));
@@ -17,6 +18,7 @@ vi.mock("@/components/layout/navbar", () => ({ Navbar: () => null }));
 vi.mock("@/components/layout/footer", () => ({ Footer: () => null }));
 
 const team = {
+  version: 3,
   id: "team-1",
   leaderId: "leader",
   title: "原队伍",
@@ -71,6 +73,7 @@ describe("EditTeamClient contract", () => {
     )!;
     const payload = JSON.parse(call[1].body);
     expect(payload).toEqual({
+      expectedVersion: 3,
       title: "新队名",
       description: "新介绍",
       meetingPoint: "新入口",
@@ -141,6 +144,32 @@ describe("EditTeamClient contract", () => {
     ).toBeNull();
     expect(fetchAPI).toHaveBeenCalledTimes(1);
   });
+});
+
+it("keeps edits on conflict until the user confirms replacement with the latest version", async () => {
+  arrange();
+  let latest = false;
+  fetchAPI.mockImplementation(async (_path: string, init?: RequestInit) => ({
+    status: init?.method === "PUT" ? 409 : 200,
+    json: async () => init?.method === "PUT" ? { success: false }
+      : { success: true, team: latest ? { ...team, title: "服务器新标题", version: 4 } : team },
+  }));
+  const { title, element } = await form();
+  fireEvent.change(title, { target: { value: "我的未提交修改" } });
+  fireEvent.submit(element);
+  const reload = await screen.findByRole("button", { name: "teams.loadLatestTeam" });
+  expect(title).toHaveValue("我的未提交修改");
+  latest = true;
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+  fireEvent.click(reload);
+  expect(title).toHaveValue("我的未提交修改");
+  confirm.mockReturnValue(true);
+  fireEvent.click(reload);
+  await screen.findByDisplayValue("服务器新标题");
+  fireEvent.submit(element);
+  await waitFor(() => expect(fetchAPI.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(2));
+  expect(JSON.parse(fetchAPI.mock.calls.filter(([, init]) => init?.method === "PUT")[1][1].body).expectedVersion).toBe(4);
+  confirm.mockRestore();
 });
 
 it.each([

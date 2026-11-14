@@ -5,6 +5,7 @@ import { Navbar } from "../components/layout/navbar";
 
 const fetchCurrentUserMock = vi.fn();
 const refreshCurrentUserMock = vi.fn();
+const signOutMock = vi.fn();
 
 vi.mock("@/lib/api", () => ({
   fetchCurrentUser: (...args: unknown[]) => fetchCurrentUserMock(...args),
@@ -12,7 +13,7 @@ vi.mock("@/lib/api", () => ({
 }));
 
 vi.mock("@/lib/auth-client", () => ({
-  authClient: { signOut: vi.fn() },
+  authClient: { signOut: (...args: unknown[]) => signOutMock(...args) },
 }));
 
 vi.mock("@/hooks/useMessages", () => ({
@@ -42,6 +43,37 @@ describe("Navbar auth state", () => {
   beforeEach(() => {
     fetchCurrentUserMock.mockReset();
     refreshCurrentUserMock.mockReset();
+    signOutMock.mockReset();
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it("clears only the signing-out user's private creation after confirmed logout", async () => {
+    fetchCurrentUserMock.mockResolvedValue({ id: "user-1", name: "Tester", extra: {} });
+    sessionStorage.setItem("gomate.team-create.user-1", "private pending payload");
+    sessionStorage.setItem("gomate.team-create.other", "other pending payload");
+    sessionStorage.setItem("unrelated", "keep");
+    let resolve!: (value: unknown) => void;
+    signOutMock.mockReturnValue(new Promise((done) => { resolve = done; }));
+    render(<Navbar />);
+    fireEvent.click(await screen.findByRole("button", { name: /Tester/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "nav.logout" }));
+    expect(sessionStorage.getItem("gomate.team-create.user-1")).toBe("private pending payload");
+    await act(async () => resolve({ data: { success: true }, error: null }));
+    expect(sessionStorage.getItem("gomate.team-create.user-1")).toBeNull();
+    expect(sessionStorage.getItem("gomate.team-create.other")).toBe("other pending payload");
+    expect(sessionStorage.getItem("unrelated")).toBe("keep");
+  });
+
+  it("retains pending creation when sign-out returns an error", async () => {
+    fetchCurrentUserMock.mockResolvedValue({ id: "user-1", name: "Tester", extra: {} });
+    sessionStorage.setItem("gomate.team-create.user-1", "private pending payload");
+    signOutMock.mockResolvedValue({ data: null, error: { status: 500 } });
+    render(<Navbar />);
+    fireEvent.click(await screen.findByRole("button", { name: /Tester/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "nav.logout" }));
+    await waitFor(() => expect(signOutMock).toHaveBeenCalled());
+    expect(sessionStorage.getItem("gomate.team-create.user-1")).toBe("private pending payload");
   });
 
   it("does not flash guest actions while authentication is loading", async () => {

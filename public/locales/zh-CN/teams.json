@@ -416,5 +416,14 @@
       "cancelled": "已取消",
       "expired_unformed": "已过期 · 未成团"
     }
-  }
+  },
+  "createOutcomeUnknown": "这次创建的结果尚未确认。请重试原请求或到我的队伍核对；确认前不能修改内容再次发布。",
+  "retryOriginalCreate": "重试这次创建",
+  "checkMyTeams": "查看我的队伍",
+  "createStorageUnavailable": "无法保存本次创建记录，请允许此标签页使用浏览器存储后重试。尚未发送新请求。",
+  "editConflict": "队伍已被修改或状态发生变化。你的输入已保留，请核对最新队伍信息后再编辑。",
+  "loadLatestTeam": "读取最新队伍信息",
+  "replaceEditsConfirm": "读取最新队伍信息会替换当前未保存的输入，是否继续？",
+  "discardCheckedCreate": "已核对我的队伍，放弃本次请求",
+  "discardCheckedCreateConfirm": "请先在“我的队伍”核对这次发布。放弃只会删除此标签页的重试记录，不会删除已创建的队伍；未核对就重新发布可能重复建队。确认放弃？"
 }

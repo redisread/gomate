@@ -344,6 +344,7 @@ export const teams = sqliteTable(
   "teams",
   {
     id: text("id").notNull().primaryKey(),
+    version: integer("version").notNull().default(1),
     locationId: text("location_id")
       .notNull()
       .references(() => locations.id, { onDelete: "restrict" }),
@@ -409,6 +410,28 @@ export const teams = sqliteTable(
     ),
   ],
 );
+
+// Keep the result identity after team deletion so a lost response cannot recreate it.
+export const teamCreateRequests = sqliteTable("team_create_requests", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  requestId: text("request_id").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+  teamId: text("team_id").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [primaryKey({ columns: [table.userId, table.requestId] })]);
+
+export const mediaObjects = sqliteTable("media_objects", {
+  key: text("key").primaryKey().notNull(),
+  url: text("url").notNull(),
+  state: text("state").$type<"writing" | "ready" | "deleting" | "done" | "blocked">().notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  nextAttemptAt: integer("next_attempt_at").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => [
+  uniqueIndex("media_objects_url_unique").on(table.url),
+  index("media_objects_due_idx").on(table.state, table.nextAttemptAt),
+  check("media_objects_state_check", sql`${table.state} in ('writing','ready','deleting','done','blocked')`),
+]);
 
 export const teamMembers = sqliteTable(
   "team_members",

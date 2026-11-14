@@ -1,3 +1,4 @@
+import { readTeamCreateRequest, teamCreateFingerprint } from "../../lib/team-create-request";
 import { d1Changes } from "../../lib/d1-result";
 import { teamCookieSecurity } from "./contracts";
 import { teamSessionMiddleware } from "./session-middleware";
@@ -9,8 +10,9 @@ import {
   errorResponses,
   z,
 } from "../../lib/openapi";
-import { and, eq, gt, inArray, isNull } from "drizzle-orm";
-import { offsetDateTimeSchema } from "@/contracts/input-formats";
+import { and, eq, gt, inArray, isNull, sql } from "drizzle-orm";
+import { createTeamSchema, teamCreateInputSchema, updateTeamSchema } from "@/contracts/team-input";
+export { createTeamSchema, updateTeamSchema } from "@/contracts/team-input";
 import { ACTIVITY_TYPES } from "@/contracts";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
@@ -25,142 +27,8 @@ import { activeTeamParticipantCount } from "../../lib/team-participant-count";
 import { legacyJsonBody, validationHook } from "../../lib/openapi";
 import { toTeamResponse } from "./utils";
 
-const teamDescriptionSchema = z
-  .string()
-  .trim()
-  .max(2_000)
-  .nullable()
-  .optional()
-  .describe("队伍补充说明，可传 null 清空。");
-
-const meetingPointSchema = z
-  .string()
-  .trim()
-  .max(1000)
-  .nullable()
-  .optional()
-  .describe(
-    "集合地点说明，最多 1000 字符；null 表示清空，普通访客不可见。",
-  );
-
 const mutations = createApiApp();
-
-const activityTypeSchema = z.enum(ACTIVITY_TYPES);
 const activityTypesJson = JSON.stringify(ACTIVITY_TYPES);
-const requirementSchema = z.string().trim().min(1).max(200);
-const tagIdsSchema = z
-  .array(z.string().trim().min(1).max(100))
-  .max(20)
-  .transform((values) => [...new Set(values)]);
-
-export const createTeamSchema = z
-  .object({
-    locationId: z
-      .string()
-      .trim()
-      .min(1)
-      .max(100)
-      .describe("活动地点的全局 ID。"),
-    activityType: activityTypeSchema.describe(
-      "活动类型的稳定枚举值，与地点推荐类型无强制绑定。",
-    ),
-    title: z.string().trim().min(1).max(100),
-    description: teamDescriptionSchema,
-    meetingPoint: meetingPointSchema,
-    startAt: offsetDateTimeSchema.describe(
-      "活动开始时间，必须带时区；创建或修改时须在未来。",
-    ),
-    endAt: offsetDateTimeSchema.describe(
-      "活动结束时间，必须带时区且不早于开始时间。",
-    ),
-    maxParticipants: z
-      .number()
-      .int()
-      .min(1)
-      .max(49)
-      .describe(
-        "包含队长在内的总人数上限，范围 1–49；修改时不能低于当前有效人数。",
-      ),
-    requirements: z
-      .array(requirementSchema)
-      .max(20)
-      .default([])
-      .describe("参与要求列表，最多 20 条，每条最多 200 字符。"),
-    recruitmentStatus: z
-      .enum(["open", "closed"])
-      .default("open")
-      .describe(
-        "招募开关：open 开放、closed 关闭；实际可报名还取决于时间、取消状态和容量。",
-      ),
-    tagIds: tagIdsSchema
-      .default([])
-      .describe("完整标签 ID 列表，最多 20 个；更新时为替换语义，空数组清空。"),
-  })
-  .superRefine((value, ctx) => {
-    const startAt = Date.parse(value.startAt);
-    const endAt = Date.parse(value.endAt);
-    if (startAt <= Date.now()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["startAt"],
-        message: "startAt 必须在未来",
-      });
-    }
-    if (endAt < startAt) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["endAt"],
-        message: "endAt 不能早于 startAt",
-      });
-    }
-  });
-
-export const updateTeamSchema = z
-  .object({
-    locationId: z
-      .string()
-      .trim()
-      .min(1)
-      .max(100)
-      .optional()
-      .describe("活动地点的全局 ID。"),
-    activityType: activityTypeSchema
-      .optional()
-      .describe("活动类型的稳定枚举值，与地点推荐类型无强制绑定。"),
-    title: z.string().trim().min(1).max(100).optional(),
-    description: teamDescriptionSchema,
-    meetingPoint: meetingPointSchema,
-    startAt: offsetDateTimeSchema
-      .optional()
-      .describe("活动开始时间，必须带时区；创建或修改时须在未来。"),
-    endAt: offsetDateTimeSchema
-      .optional()
-      .describe("活动结束时间，必须带时区且不早于开始时间。"),
-    maxParticipants: z
-      .number()
-      .int()
-      .min(1)
-      .max(49)
-      .optional()
-      .describe(
-        "包含队长在内的总人数上限，范围 1–49；修改时不能低于当前有效人数。",
-      ),
-    requirements: z
-      .array(requirementSchema)
-      .max(20)
-      .optional()
-      .describe("参与要求列表，最多 20 条，每条最多 200 字符。"),
-    recruitmentStatus: z
-      .enum(["open", "closed"])
-      .optional()
-      .describe(
-        "招募开关：open 开放、closed 关闭；实际可报名还取决于时间、取消状态和容量。",
-      ),
-    tagIds: tagIdsSchema
-      .optional()
-      .describe("完整标签 ID 列表，最多 20 个；更新时为替换语义，空数组清空。"),
-  })
-  .strict();
 
 type Db = ReturnType<typeof createDb>;
 
@@ -223,7 +91,7 @@ async function validateTagIds(db: Db, tagIds: string[]): Promise<boolean> {
 mutations.openapi(
   createRoute({
     description:
-      "需要登录。地点必须公开可用，activityType 必须来自共享枚举。startAt 必须在未来，endAt 不得早于开始时间；人数上限 1–49 且包含队长。创建者成为队长，标签最多 20 个，成功返回队伍详情。",
+      "需要登录。地点必须公开可用，activityType 必须来自共享枚举。startAt 必须在未来，endAt 不得早于开始时间；人数上限 1–49 且包含队长。创建者成为队长，标签最多 20 个。requestId 为必填 UUID，同用户同身份同内容重放返回原队伍当前详情；内容不同或结果已删除返回 409。",
     method: "post",
     path: "/",
     operationId: "teamsCreate",
@@ -234,7 +102,7 @@ mutations.openapi(
     request: {
       body: {
         required: true,
-        content: { "application/json": { schema: createTeamSchema } },
+        content: { "application/json": { schema: teamCreateInputSchema } },
       },
     },
     middleware: [
@@ -256,6 +124,16 @@ mutations.openapi(
       const parsed = c.req.valid("json");
 
       const db = createDb(c.env.DB);
+      const fingerprint = await teamCreateFingerprint(parsed);
+      const prior = await readTeamCreateRequest(c.env.DB, session.user.id, parsed.requestId);
+      if (prior) {
+        if (prior.fingerprint !== fingerprint) return c.json(APIErrors.conflict("创建请求内容已变化，请先核对原队伍"), 409);
+        const team = await readTeamResponse(db, prior.team_id, true);
+        if (!team) return c.json(APIErrors.conflict("原队伍已删除，不能重放创建请求"), 409);
+        return c.json({ success: true as const, team }, 201);
+      }
+      const validated = createTeamSchema.safeParse(parsed);
+      if (!validated.success) return c.json(APIErrors.validationError("开始时间须在未来，结束时间不能早于开始时间"), 400);
       const user = await db.query.users.findFirst({
         where: eq(schema.users.id, session.user.id),
       });
@@ -286,6 +164,7 @@ mutations.openapi(
       WHERE location.id = ?
         AND location.status = 'published'
         AND ? IN (SELECT value FROM json_each(?))
+        AND NOT EXISTS (SELECT 1 FROM team_create_requests WHERE user_id = ? AND request_id = ?)
     `,
       ).bind(
         teamId,
@@ -304,6 +183,8 @@ mutations.openapi(
         data.locationId,
         data.activityType,
         activityTypesJson,
+        session.user.id,
+        parsed.requestId,
       );
       const tagStatements = data.tagIds.map((tagId) =>
         c.env.DB.prepare(
@@ -315,16 +196,22 @@ mutations.openapi(
         ).bind(teamId, tagId, now, teamId),
       );
 
-      const results = await c.env.DB.batch([createTeam, ...tagStatements]);
-      if (d1Changes(results[0]) !== 1) {
+      const recordRequest = c.env.DB.prepare(`
+        INSERT INTO team_create_requests(user_id,request_id,fingerprint,team_id,created_at)
+        SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM teams WHERE id=?)
+      `).bind(session.user.id, parsed.requestId, fingerprint, teamId, now, teamId);
+      const results = await c.env.DB.batch([createTeam, ...tagStatements, recordRequest]);
+      const committed = await readTeamCreateRequest(c.env.DB, session.user.id, parsed.requestId);
+      if (committed && committed.fingerprint !== fingerprint) return c.json(APIErrors.conflict("创建请求内容已变化，请先核对原队伍"), 409);
+      if (!committed && d1Changes(results[0]) !== 1) {
         return c.json(
           APIErrors.validationError("地点不存在、未发布或活动类型不可用"),
           422,
         );
       }
 
-      const team = await readTeamResponse(db, teamId, true);
-      if (!team) throw new Error("Created team could not be loaded");
+      const team = await readTeamResponse(db, committed?.team_id ?? teamId, true);
+      if (!team) return c.json(APIErrors.conflict("原队伍已删除，不能重放创建请求"), 409);
       return c.json({ success: true as const, team }, 201);
     } catch (error) {
       if (isConstraintError(error)) {
@@ -341,7 +228,7 @@ mutations.openapi(
 mutations.openapi(
   createRoute({
     description:
-      "仅队长可操作，队伍必须尚未开始、未成团且未取消。只修改提交字段；人数上限不能低于当前有效人数，修改时间、地点和活动类型仍需满足创建约束。并发状态变化返回 409。",
+      "仅队长可操作，队伍必须尚未开始、未成团且未取消。只修改提交字段；人数上限不能低于当前有效人数，修改时间、地点和活动类型仍需满足创建约束。expectedVersion 为必填读取版本；陈旧版本或并发状态变化返回 409，未提交字段保持原值。",
     method: "put",
     path: "/{id}",
     operationId: "teamsUpdate",
@@ -373,7 +260,7 @@ mutations.openapi(
       const session = c.get("session");
 
       const parsed = c.req.valid("json");
-      if (Object.keys(parsed).length === 0) {
+      if (Object.keys(parsed).length === 1) {
         return c.json(APIErrors.validationError("至少提供一个更新字段"), 400);
       }
 
@@ -387,20 +274,12 @@ mutations.openapi(
         return c.json(APIErrors.forbidden("只有队长可以修改队伍"), 403);
       }
 
+      if (existing.version !== parsed.expectedVersion) return c.json(APIErrors.conflict("队伍已被修改，请重新读取后确认"), 409);
       const data = parsed;
       const locationId = data.locationId ?? existing.locationId;
       const activityType = data.activityType ?? existing.activityType;
-      const title = data.title ?? existing.title;
-      const description =
-        data.description === undefined
-          ? existing.description
-          : data.description;
       const startAt = data.startAt ? new Date(data.startAt) : existing.startAt;
       const endAt = data.endAt ? new Date(data.endAt) : existing.endAt;
-      const maxParticipants = data.maxParticipants ?? existing.maxParticipants;
-      const requirements = data.requirements ?? existing.requirements;
-      const recruitmentStatus =
-        data.recruitmentStatus ?? existing.recruitmentStatus;
 
       if (startAt.getTime() <= Date.now()) {
         return c.json(APIErrors.validationError("startAt 必须在未来"), 400);
@@ -416,53 +295,25 @@ mutations.openapi(
       }
 
       const now = Date.now();
-      const updateTeam = c.env.DB.prepare(
-        `
-      UPDATE teams
-      SET location_id = ?,
-          activity_type = ?,
-          title = ?,
-          description = ?,
-          start_at = ?,
-          end_at = ?,
-          max_participants = ?,
-          requirements = ?,
-          recruitment_status = ?,
-          meeting_point = ?,
-          updated_at = ?
-      WHERE id = ?
-        AND leader_id = ?
-        AND formed_at IS NULL
-        AND cancelled_at IS NULL
-        AND start_at > ?
-        AND EXISTS (
-          SELECT 1 FROM locations AS location
-          WHERE location.id = ?
-            AND location.status = 'published'
-        )
-        AND ? IN (SELECT value FROM json_each(?))
-    `,
-      ).bind(
-        locationId,
-        activityType,
-        title,
-        description,
-        startAt.getTime(),
-        endAt.getTime(),
-        maxParticipants,
-        JSON.stringify(requirements),
-        recruitmentStatus,
-        data.meetingPoint === undefined
-          ? existing.meetingPoint
-          : data.meetingPoint,
-        now,
-        teamId,
-        session.user.id,
-        now,
-        locationId,
-        activityType,
-        activityTypesJson,
-      );
+      const changes: Record<string, string | number | null | undefined> = {
+        location_id: data.locationId, activity_type: data.activityType,
+        title: data.title, description: data.description,
+        start_at: data.startAt === undefined ? undefined : startAt.getTime(),
+        end_at: data.endAt === undefined ? undefined : endAt.getTime(),
+        max_participants: data.maxParticipants,
+        requirements: data.requirements === undefined ? undefined : JSON.stringify(data.requirements),
+        recruitment_status: data.recruitmentStatus, meeting_point: data.meetingPoint,
+      };
+      const fields = Object.entries(changes).filter((entry): entry is [string, string | number | null] => entry[1] !== undefined);
+      const updateTeam = c.env.DB.prepare(`
+        UPDATE teams SET ${fields.map(([column]) => `${column} = ?,`).join(" ")}
+          updated_at = ?, version = version + 1
+        WHERE id = ? AND leader_id = ? AND version = ?
+          AND formed_at IS NULL AND cancelled_at IS NULL AND start_at > ?
+          AND EXISTS (SELECT 1 FROM locations WHERE id = ? AND status = 'published')
+          AND ? IN (SELECT value FROM json_each(?))
+      `).bind(...fields.map(([,value]) => value), now, teamId, session.user.id,
+        data.expectedVersion, now, locationId, activityType, activityTypesJson);
 
       const statements = data.tagIds
         ? createTeamTagUpdateBatch(c.env.DB, updateTeam, {
@@ -598,7 +449,7 @@ mutations.openapi(
       const now = new Date();
       const updated = await db
         .update(schema.teams)
-        .set({ formedAt: now, recruitmentStatus: "closed", updatedAt: now })
+        .set({ formedAt: now, recruitmentStatus: "closed", updatedAt: now, version: sql`${schema.teams.version} + 1` })
         .where(
           and(
             eq(schema.teams.id, teamId),
@@ -659,7 +510,7 @@ mutations.openapi(
       const now = new Date();
       const updated = await db
         .update(schema.teams)
-        .set({ cancelledAt: now, recruitmentStatus: "closed", updatedAt: now })
+        .set({ cancelledAt: now, recruitmentStatus: "closed", updatedAt: now, version: sql`${schema.teams.version} + 1` })
         .where(
           and(
             eq(schema.teams.id, teamId),
