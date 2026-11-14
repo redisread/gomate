@@ -1,6 +1,6 @@
 import type { Env } from "./auth";
+import { beginMediaWrite, completeMediaWrite, recoverMediaObjects, registerExistingMedia } from "./media-recovery";
 import {
-  deleteR2ObjectsWithRetry,
   exactR2KeyFromPublicUrl,
   getR2PublicBaseUrl,
   mediaFilename,
@@ -26,11 +26,6 @@ export type LocationMediaValues = {
 export type PreparedLocationMedia = LocationMediaValues & {
   tempKeys: string[];
   finalKeys: string[];
-};
-
-export type LocationMediaBackup = {
-  sourceKey: string;
-  backupKey: string;
 };
 
 export async function prepareLocationMedia(
@@ -83,15 +78,17 @@ export async function prepareLocationMedia(
       }
       const extension = filename.slice(filename.lastIndexOf(".") + 1);
       const finalKey = `locations/${locationId}/${crypto.randomUUID()}.${extension}`;
+      await beginMediaWrite(env, finalKey, `${publicBaseUrl}/${finalKey}`);
       finalKeys.push(finalKey);
       await env.R2.put(finalKey, object.body, {
         httpMetadata: object.httpMetadata,
         customMetadata: object.customMetadata,
       });
+      await completeMediaWrite(env, finalKey);
       replacements.set(`${publicBaseUrl}/${tempKey}`, `${publicBaseUrl}/${finalKey}`);
     }
   } catch (error) {
-    await deleteR2ObjectsWithRetry(env.R2, [...finalKeys, ...tempKeys]).catch(
+    await recoverMediaObjects(env, Date.now(), [...finalKeys, ...tempKeys]).catch(
       () => undefined,
     );
     if (error instanceof LocationMediaError) throw error;
@@ -113,10 +110,7 @@ export async function discardPreparedLocationMedia(
   prepared: Pick<PreparedLocationMedia, "tempKeys" | "finalKeys">,
 ) {
   if (!env.R2) return;
-  await deleteR2ObjectsWithRetry(env.R2, [
-    ...prepared.finalKeys,
-    ...prepared.tempKeys,
-  ]);
+  await recoverMediaObjects(env, Date.now(), [...prepared.finalKeys, ...prepared.tempKeys]);
 }
 
 export async function finalizeLocationMedia(
@@ -125,7 +119,7 @@ export async function finalizeLocationMedia(
   staleKeys: string[] = [],
 ) {
   if (!env.R2) return;
-  await deleteR2ObjectsWithRetry(env.R2, [...prepared.tempKeys, ...staleKeys]);
+  await recoverMediaObjects(env, Date.now(), [...prepared.tempKeys, ...staleKeys]);
 }
 
 export function ownedLocationMediaKeys(
@@ -139,81 +133,9 @@ export function ownedLocationMediaKeys(
     .filter((key): key is string => Boolean(key)))];
 }
 
-/** Stream each object to a temporary R2 backup before destructive deletion. */
-export async function backupLocationMedia(
-  bucket: R2Bucket,
-  locationId: string,
-  sourceKeys: string[],
-): Promise<LocationMediaBackup[]> {
-  const operationId = crypto.randomUUID();
-  const backups: LocationMediaBackup[] = [];
-  try {
-    for (const [index, sourceKey] of sourceKeys.entries()) {
-      const object = await bucket.get(sourceKey);
-      if (!object) {
-        throw new LocationMediaError("Location media is missing", 500);
-      }
-      const filename = mediaFilename(sourceKey);
-      if (!filename) {
-        throw new LocationMediaError("Location media key is invalid", 500);
-      }
-      const backupKey = `temp/location-delete-backups/${locationId}/${operationId}/${index}-${filename}`;
-      backups.push({ sourceKey, backupKey });
-      await bucket.put(backupKey, object.body, {
-        httpMetadata: object.httpMetadata,
-        customMetadata: object.customMetadata,
-      });
-    }
-    return backups;
-  } catch (error) {
-    await deleteR2ObjectsWithRetry(
-      bucket,
-      backups.map(({ backupKey }) => backupKey),
-    ).catch(() => undefined);
-    throw error;
-  }
-}
-
-export async function discardLocationMediaBackups(
-  bucket: R2Bucket,
-  backups: LocationMediaBackup[],
-) {
-  await deleteR2ObjectsWithRetry(
-    bucket,
-    backups.map(({ backupKey }) => backupKey),
-  );
-}
-
-/** Restore selected originals from their R2 backups, then remove all backups. */
-export async function restoreLocationMediaBackups(
-  bucket: R2Bucket,
-  backups: LocationMediaBackup[],
-  retainedSourceKeys = new Set(backups.map(({ sourceKey }) => sourceKey)),
-) {
-  for (const backup of backups) {
-    if (!retainedSourceKeys.has(backup.sourceKey)) continue;
-    let restored = false;
-    let lastError: unknown;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      try {
-        const object = await bucket.get(backup.backupKey);
-        if (!object) throw new Error("Location media backup is missing");
-        await bucket.put(backup.sourceKey, object.body, {
-          httpMetadata: object.httpMetadata,
-          customMetadata: object.customMetadata,
-        });
-        restored = true;
-        break;
-      } catch (error) {
-        lastError = error;
-        if (attempt < 2) {
-          await new Promise((resolve) => {
-            setTimeout(resolve, 25 * (2 ** attempt));
-          });
-        }
-      }
-    }
-    if (!restored) throw lastError;
-  }
-  await discardLocationMediaBackups(bucket, backups);
+/** Register exact current objects before the reference-changing D1 statement. */
+export async function registerLocationMedia(env: Env, keys: string[]) {
+  const base = getR2PublicBaseUrl(env);
+  if (keys.length && !base) throw new LocationMediaError("Location media storage is not safely configured", 500);
+  for (const key of keys) await registerExistingMedia(env, key, `${base}/${key}`);
 }

@@ -303,7 +303,7 @@ function wildcardHostMatch(hostname: string, suffix: string) {
   return hostname.endsWith(`.${suffix}`) && hostname.length > suffix.length + 1;
 }
 
-function isAllowedLocationImageUrl(value: string, env: Env) {
+function isAllowedLocationImageUrl(value: string, env: Pick<Env, "R2_PUBLIC_URL">) {
   let url: URL;
   try {
     url = new URL(value);
@@ -314,7 +314,12 @@ function isAllowedLocationImageUrl(value: string, env: Env) {
 
   const exactHosts = new Set(["gomate.cos.jiahongw.com", "cdn.discordapp.com"]);
   try {
-    exactHosts.add(new URL(env.R2_PUBLIC_URL).hostname);
+    const managedHost = new URL(env.R2_PUBLIC_URL).hostname;
+    if (url.hostname === managedHost && (
+      url.toString() !== value || url.search || url.hash || url.username ||
+      url.password || url.pathname.includes("%")
+    )) return false;
+    exactHosts.add(managedHost);
   } catch {
     // A malformed optional binding never expands the allowlist.
   }
@@ -329,7 +334,7 @@ function isAllowedLocationImageUrl(value: string, env: Env) {
 
 export function locationImagesAreAllowed(
   input: { coverImageUrl: string | null; images: string[] },
-  env: Env,
+  env: Pick<Env, "R2_PUBLIC_URL">,
 ) {
   return [input.coverImageUrl, ...input.images]
     .filter((url): url is string => url !== null)

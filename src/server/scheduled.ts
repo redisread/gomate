@@ -1,5 +1,6 @@
 import type { WorkerEnv } from "./env";
 import { logger } from "./lib/logger";
+import { recoverMediaObjects } from "./lib/media-recovery";
 
 export async function scheduled(
   controller: ScheduledController,
@@ -12,6 +13,7 @@ export async function scheduled(
   }
 
   const now = controller.scheduledTime;
+  let failed = false;
   try {
     // A formed team is already completed after end_at. Recheck eligibility in
     // the write itself so concurrent formation, closure or date edits win safely.
@@ -30,6 +32,13 @@ export async function scheduled(
     logger.info("team_auto_close_completed", { count: result.meta.changes });
   } catch (error) {
     logger.error("team_auto_close_failed", error);
-    throw error;
+    failed = true;
   }
+  try {
+    await recoverMediaObjects(env, now);
+  } catch (error) {
+    logger.error("media_recovery_batch_failed", error);
+    failed = true;
+  }
+  if (failed) throw new Error("Scheduled maintenance failed");
 }

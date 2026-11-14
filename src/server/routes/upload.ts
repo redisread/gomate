@@ -15,7 +15,8 @@ import {
 } from "../lib/avatar-media";
 import { generateId } from "../lib/id";
 import { logger } from "../lib/logger";
-import { deleteR2ObjectsWithRetry, getR2PublicBaseUrl } from "../lib/r2-media";
+import { getR2PublicBaseUrl } from "../lib/r2-media";
+import { beginMediaWrite, completeMediaWrite, registerExistingMedia, recoverMediaObjects } from "../lib/media-recovery";
 import {
   createApiApp,
   createRoute,
@@ -338,18 +339,18 @@ upload.post("/avatar", async (c) => {
     if (!currentUser) return c.json(APIErrors.unauthorized("请先登录"), 401);
 
     const objectId = generateId();
-    const tempKey = `temp/avatars/${session.user.id}/${objectId}.${ext}`;
     const finalKey = `avatars/${session.user.id}/${objectId}.${ext}`;
-    createdKeys.push(tempKey);
-    await storage.bucket.put(tempKey, buffer, {
-      httpMetadata: { contentType },
-    });
-    createdKeys.push(finalKey);
-    await storage.bucket.put(finalKey, buffer, {
-      httpMetadata: { contentType },
-    });
-
     const url = uploadUrl(c, storage.publicBaseUrl, finalKey);
+    await beginMediaWrite(c.env, finalKey, url);
+    createdKeys.push(finalKey);
+    await storage.bucket.put(finalKey, buffer, { httpMetadata: { contentType } });
+    await completeMediaWrite(c.env, finalKey);
+    const previousKey = currentUser.image
+      ? ownedAvatarKeyFromStoredValue(c.env, new URL(c.req.raw.url), currentUser.image, session.user.id)
+      : null;
+    if (previousKey) {
+      await registerExistingMedia(c.env, previousKey, uploadUrl(c, storage.publicBaseUrl, previousKey));
+    }
     const imageUnchanged =
       currentUser.image === null
         ? isNull(schema.users.image)
@@ -367,30 +368,16 @@ upload.post("/avatar", async (c) => {
       )
       .returning({ image: schema.users.image });
     if (updated.length !== 1) {
-      await deleteR2ObjectsWithRetry(storage.bucket, createdKeys);
+      await recoverMediaObjects(c.env, Date.now(), createdKeys);
       return c.json(APIErrors.conflict("Avatar changed concurrently"), 409);
     }
 
     // From this point D1 owns the final key. Never include it in a generic
-    // rollback if deletion of the temporary or previous object later fails.
+    // rollback if deletion of the previous object later fails.
     createdKeys.length = 0;
 
-    const previousKey = currentUser.image
-      ? ownedAvatarKeyFromStoredValue(
-          c.env,
-          new URL(c.req.raw.url),
-          currentUser.image,
-          session.user.id,
-        )
-      : null;
-    await deleteR2ObjectsWithRetry(storage.bucket, [
-      tempKey,
-      ...(previousKey && previousKey !== finalKey ? [previousKey] : []),
-    ]).catch((cleanupError: unknown) => {
-      logger.error("avatar_media_cleanup_failed", {
-        errorType:
-          cleanupError instanceof Error ? cleanupError.name : "UnknownR2Error",
-      });
+    await recoverMediaObjects(c.env, Date.now(), previousKey ? [previousKey] : []).catch(() => {
+      logger.error("avatar_media_cleanup_failed");
     });
 
     return c.json({
@@ -404,7 +391,7 @@ upload.post("/avatar", async (c) => {
     if (error instanceof UploadRequestError)
       return requestErrorResponse(c, error);
     if (createdKeys.length > 0 && c.env.R2) {
-      await deleteR2ObjectsWithRetry(c.env.R2, createdKeys).catch(
+      await recoverMediaObjects(c.env, Date.now(), createdKeys).catch(
         () => undefined,
       );
     }
@@ -434,7 +421,7 @@ const avatarSessionBoundary: import("hono").MiddlewareHandler<ApiEnv> = async (
 
 const deleteAvatarContract = createRoute({
   description:
-    "需要登录，查询参数 key 必须与当前用户正在使用的头像对象一致。对象不属于当前用户、头像已移除或并发替换均返回 403。成功清空头像引用并删除对象后返回 { success: true }；重复删除需先查询当前头像状态，不能直接视为成功。对象清理失败时尝试有条件地恢复引用并返回 500。",
+    "需要登录，查询参数 key 必须与当前用户正在使用的头像对象一致。对象不属于当前用户、头像已移除或并发替换均返回 403。成功清空头像引用并删除对象后返回 { success: true }；重复删除需先查询当前头像状态，不能直接视为成功。引用移除后由持久化清理记录删除对象；清理暂时失败由定时恢复重试，不恢复已移除引用。",
   method: "delete",
   path: "/avatar",
   operationId: "deleteAvatar",
@@ -486,6 +473,10 @@ upload.openapi(
         return c.json(APIErrors.forbidden("无权删除该文件"), 403);
       }
 
+      const publicBaseUrl = getR2PublicBaseUrl(c.env);
+      if (!publicBaseUrl) return c.json(APIErrors.internalError("R2 storage is not safely configured"), 500);
+      await registerExistingMedia(c.env, key, uploadUrl(c, publicBaseUrl, key));
+
       const cleared = await db
         .update(schema.users)
         .set({ image: null, updatedAt: new Date() })
@@ -500,25 +491,9 @@ upload.openapi(
         return c.json(APIErrors.forbidden("头像已变化，请刷新后重试"), 403);
       }
 
-      try {
-        await deleteR2ObjectsWithRetry(c.env.R2, [key]);
-      } catch (error) {
-        // Restore the reference only if no concurrent replacement occurred.
-        const restored = await db
-          .update(schema.users)
-          .set({ image: userRecord.image, updatedAt: new Date() })
-          .where(
-            and(
-              eq(schema.users.id, session.user.id),
-              isNull(schema.users.image),
-            ),
-          )
-          .returning({ id: schema.users.id });
-        if (restored.length === 0) {
-          await deleteR2ObjectsWithRetry(c.env.R2, [key]);
-        }
-        throw error;
-      }
+      await recoverMediaObjects(c.env, Date.now(), [key]).catch(() => {
+        logger.error("avatar_media_cleanup_failed");
+      });
       return c.json({ success: true as const }, 200);
     } catch (error) {
       logger.error("avatar_delete_failed", {
@@ -550,10 +525,12 @@ upload.post("/location", async (c) => {
       c.env.IMAGES,
     );
     const key = `temp/locations/${admin.id}/${generateId()}.${ext}`;
+    await beginMediaWrite(c.env, key, `${storage.publicBaseUrl}/${key}`);
     attemptedKey = key;
     await storage.bucket.put(key, buffer, {
       httpMetadata: { contentType },
     });
+    await completeMediaWrite(c.env, key);
     return c.json({
       success: true,
       key,
@@ -568,7 +545,7 @@ upload.post("/location", async (c) => {
     if (error instanceof UploadRequestError)
       return requestErrorResponse(c, error);
     if (attemptedKey && c.env.R2) {
-      await deleteR2ObjectsWithRetry(c.env.R2, [attemptedKey]).catch(
+      await recoverMediaObjects(c.env, Date.now(), [attemptedKey]).catch(
         () => undefined,
       );
     }

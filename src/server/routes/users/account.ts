@@ -4,7 +4,8 @@ import { symmetricDecrypt } from "better-auth/crypto";
 import { revokeAppleToken } from "../../lib/apple-auth";
 import { eraseAccount } from "../../lib/account-erasure";
 import { ownedAvatarKeyFromStoredValue } from "../../lib/avatar-media";
-import { deleteR2ObjectsWithRetry } from "../../lib/r2-media";
+import { getR2PublicBaseUrl } from "../../lib/r2-media";
+import { registerExistingMedia, recoverMediaObjects } from "../../lib/media-recovery";
 import { logger } from "../../lib/logger";
 import { createDb } from "../../db";
 import * as schema from "../../db/schema";
@@ -33,7 +34,7 @@ const deleteAccountSchema = z
 account.openapi(
   createRoute({
     description:
-      '需要登录，JSON body 必须为 {"confirmation":"DELETE"}。先清理自有头像，再匿名化账号并撤销全部登录凭证和会话；历史队伍关联保留。该操作不可通过再次登录撤销。',
+      '需要登录，JSON body 必须为 {"confirmation":"DELETE"}。先登记自有头像的清理身份，再匿名化账号并撤销全部登录凭证和会话；历史队伍关联保留。未被其他记录引用的头像随后有界清理，成功不代表物理对象已立即删除。该操作不可通过再次登录撤销。',
     method: "delete",
     path: "/me",
     operationId: "usersDeleteMe",
@@ -101,7 +102,9 @@ account.openapi(
         return c.json(APIErrors.serviceUnavailable("头像存储暂不可用"), 503);
       }
       try {
-        await deleteR2ObjectsWithRetry(c.env.R2, [avatarKey]);
+        const base = getR2PublicBaseUrl(c.env);
+        if (!base) throw new Error("Media storage is not safely configured");
+        await registerExistingMedia(c.env, avatarKey, `${base}/${avatarKey}`);
       } catch (error) {
         logger.error("account_avatar_cleanup_failed", {
           errorType: error instanceof Error ? error.name : "UnknownR2Error",
@@ -116,6 +119,9 @@ account.openapi(
         currentEmail: user.email,
         now: Date.now(),
       });
+      await recoverMediaObjects(c.env, Date.now(), avatarKey ? [avatarKey] : []).catch(() => {
+        logger.error("account_avatar_cleanup_failed");
+      });
       return c.json({ success: true as const }, 200);
     } catch (error) {
       const current = await c.env.DB.prepare(
@@ -125,6 +131,10 @@ account.openapi(
         .first<{ status: string; email: string }>()
         .catch(() => null);
       if (current?.status === "deleted" && current.email === deletedEmail) {
+        // A committed batch with a lost/ambiguous response still owns cleanup.
+        await recoverMediaObjects(c.env, Date.now(), avatarKey ? [avatarKey] : []).catch(() => {
+          logger.error("account_avatar_cleanup_failed");
+        });
         return c.json({ success: true as const }, 200);
       }
       logger.error("account_erasure_failed", {

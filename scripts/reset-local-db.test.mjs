@@ -9,8 +9,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const WRANGLER = path.join(ROOT, "node_modules", ".bin", "wrangler");
 const EXPECTED_TABLES = [
-  "accounts", "d1_migrations", "location_tags", "locations", "region",
-  "sessions", "tags", "team_members", "team_tags", "teams", "users", "verifications",
+  "accounts", "d1_migrations", "location_tags", "locations", "media_objects", "region",
+  "sessions", "tags", "team_create_requests", "team_members", "team_tags", "teams", "users", "verifications",
 ];
 
 function run(command, args, options = {}) {
@@ -102,7 +102,7 @@ test("binding-level reset removes unknown tables and rebuilds exactly v3", () =>
       location_count: 37,
       tag_count: 3,
       location_tag_count: 3,
-      migration_count: 13,
+      migration_count: 14,
       retained_v3_location_count: 1,
       wutongshan_cover_url:
         "https://gomate.cos.jiahongw.com/locations/hiking/wutong-mountain/wutongshan_01.jpg",

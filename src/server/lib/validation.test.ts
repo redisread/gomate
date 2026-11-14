@@ -243,7 +243,7 @@ it("accepts the existing compact timezone offset on team updates", async () => {
     },
     validationHook("Invalid input", "issues"),
   );
-  const body = { startAt: "2030-01-01T10:00:00+0800" };
+  const body = { expectedVersion: 1, startAt: "2030-01-01T10:00:00+0800" };
   const response = await app.request("/", {
     method: "PUT",
     body: JSON.stringify(body),

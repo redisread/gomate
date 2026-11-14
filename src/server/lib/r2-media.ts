@@ -57,37 +57,6 @@ export function ownedFinalLocationKey(
   return MEDIA_FILENAME.test(filename) ? key : null;
 }
 
-/**
- * R2 delete is idempotent. Retrying the same exact keys is therefore the
- * safest compensation available without adding a twentieth persistence table.
- */
-export async function deleteR2ObjectsWithRetry(
-  bucket: R2Bucket,
-  keys: string[],
-  attempts = 3,
-): Promise<void> {
-  const uniqueKeys = [...new Set(keys)];
-  if (uniqueKeys.length === 0) return;
-
-  let lastError: unknown;
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    try {
-      await bucket.delete(uniqueKeys);
-      return;
-    } catch (error) {
-      lastError = error;
-      if (attempt + 1 < attempts) {
-        await new Promise((resolve) => {
-          setTimeout(resolve, 25 * (2 ** attempt));
-        });
-      }
-    }
-  }
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("R2 media compensation failed");
-}
-
 export function mediaFilename(key: string): string | null {
   const filename = key.slice(key.lastIndexOf("/") + 1);
   return MEDIA_FILENAME.test(filename) ? filename : null;

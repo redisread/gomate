@@ -86,6 +86,12 @@
       "sha256": "4008ded1260448db0e51b6dcb8a0325dbb346dd8b1429ea30bc4e6c3ac1533ac",
       "phase": "expand",
       "enabled": true
+    },
+    {
+      "name": "0013_write_reliability.sql",
+      "sha256": "20b431fb78c7cd8ee25ada55192b74d346dc3c98d9bbb7806645239e6bb3e22b",
+      "phase": "expand",
+      "enabled": true
     }
   ]
 }

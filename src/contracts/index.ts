@@ -160,6 +160,7 @@ export type TeamParticipant = z.infer<typeof TeamParticipantSchema>;
 
 export const TeamSchema = z.object({
   id: z.string(),
+  version: z.number().int().min(1),
   locationId: z.string(),
   leaderId: z.string(),
   activityType: ActivityTypeSchema,

@@ -19,19 +19,15 @@ import { APIErrors } from "../../lib/api-errors";
 import { generateId } from "../../lib/id";
 import { logger } from "../../lib/logger";
 import {
-  backupLocationMedia,
-  discardLocationMediaBackups,
   discardPreparedLocationMedia,
   finalizeLocationMedia,
   LocationMediaError,
   ownedLocationMediaKeys,
   prepareLocationMedia,
-  restoreLocationMediaBackups,
-  type LocationMediaBackup,
+  registerLocationMedia,
   type PreparedLocationMedia,
 } from "../../lib/location-media";
 import {
-  deleteR2ObjectsWithRetry,
   getR2PublicBaseUrl,
 } from "../../lib/r2-media";
 import { ACTIVITY_TYPES } from "@/contracts";
@@ -49,6 +45,7 @@ import {
   updateLocationInputSchema,
 } from "./utils";
 import { buildLocationUpdateSql } from "./update-sql";
+import { recoverMediaObjects } from "../../lib/media-recovery";
 
 const mutations = createApiApp();
 const locationResultSchema = z.object({
@@ -350,6 +347,9 @@ mutations.openapi(
         );
       }
 
+      await registerLocationMedia(c.env, ownedLocationMediaKeys(c.env, id, {
+        coverImageUrl: existing.coverImageUrl, images: existing.images,
+      }));
       preparedMedia = await prepareLocationMedia(
         c.env,
         admin.id,
@@ -535,9 +535,6 @@ mutations.openapi(
     },
   }),
   async (c) => {
-    let mediaBackups: LocationMediaBackup[] = [];
-    let originalsRemovalAttempted = false;
-    let databaseDeleted = false;
     try {
       const query = c.req.valid("query");
       const db = createDb(c.env.DB);
@@ -620,21 +617,7 @@ mutations.openapi(
         );
       }
 
-      if (mediaKeys.length > 0) {
-        if (!c.env.R2) {
-          return c.json(
-            APIErrors.internalError("Location media storage is not configured"),
-            500,
-          );
-        }
-        mediaBackups = await backupLocationMedia(
-          c.env.R2,
-          locationId,
-          mediaKeys,
-        );
-        originalsRemovalAttempted = true;
-        await deleteR2ObjectsWithRetry(c.env.R2, mediaKeys);
-      }
+      await registerLocationMedia(c.env, mediaKeys);
 
       const deleted = await db
         .delete(schema.locations)
@@ -648,60 +631,19 @@ mutations.openapi(
         )
         .returning({ id: schema.locations.id });
       if (deleted.length === 0) {
-        // A concurrent media update won the conditional DML. Restore only keys
-        // that its current version still references; the rest are stale.
-        const [current] = await db
-          .select({
-            coverImageUrl: schema.locations.coverImageUrl,
-            images: schema.locations.images,
-          })
-          .from(schema.locations)
-          .where(eq(schema.locations.id, locationId))
-          .limit(1);
-        if (c.env.R2) {
-          const retainedKeys = new Set(
-            current ? ownedLocationMediaKeys(c.env, locationId, current) : [],
-          );
-          await restoreLocationMediaBackups(
-            c.env.R2,
-            mediaBackups,
-            retainedKeys,
-          );
-        }
-        originalsRemovalAttempted = false;
         return c.json(
           APIErrors.conflict("Location changed concurrently", {
             reason: "location_changed_concurrently" satisfies AdminErrorReason,
-          }),
-          409,
+          }), 409,
         );
       }
-      databaseDeleted = true;
-      originalsRemovalAttempted = false;
-      if (c.env.R2) {
-        await discardLocationMediaBackups(c.env.R2, mediaBackups).catch(
-          (cleanupError: unknown) =>
-            logger.error(
-              "location_delete_media_backup_cleanup_failed",
-              safeErrorMetadata(cleanupError),
-            ),
-        );
-      }
+      // D1 is authoritative: never remove an object before its reference is gone.
+      // Registration happened before the DML, so interruption leaves recovery work.
+      await recoverMediaObjects(c.env, Date.now(), mediaKeys).catch(() => {
+        logger.error("location_delete_media_cleanup_failed");
+      });
       return c.json({ success: true as const, id: deleted[0].id }, 200);
     } catch (error) {
-      if (!databaseDeleted && originalsRemovalAttempted && c.env.R2) {
-        await restoreLocationMediaBackups(c.env.R2, mediaBackups).catch(
-          (restoreError: unknown) =>
-            logger.error(
-              "location_delete_media_rollback_failed",
-              safeErrorMetadata(restoreError),
-            ),
-        );
-      } else if (!databaseDeleted && mediaBackups.length > 0 && c.env.R2) {
-        await discardLocationMediaBackups(c.env.R2, mediaBackups).catch(
-          () => undefined,
-        );
-      }
       logger.error("location_delete_failed", safeErrorMetadata(error));
       return c.json(APIErrors.internalError("Failed to delete location"), 500);
     }

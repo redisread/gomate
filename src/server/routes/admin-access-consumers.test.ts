@@ -77,7 +77,10 @@ const images = {
 } as unknown as ImagesBinding;
 
 const env = {
-  DB: {} as D1Database,
+  DB: { prepare: vi.fn(() => ({
+    bind: vi.fn(() => ({ run: vi.fn().mockResolvedValue({ meta: { changes: 1 } }) })),
+  })) } as unknown as D1Database,
+  WRITE_MODE: "open",
   R2: r2,
   IMAGES: images,
   R2_PUBLIC_URL: "https://media.example.com",

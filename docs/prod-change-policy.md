@@ -11,6 +11,7 @@
   时跳过所有定时写入；恢复开放后下一次扫描补处理积压。配置随受保护的 main 流水线发布，
   不通过本机或 Dashboard 手工补写。日志事件为 `team_auto_close_completed`（含 count）、
   `team_auto_close_skipped`、`team_auto_close_failed`；失败抛出供平台记录。
+- 同一 Cron 在关闭队伍后执行登记媒体恢复：每批最多 32 条，R2 删除最多 8 次，protected 模式不读写恢复记录或对象。只处理新流程登记的精确 `avatars/`、`locations/`、`temp/locations/` 对象，不按前缀扫描或清理历史备份；未知 put 或预算耗尽转 blocked，由受保护流程另行核对。媒体回滚必须先 protected 并停止恢复，再确认旧代码与永久 tombstone 的关系；不能恢复允许重新引用已删对象的旧行为。
 - Worker 入口：`src/worker.ts`
 - API：同源 `/api/*`，进程内交给 `src/server/app.ts`
 - D1：binding `DB`，目标数据库 `gomate-db-v3`（生产数据库必须由受保护环境按名称绑定；仓库不携带旧数据库 UUID）
@@ -27,7 +28,7 @@
 `production` 环境显式绑定线上 Worker、D1、R2 和 route。根配置不再指向任何生产资源，
 生产命令必须显式传入 `--env production`。
 
-仓库历史 baseline 为 19 张业务表、13 个触发器；完整本地 contract 迁移后为 11 张核心表，
+仓库历史 baseline 为 19 张业务表、13 个触发器；`0011` contract 迁移后为 11 张核心表，`0013` expand 后为 13 张应用表，
 生产获准前缀现已包含完整 contract 链。稳定 Region ID `region-cn`、`region-cn-guangdong`、
 `region-cn-shenzhen` 由参考目录管理。实际生产 migration 状态必须从只读 inventory 验证，
 不能由仓库文件推断。阶段区别见[数据库文档](database.md#迁移与发布阶段)。
