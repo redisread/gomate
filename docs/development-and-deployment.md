@@ -71,16 +71,23 @@ CI 模式使用 `pnpm test:e2e:ci`；交互式调试使用 `pnpm exec playwright
 
 ### PR CI 执行方式
 
-Worker CI 对目标为 main 的 PR 并行执行四类门禁，每个命令单独显示耗时。
+Worker CI 对目标为 main 的 PR 先分类完整 diff，再并行执行五类门禁，每个命令单独显示耗时。
 
-- `checks` 执行生产依赖审计、locale 生成与校验、构建护栏、迁移元数据、lint、TypeScript/Astro、前端及服务端单元测试和生成类型一致性校验。
+- `checks` 执行生产依赖审计、locale 生成与校验、构建护栏、迁移元数据、lint、TypeScript/Astro 和生成类型一致性校验。
+- `unit` 生成 locale 后执行前端及服务端单元测试。
 - `database` 执行完整的真实 D1 重置与迁移回归。
 - `worker` 生成 locale 后构建 production Worker，执行 Workers 集成测试、bundle dry-run 和体积预算。
-- `e2e` 使用两个 Chromium shard，每个 shard 保持一个 Playwright worker，并独立初始化本地 D1/R2、构建和启动本地应用。文件内测试顺序由现有 Playwright 配置保持。
+- `e2e` 使用六个 Chromium shard，每个 shard 保持一个 Playwright worker，并独立初始化本地 D1/R2、构建和启动本地应用。文件内测试顺序由现有 Playwright 配置保持。
 
-必需检查 `validate` 等待上述 jobs，并仅在全部成功时通过。失败、取消及跳过均阻止通过；E2E 的一个 shard 失败时另一个仍完成诊断。`pnpm test:ci` 保留本地完整应用门禁，CI 政策回归检查每个子命令仍出现在工作流中，并执行聚合脚本验证失败状态。
+纯文档 PR 仅允许根目录 README、AGENTS、CLAUDE、CODING_STANDARDS、LESSONS、REVIEW 的 `.md` 文件及 `docs/**/*.md`。分类比较触发事件固定的 base/head SHA，重跑旧运行仍检查原版本。分类同时核对重命名前的路径和 API 文件总数，达到 Compare API 的 300 文件上限、未知路径或不完整列表执行全量检查。API 失败会阻止通过。工作流始终触发，避免必需检查因 workflow 层路径过滤停留在 Pending。
+
+必需检查 `validate` 要求分类成功，代码 PR 的全部 jobs 成功，纯文档 PR 的全部重任务按预期跳过。失败、取消、缺失结果和意外跳过均阻止通过；E2E 的一个 shard 失败时其他 shard 仍完成诊断。`pnpm test:ci` 保留本地完整应用门禁，CI 政策回归检查每个子命令仍出现在工作流中，并执行聚合脚本验证失败状态。
+
+同一 PR 的连续提交使用 `cancel-in-progress` 取消旧运行；非 PR 使用独立 run ID，避免取消 main 提交。Actions 仍仅验证目标为 main 的 PR，main 的受保护发布由 Workers Builds 完成。依赖只使用 setup-node 的 pnpm store 缓存，保留锁文件安装；Playwright 使用匹配版本的预编译镜像。
 
 每个 shard 的 HTML/JSON 报告及失败截图、trace 上传为独立 artifact，保留 7 天。产物只包含本地隔离测试生成的 `e2e-report/` 和 `test-results/`。比较优化效果时同时记录 PR 等待时间、各 job 排队/运行耗时、总 runner-minutes、首次通过率及缓存命中情况。
+
+端到端等待从本次运行的创建时间算到 `validate` 完成，重跑使用对应 attempt 的时间。job 排队从依赖就绪算到启动，上游依赖等待单列；安装、容器、locale、构建及浏览器服务启动计入准备，检查与测试计入执行，报告上传和清理单列。工作流 `updated_at` 可能受后续事件影响，不用于代替完成时间。历史不同版本样本与同应用版本的对照分开统计，同时保留失败和取消记录。
 
 production 构建和 E2E 本地构建使用各自的绑定配置与工作目录。工作流定义见 [ci.yml](../.github/workflows/ci.yml)，原有完整本地入口见 [package.json](../package.json)。
 

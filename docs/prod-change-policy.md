@@ -149,8 +149,11 @@ pnpm worker:size
 pnpm test:e2e:ci
 ```
 
-GitHub PR CI 会在 `pnpm test:ci`、Worker types/dry-run/size 通过后初始化 runner 临时 D1，
-再自动执行 `pnpm test:e2e:ci`；该流程不持有 Cloudflare 生产凭据，也不访问远程 D1/R2。
+GitHub PR CI 对代码变更并行执行 `pnpm test:ci` 对应的全部门禁、Worker types/dry-run/size
+及六分片 `pnpm test:e2e:ci`。每个浏览器分片独立初始化 runner 临时 D1，聚合 `validate`
+要求全部预期任务成功。纯文档变更仅执行路径分类与聚合，具体范围及失败处理见
+[PR CI 执行方式](development-and-deployment.md#pr-ci-执行方式)。该流程不持有 Cloudflare
+生产凭据，也不访问远程 D1/R2。
 本地检查必须记录实际完成的验证和未执行项。检查通过只说明代码具备合并条件，不等于获得生产写入授权。
 
 ### Google OAuth 运行时配置
