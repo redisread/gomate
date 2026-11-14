@@ -254,4 +254,34 @@ describe("durable media recovery", () => {
     expect(await state()).toBe("done");
   });
 
+  const c0Aliases = Array.from({ length: 33 }, (_, code) => {
+    const control = String.fromCharCode(code);
+    const label = `U+${code.toString(16).padStart(4, "0")}`;
+    return [
+      { label: `${label} prefix`, alias: `${control}${url}` },
+      { label: `${label} suffix`, alias: `${url}${control}` },
+      { label: `${label} mixed`, alias: `${String.fromCharCode(0, 1, 8)}${control}${url}${control}${String.fromCharCode(11, 12, 31, 32)}` },
+    ];
+  }).flat();
+
+  it.each(c0Aliases)("preserves every URL-parser C0 alias: $label", async ({ alias }) => {
+    // Prove this is an alias of the same object, not merely malformed input.
+    expect(new URL(alias).href).toBe(url);
+    await env.DB.prepare("UPDATE locations SET cover_image_url=? WHERE id=(SELECT id FROM locations LIMIT 1)")
+      .bind(alias).run();
+    await registerExistingMedia(bindings(), key, url, now);
+    await env.R2.put(key, "image");
+    await recoverMediaObjects(bindings(), now + 2 * 86_400_000);
+    expect(await env.R2.head(key)).not.toBeNull();
+    expect(await state()).toBe("ready");
+  });
+
+  it.each(c0Aliases)("fences every URL-parser C0 alias: $label", async ({ alias }) => {
+    expect(new URL(alias).href).toBe(url);
+    await registerExistingMedia(bindings(), key, url, now);
+    await env.DB.prepare("UPDATE media_objects SET state='deleting' WHERE key=?").bind(key).run();
+    await expect(env.DB.prepare("UPDATE locations SET images=? WHERE id=(SELECT id FROM locations LIMIT 1)")
+      .bind(JSON.stringify([alias])).run()).rejects.toThrow(/media_reference_unavailable/);
+  });
+
 });

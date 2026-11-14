@@ -32,8 +32,8 @@ WHEN EXISTS (
  OR (
     (reference.value GLOB '*[?#%]*' OR reference.value LIKE '%/../%' OR
       reference.value LIKE '%/./%' OR instr(reference.value, char(92)) > 0 OR
-      instr(reference.value, char(9)) > 0 OR instr(reference.value, char(10)) > 0 OR
-      instr(reference.value, char(13)) > 0 OR trim(reference.value) != reference.value)
+      instr(CAST(reference.value AS BLOB), x'00') > 0 OR
+      reference.value GLOB ('*[' || char(1) || '-' || char(32) || ']*'))
     AND NOT EXISTS (
       SELECT 1 FROM (SELECT lower(substr(substr(reference.value, instr(reference.value, '://') + 3), 1, instr(substr(reference.value, instr(reference.value, '://') + 3), '/') - 1)) AS external_host,
         lower(substr(substr(media.url, instr(media.url, '://') + 3), 1, instr(substr(media.url, instr(media.url, '://') + 3), '/') - 1)) AS managed_authority)
@@ -61,8 +61,8 @@ WHEN EXISTS (
  OR (
     (reference.value GLOB '*[?#%]*' OR reference.value LIKE '%/../%' OR
       reference.value LIKE '%/./%' OR instr(reference.value, char(92)) > 0 OR
-      instr(reference.value, char(9)) > 0 OR instr(reference.value, char(10)) > 0 OR
-      instr(reference.value, char(13)) > 0 OR trim(reference.value) != reference.value)
+      instr(CAST(reference.value AS BLOB), x'00') > 0 OR
+      reference.value GLOB ('*[' || char(1) || '-' || char(32) || ']*'))
     AND NOT EXISTS (
       SELECT 1 FROM (SELECT lower(substr(substr(reference.value, instr(reference.value, '://') + 3), 1, instr(substr(reference.value, instr(reference.value, '://') + 3), '/') - 1)) AS external_host,
         lower(substr(substr(media.url, instr(media.url, '://') + 3), 1, instr(substr(media.url, instr(media.url, '://') + 3), '/') - 1)) AS managed_authority)
@@ -90,8 +90,8 @@ WHEN EXISTS (
  OR (
     (reference.value GLOB '*[?#%]*' OR reference.value LIKE '%/../%' OR
       reference.value LIKE '%/./%' OR instr(reference.value, char(92)) > 0 OR
-      instr(reference.value, char(9)) > 0 OR instr(reference.value, char(10)) > 0 OR
-      instr(reference.value, char(13)) > 0 OR trim(reference.value) != reference.value)
+      instr(CAST(reference.value AS BLOB), x'00') > 0 OR
+      reference.value GLOB ('*[' || char(1) || '-' || char(32) || ']*'))
     AND NOT EXISTS (
       SELECT 1 FROM (SELECT lower(substr(substr(reference.value, instr(reference.value, '://') + 3), 1, instr(substr(reference.value, instr(reference.value, '://') + 3), '/') - 1)) AS external_host,
         lower(substr(substr(media.url, instr(media.url, '://') + 3), 1, instr(substr(media.url, instr(media.url, '://') + 3), '/') - 1)) AS managed_authority)
@@ -119,8 +119,8 @@ WHEN EXISTS (
  OR (
     (reference.value GLOB '*[?#%]*' OR reference.value LIKE '%/../%' OR
       reference.value LIKE '%/./%' OR instr(reference.value, char(92)) > 0 OR
-      instr(reference.value, char(9)) > 0 OR instr(reference.value, char(10)) > 0 OR
-      instr(reference.value, char(13)) > 0 OR trim(reference.value) != reference.value)
+      instr(CAST(reference.value AS BLOB), x'00') > 0 OR
+      reference.value GLOB ('*[' || char(1) || '-' || char(32) || ']*'))
     AND NOT EXISTS (
       SELECT 1 FROM (SELECT lower(substr(substr(reference.value, instr(reference.value, '://') + 3), 1, instr(substr(reference.value, instr(reference.value, '://') + 3), '/') - 1)) AS external_host,
         lower(substr(substr(media.url, instr(media.url, '://') + 3), 1, instr(substr(media.url, instr(media.url, '://') + 3), '/') - 1)) AS managed_authority)
