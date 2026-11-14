@@ -416,5 +416,14 @@
       "cancelled": "Cancelled",
       "expired_unformed": "Expired · Unconfirmed"
     }
-  }
+  },
+  "createOutcomeUnknown": "The result of this creation is not confirmed. Retry the original request or check My teams before changing and submitting again.",
+  "retryOriginalCreate": "Retry this creation",
+  "checkMyTeams": "Check My teams",
+  "createStorageUnavailable": "This tab could not save the creation record. Allow browser storage and try again. No new request was sent.",
+  "editConflict": "The team has changed. Your input is preserved. Check the latest team details before editing again.",
+  "loadLatestTeam": "Load latest team details",
+  "replaceEditsConfirm": "Loading the latest team details will replace your unsaved input. Continue?",
+  "discardCheckedCreate": "I checked My teams — discard this request",
+  "discardCheckedCreateConfirm": "Check My teams first. Discarding removes only this tab’s retry record, not any team already created. Submitting again without checking may create a duplicate. Discard this request?"
 }

@@ -17,6 +17,7 @@ const teams: Team[] = ["周末去梧桐山", "海边日落散步", "城市骑行
     ({
       id: `team-${index}`,
       locationId: `location-${index}`,
+      version: 1,
       leaderId: `leader-${index}`,
       activityType: "hiking",
       title,

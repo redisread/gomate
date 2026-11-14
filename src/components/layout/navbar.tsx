@@ -11,6 +11,7 @@ import { BrandIcon } from "@/components/brand-icon";
 
 import * as React from "react";
 import { authClient } from "@/lib/auth-client";
+import { clearSignedOutTeamCreate } from "@/components/features/teams/form/team-create-operation";
 import {
   Mountain,
   MapPinPlus,
@@ -177,9 +178,20 @@ export function Navbar({
   }, [updateSession]);
 
   const handleLogout = async () => {
-    await authClient.signOut();
-    setSession(null);
-    window.location.href = "/";
+    const owner = session?.user.id;
+    try {
+      const result = await authClient.signOut();
+      if (result.error || !result.data?.success) {
+        setSessionFailed(true);
+        return;
+      }
+      if (owner) clearSignedOutTeamCreate(window.sessionStorage, owner);
+      setSession(null);
+      window.location.href = "/";
+    } catch {
+      // Unknown logout results retain the retry identity and private payload.
+      setSessionFailed(true);
+    }
   };
 
   /** 判断链接是否活跃（只在客户端执行，避免 SSR/CSR 不一致） */

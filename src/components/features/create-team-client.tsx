@@ -36,6 +36,22 @@ export function CreateTeamClient() {
       </main>
     );
 
+  if (ctx.pendingCreate || ctx.storageBlocked) return (
+    <TeamFormFrame title={t("teams.createTitle")} backHref="/my-teams" backLabel={t("teams.checkMyTeams")}>
+      <section className="space-y-4" aria-label={t("teams.createOutcomeUnknown")}>
+        {ctx.pendingCreate && <p className="font-semibold">{ctx.pendingCreate.title}</p>}
+        <p role="status">{t("teams.createOutcomeUnknown")}</p>
+        {ctx.error && <p role="alert" className="text-destructive">{ctx.error}</p>}
+        {ctx.pendingCreate && <Button type="button" className="flex h-auto min-h-11 max-w-full whitespace-normal text-start" disabled={ctx.isSubmitting} onClick={ctx.retryCreate}>
+          {ctx.isSubmitting ? t("teams.createBtnLoading") : t("teams.retryOriginalCreate")}
+        </Button>}
+        <Button type="button" variant="outline" className="flex h-auto min-h-11 max-w-full whitespace-normal text-start" disabled={ctx.isSubmitting} onClick={ctx.reconcileCreate}>
+          {t("teams.discardCheckedCreate")}
+        </Button>
+      </section>
+    </TeamFormFrame>
+  );
+
   return (
     <TeamFormFrame
       title={t("teams.createTitle")}
@@ -195,7 +211,7 @@ export function CreateTeamClient() {
           }
           loadingLabel={t("teams.createBtnLoading")}
           loading={ctx.isSubmitting}
-          disabled={!ctx.hasWechat}
+          disabled={!ctx.hasWechat || ctx.storageBlocked}
           error={ctx.error}
           onCancel={() => window.history.back()}
           testId="create-team-submit"
