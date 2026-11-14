@@ -1,5 +1,6 @@
 import type { Env } from "./auth";
 import { logger } from "./logger";
+import { mediaReferenceSql } from "./media-reference-sql";
 
 type MediaEnv = Pick<Env, "DB" | "R2" | "WRITE_MODE">;
 const GRACE_MS = 86_400_000;
@@ -8,20 +9,11 @@ const MAX_ATTEMPTS = 8;
 const BATCH_SIZE = 32;
 const KEY = /^(?:avatars|locations|temp\/avatars|temp\/locations)\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\.(?:jpg|jpeg|png|gif|webp)$/u;
 
-// The alias branch is deliberately conservative: historic non-canonical URLs
-// on this storage origin require reconciliation, never speculative deletion.
-const referenceMatches = (value: string) => `(
-  ${value} = media_objects.key OR ${value} = media_objects.url OR
-  substr(${value}, -length(media_objects.key)-1) = '/' || media_objects.key OR
-  (lower(substr(${value}, 1, length(media_objects.url)-length(media_objects.key))) =
-    lower(substr(media_objects.url, 1, length(media_objects.url)-length(media_objects.key)))
-    AND (${value} GLOB '*[?#%]*' OR ${value} LIKE '%/../%' OR ${value} LIKE '%/./%' OR instr(${value}, char(92)) > 0))
-)`;
 const UNREFERENCED = `
-  NOT EXISTS (SELECT 1 FROM users WHERE ${referenceMatches("users.image")})
-  AND NOT EXISTS (SELECT 1 FROM locations WHERE ${referenceMatches("locations.cover_image_url")})
+  NOT EXISTS (SELECT 1 FROM users WHERE ${mediaReferenceSql("users.image")})
+  AND NOT EXISTS (SELECT 1 FROM locations WHERE ${mediaReferenceSql("locations.cover_image_url")})
   AND NOT EXISTS (SELECT 1 FROM locations, json_each(locations.images) AS image
-    WHERE ${referenceMatches("image.value")})
+    WHERE ${mediaReferenceSql("image.value")})
 `;
 
 function validateObject(key: string, url: string) {

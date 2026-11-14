@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CreateTeamClient } from "../components/features/create-team-client";
@@ -223,6 +223,26 @@ it("preserves a corrupt record until the user explicitly discards it", async () 
   fireEvent.click(discard);
   await waitFor(() => expect(screen.getByTestId("create-team-submit")).toBeEnabled());
   expect(sessionStorage.getItem("gomate.team-create.leader")).toBeNull();
+});
+
+it("rechecks identity on focus without treating an unavailable identity service as logout", async () => {
+  arrangeRequests();
+  const ordinary = fetchAPI.getMockImplementation()!;
+  fetchAPI.mockImplementation((path: string, init?: RequestInit) => path === "/teams"
+    ? Promise.reject(new Error("lost")) : ordinary(path, init));
+  render(<CreateTeamClient />);
+  await fillCreation();
+  fireEvent.click(screen.getByTestId("create-team-submit"));
+  await screen.findByRole("button", { name: "teams.retryOriginalCreate" });
+  const saved = sessionStorage.getItem("gomate.team-create.leader");
+  fetchCurrentUser.mockRejectedValue(new Error("identity unavailable"));
+  await act(async () => window.dispatchEvent(new Event("focus")));
+  expect(sessionStorage.getItem("gomate.team-create.leader")).toBe(saved);
+  expect(screen.getByRole("button", { name: "teams.retryOriginalCreate" })).toBeVisible();
+  fetchCurrentUser.mockResolvedValue(null);
+  await act(async () => window.dispatchEvent(new Event("focus")));
+  expect(sessionStorage.getItem("gomate.team-create.leader")).toBeNull();
+  expect(screen.queryByText("唯一的一次创建")).toBeNull();
 });
 
 describe("CreateTeamClient contract", () => {

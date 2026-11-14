@@ -207,4 +207,51 @@ describe("durable media recovery", () => {
     expect(await env.R2.head(key)).toBeNull();
   });
 
+  const historicalAliases = [
+    "https://media.example.test:443/avatars/media-user/example.webp?download=1",
+    "https://%6dedia.example.test/avatars/media-user/example.webp?download=1",
+    "https://MEDIA.EXAMPLE.TEST:443/avatars/media-user/example.webp?download=1",
+    "https://user:pass@media.example.test/avatars/media-user/example.webp?download=1",
+    String.raw`https:\\media.example.test\avatars\media-user\example.webp`,
+    "https://media.example.test:443/avatars/./media-user/%65xample.webp",
+    "https://media.example.test:443/avatars/other/../media-user/example.webp",
+    "https://media.example.test:443/%61vatars/media-user/example.webp",
+    "https://media.example.test/avatars/media-user/exam\tple.webp",
+    "https://media.example.test/avatars/media-user/exam\nple.webp",
+    "https://media.example.test/avatars/media-user/exam\rple.webp",
+    " https://media.example.test/avatars/media-user/example.webp ",
+  ];
+
+  it.each(historicalAliases)("preserves a historical URL alias: %s", async (alias) => {
+    // A previous Worker accepted this URL before the object entered the ledger.
+    await env.DB.prepare("UPDATE locations SET cover_image_url=? WHERE id=(SELECT id FROM locations LIMIT 1)")
+      .bind(alias).run();
+    await registerExistingMedia(bindings(), key, url, now);
+    await env.R2.put(key, "image");
+    await recoverMediaObjects(bindings(), now + 2 * 86_400_000);
+    expect(await env.R2.head(key)).not.toBeNull();
+    expect(await state()).toBe("ready");
+  });
+
+  it.each(historicalAliases)("fences alias insertion after a deletion claim: %s", async (alias) => {
+    await registerExistingMedia(bindings(), key, url, now);
+    await env.DB.prepare("UPDATE media_objects SET state='deleting' WHERE key=?").bind(key).run();
+    await expect(env.DB.prepare("UPDATE locations SET images=? WHERE id=(SELECT id FROM locations LIMIT 1)")
+      .bind(JSON.stringify([alias])).run()).rejects.toThrow(/media_reference_unavailable/);
+  });
+
+  it("allows known external CDN query URLs without treating them as managed references", async () => {
+    await registerExistingMedia(bindings(), key, url, now);
+    await env.R2.put(key, "image");
+    await env.DB.prepare("UPDATE locations SET images=? WHERE id=(SELECT id FROM locations LIMIT 1)")
+      .bind(JSON.stringify([
+        "https://cdn.discordapp.com/avatars/media-user/example.webp?size=200",
+        "https://lh3.googleusercontent.com/image?size=200",
+        "https://raw.githubusercontent.com/image%20name.webp?raw=1",
+      ])).run();
+    await recoverMediaObjects(bindings(), now + 2 * 86_400_000);
+    expect(await env.R2.head(key)).toBeNull();
+    expect(await state()).toBe("done");
+  });
+
 });

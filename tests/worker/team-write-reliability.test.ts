@@ -100,6 +100,15 @@ describe("team write recovery with real D1", () => {
     expect(second.team.id).not.toBe(first.team.id);
     expect(await env.DB.prepare("SELECT count(*) AS count FROM team_create_requests").first("count")).toBe(2);
   });
+  it("increments the revision through lifecycle writes as well as edits", async () => {
+    const { team } = await (await request("", "POST", input)).json<{ team: { id: string; version: number } }>();
+    const formed = await request(`/${team.id}/form`, "POST");
+    expect(formed.status).toBe(200);
+    expect((await formed.json<{ team: { version: number } }>()).team.version).toBe(team.version + 1);
+    const cancelled = await request(`/${team.id}/cancel`, "POST");
+    expect(cancelled.status).toBe(200);
+    expect((await cancelled.json<{ team: { version: number } }>()).team.version).toBe(team.version + 2);
+  });
   it("rolls back both team and request identity when a later batch statement fails", async () => {
     const tagId = await env.DB.prepare("SELECT id FROM tags LIMIT 1").first<string>("id");
     await env.DB.prepare(`CREATE TRIGGER injected_team_tag_failure BEFORE INSERT ON team_tags

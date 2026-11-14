@@ -9,9 +9,10 @@ import { buildTeamPageQuery } from "../../src/server/routes/teams/queries";
 
 afterEach(() => reset());
 
-it("keeps old-schema reads compatible and removes public feed sorting after the additive migration", async () => {
+it("keeps current-schema query results stable with and without the public feed indexes", async () => {
   const migrations = JSON.parse((env as unknown as { TEST_MIGRATIONS: string }).TEST_MIGRATIONS);
-  await applyD1Migrations(env.DB, migrations.slice(0, -1));
+  await applyD1Migrations(env.DB, migrations);
+  await env.DB.batch([env.DB.prepare("DROP INDEX locations_public_feed_idx"), env.DB.prepare("DROP INDEX teams_start_feed_idx")]);
   const db = createDb(env.DB);
   await env.DB.prepare("INSERT INTO users(id,name,email) VALUES ('feed-user','Feed','feed@example.test')").run();
   const location = await db.select({ id: schema.locations.id }).from(schema.locations).where(eq(schema.locations.status, "published")).limit(1);
@@ -26,7 +27,10 @@ it("keeps old-schema reads compatible and removes public feed sorting after the 
   const beforeLocations = await locationQuery();
   const beforeTeams = await teamQuery();
   expect(beforeTeams.map((row) => row.team.id)).toEqual(["feed-0", "feed-1", "feed-2"]);
-  await applyD1Migrations(env.DB, migrations);
+  await env.DB.batch([
+    env.DB.prepare("CREATE INDEX locations_public_feed_idx ON locations(status,created_at,id)"),
+    env.DB.prepare("CREATE INDEX teams_start_feed_idx ON teams(start_at,id)"),
+  ]);
   expect(await locationQuery()).toEqual(beforeLocations);
   expect(await teamQuery()).toEqual(beforeTeams);
   for (const [query, index] of [[locationQuery(), "locations_public_feed_idx"], [teamQuery(), "teams_start_feed_idx"]] as const) {

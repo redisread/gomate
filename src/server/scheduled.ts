@@ -20,7 +20,7 @@ export async function scheduled(
     const result = await env.DB.prepare(
       `
       UPDATE teams
-      SET recruitment_status = 'closed', updated_at = ?
+      SET recruitment_status = 'closed', updated_at = ?, version = version + 1
       WHERE recruitment_status = 'open'
         AND cancelled_at IS NULL
         AND formed_at IS NULL

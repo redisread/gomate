@@ -50,7 +50,7 @@ D1 多语句原子操作使用 `batch()` 与条件 DML；不要使用客户端 `
 
 R2 保存头像与地点媒体，D1 保存权威引用及 `media_objects` 精确对象记录，不声称具有跨存储原子性。上传在 put 前登记 `writing`，put 明确成功后转 `ready`；地点临时上传有 24 小时的未引用保留期。头像直接写唯一最终 key，地点提交时把临时图复制到唯一最终 key。移除已有引用前先登记其精确对象，条件 DML 成功后才尝试 R2 删除；地点永久删除不再先删图片或生成新备份。
 
-恢复每次最多扫描 32 条到期记录，只有确认 users.image、地点封面与相册均无引用的 `ready` 对象才能原子转 `deleting`。数据库触发器只允许引用已明确完成 put 的对象，禁止引用 `writing/deleting/done/blocked` 对象，包含生产 URL、本地 `/api/r2/` URL 与旧 raw key；新自有存储 URL 必须规范化，不接受 query、fragment、百分号编码或 URL 规范化别名。历史非规范引用保守保留，需另行核对。
+恢复每次最多扫描 32 条到期记录，只有确认 users.image、地点封面与相册均无引用的 `ready` 对象才能原子转 `deleting`。数据库触发器只允许引用已明确完成 put 的对象，禁止引用 `writing/deleting/done/blocked` 对象，包含生产 URL、本地 `/api/r2/` URL 与旧 raw key；新自有存储 URL 必须规范化，不接受 query、fragment、百分号编码或 URL 规范化别名。历史 URL 含 query、编码、点路径、反斜杠、ASCII 控制字符或边缘空白时，只有 authority 明确属于外部 CDN（现有图片来源及历史 Unsplash，且不等于托管 hostname）才可豁免。其余可疑别名保守阻止自动删除，并禁止新的同类别名写入；不尝试用 SQLite 模拟完整 URL 解码。遇到这类历史引用需先核对规范化，否则可能暂停多个已登记对象的清理。外部 CDN 豁免仅用于判断引用，不扩大 API 的图片来源 allowlist。
 
 `deleting` 采用 5 分钟领取窗口，失败指数退避（上限一天），最多 8 次后进入 `blocked`，精确 key 留在 D1；成功保留 `done` 墓碑阻止重用。未知结果的 `writing` 超过一天只标记 `blocked`，不会把经过时间当作 put 已停止的证据。两类 blocked 均需按生产规约核对，不在日志输出 key/URL，也不提供本机生产补写命令。已删除 R2 内容不能靠 Worker 回滚恢复。
 

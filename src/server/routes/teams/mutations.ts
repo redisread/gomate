@@ -10,7 +10,7 @@ import {
   errorResponses,
   z,
 } from "../../lib/openapi";
-import { and, eq, gt, inArray, isNull } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { createTeamSchema, teamCreateInputSchema, updateTeamSchema } from "@/contracts/team-input";
 export { createTeamSchema, updateTeamSchema } from "@/contracts/team-input";
 import { ACTIVITY_TYPES } from "@/contracts";
@@ -449,7 +449,7 @@ mutations.openapi(
       const now = new Date();
       const updated = await db
         .update(schema.teams)
-        .set({ formedAt: now, recruitmentStatus: "closed", updatedAt: now })
+        .set({ formedAt: now, recruitmentStatus: "closed", updatedAt: now, version: sql`${schema.teams.version} + 1` })
         .where(
           and(
             eq(schema.teams.id, teamId),
@@ -510,7 +510,7 @@ mutations.openapi(
       const now = new Date();
       const updated = await db
         .update(schema.teams)
-        .set({ cancelledAt: now, recruitmentStatus: "closed", updatedAt: now })
+        .set({ cancelledAt: now, recruitmentStatus: "closed", updatedAt: now, version: sql`${schema.teams.version} + 1` })
         .where(
           and(
             eq(schema.teams.id, teamId),

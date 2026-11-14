@@ -116,3 +116,36 @@ test("manual reconciliation requires confirmation before releasing the stored op
   await expect(page.getByTestId("create-team-title")).toBeVisible();
   expect(await page.evaluate((id) => sessionStorage.getItem(`gomate.team-create.${encodeURIComponent(id)}`), user.userId)).toBeNull();
 });
+
+test("successful logout in another tab clears a pending creation and its private snapshot", async ({ page, context }) => {
+  const user = await signUpUser(`logout-tabs-${Date.now()}@e2e.gomate.test`, "test1234", "Logout tabs tester");
+  await patchWechat(user, "private-contact");
+  const locationId = await getFirstLocationId();
+  await loginAs(page, user.email, user.password);
+  await page.goto(`/teams/create?locationId=${locationId}`);
+  await expect(page.getByTestId("create-team-activity-type")).toBeEnabled();
+  await page.getByTestId("create-team-title").fill("Private pending team");
+  await page.getByTestId("create-team-activity-type").selectOption("hiking");
+  await page.getByTestId("create-team-date").fill("2099-08-16");
+  await page.getByTestId("create-team-time").fill("09:30");
+  await page.getByTestId("create-team-max-members").fill("6");
+  await page.getByTestId("create-team-description").fill("Private pending description");
+  await page.route("**/api/teams", async (route) => route.request().method() === "POST"
+    ? route.fulfill({ status: 503, contentType: "application/json", body: '{"success":false}' })
+    : route.continue());
+  await page.getByTestId("create-team-submit").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: /重试这次创建|Retry this creation/u })).toBeEnabled();
+  const other = await context.newPage();
+  await other.goto("/my-teams");
+  await other.getByRole("button", { name: /Logout tabs tester/ }).click();
+  await other.getByRole("menuitem", { name: /退出登录|Log out|Logout|Sign out/u }).click();
+  await expect(other).toHaveURL(new RegExp("/$"));
+  await expect(page.getByText("Private pending team", { exact: true })).toHaveCount(0);
+  expect(await page.evaluate((id) => sessionStorage.getItem(`gomate.team-create.${encodeURIComponent(id)}`), user.userId)).toBeNull();
+  await loginAs(other, user.email, user.password);
+  await page.goto("/teams/create");
+  await expect(page.getByTestId("create-team-title")).toHaveValue("");
+  await expect(page.getByRole("button", { name: /重试这次创建|Retry this creation/u })).toHaveCount(0);
+  await other.close();
+});

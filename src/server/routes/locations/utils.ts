@@ -303,7 +303,7 @@ function wildcardHostMatch(hostname: string, suffix: string) {
   return hostname.endsWith(`.${suffix}`) && hostname.length > suffix.length + 1;
 }
 
-function isAllowedLocationImageUrl(value: string, env: Pick<Env, "R2_PUBLIC_URL">) {
+function isAllowedLocationImageUrl(value: string, env: { R2_PUBLIC_URL: string }) {
   let url: URL;
   try {
     url = new URL(value);
@@ -334,7 +334,7 @@ function isAllowedLocationImageUrl(value: string, env: Pick<Env, "R2_PUBLIC_URL"
 
 export function locationImagesAreAllowed(
   input: { coverImageUrl: string | null; images: string[] },
-  env: Pick<Env, "R2_PUBLIC_URL">,
+  env: { R2_PUBLIC_URL: string },
 ) {
   return [input.coverImageUrl, ...input.images]
     .filter((url): url is string => url !== null)

@@ -15,9 +15,11 @@ import type { CreateTeamFormData } from "./team-form-data";
 import { teamDefaultSchedule } from "./team-default-schedule";
 
 import {
-  clearTeamCreateOperation, discardTeamCreateRecord, newTeamCreateOperation, readTeamCreateOperation, readTeamCreateRaw,
+  clearTeamCreateOperation, clearSignedOutTeamCreate, discardTeamCreateRecord, newTeamCreateOperation, readTeamCreateOperation, readTeamCreateRaw,
   saveTeamCreateOperation, type TeamCreateOperation,
 } from "./team-create-operation";
+
+import { synchronizeTeamCreateLogout, watchTeamCreateLogout } from "./team-create-logout";
 
 export function useCreateTeamForm() {
   const { t } = useI18n(["teams", "errors", "common", "enums"]);
@@ -66,13 +68,52 @@ export function useCreateTeamForm() {
   });
 
   React.useEffect(() => {
+    let active = true;
+    let removeLogoutListener: (() => void) | undefined;
+    const invalidatePrivateState = () => {
+      if (!active) return;
+      userId.current = null;
+      savedRecord.current = null;
+      setPendingCreate(null);
+      const schedule = teamDefaultSchedule(new Date());
+      setFormData({
+        title: "", locationId: "", activityType: "",
+        startDateInput: schedule.startDateInput, startClockInput: schedule.startClockInput,
+        durationMinutes: "240", maxParticipants: "", description: "", meetingPoint: "", requirementsInput: "",
+      });
+      setHasWechat(false);
+      setSessionFailed(true);
+    };
+    const checkSession = async () => {
+      const owner = userId.current;
+      if (!owner) return;
+      try {
+        if (synchronizeTeamCreateLogout(owner)) { invalidatePrivateState(); return; }
+      } catch { /* Continue with an authoritative session check. */ }
+      try {
+        const current = await refreshCurrentUser();
+        if (!active || userId.current !== owner) return;
+        if (current?.id !== owner) {
+          try { clearSignedOutTeamCreate(window.sessionStorage, owner); }
+          finally { invalidatePrivateState(); }
+        }
+      } catch { /* An unavailable identity service is not confirmation of logout. */ }
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") void checkSession(); };
+    const onPageShow = (event: PageTransitionEvent) => { if (event.persisted) void checkSession(); };
+    const onFocus = () => { void checkSession(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onPageShow);
     (async () => {
       const u = await fetchCurrentUser(
         authPageHref("login", `${window.location.pathname}${window.location.search}`),
       );
-      if (!u || !mounted.current) return;
+      if (!u || !mounted.current || !active) return;
       userId.current = u.id;
+      removeLogoutListener = watchTeamCreateLogout(u.id, invalidatePrivateState);
       try {
+        synchronizeTeamCreateLogout(u.id);
         savedRecord.current = readTeamCreateRaw(window.sessionStorage, u.id);
         setPendingCreate(readTeamCreateOperation(window.sessionStorage, u.id));
       } catch {
@@ -85,6 +126,13 @@ export function useCreateTeamForm() {
     const params = new URLSearchParams(window.location.search);
     const locId = params.get("locationId");
     if (locId) setFormData((prev) => ({ ...prev, locationId: locId }));
+    return () => {
+      active = false;
+      removeLogoutListener?.();
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -195,7 +243,7 @@ export function useCreateTeamForm() {
     setError("");
     try {
       const currentUser = await refreshCurrentUser();
-      if (!mounted.current) return;
+      if (!mounted.current || userId.current !== owner) return;
       if (currentUser?.id !== owner) {
         setSessionFailed(true);
         return;
@@ -204,6 +252,7 @@ export function useCreateTeamForm() {
         method: "POST", body: JSON.stringify(operation),
       });
       const data = await res.json<ApiResult<TeamResponse>>();
+      if (!mounted.current || userId.current !== owner) return;
       if (data.success && data.team?.id) {
         clearTeamCreateOperation(window.sessionStorage, owner, operation.requestId);
         setPendingCreate(null);
@@ -260,7 +309,7 @@ export function useCreateTeamForm() {
     setIsSubmitting(true);
     try {
       const current = await refreshCurrentUser();
-      if (!mounted.current) return;
+      if (!mounted.current || userId.current !== owner) return;
       if (current?.id !== owner) { setSessionFailed(true); return; }
       discardTeamCreateRecord(window.sessionStorage, owner, savedRecord.current);
       savedRecord.current = null;

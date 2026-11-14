@@ -45,6 +45,7 @@ describe("Navbar auth state", () => {
     refreshCurrentUserMock.mockReset();
     signOutMock.mockReset();
     sessionStorage.clear();
+    localStorage.clear();
   });
 
   it("clears only the signing-out user's private creation after confirmed logout", async () => {
